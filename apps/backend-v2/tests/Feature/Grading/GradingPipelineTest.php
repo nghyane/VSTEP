@@ -102,11 +102,9 @@ class GradingPipelineTest extends TestCase
     public function test_grading_job_endpoint(): void
     {
         $service = $this->app->make(GradingService::class);
-        $submission = $this->createWritingSubmission();
+        [$submission, $user] = $this->createWritingSubmissionWithOwner();
         $job = $service->enqueue('practice_writing', $submission->id);
 
-        $user = User::factory()->create();
-        Profile::factory()->initial()->forAccount($user)->create();
         $token = $this->postJson('/api/v1/auth/login', [
             'email' => $user->email, 'password' => 'password',
         ])->json('data.access_token');
@@ -117,7 +115,33 @@ class GradingPipelineTest extends TestCase
             ->assertJsonPath('data.status', 'ready');
     }
 
+    public function test_grading_job_endpoint_rejects_non_owner(): void
+    {
+        $service = $this->app->make(GradingService::class);
+        [$submission] = $this->createWritingSubmissionWithOwner();
+        $job = $service->enqueue('practice_writing', $submission->id);
+
+        // Different account
+        $intruder = User::factory()->create();
+        Profile::factory()->initial()->forAccount($intruder)->create();
+        $token = $this->postJson('/api/v1/auth/login', [
+            'email' => $intruder->email, 'password' => 'password',
+        ])->json('data.access_token');
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/grading/jobs/{$job->id}")
+            ->assertForbidden();
+    }
+
     private function createWritingSubmission(): PracticeWritingSubmission
+    {
+        return $this->createWritingSubmissionWithOwner()[0];
+    }
+
+    /**
+     * @return array{PracticeWritingSubmission, User}
+     */
+    private function createWritingSubmissionWithOwner(): array
     {
         $user = User::factory()->create();
         $profile = Profile::factory()->initial()->forAccount($user)->create();
@@ -132,7 +156,7 @@ class GradingPipelineTest extends TestCase
             'duration_seconds' => 60,
         ]);
 
-        return PracticeWritingSubmission::create([
+        $submission = PracticeWritingSubmission::create([
             'session_id' => $session->id,
             'profile_id' => $profile->id,
             'prompt_id' => $prompt->id,
@@ -140,5 +164,7 @@ class GradingPipelineTest extends TestCase
             'word_count' => 10,
             'submitted_at' => now(),
         ]);
+
+        return [$submission, $user];
     }
 }

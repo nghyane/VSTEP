@@ -141,10 +141,14 @@ Route::prefix('v1')->group(function () {
         Route::get('/exam-sessions/{exam_session}/speaking-results', [ExamController::class, 'speakingResults']);
 
         // Grading.
-        Route::get('/grading/jobs/{id}', [GradingController::class, 'showJob']);
-        Route::get('/grading/jobs/{id}/status', [GradingController::class, 'jobStatus']);
-        Route::get('/grading/writing/{submissionType}/{submissionId}', [GradingController::class, 'writingResult']);
-        Route::get('/grading/speaking/{submissionType}/{submissionId}', [GradingController::class, 'speakingResult']);
+        Route::get('/grading/jobs/{grading_job}', [GradingController::class, 'showJob']);
+        Route::get('/grading/jobs/{grading_job}/status', [GradingController::class, 'jobStatus']);
+        Route::get('/grading/writing/{submissionType}/{submissionId}', [GradingController::class, 'writingResult'])
+            ->whereIn('submissionType', ['practice_writing', 'exam_writing'])
+            ->whereUuid('submissionId');
+        Route::get('/grading/speaking/{submissionType}/{submissionId}', [GradingController::class, 'speakingResult'])
+            ->whereIn('submissionType', ['practice_speaking', 'exam_speaking'])
+            ->whereUuid('submissionId');
 
         // Audio presigned URLs (R2).
         Route::post('/audio/presign-upload', [AudioController::class, 'presignUpload']);
