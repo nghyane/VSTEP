@@ -1,4 +1,4 @@
-import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
+import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { Input as AntdInput, Empty, Flex, Pagination, Skeleton, Space, Table, Tag, Typography } from "antd"
@@ -133,9 +133,6 @@ function VocabListPage() {
 			align: "right",
 			render: (_: unknown, t) => (
 				<Space size={4}>
-					<Link to="/vocab/$topicId" params={{ topicId: t.id }} aria-label="Xem chi tiết">
-						<Button variant="ghost" size="sm" icon={<EyeOutlined />} />
-					</Link>
 					<Link to="/vocab/$topicId" params={{ topicId: t.id }} aria-label="Sửa">
 						<Button variant="ghost" size="sm" icon={<EditOutlined />} />
 					</Link>
