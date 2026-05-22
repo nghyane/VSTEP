@@ -22,12 +22,19 @@ export type PracticeMode = "free" | "shadowing" | "drill" | "guided";
 // Auth
 // ============================================================
 
+export type AvatarKey =
+  | "Alex" | "Jordan" | "Sam" | "Riley" | "Casey" | "Morgan" | "Taylor" | "Drew"
+  | "Quinn" | "Avery" | "Blake" | "Cameron" | "Dakota" | "Emery" | "Finley"
+  | "Hayden" | "Indigo" | "Jesse" | "Kai" | "Logan" | "Mason" | "Noah"
+  | "Oakley" | "Parker" | "Reese" | "Sage" | "Skyler" | "Tatum" | "Winter" | "Zion";
+
 export interface AuthUser {
   id: string;
   email: string;
   role: string;
   fullName: string | null;
-  avatarKey: string | null;
+  avatarKey: AvatarKey | null;
+  avatarUrl: string | null;
 }
 
 export interface Profile {
@@ -247,6 +254,7 @@ export interface UserProfile {
   id: string;
   email: string;
   fullName: string | null;
-  avatarKey: string | null;
+  avatarKey: AvatarKey | null;
+  avatarUrl: string | null;
   role: string;
 }

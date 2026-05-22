@@ -1,5 +1,5 @@
 import { useFonts } from "expo-font";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Alert } from "react-native";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter, useSegments } from "expo-router";
@@ -8,7 +8,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthContext, type AuthStatus } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/query-client";
-import { saveTokens, clearTokens } from "@/lib/auth";
+import { saveTokens, clearTokens, getAccessToken, getRefreshToken } from "@/lib/auth";
 import { refreshSession } from "@/lib/api";
 import { HapticsProvider } from "@/contexts/HapticsContext";
 import { loadCoins } from "@/features/coin/coin-store";
@@ -94,6 +94,39 @@ export default function RootLayout() {
     setStatus("unauthenticated");
   }, []);
 
+  const updateUser = useCallback(
+    async (patch: Partial<AuthUser>) => {
+      // Use functional setState to avoid stale-closure: rotate the latest user
+      // through SecureStore so the next refreshSession() restores correctly.
+      setUser((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev, ...patch };
+        (async () => {
+          try {
+            const [accessToken, refreshToken] = await Promise.all([
+              getAccessToken(),
+              getRefreshToken(),
+            ]);
+            if (accessToken && refreshToken) {
+              await saveTokens(accessToken, refreshToken, next, profileRef.current);
+            }
+          } catch {
+            // Persist best-effort — state is already correct in memory.
+          }
+        })();
+        return next;
+      });
+    },
+    [],
+  );
+
+  // Keep a ref to latest profile so updateUser can pass it to saveTokens
+  // without listing `profile` as dependency (would close over stale value).
+  const profileRef = useRef<Profile | null>(null);
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
+
   const segments = useSegments();
   const router = useRouter();
 
@@ -114,7 +147,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <AuthContext.Provider value={{ status, user, profile, isLoading: false, signIn, switchSession, signOut }}>
+        <AuthContext.Provider value={{ status, user, profile, isLoading: false, signIn, switchSession, signOut, updateUser }}>
           <HapticsProvider>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" />

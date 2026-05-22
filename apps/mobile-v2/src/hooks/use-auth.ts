@@ -20,6 +20,7 @@ interface AuthCtx {
     profile: Profile,
   ) => Promise<void>;
   signOut: () => Promise<void>;
+  updateUser: (patch: Partial<AuthUser>) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthCtx>({
@@ -30,6 +31,7 @@ export const AuthContext = createContext<AuthCtx>({
   signIn: async () => undefined,
   switchSession: async () => undefined,
   signOut: async () => undefined,
+  updateUser: async () => undefined,
 });
 
 export function useAuth() {

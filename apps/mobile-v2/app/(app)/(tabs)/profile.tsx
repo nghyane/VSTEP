@@ -18,6 +18,8 @@ import { DepthButton } from "@/components/DepthButton";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { Mascot } from "@/components/Mascot";
+import { UserAvatar } from "@/components/UserAvatar";
+import { AvatarPickerSheet } from "@/features/profile/AvatarPickerSheet";
 import { useAuth } from "@/hooks/use-auth";
 import { useProfiles, useCreateProfile, useDeleteProfile, useResetProfile, useSwitchProfile } from "@/hooks/use-profiles";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
@@ -37,6 +39,7 @@ export default function ProfileScreen() {
   const switchMutation = useSwitchProfile();
 
   const [showCreate, setShowCreate] = useState(false);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   function handleSwitchProfile(p: Profile) {
     if (p.id === activeProfile?.id || switchMutation.isPending) return;
@@ -102,7 +105,6 @@ export default function ProfileScreen() {
   if (isLoading) return <LoadingScreen />;
 
   const displayName = activeProfile?.nickname ?? user?.fullName ?? user?.email ?? "Người dùng";
-  const initial = displayName.charAt(0).toUpperCase();
   const avatarColor = activeProfile?.avatarColor ?? c.primary;
   const targetLevel = activeProfile?.targetLevel ?? "Chưa đặt";
   const targetDeadline = activeProfile?.targetDeadline;
@@ -115,9 +117,12 @@ export default function ProfileScreen() {
     >
       {/* Hero */}
       <View style={[s.heroCard, { backgroundColor: c.card, borderColor: c.border }]}>
-        <View style={[s.avatar, { backgroundColor: avatarColor }]}>
-          <Text style={s.avatarText}>{initial}</Text>
-        </View>
+        <HapticTouchable onPress={() => setShowAvatarPicker(true)} style={s.avatarTouch}>
+          <UserAvatar user={user} size={84} fallbackName={displayName} fallbackColor={avatarColor} />
+          <View style={[s.avatarEditBadge, { backgroundColor: c.primary, borderColor: c.card }]}>
+            <Ionicons name="camera" size={12} color={c.primaryForeground} />
+          </View>
+        </HapticTouchable>
         <Text style={[s.heroName, { color: c.foreground }]}>{displayName}</Text>
         <Text style={[s.heroEmail, { color: c.mutedForeground }]}>{user?.email}</Text>
         <View style={[s.targetBadge, { backgroundColor: c.primaryTint }]}>
@@ -182,6 +187,12 @@ export default function ProfileScreen() {
         onClose={() => setShowCreate(false)}
         onCreate={createMutation.mutate}
         c={c}
+      />
+
+      {/* Avatar picker sheet */}
+      <AvatarPickerSheet
+        visible={showAvatarPicker}
+        onClose={() => setShowAvatarPicker(false)}
       />
     </ScrollView>
   );
@@ -340,8 +351,18 @@ const s = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: spacing.xl, gap: spacing.lg },
   heroCard: { borderWidth: 2, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.sm, position: "relative" },
-  avatar: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
-  avatarText: { color: "#FFFFFF", fontSize: 32, fontFamily: fontFamily.extraBold },
+  avatarTouch: { position: "relative" },
+  avatarEditBadge: {
+    position: "absolute",
+    right: -2,
+    bottom: -2,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   heroName: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   heroEmail: { fontSize: fontSize.sm },
   targetBadge: { flexDirection: "row", paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full },
