@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { DepthCard } from "@/components/DepthCard";
+import { PromoRedeemCard } from "@/features/wallet/PromoRedeemCard";
 import { useWalletBalance, useWalletTransactions } from "@/features/wallet/queries";
 import { useThemeColors, spacing, fontSize, fontFamily } from "@/theme";
 
@@ -27,6 +28,8 @@ export default function WalletScreen() {
           {balance.toLocaleString("vi-VN")} xu
         </Text>
       </DepthCard>
+
+      <PromoRedeemCard />
 
       <Text style={[styles.sectionTitle, { color: c.foreground }]}>Lịch sử giao dịch</Text>
 
