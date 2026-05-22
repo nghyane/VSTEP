@@ -9,6 +9,7 @@ import type { Notification, UnreadCount } from "#/features/notifications/types"
 import { visualForType } from "#/features/notifications/visuals"
 import type { ApiResponse, PaginatedResponse } from "#/lib/api"
 import { useAuth, useSession } from "#/lib/auth"
+import { getUserAvatarSrc } from "#/lib/avatar"
 import { useToast } from "#/lib/toast"
 import { useClickOutside } from "#/lib/use-click-outside"
 import { cn } from "#/lib/utils"
@@ -124,6 +125,7 @@ interface Props {
 
 export function ProfileDropdown({ unread, initial }: Props) {
 	const { profile, user } = useSession()
+	const avatarSrc = getUserAvatarSrc(user)
 	const logout = useAuth((s) => s.logout)
 	const { data: notifsData } = useQuery({ ...notificationsQuery, enabled: false })
 	const navigate = useNavigate()
@@ -219,9 +221,13 @@ export function ProfileDropdown({ unread, initial }: Props) {
 				onClick={toggle}
 				className="relative w-10 h-10 rounded-full bg-primary text-primary-foreground font-display text-base flex items-center justify-center hover:ring-2 hover:ring-primary/40 transition"
 			>
-				{initial}
+				{avatarSrc ? (
+					<img src={avatarSrc} alt="" className="w-full h-full object-cover rounded-full overflow-hidden" />
+				) : (
+					initial
+				)}
 				{unread > 0 && (
-					<span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-destructive border-2 border-background" />
+					<span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-destructive border-2 border-background z-10" />
 				)}
 			</button>
 
@@ -231,8 +237,12 @@ export function ProfileDropdown({ unread, initial }: Props) {
 						<div>
 							<div className="bg-gradient-to-b from-primary-tint/60 to-transparent px-4 pt-5 pb-4">
 								<div className="flex items-center gap-3">
-									<div className="size-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-display text-lg shrink-0">
-										{initial}
+									<div className="size-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-display text-lg shrink-0 overflow-hidden">
+										{avatarSrc ? (
+											<img src={avatarSrc} alt="" className="w-full h-full object-cover" />
+										) : (
+											initial
+										)}
 									</div>
 									<div className="min-w-0 flex-1">
 										<p className="text-base font-extrabold text-foreground truncate">{profile.nickname}</p>

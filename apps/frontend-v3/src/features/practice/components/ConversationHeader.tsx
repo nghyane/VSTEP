@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
 import type { ConversationScenario } from "#/features/practice/types"
-import { cn, getEnglishVoices, speak, stopSpeaking } from "#/lib/utils"
+import { extractFirstName, getAvatarUrl } from "#/lib/avatar"
+import { cn, getEnglishVoices, shortVoiceName, speak, stopSpeaking } from "#/lib/utils"
 
 interface Props {
 	scenario: ConversationScenario
@@ -12,11 +13,11 @@ interface Props {
 	completed?: boolean
 }
 
-const PREVIEW_TEXT = "Hello! Nice to meet you."
-
-function shortName(name: string): string {
-	return name.replace(/Microsoft |Google |Online| \(Natural\)/g, "").trim()
+function displayName(voice: SpeechSynthesisVoice | undefined, fallback: string): string {
+	return voice ? extractFirstName(shortVoiceName(voice.name)) : fallback
 }
+
+const PREVIEW_TEXT = "Hello! Nice to meet you."
 
 export function ConversationHeader({ scenario, onEnd, onBack, voice, onVoiceChange, completed }: Props) {
 	const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
@@ -70,13 +71,17 @@ export function ConversationHeader({ scenario, onEnd, onBack, voice, onVoiceChan
 
 			<div className="flex items-center gap-3 min-w-0 flex-1">
 				<div className="relative shrink-0">
-					<div className="w-10 h-10 rounded-full bg-skill-speaking text-primary-foreground flex items-center justify-center font-extrabold text-sm">
-						{scenario.character_name.charAt(0)}
-					</div>
+					<img
+						src={getAvatarUrl(displayName(voice, scenario.character_name))}
+						alt={displayName(voice, scenario.character_name)}
+						className="w-10 h-10 rounded-full bg-skill-speaking/20 border-2 border-skill-speaking/30 object-cover"
+					/>
 					<div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-success border-2 border-surface" />
 				</div>
 				<div className="min-w-0">
-					<p className="text-sm font-extrabold text-foreground truncate">{scenario.character_name}</p>
+					<p className="text-sm font-extrabold text-foreground truncate">
+						{displayName(voice, scenario.character_name)}
+					</p>
 					<div className="flex items-center gap-2 min-w-0">
 						<span className="text-[10px] font-bold text-skill-speaking bg-skill-speaking/15 px-1.5 py-0.5 rounded shrink-0">
 							{scenario.level}
@@ -92,15 +97,19 @@ export function ConversationHeader({ scenario, onEnd, onBack, voice, onVoiceChan
 					type="button"
 					onClick={() => setOpen((v) => !v)}
 					className={cn(
-						"flex items-center gap-2 px-3 h-9 rounded-(--radius-button) border-2 border-b-4 bg-surface text-xs font-bold transition shrink-0 active:translate-y-[1px] active:border-b-2",
+						"flex items-center gap-2 pl-1.5 pr-3 h-9 rounded-(--radius-button) border-2 border-b-4 bg-surface text-xs font-bold transition shrink-0 active:translate-y-[1px] active:border-b-2",
 						open
 							? "border-skill-speaking text-skill-speaking"
 							: "border-border text-muted hover:text-foreground",
 					)}
 				>
-					<Icon name="volume" size="xs" />
+					<img
+						src={getAvatarUrl(displayName(voice, scenario.character_name))}
+						alt=""
+						className="w-6 h-6 rounded-full bg-skill-speaking/20 object-cover shrink-0"
+					/>
 					<span className="hidden sm:inline max-w-24 truncate">
-						{voice ? shortName(voice.name) : "Giọng"}
+						{displayName(voice, scenario.character_name)}
 					</span>
 				</button>
 
@@ -112,6 +121,7 @@ export function ConversationHeader({ scenario, onEnd, onBack, voice, onVoiceChan
 						{voices.map((v) => {
 							const isActive = voice?.name === v.name
 							const isPlaying = playing === v.name
+							const vName = displayName(v, shortVoiceName(v.name))
 							return (
 								<div
 									key={v.name}
@@ -120,19 +130,12 @@ export function ConversationHeader({ scenario, onEnd, onBack, voice, onVoiceChan
 										isActive ? "bg-skill-speaking/10" : "hover:bg-background",
 									)}
 								>
-									{/* Play preview */}
-									<button
-										type="button"
-										onClick={() => preview(v)}
-										className={cn(
-											"w-8 h-8 rounded-full border-2 flex items-center justify-center shrink-0 transition",
-											isPlaying
-												? "border-skill-speaking bg-skill-speaking text-primary-foreground"
-												: "border-border text-muted hover:border-skill-speaking hover:text-skill-speaking",
-										)}
-									>
-										<Icon name={isPlaying ? "close" : "play"} size="xs" />
-									</button>
+									{/* Avatar */}
+									<img
+										src={getAvatarUrl(vName)}
+										alt={vName}
+										className="w-8 h-8 rounded-full bg-skill-speaking/20 object-cover shrink-0"
+									/>
 
 									{/* Voice info + select */}
 									<button type="button" onClick={() => select(v)} className="flex-1 min-w-0 text-left">
@@ -142,12 +145,25 @@ export function ConversationHeader({ scenario, onEnd, onBack, voice, onVoiceChan
 												isActive ? "text-skill-speaking" : "text-foreground",
 											)}
 										>
-											{shortName(v.name)}
+											{vName}
 										</p>
 										<p className="text-[10px] text-subtle">{v.lang}</p>
 									</button>
 
-									{isActive && <Icon name="check" size="xs" className="text-skill-speaking shrink-0" />}
+									{/* Preview button */}
+									<button
+										type="button"
+										onClick={() => preview(v)}
+										className={cn(
+											"w-7 h-7 rounded-full border-2 flex items-center justify-center shrink-0 transition",
+											isPlaying
+												? "border-skill-speaking bg-skill-speaking text-primary-foreground"
+												: "border-border text-muted hover:border-skill-speaking hover:text-skill-speaking",
+										)}
+										title="Nghe thử"
+									>
+										<Icon name={isPlaying ? "volume" : "play"} size="xs" />
+									</button>
 								</div>
 							)
 						})}

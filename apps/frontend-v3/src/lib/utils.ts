@@ -246,7 +246,21 @@ export function speak(text: string, opts: SpeakOptions = {}) {
 
 export function getEnglishVoices(): SpeechSynthesisVoice[] {
 	if (!window.speechSynthesis) return []
-	return window.speechSynthesis.getVoices().filter((v) => v.lang.startsWith("en"))
+	const all = window.speechSynthesis.getVoices().filter((v) => v.lang.startsWith("en"))
+
+	// Loại bỏ duplicate theo tên rút gọn (giữ cái đầu tiên gặp)
+	const seen = new Set<string>()
+	return all.filter((v) => {
+		const key = v.name.replace(/Microsoft |Google |Online| \(Natural\)|\s*-.*$/g, "").trim()
+		if (seen.has(key)) return false
+		seen.add(key)
+		return true
+	})
+}
+
+/** Rút gọn tên giọng TTS: bỏ "Microsoft ", "Google ", "Online", " (Natural)". */
+export function shortVoiceName(name: string): string {
+	return name.replace(/Microsoft |Google |Online| \(Natural\)/g, "").trim()
 }
 
 /** Cancel any ongoing speech. */

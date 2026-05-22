@@ -9,7 +9,6 @@ use App\Models\Notification;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 
 final class NotificationController extends Controller
 {
@@ -42,17 +41,16 @@ final class NotificationController extends Controller
 
     public function read(Request $request, Notification $notification): JsonResponse
     {
-        Gate::authorize('update', $notification);
-
-        $ok = $this->notificationService->markRead($notification);
+        $ok = $this->notificationService->markRead($request->profile(), (string) $notification->id);
 
         return response()->json(['data' => ['marked' => $ok]]);
     }
 
     public function destroy(Request $request, Notification $notification): JsonResponse
     {
-        Gate::authorize('delete', $notification);
-
+        if ((string) $notification->profile_id !== $request->profile()->id) {
+            abort(403);
+        }
         $notification->delete();
 
         return response()->json(['data' => ['success' => true]]);

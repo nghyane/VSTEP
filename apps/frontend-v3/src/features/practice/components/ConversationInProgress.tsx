@@ -9,8 +9,9 @@ import { ConversationScenarioCard } from "#/features/practice/components/Convers
 import { ConversationSuggestions } from "#/features/practice/components/ConversationSuggestions"
 import { ConversationTurnView } from "#/features/practice/components/ConversationTurnView"
 import type { ConversationSessionDetail, ConversationTurn } from "#/features/practice/types"
+import { extractFirstName, getAvatarUrl } from "#/lib/avatar"
 import { useToast } from "#/lib/toast"
-import { pickEnglishVoice, speak, stopSpeaking, warmupTTS } from "#/lib/utils"
+import { pickEnglishVoice, shortVoiceName, speak, stopSpeaking, warmupTTS } from "#/lib/utils"
 
 interface Props {
 	session: ConversationSessionDetail
@@ -29,6 +30,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	const [mic, setMic] = useState<MicState>("idle")
 	const [elapsed, setElapsed] = useState(0)
 	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickEnglishVoice())
+	const aiName = voice ? extractFirstName(shortVoiceName(voice.name)) : scenario.character_name
 	const [sessionState, setSessionState] = useState<SessionState>("active")
 	const [showReview, setShowReview] = useState(false)
 	const [emptyWarning, setEmptyWarning] = useState(false)
@@ -289,15 +291,18 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 							key={t.id}
 							turn={t}
 							scenario={scenario}
+							aiName={aiName}
 							isSpeaking={speakingTurnId === t.id}
 							highlightCharIndex={speakingTurnId === t.id ? speakingCharIndex : -1}
 						/>
 					))}
 					{mic === "thinking" && (
 						<div className="flex gap-3">
-							<div className="w-9 h-9 rounded-full bg-skill-speaking text-primary-foreground flex items-center justify-center font-extrabold text-xs shrink-0 border-2 border-b-4 border-skill-speaking">
-								{scenario.character_name.charAt(0)}
-							</div>
+							<img
+								src={getAvatarUrl(aiName)}
+								alt={scenario.character_name}
+								className="w-9 h-9 rounded-full bg-skill-speaking/20 border-2 border-skill-speaking/30 shrink-0 object-cover"
+							/>
 							<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-surface px-4 py-3">
 								<div className="flex gap-1.5">
 									<div className="w-2 h-2 rounded-full bg-skill-speaking animate-[dotBounce_1.2s_ease-in-out_infinite]" />
