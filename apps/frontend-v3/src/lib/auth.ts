@@ -194,6 +194,15 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			useToast.getState().add("Đăng nhập thành công", "success")
 			return { needsOnboarding: false, suggestedNickname: null }
 		} catch (e) {
+			// 409 Conflict — email đã đăng ký nhưng chưa verify → BE chống account takeover.
+			// User cần đăng nhập bằng password trước để verify email ownership.
+			if (e instanceof HTTPError && e.response.status === 409) {
+				const body = e.data as { message?: string } | undefined
+				useToast
+					.getState()
+					.add(body?.message ?? "Email này đã được đăng ký. Vui lòng đăng nhập bằng mật khẩu.")
+				return null
+			}
 			showError(e)
 			return null
 		}
@@ -281,8 +290,13 @@ export async function initAuth() {
 		} else {
 			useAuth.getState()._setUnauthenticated()
 		}
-	} catch {
+	} catch (e) {
+		// Refresh token bị reject (TTL hết, BE rotate format, ...) → clear session.
+		// Chỉ show toast khi user đã có session trước (refresh token tồn tại).
 		tokens.clear()
 		useAuth.getState()._setUnauthenticated()
+		if (e instanceof HTTPError && e.response.status === 422) {
+			useToast.getState().add("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.")
+		}
 	}
 }
