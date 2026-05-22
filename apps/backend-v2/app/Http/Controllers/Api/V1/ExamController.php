@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\ExamSessionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\SaveExamDraftRequest;
 use App\Http\Requests\SubmitExamRequest;
@@ -18,14 +19,17 @@ use App\Models\ExamVersion;
 use App\Models\Profile;
 use App\Services\ExamScoringService;
 use App\Services\ExamSessionService;
+use App\Services\ProgressService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ExamController extends Controller
 {
     public function __construct(
         private readonly ExamSessionService $examService,
         private readonly ExamScoringService $scoringService,
+        private readonly ProgressService $progressService,
     ) {}
 
     public function index(): JsonResponse
@@ -141,7 +145,7 @@ class ExamController extends Controller
             'started_at' => $session->started_at,
             'submitted_at' => $session->submitted_at,
             'server_deadline_at' => $session->server_deadline_at,
-            'scores' => in_array($session->status, ['submitted', 'auto_submitted', 'grading', 'graded'], true)
+            'scores' => $session->status->isTerminal()
                 ? $this->scoringService->getSessionScores($session)
                 : null,
         ]);
@@ -156,14 +160,17 @@ class ExamController extends Controller
         if ($session->profile_id !== $this->profile($request)->id) {
             abort(403);
         }
-        if ($session->status !== 'active') {
+        if ($session->status !== ExamSessionStatus::Active) {
             return response()->json(['data' => ['abandoned' => false]]);
         }
         $session->update([
-            'status' => 'auto_submitted',
+            'status' => ExamSessionStatus::AutoSubmitted,
             'submitted_at' => now(),
         ]);
         ExamSessionDraft::query()->where('session_id', $session->id)->delete();
+
+        $progressService = $this->progressService;
+        DB::afterCommit(fn () => $progressService->recordExamCompletion($session->fresh()));
 
         return response()->json(['data' => ['abandoned' => true]]);
     }
@@ -216,7 +223,7 @@ class ExamController extends Controller
         $session = ExamSession::query()
             ->with('examVersion:id,exam_id', 'examVersion.exam:id,title')
             ->where('profile_id', $profile->id)
-            ->where('status', 'active')
+            ->where('status', ExamSessionStatus::Active)
             ->where('server_deadline_at', '>', now())
             ->latest('started_at')
             ->first();
@@ -287,7 +294,7 @@ class ExamController extends Controller
             abort(403);
         }
 
-        if (! in_array($session->status, ['submitted', 'graded'], true)) {
+        if (! in_array($session->status, [ExamSessionStatus::Submitted, ExamSessionStatus::Graded], true)) {
             return response()->json(['data' => [
                 'session' => $this->formatSessionSummary($session),
                 'scores' => null,

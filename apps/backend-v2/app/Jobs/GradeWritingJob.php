@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Enums\GradingJobStatus;
 use App\Events\GradingCompleted;
 use App\Events\GradingFailed;
 use App\Models\GradingJob;
@@ -51,7 +52,7 @@ class GradeWritingJob implements ShouldQueue
         $job = GradingJob::query()->find($this->gradingJobId);
         if ($job !== null) {
             $job->update([
-                'status' => 'failed',
+                'status' => GradingJobStatus::Failed,
                 'last_error' => $exception->getMessage(),
             ]);
 

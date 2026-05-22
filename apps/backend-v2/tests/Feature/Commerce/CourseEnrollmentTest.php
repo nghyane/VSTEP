@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Commerce;
 
+use App\Enums\BookingStatus;
 use App\Enums\CoinTransactionType;
+use App\Enums\ExamSessionStatus;
+use App\Enums\SlotStatus;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\Exam;
@@ -137,7 +140,7 @@ class CourseEnrollmentTest extends TestCase
 
         $slot = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
-            'starts_at' => now()->addDay(), 'status' => 'open',
+            'starts_at' => now()->addDay(), 'status' => SlotStatus::Open,
         ]);
 
         // No full tests done → commitment pending → booking rejected
@@ -176,13 +179,13 @@ class CourseEnrollmentTest extends TestCase
                 'started_at' => $enrollment->enrolled_at->copy()->addHours(1),
                 'server_deadline_at' => $enrollment->enrolled_at->copy()->addDays(1),
                 'submitted_at' => $enrollment->enrolled_at->copy()->addDays(1),
-                'status' => 'submitted', 'coins_charged' => 25,
+                'status' => ExamSessionStatus::Submitted, 'coins_charged' => 25,
             ]);
         }
 
         $slot = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
-            'starts_at' => now()->addDay(), 'status' => 'open',
+            'starts_at' => now()->addDay(), 'status' => SlotStatus::Open,
         ]);
 
         // Booking trừ 50 xu — credit đủ trước khi book.
@@ -196,9 +199,9 @@ class CourseEnrollmentTest extends TestCase
             ->assertJsonPath('data.coins_charged', 50);
 
         $this->assertDatabaseHas('teacher_bookings', [
-            'profile_id' => $profile->id, 'slot_id' => $slot->id, 'status' => 'booked',
+            'profile_id' => $profile->id, 'slot_id' => $slot->id, 'status' => BookingStatus::Booked->value,
         ]);
-        $this->assertDatabaseHas('teacher_slots', ['id' => $slot->id, 'status' => 'booked']);
+        $this->assertDatabaseHas('teacher_slots', ['id' => $slot->id, 'status' => SlotStatus::Booked->value]);
         $this->assertSame(50, $wallet->getBalance($profile));
     }
 
@@ -209,15 +212,15 @@ class CourseEnrollmentTest extends TestCase
 
         $futureSlot = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
-            'starts_at' => now()->addDays(2), 'status' => 'open',
+            'starts_at' => now()->addDays(2), 'status' => SlotStatus::Open,
         ]);
         $bookedByOther = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
-            'starts_at' => now()->addDays(3), 'status' => 'booked',
+            'starts_at' => now()->addDays(3), 'status' => SlotStatus::Booked,
         ]);
         $pastSlot = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
-            'starts_at' => now()->subDays(2), 'status' => 'open',
+            'starts_at' => now()->subDays(2), 'status' => SlotStatus::Open,
         ]);
 
         $response = $this->withHeader('Authorization', "Bearer {$token}")
@@ -260,13 +263,13 @@ class CourseEnrollmentTest extends TestCase
                 'started_at' => $enrollment->enrolled_at->copy()->addHours(1),
                 'server_deadline_at' => $enrollment->enrolled_at->copy()->addDays(1),
                 'submitted_at' => $enrollment->enrolled_at->copy()->addDays(1),
-                'status' => 'submitted', 'coins_charged' => 25,
+                'status' => ExamSessionStatus::Submitted, 'coins_charged' => 25,
             ]);
         }
 
         $slot = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
-            'starts_at' => now()->addDay(), 'status' => 'open',
+            'starts_at' => now()->addDay(), 'status' => SlotStatus::Open,
         ]);
 
         // Wallet trống — phải bị reject 422 và slot vẫn open.
@@ -274,7 +277,7 @@ class CourseEnrollmentTest extends TestCase
             ->postJson("/api/v1/courses/{$course->id}/bookings", ['slot_id' => $slot->id])
             ->assertStatus(422);
 
-        $this->assertDatabaseHas('teacher_slots', ['id' => $slot->id, 'status' => 'open']);
+        $this->assertDatabaseHas('teacher_slots', ['id' => $slot->id, 'status' => SlotStatus::Open->value]);
         $this->assertDatabaseMissing('teacher_bookings', ['slot_id' => $slot->id]);
     }
 

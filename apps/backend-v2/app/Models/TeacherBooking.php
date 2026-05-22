@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\BookingStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -15,7 +16,7 @@ class TeacherBooking extends BaseModel
 {
     protected function casts(): array
     {
-        return ['booked_at' => 'datetime'];
+        return ['booked_at' => 'datetime', 'status' => BookingStatus::class];
     }
 
     public function slot(): BelongsTo

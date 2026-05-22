@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Progress;
 
+use App\Enums\ExamSessionStatus;
 use App\Models\Exam;
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
@@ -86,7 +87,7 @@ class ProgressStreakTest extends TestCase
             'started_at' => now()->subHour(),
             'server_deadline_at' => now()->addHour(),
             'submitted_at' => now(),
-            'status' => 'submitted',
+            'status' => ExamSessionStatus::Submitted,
             'coins_charged' => 8,
         ]);
 
@@ -170,7 +171,7 @@ class ProgressStreakTest extends TestCase
             'started_at' => $submittedAt->copy()->subHour(),
             'server_deadline_at' => $submittedAt->copy()->addHour(),
             'submitted_at' => $submittedAt,
-            'status' => 'submitted',
+            'status' => ExamSessionStatus::Submitted,
             'coins_charged' => 25,
         ]);
     }

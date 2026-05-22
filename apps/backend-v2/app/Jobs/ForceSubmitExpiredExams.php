@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Enums\ExamSessionStatus;
 use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
 use App\Services\ProgressService;
@@ -30,7 +31,7 @@ class ForceSubmitExpiredExams implements ShouldQueue
     public function handle(ProgressService $progressService): void
     {
         $expired = ExamSession::query()
-            ->where('status', 'active')
+            ->where('status', ExamSessionStatus::Active)
             ->where('server_deadline_at', '<', now())
             ->get();
 
@@ -87,7 +88,7 @@ class ForceSubmitExpiredExams implements ShouldQueue
 
         // Update session status
         $session->update([
-            'status' => 'auto_submitted',
+            'status' => ExamSessionStatus::AutoSubmitted,
             'submitted_at' => $session->server_deadline_at,
         ]);
 

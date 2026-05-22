@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
+use App\Enums\BookingStatus;
 use App\Enums\CoinTransactionType;
+use App\Enums\OrderStatus;
+use App\Enums\SlotStatus;
 use App\Models\CoinTransaction;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
@@ -13,6 +16,7 @@ use App\Models\CourseScheduleItem;
 use App\Models\Profile;
 use App\Models\TeacherBooking;
 use App\Models\TeacherSlot;
+use App\Services\CourseService;
 use App\Services\NotificationService;
 use App\Services\WalletService;
 use Carbon\CarbonImmutable;
@@ -27,6 +31,7 @@ use Illuminate\Validation\ValidationException;
 class AdminCourseService
 {
     public function __construct(
+        private readonly CourseService $courseService,
         private readonly NotificationService $notificationService,
         private readonly WalletService $walletService,
     ) {}
@@ -191,8 +196,8 @@ class AdminCourseService
                 CourseEnrollmentOrder::query()
                     ->where('profile_id', $profile->id)
                     ->where('course_id', $courseId)
-                    ->whereIn('status', ['pending', 'paid'])
-                    ->update(['status' => 'cancelled']);
+                    ->whereIn('status', OrderStatus::activeValues())
+                    ->update(['status' => OrderStatus::Cancelled]);
             }
         });
 
@@ -212,52 +217,19 @@ class AdminCourseService
 
     /**
      * Admin thêm thủ công học viên vào khóa (ngoài luồng mua bằng xu).
-     * - Chặn nếu profile đã ghi danh khóa này.
-     * - Chặn nếu khóa đã full theo max_slots.
-     * - Không trừ/credit xu — admin thêm tay thường là comp / xử lý ngoài hệ thống.
-     * - Push noti để học viên biết đã được thêm vào khóa.
+     * Delegates to CourseService::createEnrollment — single source of truth.
+     * No bonus coins credited for admin manual enroll.
      */
     public function enrollProfile(Course $course, Profile $profile): CourseEnrollment
     {
         return DB::transaction(function () use ($course, $profile) {
-            $locked = Course::query()->whereKey($course->id)->lockForUpdate()->first();
-            if ($locked === null) {
-                throw new \RuntimeException('Course not found during enroll.');
-            }
-
-            if (CourseEnrollment::query()
-                ->where('course_id', $locked->id)
-                ->where('profile_id', $profile->id)
-                ->exists()
-            ) {
-                throw ValidationException::withMessages([
-                    'profile_id' => ['Học viên này đã ghi danh khóa.'],
-                ]);
-            }
-
-            if ($locked->soldSlots() >= $locked->max_slots) {
-                throw ValidationException::withMessages([
-                    'profile_id' => ['Khóa học đã đủ số học viên tối đa.'],
-                ]);
-            }
-
-            $enrollment = CourseEnrollment::create([
-                'profile_id' => $profile->id,
-                'course_id' => $locked->id,
-                'enrolled_at' => now(),
-                'coins_paid' => 0,
-                'bonus_coins_received' => 0,
-            ]);
-
-            DB::afterCommit(fn () => $this->notificationService->push(
+            $enrollment = $this->courseService->createEnrollment(
                 profile: $profile,
-                type: 'course_enrolled',
-                title: 'Bạn đã được thêm vào khóa',
-                body: "Admin đã thêm bạn vào khóa \"{$locked->title}\". Vào mục Khóa học để xem lịch buổi học.",
-                iconKey: 'book',
-                payload: ['course_id' => $locked->id],
-                dedupKey: "course_enroll:{$locked->id}:{$profile->id}",
-            ));
+                course: $course,
+                creditBonus: false,
+                notiTitle: 'Bạn đã được thêm vào khóa',
+                notiBody: "Admin đã thêm bạn vào khóa \"{$course->title}\". Vào mục Khóa học để xem lịch buổi học.",
+            );
 
             return $enrollment->fresh(['profile.account']);
         });
@@ -306,7 +278,7 @@ class AdminCourseService
                 'teacher_id' => $course->teacher_id,
                 'starts_at' => $startsAt,
                 'duration_minutes' => (int) ($data['duration_minutes'] ?? 30),
-                'status' => 'open',
+                'status' => SlotStatus::Open,
             ]);
         } catch (UniqueConstraintViolationException) {
             // Race với bulk-create: pre-check pass nhưng DB unique chặn.
@@ -397,7 +369,7 @@ class AdminCourseService
                     'teacher_id' => $course->teacher_id,
                     'starts_at' => $startsAt,
                     'duration_minutes' => $duration,
-                    'status' => 'open',
+                    'status' => SlotStatus::Open,
                     'created_at' => $timestamp,
                     'updated_at' => $timestamp,
                 ];
@@ -477,7 +449,7 @@ class AdminCourseService
 
     private function guardSlotHasActiveBooking(TeacherSlot $slot, string $message): void
     {
-        $hasActive = $slot->bookings()->whereIn('status', ['booked', 'completed'])->exists();
+        $hasActive = $slot->bookings()->whereIn('status', BookingStatus::activeValues())->exists();
         if ($hasActive) {
             throw ValidationException::withMessages(['slot' => [$message]]);
         }
@@ -501,7 +473,7 @@ class AdminCourseService
      */
     public function updateBookingMeetUrl(TeacherBooking $booking, ?string $meetUrl): TeacherBooking
     {
-        if (! in_array($booking->status, ['booked', 'completed'], true)) {
+        if (! in_array($booking->status, BookingStatus::activeStatuses(), true)) {
             throw ValidationException::withMessages([
                 'booking' => ['Chỉ booking đang active mới chỉnh được meet URL.'],
             ]);
@@ -522,7 +494,7 @@ class AdminCourseService
      */
     public function cancelBooking(TeacherBooking $booking): TeacherBooking
     {
-        if ($booking->status === 'cancelled') {
+        if ($booking->status === BookingStatus::Cancelled) {
             throw ValidationException::withMessages([
                 'booking' => ['Booking đã hủy rồi.'],
             ]);
@@ -543,11 +515,11 @@ class AdminCourseService
         $refundAmount = $originalTx !== null ? abs((int) $originalTx->delta) : 0;
 
         DB::transaction(function () use ($booking, $slot, $profile, $refundAmount) {
-            $booking->forceFill(['status' => 'cancelled'])->save();
+            $booking->forceFill(['status' => BookingStatus::Cancelled])->save();
 
             // Free slot lại để học viên khác (hoặc chính học viên đó) có thể book.
-            if ($slot !== null && $slot->status === 'booked') {
-                $slot->forceFill(['status' => 'open'])->save();
+            if ($slot !== null && $slot->status === SlotStatus::Booked) {
+                $slot->forceFill(['status' => SlotStatus::Open])->save();
             }
 
             if ($profile !== null && $refundAmount > 0) {

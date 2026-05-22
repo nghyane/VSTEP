@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\GradingJobStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 
 #[Fillable([
@@ -14,6 +15,6 @@ class GradingJob extends BaseModel
 {
     protected function casts(): array
     {
-        return ['started_at' => 'datetime', 'completed_at' => 'datetime'];
+        return ['started_at' => 'datetime', 'completed_at' => 'datetime', 'status' => GradingJobStatus::class];
     }
 }

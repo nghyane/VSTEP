@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\BookingStatus;
 use App\Enums\CoinTransactionType;
+use App\Enums\ExamSessionStatus;
+use App\Enums\SlotStatus;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\ExamSession;
@@ -128,44 +131,75 @@ class CourseService
     }
 
     /**
-     * Enroll profile in course. Payment is VND (external). Credit bonus coins.
+     * Create enrollment — single source of truth for both learner and admin flows.
+     *
+     * Guards: duplicate check + capacity check (with row lock to prevent races).
+     * Callers decide whether to credit bonus coins and provide optional metadata.
+     *
+     * Must be called inside a DB::transaction by the caller (CourseOrderService or AdminCourseService).
      */
-    public function enroll(Profile $profile, Course $course): CourseEnrollment
-    {
-        if ($course->end_date->isPast()) {
-            throw ValidationException::withMessages(['course' => ['Khóa học đã kết thúc.']]);
-        }
-        if ($course->isFull()) {
-            throw ValidationException::withMessages(['course' => ['Khóa học đã đủ học viên.']]);
-        }
-        if (CourseEnrollment::query()->where('profile_id', $profile->id)->where('course_id', $course->id)->exists()) {
-            throw ValidationException::withMessages(['course' => ['Bạn đã ghi danh khóa học này.']]);
+    public function createEnrollment(
+        Profile $profile,
+        Course $course,
+        bool $creditBonus = true,
+        ?string $commitmentSignature = null,
+        ?string $notiTitle = null,
+        ?string $notiBody = null,
+    ): CourseEnrollment {
+        $locked = Course::query()->whereKey($course->id)->lockForUpdate()->first();
+        if ($locked === null) {
+            throw new \RuntimeException('Course not found during enroll.');
         }
 
-        return DB::transaction(function () use ($profile, $course) {
-            $enrollment = CourseEnrollment::create([
-                'profile_id' => $profile->id,
-                'course_id' => $course->id,
-                'enrolled_at' => now(),
-                'coins_paid' => 0,
-                'bonus_coins_received' => $course->bonus_coins,
+        if (CourseEnrollment::query()
+            ->where('course_id', $locked->id)
+            ->where('profile_id', $profile->id)
+            ->exists()
+        ) {
+            throw ValidationException::withMessages([
+                'course' => ['Bạn đã ghi danh khóa học này.'],
             ]);
+        }
 
-            if ($course->bonus_coins > 0) {
-                $this->walletService->credit($profile, $course->bonus_coins, CoinTransactionType::OnboardingBonus, $enrollment, ['reason' => 'course_bonus']);
-            }
+        if ($locked->soldSlots() >= $locked->max_slots) {
+            throw ValidationException::withMessages([
+                'course' => ['Khóa học đã đủ số học viên tối đa.'],
+            ]);
+        }
 
-            DB::afterCommit(fn () => $this->notificationService->push(
-                profile: $profile,
-                type: 'course_enrolled',
-                title: 'Ghi danh thành công',
-                body: "Bạn đã tham gia khóa {$course->title}.",
-                iconKey: 'book',
-                dedupKey: "course_enroll:{$course->id}:{$profile->id}",
-            ));
+        $bonusCoins = $creditBonus ? (int) $locked->bonus_coins : 0;
 
-            return $enrollment;
-        });
+        $enrollment = CourseEnrollment::create([
+            'profile_id' => $profile->id,
+            'course_id' => $locked->id,
+            'enrolled_at' => now(),
+            'coins_paid' => 0,
+            'bonus_coins_received' => $bonusCoins,
+            'commitment_signature' => $commitmentSignature,
+        ]);
+
+        if ($bonusCoins > 0) {
+            $this->walletService->credit(
+                $profile,
+                $bonusCoins,
+                CoinTransactionType::CourseBonus,
+                $enrollment,
+                ['reason' => 'course_bonus'],
+            );
+        }
+
+        $title = $notiTitle ?? 'Ghi danh thành công';
+        $body = $notiBody ?? "Bạn đã tham gia khóa {$locked->title}.";
+        DB::afterCommit(fn () => $this->notificationService->push(
+            profile: $profile,
+            type: 'course_enrolled',
+            title: $title,
+            body: $body,
+            iconKey: 'book',
+            dedupKey: "course_enroll:{$locked->id}:{$profile->id}",
+        ));
+
+        return $enrollment;
     }
 
     /**
@@ -202,7 +236,7 @@ class CourseService
         $completed = ExamSession::query()
             ->where('profile_id', $profile->id)
             ->where('is_full_test', true)
-            ->where('status', 'submitted')
+            ->whereIn('status', ExamSessionStatus::terminalValues())
             ->whereBetween('submitted_at', [$windowStart, $windowEnd])
             ->count();
 
@@ -274,22 +308,22 @@ class CourseService
         $bookedCount = TeacherBooking::query()
             ->where('profile_id', $profile->id)
             ->whereHas('slot', fn ($q) => $q->where('course_id', $course->id))
-            ->whereIn('status', ['booked', 'completed'])
+            ->whereIn('status', BookingStatus::activeValues())
             ->count();
 
         if ($bookedCount >= $course->max_slots_per_student) {
             throw ValidationException::withMessages(['slots' => ['Đã đạt giới hạn đăng ký slot tối đa.']]);
         }
 
-        $cost = (int) ($slot->course->booking_coin_cost ?? $course->booking_coin_cost ?? self::BOOKING_COIN_COST_FALLBACK);
+        $cost = (int) ($course->booking_coin_cost ?? self::BOOKING_COIN_COST_FALLBACK);
 
         return DB::transaction(function () use ($profile, $slot, $submissionType, $submissionId, $cost) {
             $locked = TeacherSlot::query()->whereKey($slot->id)->lockForUpdate()->first();
-            if ($locked->status !== 'open') {
+            if ($locked->status !== SlotStatus::Open) {
                 throw ValidationException::withMessages(['slot' => ['Slot không còn khả dụng.']]);
             }
 
-            $locked->update(['status' => 'booked']);
+            $locked->update(['status' => SlotStatus::Booked]);
 
             $booking = TeacherBooking::create([
                 'slot_id' => $slot->id,
@@ -297,7 +331,7 @@ class CourseService
                 'submission_type' => $submissionType,
                 'submission_id' => $submissionId,
                 'meet_url' => $this->generateMeetUrl(),
-                'status' => 'booked',
+                'status' => BookingStatus::Booked,
                 'booked_at' => now(),
             ]);
 
@@ -363,7 +397,7 @@ class CourseService
         $myBookings = TeacherBooking::query()
             ->where('profile_id', $profile->id)
             ->whereHas('slot', fn ($q) => $q->where('course_id', $course->id))
-            ->whereIn('status', ['booked', 'completed'])
+            ->whereIn('status', BookingStatus::activeValues())
             ->get()
             ->keyBy('slot_id');
 
@@ -372,7 +406,7 @@ class CourseService
             $status = match (true) {
                 $slot->starts_at->lt($now) => 'past',
                 $mine !== null => 'booked_me',
-                $slot->status === 'booked' => 'booked_other',
+                $slot->status === SlotStatus::Booked => 'booked_other',
                 default => 'available',
             };
 

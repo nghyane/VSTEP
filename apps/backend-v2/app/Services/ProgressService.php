@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\ExamSessionStatus;
 use App\Models\ExamSession;
 use App\Models\PracticeSession;
 use App\Models\Profile;
@@ -122,7 +123,7 @@ class ProgressService
         $examCount = ExamSession::query()
             ->where('profile_id', $profile->id)
             ->whereIn('mode', ['custom', 'full'])
-            ->whereIn('status', ['submitted', 'auto_submitted', 'grading', 'graded'])
+            ->whereIn('status', ExamSessionStatus::terminalValues())
             ->count();
 
         $chartData = null;
@@ -164,7 +165,7 @@ class ProgressService
         $todayCount = ExamSession::query()
             ->where('profile_id', $profile->id)
             ->where('is_full_test', true)
-            ->whereIn('status', ['submitted', 'auto_submitted', 'grading', 'graded'])
+            ->whereIn('status', ExamSessionStatus::terminalValues())
             ->whereBetween('submitted_at', [$startUtc, $endUtc])
             ->count();
 
@@ -193,7 +194,7 @@ class ProgressService
 
         $rows = ExamSession::query()
             ->where('profile_id', $profile->id)
-            ->whereIn('status', ['submitted', 'auto_submitted', 'grading', 'graded'])
+            ->whereIn('status', ExamSessionStatus::terminalValues())
             ->whereBetween('submitted_at', [$startUtc, $endUtc])
             ->orderBy('submitted_at')
             ->get(['submitted_at']);
@@ -234,7 +235,7 @@ class ProgressService
         $todayCount = ExamSession::query()
             ->where('profile_id', $profileId)
             ->where('is_full_test', true)
-            ->whereIn('status', ['submitted', 'auto_submitted', 'grading', 'graded'])
+            ->whereIn('status', ExamSessionStatus::terminalValues())
             ->whereBetween('submitted_at', [$startUtc, $endUtc])
             ->count();
 
@@ -283,7 +284,7 @@ class ProgressService
         $sessions = ExamSession::query()
             ->where('profile_id', $profile->id)
             ->whereIn('mode', ['custom', 'full'])
-            ->whereIn('status', ['submitted', 'auto_submitted', 'grading', 'graded'])
+            ->whereIn('status', ExamSessionStatus::terminalValues())
             ->orderByDesc('submitted_at')
             ->limit($windowSize)
             ->pluck('id');

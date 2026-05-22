@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -29,6 +30,7 @@ class WalletTopupOrder extends BaseModel
     {
         return [
             'paid_at' => 'datetime',
+            'status' => OrderStatus::class,
         ];
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\GradingJobStatus;
 use App\Http\Controllers\Controller;
 use App\Models\GradingJob;
 use App\Models\SpeakingGradingResult;
@@ -36,7 +37,7 @@ class GradingController extends Controller
 
         // If job is completed, include the active result
         $result = null;
-        if ($job->status === 'completed') {
+        if ($job->status === GradingJobStatus::Ready) {
             $result = $job->submission_type === 'exam_writing'
                 ? WritingGradingResult::query()
                     ->where('job_id', $job->id)

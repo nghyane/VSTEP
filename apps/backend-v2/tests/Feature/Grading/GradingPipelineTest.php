@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Grading;
 
+use App\Enums\GradingJobStatus;
 use App\Models\PracticeWritingPrompt;
 use App\Models\Profile;
 use App\Models\User;
@@ -21,7 +22,7 @@ class GradingPipelineTest extends TestCase
         $service = $this->app->make(WritingGradingService::class);
         $job = $service->enqueue('practice_writing', 'fake-sub-id');
 
-        $this->assertSame('ready', $job->status);
+        $this->assertSame(GradingJobStatus::Ready, $job->status);
         $this->assertSame(1, $job->attempts);
 
         $result = WritingGradingResult::query()
@@ -79,7 +80,7 @@ class GradingPipelineTest extends TestCase
         $this->assertDatabaseHas('grading_jobs', [
             'submission_type' => 'practice_writing',
             'submission_id' => $submissionId,
-            'status' => 'ready',
+            'status' => GradingJobStatus::Ready->value,
         ]);
         $this->assertDatabaseHas('writing_grading_results', [
             'submission_type' => 'practice_writing',
