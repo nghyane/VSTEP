@@ -101,3 +101,38 @@ Ghi lại các quyết định thiết kế quan trọng, lý do chọn, và tra
 - Học viên enroll quá trễ (sát end_date) vẫn có 5 ngày deadline; có thể vượt end_date trong edge case này, chấp nhận.
 
 **Migration:** [`2026_05_01_000001_drop_exam_cooldown_days_from_courses.php`](../database/migrations/2026_05_01_000001_drop_exam_cooldown_days_from_courses.php).
+
+
+---
+
+## 7. User soft-deactivate qua `deactivated_at`, không hard delete (2026-05)
+
+**Quyết định:** `users` thêm cột `deactivated_at` (nullable timestamp). Không có endpoint DELETE user. Admin chỉ active/deactivate. Teacher có khoá active phải reassign trước khi deactivate.
+
+**Lý do:**
+- Hard delete user → CASCADE qua profiles → mất lịch sử bài thi, ghi danh, giao dịch xu, audit trail. Vi phạm yêu cầu pháp lý nội bộ (lưu hồ sơ tối thiểu 5 năm cho chứng chỉ).
+- Soft deactivate giữ data nghiệp vụ nguyên, chỉ block đăng nhập — đủ cho mọi use case admin cần ("đuổi" nhân viên, khoá tài khoản học viên vi phạm).
+- Khác với policy chung "hard delete + CASCADE" (mục #5) vì user là entity ở đầu cascade chain — xoá user kéo theo quá nhiều dữ liệu giá trị cao.
+
+**Hệ quả:**
+- AuthService check `deactivated_at` ở login (email/Google) + refresh → block ngay khi user bị khoá, không chờ JWT TTL.
+- Picker endpoints (`/admin/users/teachers`, `/admin/profiles/search`) filter `deactivated_at IS NULL`.
+- Email/role bất biến sau create — đảm bảo identity không drift, role escalation chỉ qua DB seed.
+
+**Migration:** [`2026_05_22_000002_add_deactivated_at_to_users.php`](../database/migrations/2026_05_22_000002_add_deactivated_at_to_users.php).
+
+---
+
+## 8. Promo code: là `is_active` + RFC role:admin (2026-05)
+
+**Quyết định:** Promo codes không có endpoint DELETE. Chỉ toggle `is_active` (đã có sẵn trong schema). Đặt dưới `role:admin` thay vì `role:staff` như RFC 0011 dự kiến ban đầu.
+
+**Lý do:**
+- Promo code đụng tới wallet (cấp xu cho user). Sai sót dễ gây loss tiền thật → admin-only an toàn hơn staff.
+- Đã có user redeem mã → BE block đổi `code` text (identity). Các field khác (quota, expires, is_active) vẫn cho phép sửa để admin gia hạn campaign hoặc giảm quota khẩn cấp.
+- Hard delete promo có redemption → orphan rows ở `promo_code_redemptions` (FK restrictOnDelete) → migrate phức tạp. `is_active=false` đạt được hiệu ứng tương tự (mã không dùng được nữa) mà giữ audit.
+- RFC 0011 đã update reflect quyết định này.
+
+**Hệ quả:**
+- `generateUniqueCode` dùng alphabet không gây nhầm (loại 0/O, 1/I/L) — voucher in giấy dễ đọc.
+- Filter list 3 trạng thái: active / inactive / expired (derived từ `is_active` + `expires_at`).

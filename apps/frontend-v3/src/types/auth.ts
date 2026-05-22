@@ -1,7 +1,41 @@
+export type AvatarKey =
+	| "Alex"
+	| "Jordan"
+	| "Sam"
+	| "Riley"
+	| "Casey"
+	| "Morgan"
+	| "Taylor"
+	| "Drew"
+	| "Quinn"
+	| "Avery"
+	| "Blake"
+	| "Cameron"
+	| "Dakota"
+	| "Emery"
+	| "Finley"
+	| "Hayden"
+	| "Indigo"
+	| "Jesse"
+	| "Kai"
+	| "Logan"
+	| "Mason"
+	| "Noah"
+	| "Oakley"
+	| "Parker"
+	| "Reese"
+	| "Sage"
+	| "Skyler"
+	| "Tatum"
+	| "Winter"
+	| "Zion"
+
 export interface User {
 	id: string
 	email: string
 	role: string
+	avatar_key: AvatarKey | null
+	avatar_url: string | null
 }
 
 export interface Profile {

@@ -25,6 +25,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->append(JsonUtf8::class);
+
+        // API-only app. Disable the default web "redirect to login" behaviour
+        // so Authenticate middleware never calls route('login') (which doesn't
+        // exist) when the client forgot to send Accept: application/json.
+        $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('api/*'));

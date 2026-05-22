@@ -1,9 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { useState } from "react"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
 import { Header } from "#/components/Header"
+import { ChangePasswordDialog } from "#/features/profile/components/ChangePasswordDialog"
 import { CreateProfileForm } from "#/features/profile/components/CreateProfileForm"
 import { EditProfileForm } from "#/features/profile/components/EditProfileForm"
+import { useAvatarPicker } from "#/features/profile/use-avatar-picker"
 import { useProfilePage } from "#/features/profile/use-profile-page"
+import { PromoRedeemCard } from "#/features/wallet/PromoRedeemCard"
+import { useSession } from "#/lib/auth"
+import { AVATAR_PRESETS, getAvatarUrl, getUserAvatarSrc } from "#/lib/avatar"
 import { cn } from "#/lib/utils"
 import type { Profile } from "#/types/auth"
 
@@ -22,6 +28,7 @@ function daysUntil(deadline: string): number {
 function ProfilePage() {
 	const { edit } = Route.useSearch()
 	const p = useProfilePage(edit)
+	const [showChangePassword, setShowChangePassword] = useState(false)
 
 	if (p.isLoading || !p.profiles) return <Header title="Hồ sơ" />
 
@@ -92,6 +99,8 @@ function ProfilePage() {
 					onCancel={p.cancelSwitch}
 				/>
 
+				<PromoRedeemCard />
+
 				{/* Account */}
 				<section className="card p-6">
 					<h3 className="font-bold text-base text-foreground mb-4">Tài khoản</h3>
@@ -99,9 +108,159 @@ function ProfilePage() {
 						<span className="text-sm text-muted">Email</span>
 						<span className="text-sm font-bold text-foreground">{p.user.email}</span>
 					</div>
+					<div className="flex items-center justify-between gap-4 py-3 border-t border-border">
+						<div className="min-w-0">
+							<p className="text-sm text-muted">Mật khẩu</p>
+							<p className="text-xs text-subtle mt-0.5">Đổi mật khẩu định kỳ để bảo vệ tài khoản.</p>
+						</div>
+						<button
+							type="button"
+							onClick={() => setShowChangePassword(true)}
+							className="btn btn-secondary text-sm font-bold px-4 py-2 whitespace-nowrap"
+						>
+							Đổi mật khẩu
+						</button>
+					</div>
+					<div className="pt-4 border-t border-border mt-3">
+						<AvatarPickerSection />
+					</div>
 				</section>
 			</div>
+
+			<ChangePasswordDialog open={showChangePassword} onClose={() => setShowChangePassword(false)} />
 		</>
+	)
+}
+
+function AvatarPickerSection() {
+	const p = useAvatarPicker()
+	if (!p.user) return null
+
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0]
+		if (file) p.selectFile(file)
+		e.target.value = ""
+	}
+
+	return (
+		<div className="space-y-4">
+			<p className="text-sm font-bold text-foreground">Ảnh đại diện</p>
+			<AvatarPreview
+				user={p.user}
+				src={p.currentSrc}
+				isPending={p.isPending}
+				pendingFile={p.pendingFile}
+				onFileChange={handleFileChange}
+			/>
+			<AvatarPresetGrid picker={p} />
+		</div>
+	)
+}
+
+function AvatarPreview({
+	user,
+	src,
+	isPending,
+	pendingFile,
+	onFileChange,
+}: {
+	user: { email: string }
+	src: string | null
+	isPending: boolean
+	pendingFile: File | null
+	onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+}) {
+	return (
+		<div className="flex items-center gap-4">
+			<div className="w-16 h-16 rounded-full bg-primary/10 border-2 border-border flex items-center justify-center overflow-hidden shrink-0">
+				{src ? (
+					<img src={src} alt="Avatar" className="w-full h-full object-cover" />
+				) : (
+					<span className="text-2xl font-extrabold text-primary">{user.email.charAt(0).toUpperCase()}</span>
+				)}
+			</div>
+			<div className="space-y-1.5">
+				<label
+					className={cn(
+						"inline-flex items-center gap-2 px-3 py-1.5 rounded-(--radius-button) border-2 border-b-4 border-border text-xs font-bold text-foreground cursor-pointer transition hover:border-primary/40",
+						isPending && "opacity-50 pointer-events-none",
+					)}
+				>
+					<input
+						type="file"
+						accept="image/jpg,image/jpeg,image/png,image/webp"
+						className="hidden"
+						onChange={onFileChange}
+					/>
+					{pendingFile ? pendingFile.name : "Tải ảnh lên"}
+				</label>
+				<p className="text-[11px] text-muted">JPG, PNG, WebP · tối đa 2MB</p>
+			</div>
+		</div>
+	)
+}
+
+function AvatarPresetGrid({ picker }: { picker: ReturnType<typeof useAvatarPicker> }) {
+	return (
+		<div>
+			<button
+				type="button"
+				onClick={picker.togglePresets}
+				className="flex items-center gap-1.5 text-xs font-bold text-primary hover:underline mb-2"
+			>
+				{picker.showPresets ? "▲" : "▼"} Hoặc chọn avatar có sẵn
+			</button>
+			{picker.showPresets && (
+				<div className="grid grid-cols-6 gap-2">
+					{AVATAR_PRESETS.map((preset) => {
+						const isActive =
+							picker.pendingKey === preset.key ||
+							(picker.user?.avatar_key === preset.key && !picker.user?.avatar_url && !picker.pendingKey)
+						return (
+							<button
+								key={preset.key}
+								type="button"
+								onClick={() => picker.selectPreset(preset.key)}
+								disabled={picker.isPending}
+								title={preset.key}
+								className={cn(
+									"flex items-center justify-center p-1.5 rounded-(--radius-card) border-2 transition",
+									isActive
+										? "border-primary bg-primary/10"
+										: "border-border hover:border-primary/40 hover:bg-primary/5",
+								)}
+							>
+								<img
+									src={getAvatarUrl(preset.key)}
+									alt={preset.key}
+									className="w-12 h-12 rounded-full object-cover"
+								/>
+							</button>
+						)
+					})}
+				</div>
+			)}
+			{picker.isDirty && (
+				<div className="flex items-center gap-2 mt-3">
+					<button
+						type="button"
+						onClick={picker.save}
+						disabled={picker.isPending}
+						className="px-4 py-1.5 rounded-(--radius-button) bg-primary text-primary-foreground text-xs font-bold shadow-[0_3px_0_var(--color-primary-dark)] active:shadow-[0_1px_0_var(--color-primary-dark)] active:translate-y-[2px] transition disabled:opacity-50"
+					>
+						{picker.isPending ? "Đang lưu..." : "Lưu"}
+					</button>
+					<button
+						type="button"
+						onClick={picker.cancel}
+						disabled={picker.isPending}
+						className="px-4 py-1.5 rounded-(--radius-button) border-2 border-border text-xs font-bold text-muted hover:text-foreground transition"
+					>
+						Huỷ
+					</button>
+				</div>
+			)}
+		</div>
 	)
 }
 
@@ -116,6 +275,8 @@ function ProfileAvatar({
 	onSwitch: () => void
 	onEdit: () => void
 }) {
+	const { user } = useSession()
+	const avatarSrc = getUserAvatarSrc(user)
 	const initial = profile.nickname.charAt(0).toUpperCase()
 	const level = profile.target_level
 	const days = daysUntil(profile.target_deadline)
@@ -127,13 +288,17 @@ function ProfileAvatar({
 				onClick={onSwitch}
 				disabled={isActive}
 				className={cn(
-					"relative size-24 rounded-2xl bg-primary flex items-center justify-center transition-all duration-200 border-2 border-b-4 border-primary-dark",
+					"relative size-24 rounded-2xl bg-primary flex items-center justify-center transition-all duration-200 border-2 border-b-4 border-primary-dark overflow-hidden",
 					isActive
 						? "ring-4 ring-primary-dark ring-offset-2 ring-offset-surface scale-105"
 						: "hover:scale-110 hover:shadow-lg active:scale-100 active:translate-y-[2px] active:border-b-2",
 				)}
 			>
-				<span className="text-white font-display text-3xl">{initial}</span>
+				{avatarSrc ? (
+					<img src={avatarSrc} alt="" className="w-full h-full object-cover" />
+				) : (
+					<span className="text-white font-display text-3xl">{initial}</span>
+				)}
 
 				{/* Level badge */}
 				<span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] font-extrabold text-primary-dark bg-surface border-2 border-primary-dark px-2 py-0.5 rounded-full shadow-sm">

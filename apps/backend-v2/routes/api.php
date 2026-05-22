@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Api\V1\AudioController;
-use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\CourseController;
@@ -45,6 +45,8 @@ Route::prefix('v1')->group(function () {
 
         // Self-service account ops (mọi role dùng được).
         Route::post('/me/change-password', [AccountController::class, 'changePassword']);
+        Route::patch('/me/avatar', [AccountController::class, 'updateAvatar']);
+        Route::post('/me/avatar', [AccountController::class, 'uploadAvatar']);
 
         // Profile CRUD — scoped by authenticated account.
         Route::get('/profiles', [ProfileController::class, 'index']);
@@ -348,6 +350,15 @@ Route::prefix('v1')->group(function () {
         // Users — picker endpoints (read-only) còn dùng cho staff.
         Route::get('/users/teachers', [Admin\UserController::class, 'teachers']);
         Route::get('/profiles/search', [Admin\UserController::class, 'searchProfiles']);
+
+        // Promo codes — ADMIN ONLY. Không hard delete; disable qua is_active.
+        Route::middleware('role:admin')->prefix('promo-codes')->group(function () {
+            Route::get('/', [Admin\PromoCodeController::class, 'index']);
+            Route::post('/', [Admin\PromoCodeController::class, 'store']);
+            Route::post('/generate-code', [Admin\PromoCodeController::class, 'generateCode']);
+            Route::get('/{id}', [Admin\PromoCodeController::class, 'show'])->whereUuid('id');
+            Route::patch('/{id}', [Admin\PromoCodeController::class, 'update'])->whereUuid('id');
+        });
 
         // User management — ADMIN ONLY (nested middleware override role:staff parent).
         // Soft deactivate, không hard delete. Role chỉ set lúc create.

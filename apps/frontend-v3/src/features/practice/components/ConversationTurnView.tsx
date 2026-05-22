@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react"
 import { Icon } from "#/components/Icon"
 import { ConversationFeedback } from "#/features/practice/components/ConversationFeedback"
-import type { ConversationScenario, ConversationTurn } from "#/features/practice/types"
+import type { ConversationTurn } from "#/features/practice/types"
+import { useAuth } from "#/lib/auth"
+import { getAvatarUrl, getUserAvatarSrc } from "#/lib/avatar"
 import { cn, translateText } from "#/lib/utils"
 
 interface Props {
 	turn: ConversationTurn
-	scenario: ConversationScenario
+	aiName: string
 	isSpeaking?: boolean
 	highlightCharIndex?: number
 }
@@ -125,15 +127,20 @@ function HighlightText({ text, charIndex }: { text: string; charIndex: number })
 	)
 }
 
-export function ConversationTurnView({ turn, scenario, isSpeaking, highlightCharIndex = -1 }: Props) {
+export function ConversationTurnView({ turn, aiName, isSpeaking, highlightCharIndex = -1 }: Props) {
+	const user = useAuth((s) => (s.status === "authenticated" ? s.user : null))
+	const userAvatarSrc = user ? getUserAvatarSrc(user) : null
+
 	if (turn.role === "ai") {
 		return (
 			<div className="flex gap-3">
-				<div className="w-9 h-9 rounded-full bg-skill-speaking text-primary-foreground flex items-center justify-center font-extrabold text-xs shrink-0 border-2 border-b-4 border-skill-speaking">
-					{scenario.character_name.charAt(0)}
-				</div>
+				<img
+					src={getAvatarUrl(aiName)}
+					alt={aiName}
+					className="w-9 h-9 rounded-full bg-skill-speaking/20 border-2 border-skill-speaking/30 shrink-0 object-cover"
+				/>
 				<div className="flex-1 min-w-0">
-					<p className="text-sm font-bold text-muted mb-1.5">{scenario.character_name}</p>
+					<p className="text-sm font-bold text-muted mb-1.5">{aiName}</p>
 					<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-surface px-4 py-3">
 						{isSpeaking ? (
 							<HighlightText text={turn.text} charIndex={highlightCharIndex} />
@@ -150,9 +157,17 @@ export function ConversationTurnView({ turn, scenario, isSpeaking, highlightChar
 	return (
 		<div className="flex flex-col items-end">
 			<div className="flex gap-3 max-w-[85%] flex-row-reverse">
-				<div className="w-9 h-9 rounded-full bg-foreground text-surface flex items-center justify-center font-extrabold text-[10px] shrink-0 border-2 border-b-4 border-foreground">
-					You
-				</div>
+				{userAvatarSrc ? (
+					<img
+						src={userAvatarSrc}
+						alt="You"
+						className="w-9 h-9 rounded-full bg-foreground/10 border-2 border-b-4 border-foreground/20 shrink-0 object-contain p-0.5"
+					/>
+				) : (
+					<div className="w-9 h-9 rounded-full bg-foreground text-surface flex items-center justify-center font-extrabold text-[10px] shrink-0 border-2 border-b-4 border-foreground">
+						You
+					</div>
+				)}
 				<div className="flex-1 min-w-0">
 					<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-surface px-4 py-3">
 						<p className="text-[15px] text-foreground leading-relaxed">{turn.text}</p>

@@ -16,8 +16,8 @@ use App\Models\User;
 use App\Services\Admin\AdminUserService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 final class UserController extends Controller
 {
