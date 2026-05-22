@@ -33,7 +33,7 @@ export function Modal({ open, onClose, title, description, children, size = "md"
 			width={`min(${widthMap[size]}px, calc(100vw - 32px))`}
 			centered
 			destroyOnHidden
-			maskClosable
+			mask={{ closable: true }}
 			styles={{
 				body: {
 					maxHeight: "calc(100vh - 180px)",

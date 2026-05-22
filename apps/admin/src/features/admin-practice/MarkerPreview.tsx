@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef } from "react"
 import type { AdminWritingMarker } from "#/features/admin-practice/types"
+import { useMarkerDrag } from "#/features/admin-practice/useMarkerDrag"
 
 // Màu giống FE - yellow, blue, pink với opacity
 const HIGHLIGHT_BG: Record<string, string> = {
@@ -70,12 +71,12 @@ interface Props {
 	activeMarkerId?: string | null
 	onMarkerClick?: (marker: AdminWritingMarker) => void
 	onTextSelect?: (selection: { text: string; occurrence: number }) => void
+	onReorder?: (updated: AdminWritingMarker[]) => void
 }
 
-export function MarkerPreview({ sampleAnswer, markers, activeMarkerId, onMarkerClick, onTextSelect }: Props) {
+export function MarkerPreview({ sampleAnswer, markers, activeMarkerId, onMarkerClick, onTextSelect, onReorder }: Props) {
 	const containerRef = useRef<HTMLDivElement>(null)
 	const contentRef = useRef<HTMLDivElement>(null)
-	const [lines, setLines] = useState<{ id: string; d: string }[]>([])
 
 	const segments = useMemo(() => buildSegments(sampleAnswer, markers), [sampleAnswer, markers])
 	const leftMarkers = useMemo(
@@ -86,6 +87,9 @@ export function MarkerPreview({ sampleAnswer, markers, activeMarkerId, onMarkerC
 		() => markers.filter((m) => m.side === "right").sort((a, b) => a.display_order - b.display_order),
 		[markers],
 	)
+
+	const { dragId, dragOverId, handleDragStart, handleDragOver, handleDrop, handleColumnDrop, handleDragEnd } =
+		useMarkerDrag(leftMarkers, rightMarkers, onReorder)
 
 	const computeLines = useCallback(() => {
 		const container = containerRef.current
@@ -177,23 +181,37 @@ export function MarkerPreview({ sampleAnswer, markers, activeMarkerId, onMarkerC
 
 			{/* 3-column layout */}
 			<div style={{ display: "grid", gridTemplateColumns: "160px 1fr 160px", gap: 16 }}>
-				{/* Left markers */}
-				<div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 40 }}>
-					{leftMarkers.map((m) => (
-						<button
-							key={m.id}
-							type="button"
-							data-dot={m.id}
-							onClick={() => onMarkerClick?.(m)}
-							style={{
-								all: "unset",
-								cursor: "pointer",
-								textAlign: "right",
-								transition: "transform 0.15s",
-							}}
-							onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
-							onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-						>
+			{/* Left markers */}
+			<div
+				style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 40 }}
+				onDragOver={(e) => e.preventDefault()}
+				onDrop={(e) => handleColumnDrop(e, "left")}
+			>
+			{leftMarkers.map((m) => (
+				<button
+					key={m.id}
+					type="button"
+					data-dot={m.id}
+					draggable={!!onReorder}
+					onDragStart={(e) => handleDragStart(e, m.id)}
+					onDragOver={(e) => handleDragOver(e, m.id)}
+					onDrop={(e) => handleDrop(e, m.id, "left")}
+					onDragEnd={handleDragEnd}
+					onClick={() => onMarkerClick?.(m)}
+					style={{
+						all: "unset",
+						cursor: onReorder ? "grab" : "pointer",
+						textAlign: "right",
+						transition: "transform 0.15s, opacity 0.15s",
+						opacity: dragId === m.id ? 0.4 : 1,
+						outline: dragOverId === m.id ? "2px dashed #93c5fd" : "none",
+						borderRadius: 6,
+						userSelect: "none",
+						WebkitUserDrag: "element",
+					} as React.CSSProperties}
+					onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
+					onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+				>
 							<div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 8 }}>
 								<span
 									style={{
@@ -272,23 +290,37 @@ export function MarkerPreview({ sampleAnswer, markers, activeMarkerId, onMarkerC
 					</div>
 				</div>
 
-				{/* Right markers */}
-				<div style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 40 }}>
-					{rightMarkers.map((m) => (
-						<button
-							key={m.id}
-							type="button"
-							data-dot={m.id}
-							onClick={() => onMarkerClick?.(m)}
-							style={{
-								all: "unset",
-								cursor: "pointer",
-								textAlign: "left",
-								transition: "transform 0.15s",
-							}}
-							onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
-							onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-						>
+			{/* Right markers */}
+			<div
+				style={{ display: "flex", flexDirection: "column", gap: 12, paddingTop: 40 }}
+				onDragOver={(e) => e.preventDefault()}
+				onDrop={(e) => handleColumnDrop(e, "right")}
+			>
+			{rightMarkers.map((m) => (
+				<button
+					key={m.id}
+					type="button"
+					data-dot={m.id}
+					draggable={!!onReorder}
+					onDragStart={(e) => handleDragStart(e, m.id)}
+					onDragOver={(e) => handleDragOver(e, m.id)}
+					onDrop={(e) => handleDrop(e, m.id, "right")}
+					onDragEnd={handleDragEnd}
+					onClick={() => onMarkerClick?.(m)}
+					style={{
+						all: "unset",
+						cursor: onReorder ? "grab" : "pointer",
+						textAlign: "left",
+						transition: "transform 0.15s, opacity 0.15s",
+						opacity: dragId === m.id ? 0.4 : 1,
+						outline: dragOverId === m.id ? "2px dashed #93c5fd" : "none",
+						borderRadius: 6,
+						userSelect: "none",
+						WebkitUserDrag: "element",
+					} as React.CSSProperties}
+					onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.02)")}
+					onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+				>
 							<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
 								<span
 									style={{
