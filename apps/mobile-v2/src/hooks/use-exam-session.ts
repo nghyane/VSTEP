@@ -43,20 +43,41 @@ export interface SubmitSessionResult {
   speakingSubmitted: boolean;
 }
 
+export interface ExamDraftMcq {
+  itemRefId: string;
+  selectedIndex: number;
+}
+
+export interface ExamDraftWriting {
+  taskId: string;
+  text: string;
+}
+
+export interface ExamDraftSpeakingMark {
+  partId: string;
+  audioUrl?: string | null;
+  durationSeconds?: number | null;
+}
+
+// Match BE: snake_case is transformed to camelCase by api.ts on the way in.
+// BE shape per SaveExamDraftRequest:
+//   mcq_answers: [{ item_ref_id, selected_index }]
+//   writing_answers: [{ task_id, text }]
+//   speaking_marks: [{ part_id, audio_url?, duration_seconds? }]
 export interface ExamServerDraft {
   sessionId: string;
   skillIdx: number;
-  mcqAnswers: Record<string, number>;
-  writingAnswers: Record<string, string>;
-  speakingMarks: Record<string, string>;
+  mcqAnswers: ExamDraftMcq[];
+  writingAnswers: ExamDraftWriting[];
+  speakingMarks: ExamDraftSpeakingMark[];
   savedAt: string;
 }
 
 export interface SaveExamDraftPayload {
   skillIdx: number;
-  mcqAnswers: Record<string, number>;
-  writingAnswers: Record<string, string>;
-  speakingMarks: Record<string, string>;
+  mcqAnswers: ExamDraftMcq[];
+  writingAnswers: ExamDraftWriting[];
+  speakingMarks: ExamDraftSpeakingMark[];
 }
 
 export interface McqAnswerPayload {
@@ -277,13 +298,22 @@ function buildMcqPayload(
 }
 
 function toExamDraft(session: ExamSessionData, draft: ExamServerDraft): ExamDraft {
+  // Server returns arrays of {itemRefId, selectedIndex} etc.; local ExamDraft
+  // uses Record<id, value> for AsyncStorage compatibility. Flatten on the way
+  // in so RESTORE_DRAFT reducer keeps a single code path.
   return {
     sessionId: session.id,
     examId: session.examVersionId,
     skillIdx: draft.skillIdx,
-    mcqAnswers: draft.mcqAnswers,
-    writingAnswers: draft.writingAnswers,
-    speakingMarks: draft.speakingMarks,
+    mcqAnswers: Object.fromEntries(
+      draft.mcqAnswers.map((m) => [m.itemRefId, m.selectedIndex]),
+    ),
+    writingAnswers: Object.fromEntries(
+      draft.writingAnswers.map((w) => [w.taskId, w.text]),
+    ),
+    speakingMarks: Object.fromEntries(
+      draft.speakingMarks.map((s) => [s.partId, s.audioUrl ?? ""]),
+    ),
     savedAt: draft.savedAt,
   };
 }
@@ -390,11 +420,23 @@ export function useExamSessionState(
         savedAt: new Date().toISOString(),
       };
       saveDraft(draft);
+      // BE expects arrays of objects (SaveExamDraftRequest). See
+      // ExamDraftMcq / ExamDraftWriting / ExamDraftSpeakingMark.
       saveDraftMutation.mutate({
-        skillIdx: draft.skillIdx,
-        mcqAnswers: draft.mcqAnswers,
-        writingAnswers: draft.writingAnswers,
-        speakingMarks: draft.speakingMarks,
+        skillIdx: state.skillIdx,
+        mcqAnswers: Array.from(state.mcqAnswers, ([itemId, idx]) => ({
+          itemRefId: itemId,
+          selectedIndex: idx,
+        })),
+        writingAnswers: Array.from(state.writingAnswers, ([taskId, text]) => ({
+          taskId,
+          text,
+        })),
+        speakingMarks: Array.from(state.speakingAnswers, ([partId, ans]) => ({
+          partId,
+          audioUrl: ans.audioUrl,
+          durationSeconds: ans.durationSeconds,
+        })),
       });
     }, 30_000);
     return () => clearInterval(id);
