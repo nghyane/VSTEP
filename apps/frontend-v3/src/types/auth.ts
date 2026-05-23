@@ -36,6 +36,7 @@ export interface User {
 	role: string
 	avatar_key: AvatarKey | null
 	avatar_url: string | null
+	has_password: boolean
 }
 
 export interface Profile {

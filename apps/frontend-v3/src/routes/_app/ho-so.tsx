@@ -111,15 +111,30 @@ function ProfilePage() {
 					<div className="flex items-center justify-between gap-4 py-3 border-t border-border">
 						<div className="min-w-0">
 							<p className="text-sm text-muted">Mật khẩu</p>
-							<p className="text-xs text-subtle mt-0.5">Đổi mật khẩu định kỳ để bảo vệ tài khoản.</p>
+							<p className="text-xs text-subtle mt-0.5">
+								{!p.user.has_password
+									? "Bạn đăng nhập bằng Google — mật khẩu do Google quản lý."
+									: "Đổi mật khẩu định kỳ để bảo vệ tài khoản."}
+							</p>
 						</div>
-						<button
-							type="button"
-							onClick={() => setShowChangePassword(true)}
-							className="btn btn-secondary text-sm font-bold px-4 py-2 whitespace-nowrap"
-						>
-							Đổi mật khẩu
-						</button>
+						{!p.user.has_password ? (
+							<a
+								href="https://myaccount.google.com/security"
+								target="_blank"
+								rel="noreferrer"
+								className="btn btn-secondary text-sm font-bold px-4 py-2 whitespace-nowrap"
+							>
+								Mở Google
+							</a>
+						) : (
+							<button
+								type="button"
+								onClick={() => setShowChangePassword(true)}
+								className="btn btn-secondary text-sm font-bold px-4 py-2 whitespace-nowrap"
+							>
+								Đổi mật khẩu
+							</button>
+						)}
 					</div>
 					<div className="pt-4 border-t border-border mt-3">
 						<AvatarPickerSection />

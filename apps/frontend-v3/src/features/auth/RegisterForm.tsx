@@ -330,13 +330,16 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 
 type Flow = "password" | "google"
 
-export function RegisterForm() {
+export function RegisterForm({ onboardingOnly = false }: { onboardingOnly?: boolean } = {}) {
 	const register = useAuth((s) => s.register)
 	const loginWithGoogle = useAuth((s) => s.loginWithGoogle)
 	const completeOnboarding = useAuth((s) => s.completeOnboarding)
 	const checkEmail = useAuth((s) => s.checkEmail)
-	const [step, setStep] = useState<1 | 2>(1)
-	const [flow, setFlow] = useState<Flow>("password")
+	// onboardingOnly=true: user đã có access token (admin tạo account hoặc Google
+	// signup chưa hoàn tất) — bỏ qua step1, đi thẳng vào step2 và dùng
+	// completeOnboarding thay vì register.
+	const [step, setStep] = useState<1 | 2>(onboardingOnly ? 2 : 1)
+	const [flow, setFlow] = useState<Flow>(onboardingOnly ? "google" : "password")
 	const [submitting, setSubmitting] = useState(false)
 	const [googleLoading, setGoogleLoading] = useState(false)
 	const [suggestedNickname, setSuggestedNickname] = useState<string | null>(null)

@@ -17,7 +17,7 @@ export function LoginForm() {
 		try {
 			const result = await loginWithGoogle(idToken)
 			if (result?.needsOnboarding) {
-				void navigate({ to: "/", search: { auth: "register" } })
+				void navigate({ to: "/", search: { auth: "register", onboarding: true } })
 			}
 		} finally {
 			setGoogleLoading(false)
@@ -27,7 +27,10 @@ export function LoginForm() {
 	const form = useForm({
 		defaultValues: { email: "", password: "" },
 		onSubmit: async ({ value }) => {
-			await login(value.email, value.password)
+			const result = await login(value.email, value.password)
+			if (result?.needsOnboarding) {
+				void navigate({ to: "/", search: { auth: "register", onboarding: true } })
+			}
 		},
 	})
 

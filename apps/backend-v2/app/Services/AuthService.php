@@ -100,6 +100,7 @@ final class AuthService
      *     access_token: string,
      *     refresh_token: string,
      *     expires_in: int,
+     *     user: User,
      *     profile: Profile|null,
      * }
      */
@@ -137,6 +138,7 @@ final class AuthService
             'access_token' => $accessToken,
             'refresh_token' => $newPlainToken,
             'expires_in' => config('jwt.ttl') * 60,
+            'user' => $user,
             'profile' => $profile,
         ];
     }

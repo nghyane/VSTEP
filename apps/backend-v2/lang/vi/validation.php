@@ -14,6 +14,7 @@ return [
     ],
     'boolean' => ':attribute phải là true hoặc false.',
     'confirmed' => ':attribute xác nhận không khớp.',
+    'current_password' => 'Mật khẩu hiện tại không đúng.',
     'date' => ':attribute phải là ngày hợp lệ.',
     'date_format' => ':attribute không khớp định dạng :format.',
     'different' => ':attribute và :other phải khác nhau.',
@@ -84,6 +85,8 @@ return [
         // Auth / user
         'email' => 'Email',
         'password' => 'Mật khẩu',
+        'current_password' => 'Mật khẩu hiện tại',
+        'new_password' => 'Mật khẩu mới',
         'nickname' => 'Nickname',
         'full_name' => 'Họ tên',
 

@@ -21,7 +21,16 @@ interface OnboardingBonus {
 	granted: boolean
 }
 
-interface AuthResponse {
+interface LoginResponse {
+	access_token: string
+	refresh_token: string
+	user: User
+	// Tài khoản admin tạo có thể chưa có profile → cần onboarding ở lần login đầu.
+	profile: Profile | null
+	onboarding_bonus?: OnboardingBonus
+}
+
+interface RegisterResponse {
 	access_token: string
 	refresh_token: string
 	user: User
@@ -48,6 +57,7 @@ interface CompleteOnboardingResponse {
 interface RefreshResponse {
 	access_token: string
 	refresh_token: string
+	user: User
 	profile: Profile | null
 }
 
@@ -70,7 +80,7 @@ type AuthState =
  */
 const LEARNER_ROLE = "learner"
 
-export interface GoogleLoginResult {
+export interface LoginResult {
 	needsOnboarding: boolean
 	suggestedNickname: string | null
 }
@@ -78,7 +88,7 @@ export interface GoogleLoginResult {
 type AuthActions = {
 	roleRejected: { role: string; email: string } | null
 	dismissRoleRejected: () => void
-	login: (email: string, password: string) => Promise<void>
+	login: (email: string, password: string) => Promise<LoginResult | null>
 	checkEmail: (email: string) => Promise<{ ok: true } | { ok: false; message: string }>
 	register: (data: {
 		email: string
@@ -88,7 +98,7 @@ type AuthActions = {
 		target_level: string
 		target_deadline: string
 	}) => Promise<void>
-	loginWithGoogle: (idToken: string) => Promise<GoogleLoginResult | null>
+	loginWithGoogle: (idToken: string) => Promise<LoginResult | null>
 	completeOnboarding: (data: {
 		nickname: string
 		entry_level: string
@@ -116,22 +126,29 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 		try {
 			const { data } = await api
 				.post("auth/login", { json: { email, password } })
-				.json<ApiResponse<AuthResponse>>()
+				.json<ApiResponse<LoginResponse>>()
 			if (data.user.role !== LEARNER_ROLE) {
 				// Clear hết token + cache để khỏi rò qua reload, KHÔNG set authenticated.
 				tokens.clear()
 				queryClient.clear()
 				set({ status: "unauthenticated", roleRejected: { role: data.user.role, email: data.user.email } })
-				return
+				return null
 			}
 			tokens.setAccess(data.access_token)
 			tokens.setRefresh(data.refresh_token)
 			tokens.setUser(data.user)
 			queryClient.clear()
+			// Tài khoản admin tạo chưa có profile → cần onboarding trước khi vào _app
+			// (Sidebar đọc profile.nickname sẽ crash nếu profile null).
+			if (data.profile === null) {
+				return { needsOnboarding: true, suggestedNickname: null }
+			}
 			set({ status: "authenticated", user: data.user, profile: data.profile, roleRejected: null })
 			useToast.getState().add("Đăng nhập thành công", "success")
+			return { needsOnboarding: false, suggestedNickname: null }
 		} catch (e) {
 			showError(e)
+			return null
 		}
 	},
 
@@ -151,7 +168,7 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 
 	async register(input) {
 		try {
-			const { data } = await api.post("auth/register", { json: input }).json<ApiResponse<AuthResponse>>()
+			const { data } = await api.post("auth/register", { json: input }).json<ApiResponse<RegisterResponse>>()
 			tokens.setAccess(data.access_token)
 			tokens.setRefresh(data.refresh_token)
 			tokens.setUser(data.user)
@@ -274,9 +291,12 @@ export async function initAuth() {
 			.json<ApiResponse<RefreshResponse>>()
 		tokens.setAccess(data.access_token)
 		tokens.setRefresh(data.refresh_token)
-		const user = tokens.getUser()
+		// Luôn ghi đè user từ BE — đảm bảo các field mới (vd has_password) cập nhật
+		// cho session cũ thay vì để stale trong localStorage tới khi user logout.
+		tokens.setUser(data.user)
+		const user = data.user
 		const profile = data.profile
-		if (user && user.role !== LEARNER_ROLE) {
+		if (user.role !== LEARNER_ROLE) {
 			// Guard: token cũ của admin/teacher → reset session.
 			tokens.clear()
 			useAuth.setState({
@@ -285,7 +305,7 @@ export async function initAuth() {
 			})
 			return
 		}
-		if (user && profile) {
+		if (profile) {
 			useAuth.getState()._setAuthenticated(user, profile)
 		} else {
 			useAuth.getState()._setUnauthenticated()

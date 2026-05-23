@@ -16,10 +16,13 @@ import { useAuth } from "#/lib/auth"
 type AuthParam = "login" | "register" | undefined
 
 export const Route = createFileRoute("/")({
-	validateSearch: (s: Record<string, unknown>): { auth?: AuthParam; redirect?: string } => {
+	validateSearch: (
+		s: Record<string, unknown>,
+	): { auth?: AuthParam; redirect?: string; onboarding?: boolean } => {
 		const auth = s.auth === "login" || s.auth === "register" ? s.auth : undefined
 		const redirect = typeof s.redirect === "string" ? s.redirect : undefined
-		return { auth, redirect }
+		const onboarding = s.onboarding === true || s.onboarding === "1" ? true : undefined
+		return { auth, redirect, onboarding }
 	},
 	component: LandingPage,
 })
@@ -27,7 +30,7 @@ export const Route = createFileRoute("/")({
 function LandingPage() {
 	const status = useAuth((s) => s.status)
 	const navigate = useNavigate()
-	const { auth, redirect: redirectTo } = Route.useSearch()
+	const { auth, redirect: redirectTo, onboarding } = Route.useSearch()
 	const ctaRef = useRef<HTMLDivElement>(null)
 	const [showBtn, setShowBtn] = useState(false)
 
@@ -80,7 +83,7 @@ function LandingPage() {
 			{auth && (
 				<AuthShell onClose={() => navigate({ to: "/", search: {} })}>
 					{auth === "login" && <LoginForm />}
-					{auth === "register" && <RegisterForm />}
+					{auth === "register" && <RegisterForm onboardingOnly={onboarding === true} />}
 				</AuthShell>
 			)}
 		</div>

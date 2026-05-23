@@ -120,6 +120,7 @@ final class AuthController extends Controller
             'access_token' => $result['access_token'],
             'refresh_token' => $result['refresh_token'],
             'expires_in' => $result['expires_in'],
+            'user' => new UserResource($result['user']),
             'profile' => $result['profile'] ? new ProfileResource($result['profile']) : null,
         ]]);
     }
