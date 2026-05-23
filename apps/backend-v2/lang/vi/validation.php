@@ -90,6 +90,9 @@ return [
         'nickname' => 'Nickname',
         'full_name' => 'Họ tên',
 
+        // Wallet / promo
+        'code' => 'Mã quà tặng',
+
         // Profile / target
         'target_level' => 'Trình độ mục tiêu',
         'target_deadline' => 'Ngày thi dự kiến',

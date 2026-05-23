@@ -32,7 +32,7 @@ final class PromoService
     {
         if ($profile->account_id !== $account->id) {
             throw ValidationException::withMessages([
-                'profile' => ['Profile does not belong to authenticated account.'],
+                'profile' => ['Hồ sơ này không thuộc tài khoản của bạn.'],
             ]);
         }
 
@@ -44,7 +44,7 @@ final class PromoService
 
             if ($promo === null || ! $promo->isUsable()) {
                 throw ValidationException::withMessages([
-                    'code' => ['Invalid or expired promo code.'],
+                    'code' => ['Mã quà tặng không hợp lệ hoặc đã hết hạn.'],
                 ]);
             }
 
@@ -54,7 +54,7 @@ final class PromoService
                     ->count();
                 if ($used >= $promo->max_total_uses) {
                     throw ValidationException::withMessages([
-                        'code' => ['Promo code has reached total usage limit.'],
+                        'code' => ['Mã quà tặng đã hết lượt sử dụng.'],
                     ]);
                 }
             }
@@ -65,7 +65,7 @@ final class PromoService
                 ->count();
             if ($accountUses >= $promo->per_account_limit) {
                 throw ValidationException::withMessages([
-                    'code' => ['You have already redeemed this promo code.'],
+                    'code' => ['Bạn đã sử dụng mã quà tặng này rồi.'],
                 ]);
             }
 
