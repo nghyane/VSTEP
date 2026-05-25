@@ -169,6 +169,8 @@ export function ListeningTab({ sections, examId, versionId }: Props) {
 				onCancel={() => setSectionModal({ open: false })}
 				footer={null}
 				destroyOnHidden
+				centered
+				width={560}
 			>
 				<ListeningSectionForm
 					initial={sectionModal.editing ?? undefined}
@@ -192,6 +194,8 @@ export function ListeningTab({ sections, examId, versionId }: Props) {
 				onCancel={() => setItemModal({ open: false })}
 				footer={null}
 				destroyOnHidden
+				centered
+				width={560}
 			>
 				<McqItemForm
 					initial={itemModal.editing ?? undefined}

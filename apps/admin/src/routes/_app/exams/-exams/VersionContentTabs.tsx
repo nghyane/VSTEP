@@ -1,4 +1,4 @@
-import { AudioOutlined, EditOutlined, ReadOutlined, SoundOutlined } from "@ant-design/icons"
+import { AudioOutlined, EditOutlined, LoadingOutlined, ReadOutlined, SoundOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { Empty, Skeleton, Tabs } from "antd"
@@ -16,7 +16,7 @@ interface Props {
 
 export function VersionContentTabs({ examId, versionId, tab }: Props) {
 	const navigate = useNavigate({ from: "/exams/$examId" })
-	const { data, isLoading } = useQuery(adminExamVersionDetailQuery(examId, versionId))
+	const { data, isLoading, isFetching } = useQuery(adminExamVersionDetailQuery(examId, versionId))
 
 	if (isLoading) return <Skeleton active paragraph={{ rows: 4 }} />
 
@@ -55,10 +55,25 @@ export function VersionContentTabs({ examId, versionId, tab }: Props) {
 	]
 
 	return (
-		<Tabs
-			activeKey={tab}
-			onChange={(key) => navigate({ search: (prev) => ({ ...prev, tab: key as Props["tab"] }) })}
-			items={items}
-		/>
+		<div style={{ position: "relative", opacity: isFetching ? 0.7 : 1, transition: "opacity 0.15s" }}>
+			{isFetching && (
+				<LoadingOutlined
+					spin
+					style={{
+						position: "absolute",
+						top: 8,
+						right: 8,
+						fontSize: 16,
+						color: "var(--ant-color-primary, #1677ff)",
+						zIndex: 1,
+					}}
+				/>
+			)}
+			<Tabs
+				activeKey={tab}
+				onChange={(key) => navigate({ search: (prev) => ({ ...prev, tab: key as Props["tab"] }) })}
+				items={items}
+			/>
+		</div>
 	)
 }

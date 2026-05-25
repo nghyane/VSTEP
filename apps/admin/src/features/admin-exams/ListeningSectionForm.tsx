@@ -1,4 +1,4 @@
-import { Alert, Select as AntdSelect, Flex, InputNumber } from "antd"
+import { Alert, Select as AntdSelect, Divider, Flex, InputNumber } from "antd"
 import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
@@ -53,12 +53,13 @@ export function ListeningSectionForm({ initial, onSubmit, onCancel, submitting }
 
 	return (
 		<form onSubmit={handle}>
-			{generic && <Alert type="error" description={generic} style={{ marginBottom: 12 }} />}
-			<Flex gap={12}>
-				<FormField label="Part" required error={errors.part} style={{ width: 100 }}>
+			{generic && <Alert type="error" description={generic} style={{ marginBottom: 16 }} />}
+			<Flex gap={16} align="start">
+				<FormField label="Part" required error={errors.part} style={{ width: 160 }}>
 					<AntdSelect
 						value={state.part}
 						onChange={(v) => set("part", v)}
+						style={{ width: "100%" }}
 						options={[
 							{ value: 1, label: "Part 1" },
 							{ value: 2, label: "Part 2" },
@@ -66,7 +67,7 @@ export function ListeningSectionForm({ initial, onSubmit, onCancel, submitting }
 						]}
 					/>
 				</FormField>
-				<FormField label="Thời lượng (phút)" required error={errors.duration_minutes} style={{ width: 140 }}>
+				<FormField label="Thời lượng (phút)" required error={errors.duration_minutes} style={{ flex: 1 }}>
 					<InputNumber
 						value={state.duration_minutes}
 						onChange={(v) => set("duration_minutes", v ?? 1)}
@@ -85,7 +86,8 @@ export function ListeningSectionForm({ initial, onSubmit, onCancel, submitting }
 					placeholder="https://..."
 				/>
 			</FormField>
-			<Flex justify="end" gap={8} style={{ marginTop: 16 }}>
+			<Divider style={{ margin: "8px 0 16px" }} />
+			<Flex justify="end" gap={8}>
 				<Button variant="ghost" onClick={onCancel}>
 					Huỷ
 				</Button>

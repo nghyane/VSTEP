@@ -1,10 +1,19 @@
-import { CheckCircleOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons"
+import {
+	BranchesOutlined,
+	CheckCircleOutlined,
+	ClockCircleOutlined,
+	DeleteOutlined,
+	PlusOutlined,
+	RocketOutlined,
+} from "@ant-design/icons"
 import { useNavigate } from "@tanstack/react-router"
-import { App, Button, Flex, Popconfirm, Space, Tag, Typography } from "antd"
+import { App, Button, Card, Col, Flex, Popconfirm, Row, Space, Tag, Typography, theme } from "antd"
+import type { MouseEvent } from "react"
 import { showError, showSuccess } from "#/components/Toaster"
 import { useCreateVersion, useDeleteVersion, useSetVersionActive } from "#/features/admin-exams/mutations"
 import type { ExamVersion } from "#/features/admin-exams/types"
 import { extractError } from "#/lib/api"
+import { formatDate } from "#/lib/utils"
 
 interface Props {
 	examId: string
@@ -50,62 +59,166 @@ export function VersionSelector({ examId, versions, selectedId }: Props) {
 		}
 	}
 
+	if (versions.length === 0) {
+		return (
+			<Card styles={{ body: { padding: 0 } }}>
+				<Flex
+					vertical
+					align="center"
+					justify="center"
+					gap={16}
+					style={{ padding: "64px 24px", textAlign: "center" }}
+				>
+					<Flex
+						align="center"
+						justify="center"
+						style={{
+							width: 64,
+							height: 64,
+							borderRadius: "50%",
+							background: "var(--ant-color-primary-bg, #e6f4ff)",
+						}}
+					>
+						<BranchesOutlined style={{ fontSize: 28, color: "var(--ant-color-primary, #1677ff)" }} />
+					</Flex>
+					<Flex vertical gap={4} align="center">
+						<Typography.Title level={4} style={{ margin: 0 }}>
+							Chưa có phiên bản đề thi
+						</Typography.Title>
+						<Typography.Text type="secondary" style={{ maxWidth: 420 }}>
+							Mỗi đề thi cần ít nhất một phiên bản để chứa nội dung 4 kỹ năng (Listening, Reading, Writing,
+							Speaking). Tạo phiên bản đầu tiên để bắt đầu.
+						</Typography.Text>
+					</Flex>
+					<Button
+						type="primary"
+						size="large"
+						icon={<PlusOutlined />}
+						onClick={handleCreate}
+						loading={create.isPending}
+					>
+						Tạo phiên bản đầu tiên
+					</Button>
+				</Flex>
+			</Card>
+		)
+	}
+
 	return (
-		<Flex vertical gap={8}>
-			<Flex justify="space-between" align="center">
-				<Typography.Text strong>Phiên bản</Typography.Text>
-				<Button size="small" icon={<PlusOutlined />} onClick={handleCreate} loading={create.isPending}>
+		<Card
+			title={
+				<Space size={8}>
+					<BranchesOutlined />
+					<span>Phiên bản đề thi</span>
+					<Tag color="blue">{versions.length}</Tag>
+				</Space>
+			}
+			extra={
+				<Button type="primary" icon={<PlusOutlined />} onClick={handleCreate} loading={create.isPending}>
 					Tạo phiên bản mới
 				</Button>
-			</Flex>
-			<Flex gap={8} wrap>
+			}
+			styles={{ body: { padding: 16 } }}
+		>
+			<Row gutter={[12, 12]} justify="center">
 				{versions.map((v) => (
-					<VersionTag
-						key={v.id}
-						version={v}
-						selected={v.id === selectedId}
-						onSelect={() => navigate({ search: (prev) => ({ ...prev, version: v.id }) })}
-						onActivate={() => handleActivate(v.id)}
-						onDelete={() => handleDelete(v.id)}
-					/>
+					<Col xs={24} sm={12} md={8} lg={6} key={v.id}>
+						<VersionCard
+							version={v}
+							selected={v.id === selectedId}
+							onSelect={() => navigate({ search: (prev) => ({ ...prev, version: v.id }) })}
+							onActivate={() => handleActivate(v.id)}
+							onDelete={() => handleDelete(v.id)}
+							activating={activate.isPending}
+							deleting={remove.isPending}
+						/>
+					</Col>
 				))}
-				{versions.length === 0 && (
-					<Typography.Text type="secondary">Chưa có phiên bản. Tạo mới hoặc import đề.</Typography.Text>
-				)}
-			</Flex>
-		</Flex>
+			</Row>
+		</Card>
 	)
 }
 
-interface VersionTagProps {
+interface VersionCardProps {
 	version: ExamVersion
 	selected: boolean
 	onSelect: () => void
 	onActivate: () => void
 	onDelete: () => void
+	activating: boolean
+	deleting: boolean
 }
 
-function VersionTag({ version, selected, onSelect, onActivate, onDelete }: VersionTagProps) {
+function VersionCard({
+	version,
+	selected,
+	onSelect,
+	onActivate,
+	onDelete,
+	activating,
+	deleting,
+}: VersionCardProps) {
+	const { token } = theme.useToken()
+	const stop = (e: MouseEvent) => e.stopPropagation()
+
 	return (
-		<Space size={4}>
-			<Tag
-				color={selected ? "blue" : version.is_active ? "green" : "default"}
-				style={{ cursor: "pointer" }}
-				onClick={onSelect}
-			>
-				v{version.version_number}
-				{version.is_active && <CheckCircleOutlined style={{ marginLeft: 4 }} />}
-			</Tag>
-			{selected && !version.is_active && (
-				<Button size="small" type="link" onClick={onActivate}>
-					Kích hoạt
-				</Button>
+		<Card
+			size="small"
+			onClick={onSelect}
+			styles={{
+				body: { padding: 12 },
+			}}
+			style={{
+				cursor: "pointer",
+				borderColor: selected ? token.colorPrimary : token.colorBorderSecondary,
+				borderWidth: selected ? 2 : 1,
+				background: selected ? token.colorPrimaryBg : token.colorBgContainer,
+				transition: "border-color 0.2s, background 0.2s",
+			}}
+		>
+			<Flex justify="space-between" align="start" style={{ marginBottom: 8 }}>
+				<Typography.Title level={4} style={{ margin: 0, color: token.colorPrimary }}>
+					v{version.version_number}
+				</Typography.Title>
+				{version.is_active ? (
+					<Tag color="success" icon={<CheckCircleOutlined />}>
+						Đang sử dụng
+					</Tag>
+				) : (
+					<Tag>Bản nháp</Tag>
+				)}
+			</Flex>
+
+			<Flex vertical gap={4} style={{ marginBottom: 12 }}>
+				<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+					<ClockCircleOutlined style={{ marginRight: 4 }} />
+					Tạo: {formatDate(version.created_at)}
+				</Typography.Text>
+				{version.published_at && (
+					<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+						<RocketOutlined style={{ marginRight: 4 }} />
+						Xuất bản: {formatDate(version.published_at)}
+					</Typography.Text>
+				)}
+			</Flex>
+
+			{!version.is_active && (
+				<Flex gap={4} onClick={stop}>
+					<Button size="small" type="primary" ghost block loading={activating} onClick={onActivate}>
+						Kích hoạt
+					</Button>
+					<Popconfirm
+						title="Xoá phiên bản này?"
+						description="Hành động không thể hoàn tác."
+						onConfirm={onDelete}
+						okText="Xoá"
+						cancelText="Huỷ"
+						okButtonProps={{ danger: true, loading: deleting }}
+					>
+						<Button size="small" danger icon={<DeleteOutlined />} />
+					</Popconfirm>
+				</Flex>
 			)}
-			{selected && !version.is_active && (
-				<Popconfirm title="Xoá phiên bản này?" onConfirm={onDelete} okText="Xoá" cancelText="Huỷ">
-					<Button size="small" type="link" danger icon={<DeleteOutlined />} />
-				</Popconfirm>
-			)}
-		</Space>
+		</Card>
 	)
 }
