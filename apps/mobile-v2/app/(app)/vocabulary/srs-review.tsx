@@ -63,7 +63,7 @@ export default function SrsReviewScreen() {
   }
 
   return (
-    <View style={[s.root, { backgroundColor: c.background }]}>
+    <View style={[s.root, { backgroundColor: c.background, paddingTop: insets.top }]}>
       <FocusHeader
         current={reviewed}
         total={reviewed + total}
@@ -72,7 +72,7 @@ export default function SrsReviewScreen() {
         c={c}
       />
 
-      <View style={[s.content, { paddingTop: insets.top + spacing.base }]}>
+      <View style={s.content}>
         {total === 0 ? (
           <View style={s.emptyWrap}>
             <Text style={[s.emptyTitle, { color: c.foreground }]}>Không có từ cần ôn</Text>
@@ -100,7 +100,7 @@ export default function SrsReviewScreen() {
 
 const s = StyleSheet.create({
   root: { flex: 1 },
-  content: { flex: 1, paddingHorizontal: spacing.xl, gap: spacing.lg },
+  content: { flex: 1, paddingHorizontal: spacing.xl, justifyContent: "center", gap: spacing.lg },
   emptyWrap: { alignItems: "center", gap: spacing.lg, paddingVertical: spacing["3xl"] },
   emptyTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.bold, textAlign: "center" },
 });

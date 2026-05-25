@@ -13,7 +13,7 @@ interface ResultProps {
   backLabel?: string;
 }
 
-export function MascotResult({ score, total, onBack, backLabel = "Quay lai" }: ResultProps) {
+export function MascotResult({ score, total, onBack, backLabel = "Quay lại" }: ResultProps) {
   const c = useThemeColors();
   const pct = total > 0 ? score / total : 0;
   const passed = pct >= 0.7;
@@ -26,7 +26,7 @@ export function MascotResult({ score, total, onBack, backLabel = "Quay lai" }: R
         {score}/{total}
       </Text>
       <Text style={[styles.label, { color: passed ? c.success : c.mutedForeground }]}>
-        {passed ? "Xuat sac!" : "Co len nhe!"}
+        {passed ? "Xuất sắc!" : "Cố lên nhé!"}
       </Text>
       <DepthButton onPress={onBack} variant={passed ? "primary" : "secondary"} size="lg">
         {backLabel}
@@ -73,7 +73,7 @@ export function LessonComplete({
   durationSeconds,
   onNext,
   onReview,
-  nextLabel = "Tiep tuc",
+  nextLabel = "Tiếp tục",
 }: LessonCompleteProps) {
   const c = useThemeColors();
   const pct = total > 0 ? Math.round((score / total) * 100) : 0;
@@ -84,18 +84,18 @@ export function LessonComplete({
   return (
     <View style={styles.completeContainer}>
       <GameIcon name="trophy" size={52} />
-      <Text style={[styles.completeTitle, { color: c.foreground }]}>Hoan thanh!</Text>
+      <Text style={[styles.completeTitle, { color: c.foreground }]}>Hoàn thành!</Text>
       <Text style={[styles.completeSub, { color: c.mutedForeground }]}>{getEncouragement(pct)}</Text>
 
       <View style={styles.statsRow}>
-        <StatCard label="Diem" value={`${score}/${total}`} color={c.primary} />
-        <StatCard label="Thoi gian" value={timeStr} color={c.mutedForeground} />
-        <StatCard label="Chinh xac" value={`${pct}%`} color={pct >= 70 ? c.success : c.warning} />
+        <StatCard label="Điểm" value={`${score}/${total}`} color={c.primary} />
+        <StatCard label="Thời gian" value={timeStr} color={c.mutedForeground} />
+        <StatCard label="Chính xác" value={`${pct}%`} color={pct >= 70 ? c.success : c.warning} />
       </View>
 
       <View style={styles.actions}>
         {onReview && (
-          <DepthButton variant="secondary" onPress={onReview}>Xem lai bai</DepthButton>
+          <DepthButton variant="secondary" onPress={onReview}>Xem lại bài</DepthButton>
         )}
         {onNext && (
           <DepthButton variant="primary" size="lg" onPress={onNext} fullWidth>
@@ -118,10 +118,10 @@ function StatCard({ label, value, color }: { label: string; value: string; color
 }
 
 function getEncouragement(pct: number): string {
-  if (pct >= 90) return "Xuat sac! Tiep tuc phat huy nhe";
-  if (pct >= 70) return "Kha on roi, luyen them mot chut nua.";
-  if (pct >= 50) return "Can cai thien. Xem lai loi de hoc sau hon.";
-  return "Bai nay kho, dung nan. Hay on lai kien thuc nen.";
+  if (pct >= 90) return "Xuất sắc! Tiếp tục phát huy nhé";
+  if (pct >= 70) return "Khá ổn rồi, luyện thêm một chút nữa.";
+  if (pct >= 50) return "Cần cải thiện. Xem lại lỗi để học sâu hơn.";
+  return "Bài này khó, đừng nản. Hãy ôn lại kiến thức nền.";
 }
 
 const styles = StyleSheet.create({

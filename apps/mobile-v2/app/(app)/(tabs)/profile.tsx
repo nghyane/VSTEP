@@ -2,11 +2,9 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Modal,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -14,15 +12,23 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DepthButton } from "@/components/DepthButton";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { Mascot } from "@/components/Mascot";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AvatarPickerSheet } from "@/features/profile/AvatarPickerSheet";
+import { CreateProfileSheet } from "@/features/profile/CreateProfileSheet";
+import { EditProfileSheet } from "@/features/profile/EditProfileSheet";
 import { useAuth } from "@/hooks/use-auth";
-import { useProfiles, useCreateProfile, useDeleteProfile, useResetProfile, useSwitchProfile } from "@/hooks/use-profiles";
-import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import {
+  useDeleteProfile,
+  useProfiles,
+  useResetProfile,
+  useSwitchProfile,
+} from "@/hooks/use-profiles";
+import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
 import type { Profile } from "@/types/api";
 
 const AVATAR_KEYS = ["primary", "info", "skillReading", "warning", "coin", "destructive"] as const;
@@ -33,73 +39,48 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { profile: activeProfile, user, signOut, switchSession } = useAuth();
   const { data: profiles, isLoading } = useProfiles();
-  const createMutation = useCreateProfile();
   const deleteMutation = useDeleteProfile();
   const resetMutation = useResetProfile();
   const switchMutation = useSwitchProfile();
 
   const [showCreate, setShowCreate] = useState(false);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [editing, setEditing] = useState<Profile | null>(null);
+  const [pendingSwitch, setPendingSwitch] = useState<Profile | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Profile | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
 
-  function handleSwitchProfile(p: Profile) {
+  function requestSwitch(p: Profile) {
     if (p.id === activeProfile?.id || switchMutation.isPending) return;
-    Alert.alert(
-      "Chuyển hồ sơ?",
-      `Bạn sắp chuyển sang hồ sơ "${p.nickname}". Tiến trình luyện tập sẽ áp dụng cho hồ sơ này.`,
-      [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Chuyển",
-          onPress: () => {
-            switchMutation.mutate(p.id, {
-              onSuccess: async (res) => {
-                await switchSession(res.accessToken, res.refreshToken, res.profile);
-              },
-            });
-          },
-        },
-      ],
-    );
+    setPendingSwitch(p);
   }
 
-  function handleSignOut() {
-    Alert.alert("Đăng xuất", "Bạn chắc chắn muốn đăng xuất?", [
-      { text: "Hủy", style: "cancel" },
-      { text: "Đăng xuất", style: "destructive", onPress: signOut },
-    ]);
+  function confirmSwitch() {
+    if (!pendingSwitch) return;
+    switchMutation.mutate(pendingSwitch.id, {
+      onSuccess: async (res) => {
+        await switchSession(res.accessToken, res.refreshToken, res.profile);
+        setPendingSwitch(null);
+      },
+      onError: () => setPendingSwitch(null),
+    });
   }
 
-  function handleDeleteProfile(p: Profile) {
-    Alert.alert(
-      "Xóa hồ sơ",
-      `Bạn có chắc muốn xóa hồ sơ "${p.nickname}"? Dữ liệu học tập sẽ bị mất.`,
-      [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Xóa",
-          style: "destructive",
-          onPress: () => deleteMutation.mutate(p.id),
-        },
-      ],
-    );
+  function confirmDelete() {
+    if (!pendingDelete) return;
+    deleteMutation.mutate(pendingDelete.id, {
+      onSuccess: () => setPendingDelete(null),
+      onError: () => setPendingDelete(null),
+    });
   }
 
-  function handleResetProfile() {
+  function handleConfirmReset() {
     if (!activeProfile) return;
-    Alert.alert(
-      "Đặt lại hồ sơ",
-      "Toàn bộ dữ liệu học tập sẽ bị xóa. Bạn có chắc chắn?",
-      [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Đặt lại",
-          style: "destructive",
-          onPress: () => {
-            resetMutation.mutate(activeProfile.id);
-          },
-        },
-      ],
-    );
+    resetMutation.mutate(activeProfile.id, {
+      onSuccess: () => setConfirmReset(false),
+      onError: () => setConfirmReset(false),
+    });
   }
 
   if (isLoading) return <LoadingScreen />;
@@ -112,7 +93,10 @@ export default function ProfileScreen() {
   return (
     <ScrollView
       style={[s.root, { backgroundColor: c.background }]}
-      contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing["3xl"] }]}
+      contentContainerStyle={[
+        s.scroll,
+        { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing["3xl"] },
+      ]}
       showsVerticalScrollIndicator={false}
     >
       {/* Hero */}
@@ -132,8 +116,13 @@ export default function ProfileScreen() {
           )}
         </View>
         <View style={s.heroActions}>
-          <DepthButton variant="secondary" size="sm" onPress={() => router.push("/(app)/goal")}>
-            Đổi mục tiêu
+          <DepthButton
+            variant="secondary"
+            size="sm"
+            onPress={() => activeProfile && setEditing(activeProfile)}
+            disabled={!activeProfile}
+          >
+            Chỉnh sửa
           </DepthButton>
         </View>
         <View style={s.mascotRow}>
@@ -141,58 +130,121 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Profile list */}
-      {profiles && profiles.length > 1 && (
-        <View>
-          <Text style={[s.sectionLabel, { color: c.subtle }]}>HỒ SƠ</Text>
-          <View style={s.profileList}>
-            {profiles.map((p) => (
-              <ProfileRow
-                key={p.id}
-                profile={p}
-                isActive={p.id === activeProfile?.id}
-                isSwitching={switchMutation.isPending && p.id !== activeProfile?.id}
-                onSwitch={handleSwitchProfile}
-                onDelete={handleDeleteProfile}
-              />
-            ))}
-          </View>
-        </View>
-      )}
+      {/* Profile selector */}
+      <Text style={[s.sectionLabel, { color: c.subtle }]}>HỒ SƠ CỦA BẠN</Text>
+      <View style={s.profileList}>
+        {profiles?.map((p) => (
+          <ProfileRow
+            key={p.id}
+            profile={p}
+            isActive={p.id === activeProfile?.id}
+            isSwitching={switchMutation.isPending && pendingSwitch?.id === p.id}
+            onSwitch={requestSwitch}
+            onDelete={setPendingDelete}
+          />
+        ))}
+      </View>
 
       <DepthButton fullWidth variant="secondary" onPress={() => setShowCreate(true)}>
-        <Ionicons name="add" size={16} color={c.primary} />
-        <Text style={[s.createBtnText, { color: c.primary }]}>Thêm hồ sơ mới</Text>
+        + Thêm mục tiêu mới
       </DepthButton>
 
       {/* Settings */}
       <Text style={[s.sectionLabel, { color: c.subtle }]}>CÀI ĐẶT</Text>
       <View style={[s.menuGroup, { backgroundColor: c.card, borderColor: c.border }]}>
-        <MenuRow icon="information-circle-outline" label="Tài khoản & Bảo mật" onPress={() => router.push("/(app)/account")} />
+        <MenuRow
+          icon="information-circle-outline"
+          label="Tài khoản & Bảo mật"
+          onPress={() => router.push("/(app)/account")}
+        />
         <View style={[s.divider, { backgroundColor: c.borderLight }]} />
-        <MenuRow icon="refresh-outline" label="Đặt lại tiến trình học" onPress={handleResetProfile} />
+        <MenuRow
+          icon="refresh-outline"
+          label="Đặt lại tiến trình học"
+          onPress={() => setConfirmReset(true)}
+        />
         <View style={[s.divider, { backgroundColor: c.borderLight }]} />
-        <MenuRow icon="help-circle-outline" label="Trung tâm hỗ trợ" onPress={() => Alert.alert("Hỗ trợ", "Liên hệ: support@vstepgo.com")} />
+        <MenuRow
+          icon="help-circle-outline"
+          label="Trung tâm hỗ trợ"
+          onPress={() => Alert.alert("Hỗ trợ", "Liên hệ: support@vstepgo.com")}
+        />
       </View>
 
-      <DepthButton variant="destructive" fullWidth onPress={handleSignOut} style={{ marginTop: spacing.md }}>
+      <DepthButton
+        variant="destructive"
+        fullWidth
+        onPress={() => setConfirmSignOut(true)}
+        style={{ marginTop: spacing.md }}
+      >
         Đăng xuất
       </DepthButton>
 
       <Text style={[s.version, { color: c.placeholder }]}>VSTEP Mobile v2.0.0</Text>
 
-      {/* Create profile modal */}
-      <CreateProfileModal
-        visible={showCreate}
-        onClose={() => setShowCreate(false)}
-        onCreate={createMutation.mutate}
-        c={c}
+      {/* Sheets & dialogs */}
+      <CreateProfileSheet visible={showCreate} onClose={() => setShowCreate(false)} />
+      <EditProfileSheet profile={editing} onClose={() => setEditing(null)} />
+      <AvatarPickerSheet visible={showAvatarPicker} onClose={() => setShowAvatarPicker(false)} />
+
+      <ConfirmDialog
+        open={!!pendingSwitch}
+        title="Chuyển hồ sơ?"
+        description={
+          pendingSwitch
+            ? `Bạn sắp chuyển sang hồ sơ "${pendingSwitch.nickname}" (mục tiêu ${pendingSwitch.targetLevel}). Tiến trình luyện tập sẽ áp dụng cho hồ sơ này.`
+            : ""
+        }
+        confirmLabel="Chuyển"
+        cancelLabel="Huỷ"
+        loadingLabel="Đang chuyển…"
+        isLoading={switchMutation.isPending}
+        onConfirm={confirmSwitch}
+        onCancel={() => !switchMutation.isPending && setPendingSwitch(null)}
       />
 
-      {/* Avatar picker sheet */}
-      <AvatarPickerSheet
-        visible={showAvatarPicker}
-        onClose={() => setShowAvatarPicker(false)}
+      <ConfirmDialog
+        open={!!pendingDelete}
+        title="Xóa hồ sơ?"
+        description={
+          pendingDelete
+            ? `Hồ sơ "${pendingDelete.nickname}" sẽ bị xóa vĩnh viễn. Toàn bộ dữ liệu học tập sẽ mất.`
+            : ""
+        }
+        confirmLabel="Xóa"
+        cancelLabel="Huỷ"
+        loadingLabel="Đang xóa…"
+        isLoading={deleteMutation.isPending}
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => !deleteMutation.isPending && setPendingDelete(null)}
+      />
+
+      <ConfirmDialog
+        open={confirmReset}
+        title="Đặt lại tiến trình?"
+        description="Toàn bộ dữ liệu học tập của hồ sơ hiện tại sẽ bị xóa. Hành động không thể hoàn tác."
+        confirmLabel="Đặt lại"
+        cancelLabel="Huỷ"
+        loadingLabel="Đang xóa…"
+        isLoading={resetMutation.isPending}
+        destructive
+        onConfirm={handleConfirmReset}
+        onCancel={() => !resetMutation.isPending && setConfirmReset(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmSignOut}
+        title="Đăng xuất?"
+        description="Bạn chắc chắn muốn đăng xuất khỏi tài khoản?"
+        confirmLabel="Đăng xuất"
+        cancelLabel="Huỷ"
+        destructive
+        onConfirm={() => {
+          setConfirmSignOut(false);
+          signOut();
+        }}
+        onCancel={() => setConfirmSignOut(false)}
       />
     </ScrollView>
   );
@@ -215,14 +267,22 @@ function ProfileRow({
 }) {
   const c = useThemeColors();
   const initial = profile.nickname.charAt(0).toUpperCase();
-  const color = profile.avatarColor ?? c[AVATAR_KEYS[Math.abs(profile.id.charCodeAt(0)) % AVATAR_KEYS.length]];
+  const color =
+    profile.avatarColor ??
+    c[AVATAR_KEYS[Math.abs(profile.id.charCodeAt(0)) % AVATAR_KEYS.length]];
 
   return (
     <HapticTouchable
       scalePress={!isActive}
       disabled={isActive || isSwitching}
       onPress={() => onSwitch(profile)}
-      style={[s.profileRow, { backgroundColor: isActive ? c.primaryTint : c.card, borderColor: isActive ? c.primary : c.border }]}
+      style={[
+        s.profileRow,
+        {
+          backgroundColor: isActive ? c.primaryTint : c.card,
+          borderColor: isActive ? c.primary : c.border,
+        },
+      ]}
     >
       <View style={[s.profileAvatar, { backgroundColor: color }]}>
         <Text style={s.profileAvatarText}>{initial}</Text>
@@ -240,7 +300,7 @@ function ProfileRow({
         </View>
       )}
       {isSwitching && <ActivityIndicator size="small" color={c.primary} />}
-      {!profile.isInitialProfile && (
+      {!profile.isInitialProfile && !isActive && (
         <HapticTouchable style={s.deleteBtn} onPress={() => onDelete(profile)} disabled={isSwitching}>
           <Ionicons name="trash-outline" size={16} color={c.destructive} />
         </HapticTouchable>
@@ -249,82 +309,17 @@ function ProfileRow({
   );
 }
 
-// ── Create Profile Modal ──
-
-function CreateProfileModal({ visible, onClose, onCreate, c }: { visible: boolean; onClose: () => void; onCreate: (input: { nickname: string; targetLevel: string; targetDeadline: string }) => void; c: ReturnType<typeof useThemeColors> }) {
-  const [nickname, setNickname] = useState("");
-  const [targetLevel, setTargetLevel] = useState("B1");
-  const [targetDeadline, setTargetDeadline] = useState("");
-  const LEVELS = ["A1", "A2", "B1", "B2", "C1"];
-
-  function handleSubmit() {
-    if (!nickname.trim()) return;
-    if (!targetDeadline) return;
-    onCreate({ nickname: nickname.trim(), targetLevel, targetDeadline });
-    setNickname("");
-    setTargetLevel("B1");
-    setTargetDeadline("");
-    onClose();
-  }
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={s.modalOverlay}>
-        <View style={[s.modalBox, { backgroundColor: c.card, borderColor: c.border }]}>
-          <Text style={[s.modalTitle, { color: c.foreground }]}>Tạo hồ sơ mới</Text>
-
-          <Text style={[s.inputLabel, { color: c.mutedForeground }]}>Tên hồ sơ</Text>
-          <TextInput
-            style={[s.input, { backgroundColor: c.surface, color: c.foreground, borderColor: c.border }]}
-            value={nickname}
-            onChangeText={setNickname}
-            placeholder="VD: Luyện thi VSTEP B2"
-            placeholderTextColor={c.placeholder}
-          />
-
-          <Text style={[s.inputLabel, { color: c.mutedForeground }]}>Mục tiêu</Text>
-          <View style={s.levelRow}>
-            {LEVELS.map((lvl) => (
-              <HapticTouchable
-                key={lvl}
-                onPress={() => setTargetLevel(lvl)}
-                style={[
-                  s.levelChip,
-                  {
-                    borderColor: targetLevel === lvl ? c.primary : c.border,
-                    backgroundColor: targetLevel === lvl ? c.primaryTint : c.surface,
-                  },
-                ]}
-              >
-                <Text style={[s.levelChipText, { color: targetLevel === lvl ? c.primary : c.mutedForeground }]}>{lvl}</Text>
-              </HapticTouchable>
-            ))}
-          </View>
-
-          <Text style={[s.inputLabel, { color: c.mutedForeground }]}>Ngày thi dự kiến</Text>
-          <TextInput
-            style={[s.input, { backgroundColor: c.surface, color: c.foreground, borderColor: c.border }]}
-            value={targetDeadline}
-            onChangeText={setTargetDeadline}
-            placeholder="VD: 2025-12-31"
-            placeholderTextColor={c.placeholder}
-          />
-
-          <View style={s.modalBtns}>
-            <DepthButton variant="secondary" onPress={onClose} style={{ flex: 1 }}>Hủy</DepthButton>
-            <DepthButton onPress={handleSubmit} disabled={!nickname.trim() || !targetDeadline} style={{ flex: 1 }}>
-              Tạo
-            </DepthButton>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-}
-
 // ── Menu Row ──
 
-function MenuRow({ icon, label, onPress }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void }) {
+function MenuRow({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  onPress: () => void;
+}) {
   const c = useThemeColors();
   return (
     <TouchableOpacity style={s.menuRow} onPress={onPress} activeOpacity={0.7}>
@@ -350,7 +345,14 @@ function formatDate(d: string): string {
 const s = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: spacing.xl, gap: spacing.lg },
-  heroCard: { borderWidth: 2, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.sm, position: "relative" },
+  heroCard: {
+    borderWidth: 2,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    alignItems: "center",
+    gap: spacing.sm,
+    position: "relative",
+  },
   avatarTouch: { position: "relative" },
   avatarEditBadge: {
     position: "absolute",
@@ -365,35 +367,54 @@ const s = StyleSheet.create({
   },
   heroName: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   heroEmail: { fontSize: fontSize.sm },
-  targetBadge: { flexDirection: "row", paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full },
+  targetBadge: {
+    flexDirection: "row",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
   targetBadgeText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   targetDateText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   heroActions: { flexDirection: "row", gap: spacing.sm },
   mascotRow: { position: "absolute", right: spacing.md, bottom: spacing.md },
   sectionLabel: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1 },
   profileList: { gap: spacing.sm },
-  profileRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 2, borderRadius: radius.lg, padding: spacing.md },
-  profileAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  profileRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+    borderWidth: 2,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+  },
+  profileAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   profileAvatarText: { color: "#FFFFFF", fontSize: 14, fontFamily: fontFamily.extraBold },
   profileName: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   profileMeta: { fontSize: fontSize.xs },
   activeBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   activeBadgeText: { color: "#FFFFFF", fontSize: 10, fontFamily: fontFamily.bold },
   deleteBtn: { padding: spacing.xs },
-  createBtnText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  menuGroup: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, overflow: "hidden" },
-  menuRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.base, paddingVertical: spacing.md },
+  menuGroup: {
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.xl,
+    overflow: "hidden",
+  },
+  menuRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+  },
   menuLeft: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   menuLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
   divider: { height: 1 },
   version: { fontSize: 11, textAlign: "center", marginTop: spacing.xl },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center", padding: spacing.xl },
-  modalBox: { width: "100%", borderWidth: 2, borderRadius: radius.xl, padding: spacing.xl, gap: spacing.md },
-  modalTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, textAlign: "center" },
-  inputLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
-  input: { borderWidth: 2, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, fontSize: fontSize.sm },
-  levelRow: { flexDirection: "row", gap: spacing.xs },
-  levelChip: { flex: 1, alignItems: "center", paddingVertical: spacing.sm, borderRadius: radius.full, borderWidth: 2 },
-  levelChipText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
-  modalBtns: { flexDirection: "row", gap: spacing.md, marginTop: spacing.sm },
 });

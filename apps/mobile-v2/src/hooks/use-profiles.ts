@@ -10,6 +10,7 @@ export interface CreateProfileInput {
   nickname: string;
   targetLevel: string;
   targetDeadline: string;
+  entryLevel?: string;
 }
 
 export interface UpdateProfileInput {
@@ -45,6 +46,7 @@ export function useCreateProfile() {
         nickname: input.nickname,
         target_level: input.targetLevel,
         target_deadline: input.targetDeadline,
+        entry_level: input.entryLevel ?? null,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["profiles"] });

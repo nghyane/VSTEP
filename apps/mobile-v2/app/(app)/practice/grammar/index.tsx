@@ -53,43 +53,43 @@ export default function GrammarScreen() {
           </Text>
           <View style={s.grid}>
             {points.map((point) => (
-              <HapticTouchable
-                key={point.id}
-                scalePress
-                activeOpacity={0.9}
-                onPress={() => router.push(`/(app)/practice/grammar/${point.id}` as any)}
-                style={s.cardWrapper}
-              >
-                <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-                  <Text style={[s.cardName, { color: c.foreground }]} numberOfLines={2}>
-                    {point.name}
-                  </Text>
-                  {point.vietnameseName ? (
-                    <Text style={[s.cardVi, { color: c.mutedForeground }]} numberOfLines={1}>
-                      {point.vietnameseName}
+              <View key={point.id} style={s.cardWrapper}>
+                <HapticTouchable
+                  scalePress
+                  activeOpacity={0.9}
+                  onPress={() => router.push(`/(app)/practice/grammar/${point.id}` as any)}
+                >
+                  <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
+                    <Text style={[s.cardName, { color: c.foreground }]} numberOfLines={2}>
+                      {point.name}
                     </Text>
-                  ) : null}
-                  {point.summary ? (
-                    <Text style={[s.cardSummary, { color: c.subtle }]} numberOfLines={2}>
-                      {point.summary}
-                    </Text>
-                  ) : null}
-                  {(point.levels.length > 0 || point.tasks.length > 0) ? (
-                    <View style={s.pillRow}>
-                      {point.levels.map((lvl) => (
-                        <View key={lvl} style={[s.pill, { backgroundColor: c.primaryTint }]}>
-                          <Text style={[s.pillText, { color: c.primary }]}>{lvl}</Text>
-                        </View>
-                      ))}
-                      {point.tasks.map((t) => (
-                        <View key={t} style={[s.pill, { backgroundColor: c.muted }]}>
-                          <Text style={[s.pillText, { color: c.mutedForeground }]}>{t}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  ) : null}
-                </View>
-              </HapticTouchable>
+                    {point.vietnameseName ? (
+                      <Text style={[s.cardVi, { color: c.mutedForeground }]} numberOfLines={1}>
+                        {point.vietnameseName}
+                      </Text>
+                    ) : null}
+                    {point.summary ? (
+                      <Text style={[s.cardSummary, { color: c.subtle }]} numberOfLines={2}>
+                        {point.summary}
+                      </Text>
+                    ) : null}
+                    {(point.levels.length > 0 || point.tasks.length > 0) ? (
+                      <View style={s.pillRow}>
+                        {point.levels.map((lvl) => (
+                          <View key={lvl} style={[s.pill, { backgroundColor: c.primaryTint }]}>
+                            <Text style={[s.pillText, { color: c.primary }]}>{lvl}</Text>
+                          </View>
+                        ))}
+                        {point.tasks.map((t) => (
+                          <View key={t} style={[s.pill, { backgroundColor: c.muted }]}>
+                            <Text style={[s.pillText, { color: c.mutedForeground }]}>{t}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    ) : null}
+                  </View>
+                </HapticTouchable>
+              </View>
             ))}
           </View>
         </View>
@@ -109,8 +109,8 @@ const s = StyleSheet.create({
   sub: { fontSize: fontSize.sm, lineHeight: 20, marginTop: spacing.xs },
   loadingWrap: { paddingVertical: spacing["2xl"], alignItems: "center" },
   sectionLabel: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1, marginBottom: spacing.md },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
-  cardWrapper: { width: "47%" },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, justifyContent: "space-between" },
+  cardWrapper: { width: "48%" },
   card: {
     borderWidth: 2,
     borderBottomWidth: 4,

@@ -39,7 +39,7 @@ function fmtTime(s: number) {
 }
 
 export default function SessionScreen() {
-  const { id, examId } = useLocalSearchParams<{ id: string; examId: string }>();
+  const { id, examId, resume } = useLocalSearchParams<{ id: string; examId: string; resume?: string }>();
   const { data: sessionData, isLoading: sessionLoading } = useExamSession(id ?? "");
   const { data: examDetail, isLoading: examLoading } = useExam(examId ?? "");
   const [submitResult, setSubmitResult] = useState<SubmitSessionResult | null>(null);
@@ -66,6 +66,10 @@ export default function SessionScreen() {
     );
   }
 
+  if (sessionData.status !== "active") {
+    return <SubmittedSessionRedirect sessionId={sessionData.id} c={c} />;
+  }
+
   if (submitResult) {
     return (
       <ResultScreen
@@ -82,6 +86,7 @@ export default function SessionScreen() {
     <ExamRoom
       session={sessionData}
       examDetail={examDetail}
+      skipDeviceCheck={resume === "1"}
       onSubmitted={setSubmitResult}
       c={c}
       insets={insets}
@@ -90,16 +95,32 @@ export default function SessionScreen() {
   );
 }
 
+function SubmittedSessionRedirect({ sessionId, c }: { sessionId: string; c: ReturnType<typeof useThemeColors> }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace(`/(app)/exam-result/${sessionId}`);
+  }, [router, sessionId]);
+
+  return (
+    <View style={[s.center, { backgroundColor: c.background }]}>
+      <ActivityIndicator color={c.primary} size="large" />
+      <Text style={{ color: c.mutedForeground, marginTop: spacing.md }}>Đang mở kết quả bài thi...</Text>
+    </View>
+  );
+}
+
 interface ExamRoomProps {
   session: { id: string; serverDeadlineAt: string; selectedSkills: string[] };
   examDetail: { exam: { title: string }; version: { listeningSections: unknown[]; readingPassages: unknown[]; writingTasks: unknown[]; speakingParts: unknown[] } };
+  skipDeviceCheck: boolean;
   onSubmitted: (result: SubmitSessionResult) => void;
   c: ReturnType<typeof useThemeColors>;
   insets: { top: number; bottom: number; left: number; right: number };
   router: ReturnType<typeof useRouter>;
 }
 
-function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: ExamRoomProps) {
+function ExamRoom({ session, examDetail, skipDeviceCheck, onSubmitted, c, insets, router }: ExamRoomProps) {
   const { version, exam } = examDetail;
   const listeningItems: ExamVersionMcqItem[] = (version.listeningSections as { items: ExamVersionMcqItem[] }[]).flatMap((s) => s.items);
   const readingItems: ExamVersionMcqItem[] = (version.readingPassages as { items: ExamVersionMcqItem[] }[]).flatMap((p) => p.items);
@@ -114,6 +135,10 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: ExamR
   );
   const remaining = useExamTimer(session.serverDeadlineAt);
   const [speakingBusy, setSpeakingBusy] = useState(false);
+
+  useEffect(() => {
+    if (skipDeviceCheck && es.state.phase === "device-check") es.start();
+  }, [skipDeviceCheck, es]);
 
   const guardSpeakingBusy = useCallback(() => {
     if (!speakingBusy) return false;
@@ -136,11 +161,29 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: ExamR
 
   const guardedExitSubmit = useCallback(() => {
     if (guardSpeakingBusy()) return;
-    Alert.alert("Thoát phòng thi?", "Thoát sẽ tự động nộp bài ngay.", [
+    Alert.alert("Thoát phòng thi?", "Tiến trình hiện tại sẽ không được lưu. Bạn sẽ phải bắt đầu lại từ đầu nếu quay lại đề này.", [
       { text: "Ở lại", style: "cancel" },
-      { text: "Thoát & nộp", style: "destructive", onPress: guardedSubmit },
+      {
+        text: "Thoát",
+        style: "destructive",
+        onPress: () => router.replace("/(app)/(tabs)/exams"),
+      },
     ]);
-  }, [guardSpeakingBusy, guardedSubmit]);
+  }, [guardSpeakingBusy, router]);
+
+  const currentSkillPending = getCurrentSkillPending(
+    es.currentSkill,
+    listeningItems,
+    readingItems,
+    version.writingTasks as Parameters<typeof useExamSessionState>[3],
+    version.speakingParts as Parameters<typeof useExamSessionState>[4],
+    es.state.mcqAnswers,
+    es.state.writingAnswers,
+    es.state.speakingDone,
+  );
+  const currentSkillWarning = currentSkillPending && currentSkillPending.count > 0
+    ? `Còn ${currentSkillPending.count} ${currentSkillPending.unit} chưa làm ở phần ${SKILL_LABEL[es.currentSkill]}`
+    : undefined;
 
   const autoSubmitted = useRef(false);
   useEffect(() => {
@@ -151,7 +194,7 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: ExamR
   }, [remaining, es.state.phase, speakingBusy, guardedSubmit]);
 
   useEffect(() => {
-    if (es.state.phase !== "active") return;
+    if (es.state.phase !== "active" && es.state.phase !== "device-check") return;
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
       guardedExitSubmit();
       return true;
@@ -270,8 +313,8 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: ExamR
       <ConfirmModal
         visible={es.state.confirmSubmit}
         title="Nộp bài?"
-        message="Sau khi nộp, bạn không thể chỉnh sửa câu trả lời."
-        warning={es.answeredMcq < es.totalMcq ? `Còn ${es.totalMcq - es.answeredMcq} câu chưa trả lời` : undefined}
+        message="Các kỹ năng trước đã chốt, không thể quay lại. Sau khi nộp, bài thi sẽ được chấm và bạn không thể chỉnh sửa đáp án."
+        warning={currentSkillWarning}
         confirmLabel={es.isSubmitting ? "Đang nộp..." : "Nộp bài"}
         onConfirm={guardedSubmit}
         onCancel={es.hideConfirmSubmit}
@@ -280,8 +323,9 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: ExamR
       <ConfirmModal
         visible={es.state.confirmNextSkill}
         title={`Chuyển sang ${es.nextSkill ? SKILL_LABEL[es.nextSkill] : "phần tiếp"}?`}
-        message="Sau khi chuyển, bạn không thể quay lại phần này để chỉnh sửa."
-        confirmLabel="Chuyển"
+        message={`Sau khi chuyển, bạn sẽ không thể quay lại phần ${SKILL_LABEL[es.currentSkill]} để chỉnh sửa.`}
+        warning={currentSkillWarning}
+        confirmLabel={`Chuyển sang ${es.nextSkill ? SKILL_LABEL[es.nextSkill] : "phần tiếp"}`}
         onConfirm={() => {
           if (guardSpeakingBusy()) return;
           es.nextSkillAction();
@@ -290,6 +334,36 @@ function ExamRoom({ session, examDetail, onSubmitted, c, insets, router }: ExamR
       />
     </View>
   );
+}
+
+function getCurrentSkillPending(
+  skill: string,
+  listeningItems: ExamVersionMcqItem[],
+  readingItems: ExamVersionMcqItem[],
+  writingTasks: { id: string; minWords: number }[],
+  speakingParts: { id: string }[],
+  mcqAnswers: Map<string, number>,
+  writingAnswers: Map<string, string>,
+  speakingDone: Set<string>,
+): { count: number; unit: string } | null {
+  if (skill === "listening") {
+    return { count: listeningItems.filter((item) => !mcqAnswers.has(item.id)).length, unit: "câu" };
+  }
+  if (skill === "reading") {
+    return { count: readingItems.filter((item) => !mcqAnswers.has(item.id)).length, unit: "câu" };
+  }
+  if (skill === "writing") {
+    const count = writingTasks.filter((task) => {
+      const text = writingAnswers.get(task.id) ?? "";
+      const wc = text.trim().split(/\s+/).filter(Boolean).length;
+      return wc < task.minWords;
+    }).length;
+    return { count, unit: "phần viết chưa đủ từ" };
+  }
+  if (skill === "speaking") {
+    return { count: speakingParts.length - speakingDone.size, unit: "phần chưa ghi âm" };
+  }
+  return null;
 }
 
 interface DeviceCheckProps {

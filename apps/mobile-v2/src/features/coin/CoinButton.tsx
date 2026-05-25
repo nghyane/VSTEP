@@ -1,22 +1,20 @@
 import { StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { GameIcon } from "@/components/GameIcon";
 import { useWalletBalance } from "@/features/wallet/queries";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
-interface CoinButtonProps {
-  onPress?: () => void;
-}
-
-export function CoinButton({ onPress }: CoinButtonProps) {
+export function CoinButton() {
   const c = useThemeColors();
+  const router = useRouter();
   const { data } = useWalletBalance();
   const coins = data?.balance ?? 0;
 
   return (
     <HapticTouchable
       style={[styles.container, { backgroundColor: c.coinTint }]}
-      onPress={onPress}
+      onPress={() => router.push("/(app)/wallet" as any)}
       activeOpacity={0.7}
     >
       <View style={styles.iconWrap}>

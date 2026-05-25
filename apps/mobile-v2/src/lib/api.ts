@@ -227,6 +227,7 @@ export async function registerApi(
     refreshToken: string;
     user: AuthUser;
     profile: Profile | null;
+    onboardingBonus?: { amount: number; granted: boolean };
   }>(unwrapData(json));
 }
 
