@@ -161,8 +161,7 @@ export default function ProfileScreen() {
       )}
 
       <DepthButton fullWidth variant="secondary" onPress={() => setShowCreate(true)}>
-        <Ionicons name="add" size={16} color={c.primary} />
-        <Text style={[s.createBtnText, { color: c.primary }]}>Thêm hồ sơ mới</Text>
+        + Thêm mục tiêu mới
       </DepthButton>
 
       {/* Settings */}
@@ -185,7 +184,7 @@ export default function ProfileScreen() {
       <CreateProfileModal
         visible={showCreate}
         onClose={() => setShowCreate(false)}
-        onCreate={createMutation.mutate}
+        createMutation={createMutation}
         c={c}
       />
 
@@ -251,69 +250,94 @@ function ProfileRow({
 
 // ── Create Profile Modal ──
 
-function CreateProfileModal({ visible, onClose, onCreate, c }: { visible: boolean; onClose: () => void; onCreate: (input: { nickname: string; targetLevel: string; targetDeadline: string }) => void; c: ReturnType<typeof useThemeColors> }) {
+function CreateProfileModal({ visible, onClose, createMutation, c }: { visible: boolean; onClose: () => void; createMutation: ReturnType<typeof useCreateProfile>; c: ReturnType<typeof useThemeColors> }) {
   const [nickname, setNickname] = useState("");
-  const [targetLevel, setTargetLevel] = useState("B1");
+  const [targetLevel, setTargetLevel] = useState("B2");
   const [targetDeadline, setTargetDeadline] = useState("");
-  const LEVELS = ["A1", "A2", "B1", "B2", "C1"];
+  const LEVELS = ["B1", "B2", "C1"];
 
   function handleSubmit() {
-    if (!nickname.trim()) return;
-    if (!targetDeadline) return;
-    onCreate({ nickname: nickname.trim(), targetLevel, targetDeadline });
-    setNickname("");
-    setTargetLevel("B1");
-    setTargetDeadline("");
-    onClose();
+    const trimmed = nickname.trim();
+    if (!trimmed || !targetDeadline) return;
+    createMutation.mutate(
+      { nickname: trimmed, targetLevel, targetDeadline },
+      {
+        onSuccess: () => {
+          setNickname("");
+          setTargetLevel("B2");
+          setTargetDeadline("");
+          onClose();
+        },
+      },
+    );
   }
+
+  const canSubmit = nickname.trim().length > 0 && targetDeadline.length > 0 && !createMutation.isPending;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={s.modalOverlay}>
         <View style={[s.modalBox, { backgroundColor: c.card, borderColor: c.border }]}>
-          <Text style={[s.modalTitle, { color: c.foreground }]}>Tạo hồ sơ mới</Text>
-
-          <Text style={[s.inputLabel, { color: c.mutedForeground }]}>Tên hồ sơ</Text>
-          <TextInput
-            style={[s.input, { backgroundColor: c.surface, color: c.foreground, borderColor: c.border }]}
-            value={nickname}
-            onChangeText={setNickname}
-            placeholder="VD: Luyện thi VSTEP B2"
-            placeholderTextColor={c.placeholder}
-          />
-
-          <Text style={[s.inputLabel, { color: c.mutedForeground }]}>Mục tiêu</Text>
-          <View style={s.levelRow}>
-            {LEVELS.map((lvl) => (
-              <HapticTouchable
-                key={lvl}
-                onPress={() => setTargetLevel(lvl)}
-                style={[
-                  s.levelChip,
-                  {
-                    borderColor: targetLevel === lvl ? c.primary : c.border,
-                    backgroundColor: targetLevel === lvl ? c.primaryTint : c.surface,
-                  },
-                ]}
-              >
-                <Text style={[s.levelChipText, { color: targetLevel === lvl ? c.primary : c.mutedForeground }]}>{lvl}</Text>
-              </HapticTouchable>
-            ))}
+          <View style={[s.modalHeader, { backgroundColor: c.primaryTint }]}>
+            <View style={[s.modalAvatarPreview, { backgroundColor: c.primary }]}>
+              <Text style={s.modalAvatarText}>{nickname.trim().charAt(0).toUpperCase() || "?"}</Text>
+            </View>
+            <Text style={[s.modalTitle, { color: c.foreground }]}>Tạo mục tiêu mới</Text>
+            <Text style={[s.modalSub, { color: c.subtle }]}>Mỗi mục tiêu là một lộ trình riêng</Text>
           </View>
 
-          <Text style={[s.inputLabel, { color: c.mutedForeground }]}>Ngày thi dự kiến</Text>
-          <TextInput
-            style={[s.input, { backgroundColor: c.surface, color: c.foreground, borderColor: c.border }]}
-            value={targetDeadline}
-            onChangeText={setTargetDeadline}
-            placeholder="VD: 2025-12-31"
-            placeholderTextColor={c.placeholder}
-          />
+          <View style={s.modalBody}>
+            <Text style={[s.inputLabel, { color: c.mutedForeground }]}>Nickname</Text>
+            <TextInput
+              style={[s.input, { backgroundColor: c.surface, color: c.foreground, borderColor: c.border }]}
+              value={nickname}
+              onChangeText={setNickname}
+              placeholder="VD: Mục tiêu B2 tháng 6"
+              placeholderTextColor={c.placeholder}
+              maxLength={32}
+            />
+
+            <Text style={[s.inputLabel, { color: c.mutedForeground }]}>Mục tiêu trình độ</Text>
+            <View style={s.levelRow}>
+              {LEVELS.map((lvl) => (
+                <HapticTouchable
+                  key={lvl}
+                  onPress={() => setTargetLevel(lvl)}
+                  style={[
+                    s.levelChip,
+                    {
+                      borderColor: targetLevel === lvl ? c.primary : c.border,
+                      backgroundColor: targetLevel === lvl ? c.primaryTint : c.surface,
+                      borderBottomColor: targetLevel === lvl ? c.primaryDark : c.border,
+                    },
+                  ]}
+                >
+                  <Text style={[s.levelChipText, { color: targetLevel === lvl ? c.primary : c.mutedForeground }]}>{lvl}</Text>
+                </HapticTouchable>
+              ))}
+            </View>
+
+            <Text style={[s.inputLabel, { color: c.mutedForeground }]}>Ngày thi dự kiến</Text>
+            <TextInput
+              style={[s.input, { backgroundColor: c.surface, color: c.foreground, borderColor: c.border }]}
+              value={targetDeadline}
+              onChangeText={setTargetDeadline}
+              placeholder="YYYY-MM-DD (VD: 2026-12-31)"
+              placeholderTextColor={c.placeholder}
+              keyboardType="numbers-and-punctuation"
+            />
+
+            {createMutation.isError ? (
+              <Text style={[s.errorText, { color: c.destructive }]}>Không thể tạo hồ sơ. Vui lòng thử lại.</Text>
+            ) : null}
+          </View>
 
           <View style={s.modalBtns}>
-            <DepthButton variant="secondary" onPress={onClose} style={{ flex: 1 }}>Hủy</DepthButton>
-            <DepthButton onPress={handleSubmit} disabled={!nickname.trim() || !targetDeadline} style={{ flex: 1 }}>
-              Tạo
+            <DepthButton variant="secondary" onPress={onClose} style={{ flex: 1 }}>
+              Hủy
+            </DepthButton>
+            <DepthButton onPress={handleSubmit} disabled={!canSubmit} style={{ flex: 1 }}>
+              {createMutation.isPending ? "Đang tạo..." : "Tạo mục tiêu"}
             </DepthButton>
           </View>
         </View>
@@ -380,20 +404,25 @@ const s = StyleSheet.create({
   activeBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   activeBadgeText: { color: "#FFFFFF", fontSize: 10, fontFamily: fontFamily.bold },
   deleteBtn: { padding: spacing.xs },
-  createBtnText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   menuGroup: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, overflow: "hidden" },
   menuRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.base, paddingVertical: spacing.md },
   menuLeft: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   menuLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
   divider: { height: 1 },
   version: { fontSize: 11, textAlign: "center", marginTop: spacing.xl },
-  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center", padding: spacing.xl },
-  modalBox: { width: "100%", borderWidth: 2, borderRadius: radius.xl, padding: spacing.xl, gap: spacing.md },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", alignItems: "center", justifyContent: "center", padding: spacing.xl },
+  modalBox: { width: "100%", borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, overflow: "hidden" },
+  modalHeader: { alignItems: "center", paddingVertical: spacing.xl, gap: spacing.xs },
+  modalAvatarPreview: { width: 56, height: 56, borderRadius: radius.lg, alignItems: "center", justifyContent: "center", marginBottom: spacing.xs },
+  modalAvatarText: { color: "#FFFFFF", fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   modalTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, textAlign: "center" },
+  modalSub: { fontSize: fontSize.xs, textAlign: "center" },
+  modalBody: { padding: spacing.xl, gap: spacing.md },
   inputLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
-  input: { borderWidth: 2, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, fontSize: fontSize.sm },
-  levelRow: { flexDirection: "row", gap: spacing.xs },
-  levelChip: { flex: 1, alignItems: "center", paddingVertical: spacing.sm, borderRadius: radius.full, borderWidth: 2 },
-  levelChipText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
-  modalBtns: { flexDirection: "row", gap: spacing.md, marginTop: spacing.sm },
+  input: { borderWidth: 2, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, fontSize: fontSize.sm, fontFamily: fontFamily.medium },
+  levelRow: { flexDirection: "row", gap: spacing.sm },
+  levelChip: { flex: 1, alignItems: "center", paddingVertical: spacing.md, borderRadius: radius.md, borderWidth: 2, borderBottomWidth: 4 },
+  levelChipText: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold },
+  errorText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  modalBtns: { flexDirection: "row", gap: spacing.md, padding: spacing.xl, paddingTop: 0 },
 });
