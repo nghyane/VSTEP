@@ -218,7 +218,16 @@ Route::prefix('v1')->group(function () {
         });
 
         // Exam management
-        Route::post('/exams/import', [Admin\ExamController::class, 'import']);
+        Route::prefix('exams')->group(function () {
+            Route::post('/import', [Admin\ExamController::class, 'import']);
+            Route::get('/', [Admin\ExamController::class, 'index']);
+            Route::post('/', [Admin\ExamController::class, 'store']);
+            Route::get('/{id}', [Admin\ExamController::class, 'show'])->whereUuid('id');
+            Route::patch('/{id}', [Admin\ExamController::class, 'update'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamController::class, 'destroy'])->whereUuid('id');
+            Route::post('/{id}/publish', [Admin\ExamController::class, 'publish'])->whereUuid('id');
+            Route::post('/{id}/unpublish', [Admin\ExamController::class, 'unpublish'])->whereUuid('id');
+        });
 
         // Vocab management — Topics + Words + Exercises
         Route::prefix('vocab')->group(function () {
