@@ -7,22 +7,17 @@ namespace App\Services;
 use App\Enums\Role;
 use App\Exceptions\GoogleAccountConflictException;
 use App\Models\Profile;
-use App\Models\RefreshToken;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
 final class AuthService
 {
-    private const MAX_REFRESH_TOKENS = 3;
-
-    private const REFRESH_TOKEN_DAYS = 30;
-
     public function __construct(
         private readonly ProfileService $profileService,
         private readonly GoogleTokenVerifier $googleTokenVerifier,
+        private readonly TokenService $tokenService,
     ) {}
 
     /**
@@ -43,8 +38,8 @@ final class AuthService
 
             $profile = $this->profileService->createInitialProfile($user, $profileData);
 
-            $accessToken = $this->issueAccessToken($user, $profile);
-            [, $plainToken] = $this->createRefreshToken($user, null);
+            $accessToken = $this->tokenService->issueAccessToken($user, $profile);
+            [, $plainToken] = $this->tokenService->createRefreshToken($user, null);
 
             return [
                 'user' => $user,
@@ -83,8 +78,8 @@ final class AuthService
         }
         $profile = $this->resolveActiveProfile($user);
         $this->persistActiveProfile($user, $profile);
-        $accessToken = $this->issueAccessToken($user, $profile);
-        [, $plainToken] = $this->createRefreshToken($user, $userAgent);
+        $accessToken = $this->tokenService->issueAccessToken($user, $profile);
+        [, $plainToken] = $this->tokenService->createRefreshToken($user, $userAgent);
 
         return [
             'user' => $user,
@@ -106,7 +101,7 @@ final class AuthService
      */
     public function refresh(string $plainToken, ?string $userAgent = null): array
     {
-        $refreshToken = $this->findRefreshToken($plainToken);
+        $refreshToken = $this->tokenService->findRefreshToken($plainToken);
 
         if (! $refreshToken || $refreshToken->isExpired()) {
             $refreshToken?->delete();
@@ -128,11 +123,11 @@ final class AuthService
         }
 
         $refreshToken->delete();
-        [, $newPlainToken] = $this->createRefreshToken($user, $userAgent);
+        [, $newPlainToken] = $this->tokenService->createRefreshToken($user, $userAgent);
 
         // Đọc active profile đã persist trước; fallback về default chỉ khi user chưa từng switch.
         $profile = $this->resolveActiveProfile($user);
-        $accessToken = $this->issueAccessToken($user, $profile);
+        $accessToken = $this->tokenService->issueAccessToken($user, $profile);
 
         return [
             'access_token' => $accessToken,
@@ -170,7 +165,7 @@ final class AuthService
             ]);
         }
 
-        $oldToken = $this->findRefreshToken($oldRefreshToken, $user->id);
+        $oldToken = $this->tokenService->findRefreshToken($oldRefreshToken, $user->id);
         $oldToken?->delete();
 
         $this->persistActiveProfile($user, $profile);
@@ -181,8 +176,8 @@ final class AuthService
             JWTAuth::invalidate(JWTAuth::getToken());
         }
 
-        [, $newPlainToken] = $this->createRefreshToken($user, $userAgent);
-        $accessToken = $this->issueAccessToken($user, $profile);
+        [, $newPlainToken] = $this->tokenService->createRefreshToken($user, $userAgent);
+        $accessToken = $this->tokenService->issueAccessToken($user, $profile);
 
         return [
             'access_token' => $accessToken,
@@ -260,8 +255,8 @@ final class AuthService
 
             $profile = $this->resolveActiveProfile($user);
             $this->persistActiveProfile($user, $profile);
-            $accessToken = $this->issueAccessToken($user, $profile);
-            [, $plainToken] = $this->createRefreshToken($user, $userAgent);
+            $accessToken = $this->tokenService->issueAccessToken($user, $profile);
+            [, $plainToken] = $this->tokenService->createRefreshToken($user, $userAgent);
 
             return [
                 'user' => $user,
@@ -297,7 +292,7 @@ final class AuthService
         return DB::transaction(function () use ($user, $profileData) {
             $profile = $this->profileService->createInitialProfile($user, $profileData);
             $this->persistActiveProfile($user, $profile);
-            $accessToken = $this->issueAccessToken($user, $profile);
+            $accessToken = $this->tokenService->issueAccessToken($user, $profile);
 
             return [
                 'profile' => $profile,
@@ -309,7 +304,7 @@ final class AuthService
 
     public function logout(string $plainToken, User $user): void
     {
-        $refreshToken = $this->findRefreshToken($plainToken, $user->id);
+        $refreshToken = $this->tokenService->findRefreshToken($plainToken, $user->id);
         $refreshToken?->delete();
 
         JWTAuth::invalidate(JWTAuth::getToken());
@@ -357,62 +352,5 @@ final class AuthService
         }
 
         $user->update(['active_profile_id' => $profile?->id]);
-    }
-
-    private function issueAccessToken(User $user, ?Profile $profile): string
-    {
-        $claims = [
-            'role' => $user->role->value,
-            'active_profile_id' => $profile?->id,
-        ];
-
-        return JWTAuth::claims($claims)->fromUser($user);
-    }
-
-    private function findRefreshToken(string $plainToken, ?string $userId = null): ?RefreshToken
-    {
-        $hash = hash('sha256', $plainToken);
-        $query = RefreshToken::query()->where('token_hash', $hash);
-        if ($userId !== null) {
-            $query->where('user_id', $userId);
-        }
-
-        return $query->first();
-    }
-
-    /**
-     * @return array{0: RefreshToken, 1: string}
-     */
-    private function createRefreshToken(User $user, ?string $userAgent): array
-    {
-        return DB::transaction(function () use ($user, $userAgent) {
-            // Lock user row to serialize concurrent token issuance.
-            User::query()->whereKey($user->id)->lockForUpdate()->first();
-
-            RefreshToken::where('user_id', $user->id)
-                ->where('expires_at', '<', now())
-                ->delete();
-
-            $keep = self::MAX_REFRESH_TOKENS - 1;
-            $allIds = RefreshToken::where('user_id', $user->id)
-                ->orderByDesc('created_at')
-                ->pluck('id');
-            $staleIds = $allIds->slice($keep)->values();
-
-            if ($staleIds->isNotEmpty()) {
-                RefreshToken::whereIn('id', $staleIds)->delete();
-            }
-
-            $plainToken = Str::random(64);
-
-            $refreshToken = RefreshToken::create([
-                'user_id' => $user->id,
-                'token_hash' => hash('sha256', $plainToken),
-                'user_agent' => $userAgent,
-                'expires_at' => now()->addDays(self::REFRESH_TOKEN_DAYS),
-            ]);
-
-            return [$refreshToken, $plainToken];
-        });
     }
 }
