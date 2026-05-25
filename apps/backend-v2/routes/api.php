@@ -204,6 +204,17 @@ Route::prefix('v1')->group(function () {
         // Audio upload (presigned PUT to R2) — staff only.
         Route::post('/audio/presign-upload', [Admin\AudioUploadController::class, 'presignUpload']);
 
+        // Top-up packages CRUD (Plans tab).
+        Route::prefix('topup-packages')->group(function () {
+            Route::get('/', [Admin\TopupPackageController::class, 'index']);
+            Route::post('/', [Admin\TopupPackageController::class, 'store']);
+            Route::get('/{id}', [Admin\TopupPackageController::class, 'show']);
+            Route::patch('/{id}', [Admin\TopupPackageController::class, 'update']);
+            Route::delete('/{id}', [Admin\TopupPackageController::class, 'destroy']);
+            Route::post('/{id}/activate', [Admin\TopupPackageController::class, 'activate']);
+            Route::post('/{id}/deactivate', [Admin\TopupPackageController::class, 'deactivate']);
+        });
+
         // System config — ADMIN ONLY (nested middleware role:admin overrides parent role:staff)
         Route::middleware('role:admin')->prefix('system-config')->group(function () {
             Route::get('/', [Admin\SystemConfigController::class, 'index']);
