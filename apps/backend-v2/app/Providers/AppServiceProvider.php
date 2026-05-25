@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Ai\ChatCompletionsGateway;
+use App\Ai\AiClient;
+use App\Ai\AiClientManager;
+use App\Ai\AiConfigValidator;
 use App\Models\Profile;
 use App\Services\Admin\Course\AdminCourseBookingService;
 use App\Services\Admin\Course\AdminCourseEnrollmentService;
@@ -24,13 +26,10 @@ use App\Services\SpeechToTextService;
 use App\Srs\FsrsConfig;
 use Carbon\CarbonImmutable;
 use Google\Client as GoogleClient;
-use Illuminate\Contracts\Events\Dispatcher;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\ServiceProvider;
-use Laravel\Ai\AiManager;
-use Laravel\Ai\Providers\OpenAiProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -49,6 +48,9 @@ class AppServiceProvider extends ServiceProvider
 
             return new GoogleClient(['client_id' => $clientId]);
         });
+
+        // AI Client — provider-agnostic gateway.
+        $this->app->singleton(AiClient::class, AiClientManager::class);
 
         // Default LLM grader implementation.
         $this->app->bind(LlmGrader::class, LlmGradingService::class);
@@ -69,22 +71,15 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AdminCourseBookingInterface::class, AdminCourseBookingService::class);
         $this->app->bind(AdminCourseEnrollmentInterface::class, AdminCourseEnrollmentService::class);
         $this->app->bind(AdminCourseScheduleInterface::class, AdminCourseScheduleService::class);
-
-        $this->app->resolving(AiManager::class, function (AiManager $ai, $app): void {
-            $ai->extend('chat-completions', function ($app, array $config) {
-                return new OpenAiProvider(
-                    new ChatCompletionsGateway($app['events']),
-                    $config,
-                    $app->make(Dispatcher::class),
-                );
-            });
-        });
     }
 
     public function boot(): void
     {
         Model::shouldBeStrict(! app()->isProduction());
         Date::use(CarbonImmutable::class);
+
+        // Fail-fast: validate AI config at boot.
+        (new AiConfigValidator)->validate();
 
         Request::macro('profile', function (): Profile {
             /** @var Profile|null $profile */

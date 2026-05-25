@@ -4,32 +4,109 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Default AI Provider Names
+    | AI Connections
     |--------------------------------------------------------------------------
     |
-    | Here you may specify which of the AI providers below should be the
-    | default for AI operations when no explicit provider is provided
-    | for the operation. This should be any provider defined below.
+    | Transport layer — URL + credentials. Provider-agnostic.
+    | Same connection can serve multiple wire formats.
     |
     */
 
-    'default' => 'bifrost',
-    'default_for_images' => 'gemini',
-    'default_for_audio' => 'openai',
-    'default_for_transcription' => 'openai',
-    'default_for_embeddings' => 'openai',
-    'default_for_reranking' => 'cohere',
+    'connections' => [
+        'packy' => [
+            'url' => env('PACKY_URL', 'https://www.packyapi.com'),
+            'key' => env('PACKY_API_KEY', ''),
+        ],
+        'openrouter' => [
+            'url' => env('OPENROUTER_URL', 'https://openrouter.ai/api'),
+            'key' => env('OPENROUTER_API_KEY', ''),
+        ],
+        'local' => [
+            'url' => env('LOCAL_AI_URL', 'http://localhost:11434'),
+            'key' => env('LOCAL_AI_KEY', ''),
+        ],
+    ],
 
     /*
     |--------------------------------------------------------------------------
-    | Caching
+    | AI Models
     |--------------------------------------------------------------------------
     |
-    | Below you may configure caching strategies for AI related operations
-    | such as embedding generation. You are free to adjust these values
-    | based on your application's available caching stores and needs.
+    | Each model declares: connection + wire format + model ID.
+    | Wire format is a property of the model, not the service.
+    |
+    | Supported wires: responses, chat, messages
     |
     */
+
+    'models' => [
+        'gpt-5-4' => [
+            'connection' => 'packy',
+            'wire' => 'responses',
+            'id' => 'gpt-5.4',
+            'thinking' => 'none',
+        ],
+        'gpt-5-4-mini' => [
+            'connection' => 'packy',
+            'wire' => 'responses',
+            'id' => 'gpt-5.4-mini',
+            'thinking' => 'none',
+        ],
+        'gpt-4o' => [
+            'connection' => 'packy',
+            'wire' => 'responses',
+            'id' => 'gpt-4o',
+            'thinking' => 'none',
+        ],
+        'deepseek-v4-pro' => [
+            'connection' => 'packy',
+            'wire' => 'messages',
+            'id' => 'deepseek-v4-pro',
+            'thinking' => 'low',
+        ],
+        'claude-sonnet' => [
+            'connection' => 'packy',
+            'wire' => 'messages',
+            'id' => 'claude-sonnet-4-20250514',
+            'thinking' => 'none',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | AI Services
+    |--------------------------------------------------------------------------
+    |
+    | Each service maps to a model name above. Domain code references
+    | service names only — never provider/wire/connection directly.
+    |
+    */
+
+    'services' => [
+        'grading' => [
+            'model' => env('AI_GRADING_MODEL', 'gpt-5-4'),
+            'timeout' => 60,
+        ],
+        'conversation' => [
+            'model' => env('AI_CONVERSATION_MODEL', 'gpt-5-4-mini'),
+            'timeout' => 30,
+        ],
+        'pronunciation' => [
+            'model' => env('AI_PRONUNCIATION_MODEL', 'gpt-5-4-mini'),
+            'timeout' => 30,
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Laravel AI Framework (kept for transcription/embeddings)
+    |--------------------------------------------------------------------------
+    */
+
+    'default' => 'openai',
+    'default_for_audio' => 'openai',
+    'default_for_transcription' => 'openai',
+    'default_for_embeddings' => 'openai',
 
     'caching' => [
         'embeddings' => [
@@ -38,105 +115,11 @@ return [
         ],
     ],
 
-    /*
-    |--------------------------------------------------------------------------
-    | AI Providers
-    |--------------------------------------------------------------------------
-    |
-    | Below are each of your AI providers defined for this application. Each
-    | represents an AI provider and API key combination which can be used
-    | to perform tasks like text, image, and audio creation via agents.
-    |
-    */
-
     'providers' => [
-        'anthropic' => [
-            'driver' => 'anthropic',
-            'key' => env('ANTHROPIC_API_KEY'),
-        ],
-
-        'azure' => [
-            'driver' => 'azure',
-            'key' => env('AZURE_OPENAI_API_KEY'),
-            'url' => env('AZURE_OPENAI_URL'),
-            'api_version' => env('AZURE_OPENAI_API_VERSION', '2024-10-21'),
-            'deployment' => env('AZURE_OPENAI_DEPLOYMENT', 'gpt-4o'),
-            'embedding_deployment' => env('AZURE_OPENAI_EMBEDDING_DEPLOYMENT', 'text-embedding-3-small'),
-        ],
-
-        'cohere' => [
-            'driver' => 'cohere',
-            'key' => env('COHERE_API_KEY'),
-        ],
-
-        'deepseek' => [
-            'driver' => 'deepseek',
-            'key' => env('DEEPSEEK_API_KEY'),
-        ],
-
-        'eleven' => [
-            'driver' => 'eleven',
-            'key' => env('ELEVENLABS_API_KEY'),
-        ],
-
-        'gemini' => [
-            'driver' => 'gemini',
-            'key' => env('GEMINI_API_KEY'),
-        ],
-
-        'groq' => [
-            'driver' => 'groq',
-            'key' => env('GROQ_API_KEY'),
-        ],
-
-        'jina' => [
-            'driver' => 'jina',
-            'key' => env('JINA_API_KEY'),
-        ],
-
-        'mistral' => [
-            'driver' => 'mistral',
-            'key' => env('MISTRAL_API_KEY'),
-        ],
-
-        'ollama' => [
-            'driver' => 'ollama',
-            'key' => env('OLLAMA_API_KEY', ''),
-            'url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
-        ],
-
-        'bifrost' => [
-            'driver' => 'chat-completions',
-            'key' => env('BIFROST_API_KEY', ''),
-            'url' => env('BIFROST_URL', 'http://localhost:8080/v1'),
-            'models' => [
-                'text' => [
-                    'default' => env('BIFROST_GRADING_MODEL', 'Packyapi/gpt-5.4'),
-                    'grading' => env('BIFROST_GRADING_MODEL', 'Packyapi/gpt-5.4'),
-                    'conversation' => env('BIFROST_CONVERSATION_MODEL', 'Packyapi/gpt-5.4-mini'),
-                ],
-            ],
-        ],
-
         'openai' => [
             'driver' => 'openai',
             'key' => env('OPENAI_API_KEY'),
             'url' => env('OPENAI_BASE_URL'),
-        ],
-
-        'openrouter' => [
-            'driver' => 'openrouter',
-            'key' => env('OPENROUTER_API_KEY'),
-        ],
-
-        'voyageai' => [
-            'driver' => 'voyageai',
-            'key' => env('VOYAGEAI_API_KEY'),
-        ],
-
-        'xai' => [
-            'driver' => 'xai',
-            'key' => env('XAI_API_KEY'),
         ],
     ],
 
