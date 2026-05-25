@@ -8,7 +8,7 @@ use App\Enums\GradingJobStatus;
 use App\Exceptions\GradingFailedException;
 use App\Jobs\GradeJob;
 use App\Models\GradingJob;
-use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -51,14 +51,10 @@ final class GradingService
                 'submission_id' => $submissionId,
                 'status' => GradingJobStatus::Pending,
             ]);
-        } catch (QueryException $e) {
-            // Partial unique index violation → already has active job for this submission.
-            if ($this->isUniqueViolation($e)) {
-                throw ValidationException::withMessages([
-                    'submission' => ['A grading job is already pending or processing for this submission.'],
-                ]);
-            }
-            throw $e;
+        } catch (UniqueConstraintViolationException) {
+            throw ValidationException::withMessages([
+                'submission' => ['A grading job is already pending or processing for this submission.'],
+            ]);
         }
 
         // Defer dispatch when inside a transaction — guarantees grading_jobs
@@ -96,12 +92,5 @@ final class GradingService
 
         // Persist result + mark ready — strategy controls transaction internally.
         $strategy->persistResult($job, $resultData);
-    }
-
-    private function isUniqueViolation(QueryException $e): bool
-    {
-        $sqlState = $e->errorInfo[0] ?? null;
-
-        return $sqlState === '23505';
     }
 }

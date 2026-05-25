@@ -10,7 +10,7 @@ use App\Models\CourseEnrollment;
 use App\Models\CourseEnrollmentOrder;
 use App\Models\Profile;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -86,12 +86,8 @@ final class CourseOrderService
                     ? 'mock_'.Str::random(16)
                     : null,
             ]);
-        } catch (QueryException $exception) {
-            if ($this->isUniqueConstraintViolation($exception)) {
-                throw ValidationException::withMessages(['course' => ['Bạn đang có đơn thanh toán chờ xác nhận cho khóa học này.']]);
-            }
-
-            throw $exception;
+        } catch (UniqueConstraintViolationException) {
+            throw ValidationException::withMessages(['course' => ['Bạn đang có đơn thanh toán chờ xác nhận cho khóa học này.']]);
         }
     }
 
@@ -169,14 +165,6 @@ final class CourseOrderService
             ->with('course')
             ->orderByDesc('created_at')
             ->get();
-    }
-
-    private function isUniqueConstraintViolation(QueryException $exception): bool
-    {
-        $sqlState = $exception->errorInfo[0] ?? null;
-        $driverCode = $exception->errorInfo[1] ?? null;
-
-        return $sqlState === '23505' || $driverCode === 19;
     }
 
     private function isEnrolled(Profile $profile, Course $course): bool
