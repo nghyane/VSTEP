@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Tests;
 
-use App\Ai\Agents\ConversationReviewAgent;
-use App\Ai\Agents\ConversationTurnAgent;
+use App\Ai\AiClient;
 use App\Services\Grading\LlmGrader;
 use App\Services\SpeechToText;
 use Database\Seeders\SystemConfigSeeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
-use Tests\Support\FakeConversationReviewAgent;
-use Tests\Support\FakeConversationTurnAgent;
+use Tests\Support\FakeAiClient;
 use Tests\Support\FakeLlmGrader;
 use Tests\Support\FakeSpeechToText;
 
@@ -24,7 +22,6 @@ abstract class TestCase extends BaseTestCase
 
         $this->app->bind(LlmGrader::class, FakeLlmGrader::class);
         $this->app->bind(SpeechToText::class, FakeSpeechToText::class);
-        $this->app->bind(ConversationTurnAgent::class, FakeConversationTurnAgent::class);
-        $this->app->bind(ConversationReviewAgent::class, FakeConversationReviewAgent::class);
+        $this->app->singleton(AiClient::class, FakeAiClient::class);
     }
 }

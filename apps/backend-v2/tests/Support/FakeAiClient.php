@@ -1,0 +1,96 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Support;
+
+use App\Ai\AiClient;
+
+/**
+ * Fake AiClient for testing — returns deterministic responses
+ * without making any HTTP calls.
+ */
+final class FakeAiClient implements AiClient
+{
+    public function structured(string $service, string $prompt, array $schema, ?string $instructions = null): array
+    {
+        return match ($service) {
+            'grading' => $this->fakeGradingResponse(),
+            'conversation' => $this->fakeConversationResponse($prompt),
+            'pronunciation' => $this->fakePronunciationResponse(),
+            default => [],
+        };
+    }
+
+    public function text(string $service, string $prompt, ?string $instructions = null): string
+    {
+        return match ($service) {
+            'conversation' => json_encode($this->fakeConversationResponse($prompt)),
+            'pronunciation' => $this->fakePronunciationText($prompt),
+            default => 'fake response',
+        };
+    }
+
+    private function fakeGradingResponse(): array
+    {
+        return [
+            'rubric_scores' => [
+                'task_achievement' => 3.0,
+                'coherence' => 2.5,
+                'lexical' => 2.5,
+                'grammar' => 3.0,
+            ],
+            'overall_band' => 7.0,
+            'strengths' => ['Good structure'],
+            'improvements' => [['message' => 'Use more linking words', 'explanation' => 'Improve coherence']],
+            'rewrites' => [],
+            'annotations' => [],
+        ];
+    }
+
+    private function fakeConversationResponse(string $prompt): array
+    {
+        // Detect if this is a turn or review prompt
+        if (str_contains($prompt, 'User just said')) {
+            return [
+                'feedback' => [
+                    'word_count' => ['used' => 1, 'target' => 2],
+                    'grammar_ok' => true,
+                    'grammar_corrections' => [],
+                    'vocab_check' => [],
+                    'better' => 'Hello, how are you?',
+                    'user_ipa' => 'hɛˈloʊ',
+                    'better_ipa' => 'hɛˈloʊ, haʊ ɑːr juː',
+                ],
+                'reply' => "I'm doing great, thank you! How about you?",
+                'reply_ipa' => 'aɪm ˈduɪŋ ɡreɪt, θæŋk juː',
+                'suggested_words' => ['I am fine', 'Not bad'],
+            ];
+        }
+
+        return [
+            'strengths' => ['Good vocabulary usage'],
+            'improvements' => ['Work on pronunciation'],
+            'corrected_sentences' => [],
+            'tip' => 'Keep practicing!',
+        ];
+    }
+
+    private function fakePronunciationResponse(): array
+    {
+        return [
+            'pronunciation' => 'Phát âm tốt',
+            'intonation' => 'Ngữ điệu ổn',
+            'tip' => 'Tiếp tục luyện tập',
+        ];
+    }
+
+    private function fakePronunciationText(string $prompt): string
+    {
+        if (str_contains($prompt, 'IPA phonetic transcription')) {
+            return 'hɛˈloʊ wɜːrld';
+        }
+
+        return json_encode($this->fakePronunciationResponse());
+    }
+}
