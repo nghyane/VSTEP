@@ -1,4 +1,5 @@
 import { DeleteOutlined } from "@ant-design/icons"
+import { Link } from "@tanstack/react-router"
 import { Switch as AntdSwitch, Tag, Tooltip, Typography } from "antd"
 import type { ColumnsType } from "antd/es/table"
 import { Button } from "#/components/Button"
@@ -17,7 +18,9 @@ export function getExamColumns({ togglePublish, setDeleting }: ColumnActions): C
 			key: "title",
 			render: (v: string, r) => (
 				<div>
-					<strong>{v}</strong>
+					<Link to="/exams/$examId" params={{ examId: r.id }} style={{ fontWeight: 600 }}>
+						{v}
+					</Link>
 					<br />
 					<Typography.Text type="secondary" style={{ fontFamily: "monospace", fontSize: 12 }}>
 						{r.slug}

@@ -227,6 +227,13 @@ Route::prefix('v1')->group(function () {
             Route::delete('/{id}', [Admin\ExamController::class, 'destroy'])->whereUuid('id');
             Route::post('/{id}/publish', [Admin\ExamController::class, 'publish'])->whereUuid('id');
             Route::post('/{id}/unpublish', [Admin\ExamController::class, 'unpublish'])->whereUuid('id');
+
+            // Version management
+            Route::get('/{examId}/versions', [Admin\ExamVersionController::class, 'index'])->whereUuid('examId');
+            Route::post('/{examId}/versions', [Admin\ExamVersionController::class, 'store'])->whereUuid('examId');
+            Route::get('/{examId}/versions/{versionId}', [Admin\ExamVersionController::class, 'show'])->whereUuid(['examId', 'versionId']);
+            Route::post('/{examId}/versions/{versionId}/activate', [Admin\ExamVersionController::class, 'setActive'])->whereUuid(['examId', 'versionId']);
+            Route::delete('/{examId}/versions/{versionId}', [Admin\ExamVersionController::class, 'destroy'])->whereUuid(['examId', 'versionId']);
         });
 
         // Vocab management — Topics + Words + Exercises

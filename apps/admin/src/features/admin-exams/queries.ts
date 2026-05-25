@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { AdminExam, ListExamsFilters } from "#/features/admin-exams/types"
+import type { AdminExam, ExamVersion, ListExamsFilters } from "#/features/admin-exams/types"
 import { type ApiResponse, api, type PaginatedResponse } from "#/lib/api"
 
 function buildExamListSearch(filters: ListExamsFilters): string {
@@ -24,4 +24,17 @@ export const adminExamDetailQuery = (id: string) =>
 	queryOptions({
 		queryKey: ["admin", "exams", "detail", id],
 		queryFn: () => api.get(`admin/exams/${id}`).json<ApiResponse<AdminExam>>(),
+	})
+
+export const adminExamVersionsQuery = (examId: string) =>
+	queryOptions({
+		queryKey: ["admin", "exams", examId, "versions"],
+		queryFn: () => api.get(`admin/exams/${examId}/versions`).json<ApiResponse<ExamVersion[]>>(),
+	})
+
+export const adminExamVersionDetailQuery = (examId: string, versionId: string) =>
+	queryOptions({
+		queryKey: ["admin", "exams", examId, "versions", versionId],
+		queryFn: () => api.get(`admin/exams/${examId}/versions/${versionId}`).json<ApiResponse<ExamVersion>>(),
+		enabled: !!versionId,
 	})
