@@ -194,6 +194,18 @@ function RightPanel({
 	onSelect: (id: string) => void
 	selected: TopupPackage
 }) {
+	const basePackage = packages.find((p) => p.bonus_coins === 0) ?? packages[0]
+	const basePricePerCoin = Math.round(basePackage.amount_vnd / basePackage.total_coins)
+
+	// Best value = highest savings percentage.
+	const bestValueId = packages
+		.filter((p) => p.bonus_coins > 0)
+		.sort((a, b) => {
+			const aSavings = Math.round(((basePricePerCoin - Math.round(a.amount_vnd / a.total_coins)) / basePricePerCoin) * 100)
+			const bSavings = Math.round(((basePricePerCoin - Math.round(b.amount_vnd / b.total_coins)) / basePricePerCoin) * 100)
+			return bSavings - aSavings
+		})[0]?.id ?? null
+
 	return (
 		<div className="flex flex-col gap-6 p-6 md:p-8">
 			<div>
@@ -238,6 +250,8 @@ function RightPanel({
 						pack={pack}
 						selected={selectedId === pack.id}
 						onSelect={() => onSelect(pack.id)}
+						basePricePerCoin={basePricePerCoin}
+						isBestValue={pack.id === bestValueId}
 					/>
 				))}
 			</div>
@@ -273,14 +287,19 @@ function PackCard({
 	pack,
 	selected,
 	onSelect,
+	basePricePerCoin,
+	isBestValue,
 }: {
 	pack: TopupPackage
 	selected: boolean
 	onSelect: () => void
+	basePricePerCoin: number
+	isBestValue: boolean
 }) {
-	const highlight = pack.bonus_coins > 0 && pack.bonus_coins >= 100
 	const pricePerCoin = Math.round(pack.amount_vnd / pack.total_coins)
-	const savingsPct = pack.bonus_coins > 0 ? Math.max(0, Math.round(((300 - pricePerCoin) / 300) * 100)) : 0
+	const savingsPct = pack.bonus_coins > 0
+		? Math.max(0, Math.round(((basePricePerCoin - pricePerCoin) / basePricePerCoin) * 100))
+		: 0
 
 	return (
 		<button
@@ -294,7 +313,7 @@ function PackCard({
 					: "border-border border-b-4 hover:border-primary/40",
 			)}
 		>
-			{highlight && (
+			{isBestValue && (
 				<span className="absolute -top-2.5 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
 					<StaticIcon name="trophy" size="xs" className="h-3 w-auto" />
 					Best value
