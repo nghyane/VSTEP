@@ -8,11 +8,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "@tanstack/react-query";
 import { Audio } from "expo-av";
+import * as Speech from "expo-speech";
 import { resolveAssetUrl } from "@/lib/asset-url";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
-import { FocusHeader } from "@/components/FocusHeader";
+import { FocusHeader, TtsBar } from "@/components/FocusHeader";
 import { McqQuestionCard } from "@/components/McqQuestionCard";
 import { McqResultCard } from "@/components/McqResultCard";
 import { SubmitFooter } from "@/components/SubmitFooter";
@@ -115,12 +116,18 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
   const [audioError, setAudioError] = useState<string | null>(null);
   const [unlockedSupport, setUnlockedSupport] = useState<number[]>([]);
   const [showSub, setShowSub] = useState(false);
+  const [ttsPlaying, setTtsPlaying] = useState(false);
   const progressAnim = useRef(new Animated.Value(0)).current;
 
   const hasSub = !!exercise.transcript || (exercise.wordTimestamps ?? []).length > 0;
+  const hasAudio = !!exercise.audioUrl;
+  const hasTTS = !hasAudio && !!exercise.transcript;
 
   useEffect(() => {
-    if (!exercise.audioUrl) return;
+    if (!hasAudio) {
+      if (!hasTTS) setAudioError("Bài này chưa có audio.");
+      return;
+    }
     setAudioError(null);
     const audioUrl = resolveAssetUrl(exercise.audioUrl);
     let s: Audio.Sound | null = null;
@@ -156,6 +163,22 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
   }, [exercise.audioUrl]);
 
   async function togglePlay() {
+    if (hasTTS) {
+      // TTS mode — read transcript aloud
+      if (ttsPlaying) {
+        Speech.stop();
+        setTtsPlaying(false);
+      } else {
+        Speech.speak(exercise.transcript, {
+          language: "en-US",
+          onDone: () => setTtsPlaying(false),
+          onStopped: () => setTtsPlaying(false),
+          onError: () => setTtsPlaying(false),
+        });
+        setTtsPlaying(true);
+      }
+      return;
+    }
     if (!sound) return;
     try {
       await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
@@ -183,6 +206,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
         accentColor={COLOR}
         onClose={onBack}
         c={c}
+        topInset={insets.top}
       />
 
       {/* Subtitle toggle */}
@@ -195,7 +219,22 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
       )}
 
       <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]}>
-        {/* Audio card */}
+        {/* Audio / TTS card */}
+        {hasTTS ? (
+          <View style={[s.audioCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
+            <Text style={[s.audioPartLabel, { color: COLOR }]}>Part {exercise.part}</Text>
+            <Text style={[s.audioTitle, { color: c.foreground }]}>{exercise.title}</Text>
+            {exercise.description && (
+              <Text style={[s.audioDesc, { color: c.mutedForeground }]}>{exercise.description}</Text>
+            )}
+            <TtsBar
+              playing={ttsPlaying}
+              onToggle={togglePlay}
+              accentColor={COLOR}
+              c={c}
+            />
+          </View>
+        ) : (
         <View style={[s.audioCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
           <Text style={[s.audioPartLabel, { color: COLOR }]}>Part {exercise.part}</Text>
           <Text style={[s.audioTitle, { color: c.foreground }]}>{exercise.title}</Text>
@@ -227,6 +266,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
           </View>
           {audioError && <Text style={[s.audioError, { color: c.destructive }]}>{audioError}</Text>}
         </View>
+        )}
 
         {/* Result — mirrors FE v3 ListeningInProgress celebration card */}
         {session.result && (

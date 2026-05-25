@@ -74,12 +74,11 @@ export default function ReadingListScreen() {
                   const p = progress?.[ex.id];
                   const pct = p && p.total > 0 ? Math.round((p.score / p.total) * 100) : null;
                   return (
-                    <HapticTouchable
-                      key={ex.id}
-                      scalePress
-                      style={s.cardWrapper}
-                      onPress={() => router.push(`/(app)/practice/reading/${ex.id}` as any)}
-                    >
+                    <View key={ex.id} style={s.cardWrapper}>
+                      <HapticTouchable
+                        scalePress
+                        onPress={() => router.push(`/(app)/practice/reading/${ex.id}` as any)}
+                      >
                       <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
                         <View style={s.cardTop}>
                           <View style={[s.partBadge, { backgroundColor: COLOR + "18" }]}>
@@ -103,6 +102,7 @@ export default function ReadingListScreen() {
                         </View>
                       </View>
                     </HapticTouchable>
+                  </View>
                   );
                 })}
               </View>

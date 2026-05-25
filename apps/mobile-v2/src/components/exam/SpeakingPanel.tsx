@@ -133,7 +133,7 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
       await fetch(presign.uploadUrl, {
         method: "PUT",
         body: audioBlob,
-        headers: { "Content-Type": "audio/webm" },
+        headers: { "Content-Type": "audio/mp4" },
       }).then((res) => {
         if (!res.ok) throw new Error("Upload failed");
       });

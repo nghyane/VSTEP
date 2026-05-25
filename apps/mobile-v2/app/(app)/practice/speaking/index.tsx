@@ -65,28 +65,34 @@ export default function SpeakingListScreen() {
       </View>
 
       <View style={s.quickActions}>
-        <HapticTouchable
-          scalePress
-          style={[s.quickCard, { backgroundColor: c.card, borderColor: c.border }]}
-          onPress={() => router.push("/(app)/practice/speaking/shadowing" as never)}
-        >
-          <Ionicons name="volume-high-outline" size={18} color={speakingColor} />
-          <View style={s.quickCopy}>
-            <Text style={[s.quickText, { color: c.foreground }]}>Shadowing</Text>
-            <Text style={[s.quickSub, { color: c.mutedForeground }]}>Nghe - nhắc lại - check độ khớp</Text>
-          </View>
-        </HapticTouchable>
-        <HapticTouchable
-          scalePress
-          style={[s.quickCard, { backgroundColor: c.card, borderColor: c.border }]}
-          onPress={() => router.push("/(app)/practice/speaking/history" as never)}
-        >
-          <Ionicons name="time-outline" size={18} color={speakingColor} />
-          <View style={s.quickCopy}>
-            <Text style={[s.quickText, { color: c.foreground }]}>Lịch sử</Text>
-            <Text style={[s.quickSub, { color: c.mutedForeground }]}>Drill và VSTEP đã nộp</Text>
-          </View>
-        </HapticTouchable>
+        <View style={[s.quickCardWrapper, { backgroundColor: c.card, borderColor: c.border }]}>
+          <HapticTouchable
+            scalePress
+            onPress={() => router.push("/(app)/practice/speaking/shadowing" as never)}
+          >
+            <View style={s.quickCardInner}>
+              <Ionicons name="volume-high-outline" size={18} color={speakingColor} />
+              <View style={s.quickCopy}>
+                <Text style={[s.quickText, { color: c.foreground }]}>Shadowing</Text>
+                <Text style={[s.quickSub, { color: c.mutedForeground }]}>Nghe - nhắc lại - check độ khớp</Text>
+              </View>
+            </View>
+          </HapticTouchable>
+        </View>
+        <View style={[s.quickCardWrapper, { backgroundColor: c.card, borderColor: c.border }]}>
+          <HapticTouchable
+            scalePress
+            onPress={() => router.push("/(app)/practice/speaking/history" as never)}
+          >
+            <View style={s.quickCardInner}>
+              <Ionicons name="time-outline" size={18} color={speakingColor} />
+              <View style={s.quickCopy}>
+                <Text style={[s.quickText, { color: c.foreground }]}>Lịch sử</Text>
+                <Text style={[s.quickSub, { color: c.mutedForeground }]}>Drill và VSTEP đã nộp</Text>
+              </View>
+            </View>
+          </HapticTouchable>
+        </View>
       </View>
 
       <View>
@@ -99,12 +105,12 @@ export default function SpeakingListScreen() {
         {!scenariosLoading && filteredScenarios && filteredScenarios.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.scenarioRow}>
             {filteredScenarios.map((scenario) => (
-              <HapticTouchable
-                key={scenario.id}
-                scalePress
-                style={[s.scenarioCard, { backgroundColor: c.card, borderColor: c.border }]}
-                onPress={() => router.push(`/(app)/practice/speaking/conversation/${scenario.id}` as never)}
-              >
+              <View key={scenario.id} style={[s.scenarioCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                <HapticTouchable
+                  scalePress
+                  onPress={() => router.push(`/(app)/practice/speaking/conversation/${scenario.id}` as never)}
+                >
+                <View style={s.scenarioInner}>
                 <View style={[s.avatar, { backgroundColor: c.coinTint }]}>
                   <Ionicons name="chatbubbles-outline" size={20} color={speakingText} />
                 </View>
@@ -120,7 +126,9 @@ export default function SpeakingListScreen() {
                     <Text style={[s.doneBadgeText, { color: c.primaryDark }]}>Đã luyện</Text>
                   </View>
                 ) : null}
+              </View>
               </HapticTouchable>
+            </View>
             ))}
           </ScrollView>
         )}
@@ -135,19 +143,22 @@ export default function SpeakingListScreen() {
         )}
       </View>
 
-      <HapticTouchable
-        scalePress
-        style={[s.wideAction, { backgroundColor: c.card, borderColor: c.border }]}
-        onPress={() => router.push("/(app)/practice/speaking/drills" as never)}
-      >
-        <View style={[s.actionIcon, { backgroundColor: c.coinTint }]}>
-          <Ionicons name="flash-outline" size={20} color={speakingText} />
-        </View>
-        <View style={s.quickCopy}>
-          <Text style={[s.quickText, { color: c.foreground }]}>Speaking Drills</Text>
-          <Text style={[s.quickSub, { color: c.mutedForeground }]}>Dùng backend drill thật, không mock đâu nha.</Text>
+      <View style={[s.wideAction, { backgroundColor: c.card, borderColor: c.border }]}>
+        <HapticTouchable
+          scalePress
+          onPress={() => router.push("/(app)/practice/speaking/drills" as never)}
+        >
+          <View style={s.wideActionInner}>
+          <View style={[s.actionIcon, { backgroundColor: c.coinTint }]}>
+            <Ionicons name="flash-outline" size={20} color={speakingText} />
+          </View>
+          <View style={s.quickCopy}>
+            <Text style={[s.quickText, { color: c.foreground }]}>Speaking Drills</Text>
+            <Text style={[s.quickSub, { color: c.mutedForeground }]}>Shadowing và dictation theo câu ngắn, có chấm điểm</Text>
+          </View>
         </View>
       </HapticTouchable>
+      </View>
 
       {isLoading && (
         <View style={s.center}><ActivityIndicator color={speakingColor} size="large" /></View>
@@ -164,12 +175,11 @@ export default function SpeakingListScreen() {
           <Text style={[s.sectionLabel, { color: c.subtle }]}>VSTEP SPEAKING</Text>
           <View style={s.cardGrid}>
             {tasks.map((task) => (
-              <HapticTouchable
-                key={task.id}
-                scalePress
-                style={s.cardWrapper}
-                onPress={() => router.push(`/(app)/practice/speaking/${task.id}` as never)}
-              >
+              <View key={task.id} style={s.cardWrapper}>
+                <HapticTouchable
+                  scalePress
+                  onPress={() => router.push(`/(app)/practice/speaking/${task.id}` as never)}
+                >
                 <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.border }]}>
                   <View style={[s.partBadge, { backgroundColor: c.coinTint }]}>
                     <Text style={[s.partBadgeText, { color: speakingText }]}>Part {task.part}</Text>
@@ -183,6 +193,7 @@ export default function SpeakingListScreen() {
                   </View>
                 </View>
               </HapticTouchable>
+            </View>
             ))}
           </View>
         </View>
@@ -207,14 +218,18 @@ const s = StyleSheet.create({
   center: { paddingVertical: spacing["2xl"], alignItems: "center" },
   quickActions: { flexDirection: "row", gap: spacing.sm },
   quickCard: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.md },
-  wideAction: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.md },
+  quickCardWrapper: { flex: 1, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, overflow: "hidden" },
+  quickCardInner: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md },
+  wideAction: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, overflow: "hidden" },
+  wideActionInner: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md },
   quickCopy: { flex: 1, gap: 2 },
   quickText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   quickSub: { fontSize: 11, lineHeight: 15 },
   inlineLoader: { alignSelf: "flex-start", marginVertical: spacing.md },
   sectionLabel: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1, marginBottom: spacing.md },
   scenarioRow: { gap: spacing.md, paddingRight: spacing.xl },
-  scenarioCard: { width: 220, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.base, gap: spacing.sm },
+  scenarioCard: { width: 220, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, overflow: "hidden" },
+  scenarioInner: { padding: spacing.base, gap: spacing.sm },
   avatar: { width: 40, height: 40, borderRadius: radius.full, alignItems: "center", justifyContent: "center" },
   scenarioTitle: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold, lineHeight: 21 },
   scenarioMeta: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },

@@ -123,10 +123,16 @@ export function MicTest() {
   const [audioUri, setAudioUri] = useState<string | null>(null);
   const [playback, setPlayback] = useState<Audio.Sound | null>(null);
 
+  const [permissionError, setPermissionError] = useState<string | null>(null);
+
   async function startRecording() {
+    setPermissionError(null);
     try {
       const perm = await Audio.requestPermissionsAsync();
-      if (perm.status !== "granted") return;
+      if (!perm.granted) {
+        setPermissionError("Chưa cấp quyền micro. Vào Cài đặt > VSTEP > Micro để bật.");
+        return;
+      }
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true });
       const { recording: rec } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY,
@@ -134,8 +140,10 @@ export function MicTest() {
       setRecording(rec);
       setIsRec(true);
       setAudioUri(null);
-    } catch {
-      /* ignore */
+    } catch (e: unknown) {
+      setPermissionError(
+        `Không khởi tạo được ghi âm: ${e instanceof Error ? e.message : "lỗi không xác định"}`,
+      );
     }
   }
 
@@ -181,6 +189,10 @@ export function MicTest() {
       </View>
 
       <View style={s.micControls}>
+        {permissionError ? (
+          <Text style={[s.micLabel, { color: c.destructive, textAlign: "center" }]}>{permissionError}</Text>
+        ) : (
+          <>
         {!isRec && !audioUri && (
           <HapticTouchable onPress={startRecording} style={[s.micBtn, { backgroundColor: c.primary }]}>
             <Ionicons name="mic" size={20} color={c.primaryForeground} />
@@ -202,6 +214,8 @@ export function MicTest() {
               {playback ? "Dừng" : "Nghe lại"}
             </Text>
           </HapticTouchable>
+        )}
+          </>
         )}
       </View>
     </View>

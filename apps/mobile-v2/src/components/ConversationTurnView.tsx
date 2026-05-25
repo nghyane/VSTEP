@@ -26,7 +26,7 @@ interface Props {
   scenario: SpeakingConversationScenario;
   isSpeaking: boolean;
   onSpeak: () => void;
-  onAppendWord: (word: string) => void;
+  onAppendWord?: (word: string) => void;
 }
 
 export function ConversationTurnView({
@@ -100,13 +100,19 @@ export function ConversationTurnView({
           {!isUser && turn.suggestedWords.length > 0 ? (
             <View style={[s.chipRow, isUser ? s.chipRowRight : null]}>
               {turn.suggestedWords.slice(0, 4).map((word) => (
-                <HapticTouchable
-                  key={word}
-                  onPress={() => onAppendWord(word)}
-                  style={[s.chip, { backgroundColor: c.surfaceTint }]}
-                >
-                  <Text style={[s.chipText, { color: c.foreground }]}>{word}</Text>
-                </HapticTouchable>
+                onAppendWord ? (
+                  <HapticTouchable
+                    key={word}
+                    onPress={() => onAppendWord(word)}
+                    style={[s.chip, { backgroundColor: c.surfaceTint }]}
+                  >
+                    <Text style={[s.chipText, { color: c.foreground }]}>{word}</Text>
+                  </HapticTouchable>
+                ) : (
+                  <View key={word} style={[s.chip, { backgroundColor: c.surfaceTint }]}>
+                    <Text style={[s.chipText, { color: c.foreground }]}>{word}</Text>
+                  </View>
+                )
               ))}
             </View>
           ) : null}

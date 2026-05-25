@@ -57,24 +57,12 @@ export default function AccountScreen() {
       <DepthButton
         variant="secondary"
         fullWidth
-        onPress={() => router.push("/(app)/goal")}
-        style={{ marginTop: spacing.md }}
-      >
-        <Ionicons name="flag-outline" size={16} color={c.primary} />
-        <Text style={{ color: c.primary, marginLeft: spacing.xs, fontFamily: fontFamily.semiBold }}>
-          Đổi mục tiêu học tập
-        </Text>
-      </DepthButton>
-
-      <DepthButton
-        variant="secondary"
-        fullWidth
         onPress={() => router.push("/(app)/(tabs)/profile")}
-        style={{ marginTop: spacing.sm }}
+        style={{ marginTop: spacing.md }}
       >
         <Ionicons name="people-outline" size={16} color={c.info} />
         <Text style={{ color: c.info, marginLeft: spacing.xs, fontFamily: fontFamily.semiBold }}>
-          Quản lý hồ sơ
+          Quản lý hồ sơ & mục tiêu
         </Text>
       </DepthButton>
 

@@ -142,11 +142,11 @@ export default function PracticeHubScreen() {
       </Animated.View>
 
       <Animated.View style={animStyle(3)}>
-        <HapticTouchable
-          scalePress
-          style={[styles.resultsCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}
-          onPress={() => router.push("/(app)/practice/results" as any)}
-        >
+        <View style={[styles.resultsCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
+          <HapticTouchable
+            scalePress
+            onPress={() => router.push("/(app)/practice/results" as any)}
+          >
           <View style={[styles.resultsIcon, { backgroundColor: c.skillWriting + "1A" }]}>
             <Ionicons name="trophy-outline" size={22} color={c.skillWriting} />
           </View>
@@ -158,6 +158,7 @@ export default function PracticeHubScreen() {
           </View>
           <Ionicons name="chevron-forward" size={18} color={c.subtle} />
         </HapticTouchable>
+      </View>
       </Animated.View>
 
       <View style={styles.mascotRow}>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   ScrollView,
   StyleSheet,
@@ -147,7 +148,11 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
 
   const startRecording = useCallback(async () => {
     try {
-      await Audio.requestPermissionsAsync();
+      const perm = await Audio.requestPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert("Không thể ghi âm", "Chưa cấp quyền micro. Vào Cài đặt > VSTEP > Micro để bật.");
+        return;
+      }
       await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
       const { recording: rec } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY,
@@ -162,8 +167,11 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
         setElapsedMs(el);
         if (el >= maxMs) stopRecording(rec);
       }, 100);
-    } catch {
-      // permission denied — silently ignore
+    } catch (e: unknown) {
+      Alert.alert(
+        "Không thể ghi âm",
+        `Hãy kiểm tra quyền truy cập micro trong cài đặt thiết bị.\n${e instanceof Error ? e.message : ""}`,
+      );
     }
   }, [maxMs]);
 
@@ -194,7 +202,7 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
       await fetch(presign.uploadUrl, {
         method: "PUT",
         body: audioBlob,
-        headers: { "Content-Type": "audio/webm" },
+        headers: { "Content-Type": "audio/mp4" },
       });
 
       // Step 3: Submit with audio_key
