@@ -18,6 +18,7 @@ use App\Services\ConversationServiceInterface;
 use App\Services\Grading\GradingStrategyResolver;
 use App\Services\Grading\LlmGrader;
 use App\Services\Grading\LlmGradingService;
+use App\Services\Grading\RubricResolver;
 use App\Services\Grading\SpeakingGradingStrategy;
 use App\Services\Grading\WritingGradingStrategy;
 use App\Services\SpeakingConversationService;
@@ -57,6 +58,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Default Speech-to-Text implementation.
         $this->app->bind(SpeechToText::class, SpeechToTextService::class);
+
+        // Rubric resolver — scoped so cache resets per request (Octane-safe).
+        $this->app->scoped(RubricResolver::class);
 
         // Grading strategy registry — explicit list, ordered.
         $this->app->singleton(GradingStrategyResolver::class, fn ($app) => new GradingStrategyResolver([
