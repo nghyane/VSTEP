@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import { resolveAssetUrl } from "@/lib/asset-url";
 import { HighlightablePassage } from "@/components/HighlightablePassage";
+import { useLogListeningPlayed } from "@/hooks/use-exam-session";
 import { useThemeColors, spacing, radius, fontSize, fontFamily, colors as themeColors } from "@/theme";
 import type { ExamVersionMcqItem, ExamVersionListeningSection, ExamVersionReadingPassage, ExamVersionWritingTask } from "@/types/api";
 
@@ -19,35 +20,88 @@ interface ListeningPanelProps {
 }
 
 export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, insets }: ListeningPanelProps) {
-  const [sectionIdx, setSectionIdx] = useState(0);
-  const section = sections[sectionIdx];
+  const sortedSections = useMemo(
+    () => [...sections].sort((a, b) => a.displayOrder - b.displayOrder || a.part - b.part),
+    [sections],
+  );
+  const partGroups = useMemo(() => groupListeningSections(sortedSections), [sortedSections]);
+  const [partIdx, setPartIdx] = useState(0);
+  const [sectionInPartIdx, setSectionInPartIdx] = useState(0);
+  const activeGroup = partGroups[partIdx];
+  const section = activeGroup?.sections[sectionInPartIdx] ?? activeGroup?.sections[0];
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [playing, setPlaying] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+  const shouldAutoPlayRef = useRef(false);
+  const loggedSectionsRef = useRef<Set<string>>(new Set());
+  const logPlayed = useLogListeningPlayed(sessionId);
+  const logPlayedRef = useRef(logPlayed.mutate);
+
+  useEffect(() => {
+    logPlayedRef.current = logPlayed.mutate;
+  }, [logPlayed.mutate]);
+
+  useEffect(() => {
+    setSectionInPartIdx(0);
+    shouldAutoPlayRef.current = false;
+  }, [partIdx]);
+
+  useEffect(() => {
+    if (ready || countdown <= 0) return;
+    const id = setTimeout(() => setCountdown((v) => v - 1), 1000);
+    return () => clearTimeout(id);
+  }, [countdown, ready]);
 
   useEffect(() => {
     if (!section?.audioUrl) return;
     setAudioError(null);
     const audioUrl = resolveAssetUrl(section.audioUrl);
+    const sectionId = section.id;
+    const hasNextSection = sectionInPartIdx < (activeGroup?.sections.length ?? 0) - 1;
     let snd: Audio.Sound | null = null;
+    let cancelled = false;
     (async () => {
       try {
         await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
         const { sound: loaded } = await Audio.Sound.createAsync(
           { uri: audioUrl },
           { shouldPlay: false },
-          (st) => { if (st.isLoaded) setPlaying(st.isPlaying); },
+          (st) => {
+            if (!st.isLoaded) return;
+            setPlaying(st.isPlaying);
+            if (st.didJustFinish && hasNextSection) {
+              shouldAutoPlayRef.current = true;
+              setSectionInPartIdx((idx) => idx + 1);
+            }
+          },
         );
+        if (cancelled) {
+          await loaded.unloadAsync().catch(() => undefined);
+          return;
+        }
         snd = loaded;
         setSound(loaded);
-      } catch (e: unknown) {
+        if (!loggedSectionsRef.current.has(sectionId)) {
+          loggedSectionsRef.current.add(sectionId);
+          logPlayedRef.current(sectionId);
+        }
+        if (shouldAutoPlayRef.current) {
+          shouldAutoPlayRef.current = false;
+          await loaded.playAsync();
+        }
+      } catch {
         setSound(null);
         setPlaying(false);
-        setAudioError(`Không tải được audio: ${e instanceof Error ? e.message : String(e)}`);
+        setAudioError(`Không tải được audio. Vui lòng thử lại hoặc báo lỗi nếu audio bị khóa quyền.`);
       }
     })();
-    return () => { snd?.unloadAsync().catch(() => undefined); };
-  }, [section?.audioUrl, sessionId]);
+    return () => {
+      cancelled = true;
+      snd?.unloadAsync().catch(() => undefined);
+    };
+  }, [section?.audioUrl, section?.id, sectionInPartIdx, activeGroup?.sections.length]);
 
   async function togglePlay() {
     if (!sound) return;
@@ -61,31 +115,98 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
   }
 
   const color = themeColors.light.skillListening;
+  const activeItems = activeGroup?.sections.flatMap((sec) => sec.items) ?? [];
+
+  if (!activeGroup || !section) return null;
 
   return (
     <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]}>
-      {sections.length > 1 && (
+      <ListeningReadyModal
+        visible={!ready}
+        countdown={countdown}
+        totalParts={partGroups.length}
+        totalQuestions={activeItems.length + partGroups.filter((_, i) => i !== partIdx).reduce((sum, g) => sum + g.sections.reduce((s, sec) => s + sec.items.length, 0), 0)}
+        onReady={() => setReady(true)}
+        c={c}
+      />
+      {partGroups.length > 1 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
-          {sections.map((sec, i) => (
-            <TouchableOpacity key={sec.id} onPress={() => setSectionIdx(i)} style={[s.sectionTab, { borderBottomColor: i === sectionIdx ? color : "transparent" }]}>
-              <Text style={[s.sectionTabText, { color: i === sectionIdx ? color : c.mutedForeground }]}>Part {sec.part}</Text>
+          {partGroups.map((group, i) => {
+            const answered = group.sections.reduce((sum, sec) => sum + sec.items.filter((it) => answers.has(it.id)).length, 0);
+            const total = group.sections.reduce((sum, sec) => sum + sec.items.length, 0);
+            return (
+            <TouchableOpacity key={group.part} onPress={() => setPartIdx(i)} style={[s.sectionTab, { borderBottomColor: i === partIdx ? color : "transparent" }]}>
+              <Text style={[s.sectionTabText, { color: i === partIdx ? color : c.mutedForeground }]}>Part {group.part} · {answered}/{total}</Text>
             </TouchableOpacity>
-          ))}
+            );
+          })}
         </ScrollView>
       )}
       <View style={[s.audioCard, { backgroundColor: c.card, borderColor: c.border }]}>
-        <Text style={[s.audioPartLabel, { color }]}>Part {section.part} · {section.partTitle}</Text>
+        <Text style={[s.audioPartLabel, { color }]}>Part {activeGroup.part} · {section.partTitle}</Text>
+        {activeGroup.sections.length > 1 ? (
+          <Text style={[s.audioSubText, { color: c.mutedForeground }]}>Audio {sectionInPartIdx + 1}/{activeGroup.sections.length}</Text>
+        ) : null}
         <TouchableOpacity onPress={togglePlay} disabled={!sound || !!audioError} style={[s.playBtn, { backgroundColor: audioError ? c.mutedForeground : color }]}>
           <Ionicons name={playing ? "pause" : "play"} size={22} color="#fff" />
           <Text style={s.playBtnText}>{playing ? "Tạm dừng" : "Phát audio"}</Text>
         </TouchableOpacity>
         {audioError && <Text style={[s.audioError, { color: c.destructive }]}>{audioError}</Text>}
       </View>
-      {section.items.map((item, qi) => (
+      {activeItems.map((item, qi) => (
         <McqCard key={item.id} item={item} index={qi} selected={answers.get(item.id) ?? null} onSelect={(idx) => onAnswer(item.id, idx)} color={color} c={c} />
       ))}
     </ScrollView>
   );
+}
+
+function ListeningReadyModal({
+  visible,
+  countdown,
+  totalParts,
+  totalQuestions,
+  onReady,
+  c,
+}: {
+  visible: boolean;
+  countdown: number;
+  totalParts: number;
+  totalQuestions: number;
+  onReady: () => void;
+  c: ReturnType<typeof useThemeColors>;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade">
+      <View style={s.readyOverlay}>
+        <View style={[s.readyBox, { backgroundColor: c.card, borderColor: c.border }]}> 
+          <View style={[s.readyIcon, { backgroundColor: c.infoTint }]}> 
+            <Ionicons name="volume-high" size={30} color={c.info} />
+          </View>
+          <Text style={[s.readyTitle, { color: c.foreground }]}>Bạn đã sẵn sàng chưa?</Text>
+          <Text style={[s.readyText, { color: c.mutedForeground }]}>Bạn có thể xem trước câu hỏi trước khi phát audio. Hãy đảm bảo tai nghe đã kết nối và âm lượng phù hợp.</Text>
+          <View style={[s.readyInfo, { backgroundColor: c.background, borderColor: c.border }]}> 
+            <Text style={[s.readyInfoText, { color: c.mutedForeground }]}>Bài thi gồm <Text style={{ color: c.foreground, fontFamily: fontFamily.bold }}>{totalParts} phần</Text> với <Text style={{ color: c.foreground, fontFamily: fontFamily.bold }}>{totalQuestions} câu hỏi</Text>.</Text>
+            <Text style={[s.readyInfoText, { color: c.mutedForeground }]}>Âm thanh mỗi phần chỉ phát một lần duy nhất, không thể tua lại.</Text>
+          </View>
+          <TouchableOpacity disabled={countdown > 0} onPress={onReady} style={[s.readyButton, { backgroundColor: c.primary, opacity: countdown > 0 ? 0.5 : 1 }]}> 
+            <Text style={[s.readyButtonText, { color: c.primaryForeground }]}>{countdown > 0 ? `Sẵn sàng (${countdown}s)` : "Bắt đầu làm bài"}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function groupListeningSections(sections: ExamVersionListeningSection[]) {
+  const map = new Map<number, ExamVersionListeningSection[]>();
+  for (const section of sections) {
+    const list = map.get(section.part) ?? [];
+    list.push(section);
+    map.set(section.part, list);
+  }
+  return Array.from(map.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([part, grouped]) => ({ part, sections: grouped }));
 }
 
 // ── Reading Panel ──
@@ -233,9 +354,19 @@ const s = StyleSheet.create({
   toggleText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   audioCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
   audioPartLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
+  audioSubText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
   playBtn: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: radius.full, alignSelf: "flex-start" },
   playBtnText: { color: "#fff", fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   audioError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
+  readyOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center", padding: spacing.xl },
+  readyBox: { width: "100%", borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, gap: spacing.md },
+  readyIcon: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center", alignSelf: "center" },
+  readyTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold, textAlign: "center" },
+  readyText: { fontSize: fontSize.sm, lineHeight: 20, textAlign: "center" },
+  readyInfo: { borderWidth: 2, borderRadius: radius.lg, padding: spacing.md, gap: spacing.xs },
+  readyInfoText: { fontSize: fontSize.sm, lineHeight: 20, textAlign: "center" },
+  readyButton: { minHeight: 48, borderRadius: radius.button, alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.lg },
+  readyButtonText: { fontSize: fontSize.sm, fontFamily: fontFamily.extraBold, textTransform: "uppercase" },
   passageCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
   passageTitle: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
   promptCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },

@@ -19,8 +19,7 @@ import { DepthCard } from "@/components/DepthCard";
 import { GameIcon } from "@/components/GameIcon";
 import { SkillIcon } from "@/components/SkillIcon";
 import { CoinButton } from "@/features/coin/CoinButton";
-import { FULL_TEST_COST } from "@/features/coin/coin-store";
-import { useExams, type Exam } from "@/hooks/use-exams";
+import { useAppConfig, useExamSessions, useExams, type Exam } from "@/hooks/use-exams";
 import { useAbandonExamSession, useActiveExamSession, type ExamSessionData } from "@/hooks/use-exam-session";
 import { MascotEmpty } from "@/components/MascotStates";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
@@ -47,9 +46,11 @@ export default function ExamsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data, isLoading } = useExams();
+  const { data: config } = useAppConfig();
   const activeSession = useActiveExamSession();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const submittedSessions = useExamSessions(statusFilter === "submitted" ? "submitted" : undefined);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -69,6 +70,7 @@ export default function ExamsScreen() {
     if (statusFilter === "submitted") return exam.status === "submitted" || exam.status === "completed";
     return exam.status === statusFilter;
   });
+  const showSubmittedSessions = statusFilter === "submitted";
 
   return (
     <ScrollView
@@ -131,13 +133,13 @@ export default function ExamsScreen() {
         </ScrollView>
       </Animated.View>
 
-      {isLoading ? (
+      {(isLoading || (showSubmittedSessions && submittedSessions.isLoading)) ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator color={c.primary} size="large" />
         </View>
       ) : null}
 
-      {!isLoading && exams.length === 0 ? (
+      {!isLoading && !showSubmittedSessions && exams.length === 0 ? (
         <MascotEmpty
           mascot="think"
           title="Không tìm thấy đề thi nào"
@@ -145,19 +147,57 @@ export default function ExamsScreen() {
         />
       ) : null}
 
+      {showSubmittedSessions && !submittedSessions.isLoading && (submittedSessions.data ?? []).length === 0 ? (
+        <MascotEmpty
+          mascot="think"
+          title="Chưa có bài đã nộp"
+          subtitle="Nộp xong bài thi, lịch sử sẽ xuất hiện tại đây."
+        />
+      ) : null}
+
       <View style={styles.list}>
-        {exams.map((exam, index) => (
-          <ExamCard
-            key={exam.id}
-            exam={exam}
-            index={index}
-            onPress={() => router.push(`/(app)/exam/${exam.id}` as any)}
-          />
+        {showSubmittedSessions ? (
+          (submittedSessions.data ?? []).map((session) => (
+            <SubmittedSessionCard key={session.id} session={session} />
+          ))
+        ) : exams.map((exam, index) => (
+            <ExamCard
+              key={exam.id}
+              exam={exam}
+              index={index}
+              cost={config?.pricing.exam.fullTestCostCoins ?? 25}
+              onPress={() => router.push(`/(app)/exam/${exam.id}` as any)}
+            />
         ))}
       </View>
 
       <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
+  );
+}
+
+function SubmittedSessionCard({ session }: { session: import("@/types/api").ExamSessionResult }) {
+  const c = useThemeColors();
+  const router = useRouter();
+  const submittedAt = session.submittedAt ? new Date(session.submittedAt).toLocaleDateString("vi-VN") : "Chưa rõ ngày";
+
+  return (
+    <DepthCard>
+      <View style={styles.activeHeader}>
+        <View style={[styles.activeIcon, { backgroundColor: c.primaryTint }]}> 
+          <Ionicons name="checkmark-circle" size={18} color={c.primary} />
+        </View>
+        <View style={styles.activeTextWrap}>
+          <Text style={[styles.activeEyebrow, { color: c.primary }]}>Đã nộp · {submittedAt}</Text>
+          <Text style={[styles.activeTitle, { color: c.foreground }]} numberOfLines={1}>Phiên thi #{session.id.slice(0, 8)}</Text>
+        </View>
+      </View>
+      <View style={styles.activeActions}>
+        <DepthButton size="sm" onPress={() => router.push(`/(app)/exam-result/${session.id}` as never)}>
+          Xem kết quả
+        </DepthButton>
+      </View>
+    </DepthCard>
   );
 }
 
@@ -168,7 +208,7 @@ function ActiveSessionCard({ session }: { session: ExamSessionData }) {
   const title = session.examTitle ?? "Bài thi đang làm";
 
   const handleContinue = () => {
-    router.push(`/(app)/session/${session.id}?examId=${session.examId}` as any);
+    router.push(`/(app)/session/${session.id}?examId=${session.examId}&resume=1` as any);
   };
 
   const handleAbandon = () => {
@@ -212,10 +252,12 @@ function ActiveSessionCard({ session }: { session: ExamSessionData }) {
 function ExamCard({
   exam,
   index,
+  cost,
   onPress,
 }: {
   exam: Exam;
   index: number;
+  cost: number;
   onPress: () => void;
 }) {
   const c = useThemeColors();
@@ -275,7 +317,7 @@ function ExamCard({
           <View style={[styles.cardFooter, { borderTopColor: c.borderLight }]}> 
             <View style={styles.coinWrap}>
               <GameIcon name="coin" size={16} />
-              <Text style={[styles.coinText, { color: c.coinDark }]}>{FULL_TEST_COST} xu</Text>
+              <Text style={[styles.coinText, { color: c.coinDark }]}>{cost} xu</Text>
             </View>
             <DepthButton size="sm" onPress={onPress}>
               Xem chi tiết →

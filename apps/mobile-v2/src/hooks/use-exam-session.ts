@@ -36,11 +36,18 @@ export interface SubmitSessionPayload {
 export interface SubmitSessionResult {
   sessionId: string;
   status: string;
-  mcqScore: number;
-  mcqTotal: number;
+  mcq?: {
+    score: number;
+    total: number;
+    items: McqAnswerPayload[];
+  };
+  mcqScore?: number;
+  mcqTotal?: number;
   submittedAt: string;
-  writingSubmitted: boolean;
-  speakingSubmitted: boolean;
+  writingJobs?: { submissionId: string; jobId: string; status: string }[];
+  speakingJobs?: { submissionId: string; jobId: string; status: string }[];
+  writingSubmitted?: boolean;
+  speakingSubmitted?: boolean;
 }
 
 export interface ExamDraftMcq {
@@ -341,6 +348,7 @@ export function useExamSessionState(
   const saveDraftMutation = useSaveExamDraft(session.id);
   const serverDraft = useExamDraft(session.id);
   const restoredDraftRef = useRef(false);
+  const localSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const activeSkills = SKILL_ORDER.filter((sk) => session.selectedSkills.includes(sk));
   const currentSkill = activeSkills[state.skillIdx] ?? activeSkills[0];
@@ -405,7 +413,31 @@ export function useExamSessionState(
     });
   }, [state.phase, state.mcqAnswers, state.writingAnswers, state.speakingAnswers, listeningItems, readingItems, writingTasks, speakingParts, activeSkills, submitMutation, onSubmitted, session.id]);
 
-  // Autosave: persist answers to local storage every 30s
+  // Persist locally almost immediately so app kill / background does not lose
+  // recent answers. Server sync below stays throttled to avoid noisy requests.
+  useEffect(() => {
+    if (state.phase === "submitted" || state.phase === "submitting") return;
+    if (localSaveTimerRef.current) clearTimeout(localSaveTimerRef.current);
+    localSaveTimerRef.current = setTimeout(() => {
+      const draft: ExamDraft = {
+        sessionId: session.id,
+        examId: session.examVersionId,
+        skillIdx: state.skillIdx,
+        mcqAnswers: Object.fromEntries(state.mcqAnswers),
+        writingAnswers: Object.fromEntries(state.writingAnswers),
+        speakingMarks: Object.fromEntries(
+          Array.from(state.speakingAnswers.entries()).map(([k, v]) => [k, v.audioUrl ?? ""]),
+        ),
+        savedAt: new Date().toISOString(),
+      };
+      void saveDraft(draft);
+    }, 250);
+    return () => {
+      if (localSaveTimerRef.current) clearTimeout(localSaveTimerRef.current);
+    };
+  }, [session.id, session.examVersionId, state.phase, state.skillIdx, state.mcqAnswers, state.writingAnswers, state.speakingAnswers]);
+
+  // Autosave: sync answers to server every 30s
   useEffect(() => {
     const id = setInterval(() => {
       const draft: ExamDraft = {

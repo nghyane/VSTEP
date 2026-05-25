@@ -239,12 +239,14 @@ export interface StreakData {
 
 export interface ExamSessionResult {
   id: string;
+  examId: string;
   examVersionId: string;
   mode: string;
   isFullTest: boolean;
   status: string;
   startedAt: string;
   submittedAt: string | null;
+  serverDeadlineAt: string;
   scores: Record<Skill, number | null> | null;
 }
 
