@@ -45,6 +45,8 @@ export interface Profile {
 	target_level: string
 	target_deadline: string
 	avatar_color: string | null
+	avatar_key: AvatarKey | null
+	avatar_url: string | null
 	is_initial_profile: boolean
 	created_at: string
 }

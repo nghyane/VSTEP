@@ -1,4 +1,4 @@
-import type { AvatarKey, User } from "#/types/auth"
+import type { AvatarKey, Profile } from "#/types/auth"
 
 const BG_COLORS = "b6e3f4,ffd5dc,c0aede,ffdfbf"
 
@@ -35,9 +35,9 @@ export const AVATAR_PRESETS: { key: AvatarKey }[] = [
 	{ key: "Zion" },
 ]
 
-export function getUserAvatarSrc(user: Pick<User, "avatar_key" | "avatar_url">): string | null {
-	if (user.avatar_url) return user.avatar_url
-	if (user.avatar_key) return getAvatarUrl(user.avatar_key)
+export function getProfileAvatarSrc(profile: Pick<Profile, "avatar_key" | "avatar_url">): string | null {
+	if (profile.avatar_url) return profile.avatar_url
+	if (profile.avatar_key) return getAvatarUrl(profile.avatar_key)
 	return null
 }
 

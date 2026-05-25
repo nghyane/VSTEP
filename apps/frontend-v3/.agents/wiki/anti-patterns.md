@@ -168,5 +168,17 @@ Admin routes trong `apps/admin/src/routes/_app/` hiện vượt 100 lines giới
 - Logic phức tạp (filter state, form handlers, sub-tables) → tách vào component riêng trong `src/features/admin-<domain>/`.
 - Khi thêm tính năng mới vào admin route, split trước, compose sau.
 
+## Backend Docker — không chạy test trên database dev
+
+Chạy `php artisan test` trực tiếp trong container backend đang phục vụ local có thể sử dụng database dev `vstep` thay vì database test, làm mất dữ liệu demo khi test dùng `RefreshDatabase`.
+
+**Đúng:** ép rõ môi trường test khi chạy test trong container:
+
+```sh
+docker exec -e APP_ENV=testing -e DB_DATABASE=vstep_test -e DB_HOST=postgres -e CACHE_STORE=array -w /app vstep-backend-1 php artisan test
+```
+
+Không chạy lệnh test trần trong container backend dev.
+
 ---
 See also: [[auth-architecture]] · [[api-conventions]] · [[state-patterns]]

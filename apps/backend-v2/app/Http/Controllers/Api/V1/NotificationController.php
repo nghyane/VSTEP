@@ -41,7 +41,11 @@ final class NotificationController extends Controller
 
     public function read(Request $request, Notification $notification): JsonResponse
     {
-        $ok = $this->notificationService->markRead($request->profile(), (string) $notification->id);
+        if ((string) $notification->profile_id !== $request->profile()->id) {
+            abort(403);
+        }
+
+        $ok = $this->notificationService->markRead($notification);
 
         return response()->json(['data' => ['marked' => $ok]]);
     }

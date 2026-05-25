@@ -22,6 +22,8 @@ final class ProfileResource extends JsonResource
             'target_deadline' => $this->resource->target_deadline?->toDateString(),
             'entry_level' => $this->resource->entry_level,
             'avatar_color' => $this->resource->avatar_color,
+            'avatar_key' => $this->resource->avatar_key,
+            'avatar_url' => $this->resource->avatar_url,
             'is_initial_profile' => $this->resource->is_initial_profile,
             'created_at' => $this->resource->created_at,
             'updated_at' => $this->resource->updated_at,

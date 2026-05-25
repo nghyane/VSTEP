@@ -45,8 +45,6 @@ Route::prefix('v1')->group(function () {
 
         // Self-service account ops (mọi role dùng được).
         Route::post('/me/change-password', [AccountController::class, 'changePassword']);
-        Route::patch('/me/avatar', [AccountController::class, 'updateAvatar']);
-        Route::post('/me/avatar', [AccountController::class, 'uploadAvatar']);
 
         // Profile CRUD — scoped by authenticated account.
         Route::get('/profiles', [ProfileController::class, 'index']);
@@ -60,6 +58,9 @@ Route::prefix('v1')->group(function () {
 
     // Learner routes requiring active profile context.
     Route::middleware(['auth:api', 'active-profile'])->group(function () {
+        Route::patch('/me/avatar', [AccountController::class, 'updateAvatar']);
+        Route::post('/me/avatar', [AccountController::class, 'uploadAvatar']);
+
         Route::get('/wallet/balance', [WalletController::class, 'balance']);
         Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
         Route::get('/wallet/topup-packages', [WalletController::class, 'topupPackages']);

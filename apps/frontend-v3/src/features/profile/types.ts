@@ -1,4 +1,4 @@
-import type { Profile } from "#/types/auth"
+import type { AvatarKey, Profile } from "#/types/auth"
 
 export interface CreateProfileInput {
 	nickname: string
@@ -10,6 +10,11 @@ export interface CreateProfileInput {
 export interface UpdateProfileInput {
 	nickname?: string
 	target_deadline?: string
+}
+
+export interface AvatarResponse {
+	avatar_key: AvatarKey | null
+	avatar_url: string | null
 }
 
 export interface ProfileCardProps {
