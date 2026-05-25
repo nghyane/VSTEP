@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 #[Fillable([
     'profile_id',
@@ -57,7 +56,7 @@ class ProfileStreakLog extends Model
         $todayStr = $today->toDateString();
 
         // Upsert streak log
-        DB::table('profile_streak_logs')->updateOrInsert(
+        self::query()->updateOrInsert(
             [
                 'profile_id' => $profileId,
                 'date_local' => $todayStr,

@@ -61,14 +61,14 @@ final class RuleBasedScoringService
      */
     private function computeMetrics(string $text, array $errors): array
     {
-        $words = preg_split('/\s+/', trim($text));
-        $wordCount = count($words);
-        $sentences = preg_split('/[.!?]+/', trim($text), -1, PREG_SPLIT_NO_EMPTY);
-        $sentenceCount = max(1, count($sentences));
-        $paragraphs = preg_split('/\n\s*\n/', trim($text), -1, PREG_SPLIT_NO_EMPTY);
-        $paragraphCount = count($paragraphs);
+        $words = Str::of($text)->trim()->split('/\s+/');
+        $wordCount = $words->count();
+        $sentences = Str::of($text)->trim()->split('/[.!?]+/', -1, PREG_SPLIT_NO_EMPTY);
+        $sentenceCount = max(1, $sentences->count());
+        $paragraphs = Str::of($text)->trim()->split('/\n\s*\n/', -1, PREG_SPLIT_NO_EMPTY);
+        $paragraphCount = $paragraphs->count();
 
-        $uniqueWords = count(array_unique(array_map('strtolower', $words)));
+        $uniqueWords = $words->map(fn (string $w): string => Str::lower($w))->unique()->count();
         $uniqueRatio = $wordCount > 0 ? $uniqueWords / $wordCount : 0;
 
         $avgSentenceLength = $wordCount / $sentenceCount;

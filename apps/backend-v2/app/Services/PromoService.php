@@ -10,6 +10,7 @@ use App\Models\PromoCode;
 use App\Models\PromoCodeRedemption;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -38,7 +39,7 @@ final class PromoService
 
         return DB::transaction(function () use ($account, $profile, $code) {
             $promo = PromoCode::query()
-                ->whereRaw('LOWER(code) = ?', [strtolower($code)])
+                ->whereRaw('LOWER(code) = ?', [Str::lower($code)])
                 ->lockForUpdate()
                 ->first();
 
