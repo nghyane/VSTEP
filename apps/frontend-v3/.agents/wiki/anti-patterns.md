@@ -100,6 +100,22 @@ useReducer(reducer, {
 } satisfies ExamState)
 ```
 
+## Inline SVG cho icon đã có trong `Icon` component
+
+**Sai:** Viết lại inline `<svg>` checkmark/chevron/star trong từng section component vì "chỉ vài dòng".
+```tsx
+function CheckMark() {
+  return (
+    <svg viewBox="0 0 20 20" fill="var(--color-primary)" className="w-4 h-4 shrink-0 mt-0.5">
+      <path fillRule="evenodd" d="M16.704 4.153..." />
+    </svg>
+  )
+}
+```
+Hệ quả: cùng 1 path SVG xuất hiện ở ≥ 2 file, sửa style phải sửa nhiều chỗ, drift dần.
+
+**Đúng:** Grep `Icon.tsx` trước. Nếu icon đã có (`check`, `close`, `play`, `lightning`...) → dùng `<Icon name="check" size="xs" className="text-primary" />`. Chỉ inline SVG cho shape thật sự đặc thù section (vd. quote bubble không có trong icon set), và ngay cả khi đó cũng tách thành 1 helper component duy nhất, không duplicate giữa các file.
+
 ## Skill chip — dùng `SkillChip` shared, không inline
 
 **Sai:** mỗi component tự render pill cho kỹ năng + nhét thêm dot `<span className="size-1.5 rounded-full bg-current" />`.

@@ -27,6 +27,7 @@ Old drill/VSTEP speaking features removed entirely — replaced by these 2 modes
 ### LLM: Workers AI (Cloudflare)
 - Provider: `workers-ai` in `config/ai.php`. Model: `@cf/meta/llama-4-scout-17b-16e-instruct`.
 - OpenAI via Cloudflare gateway quota exceeded → switched to Workers AI (free).
+- Prompt Blade files live under backend `resources/ai/`; `AppServiceProvider` must register `resource_path()` as a view location so calls such as `view('ai.conversation.turn')` resolve.
 - Workers AI returns `content` as array (not string) → `ChatCompletionsGateway.php` line 94 fixed to handle both.
 - Agent framework `StructuredAgentResponse` fails with Workers AI → conversation/review use direct `Http::post` + manual JSON parse.
 - LLM returns varying key names (`feedback`/`grade`, `reply`/`response`, `vocab_check`/`used`) → `normalizeTurnResponse()` handles all variants.
