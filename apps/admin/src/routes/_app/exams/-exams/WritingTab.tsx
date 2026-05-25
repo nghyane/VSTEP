@@ -4,6 +4,8 @@ import type { WritingTask } from "#/features/admin-exams/types"
 
 interface Props {
 	tasks: WritingTask[]
+	examId: string
+	versionId: string
 }
 
 export function WritingTab({ tasks }: Props) {

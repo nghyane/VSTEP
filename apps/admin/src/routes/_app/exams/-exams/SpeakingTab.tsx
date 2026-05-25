@@ -3,6 +3,8 @@ import type { SpeakingPart } from "#/features/admin-exams/types"
 
 interface Props {
 	parts: SpeakingPart[]
+	examId: string
+	versionId: string
 }
 
 export function SpeakingTab({ parts }: Props) {

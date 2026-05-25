@@ -3,6 +3,8 @@ import type { ReadingPassage } from "#/features/admin-exams/types"
 
 interface Props {
 	passages: ReadingPassage[]
+	examId: string
+	versionId: string
 }
 
 export function ReadingTab({ passages }: Props) {
