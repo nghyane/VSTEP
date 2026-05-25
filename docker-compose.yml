@@ -30,8 +30,16 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: vstep
+    command: >
+      postgres
+        -c shared_buffers=32MB
+        -c work_mem=2MB
+        -c effective_cache_size=256MB
+        -c maintenance_work_mem=32MB
+        -c max_connections=30
     volumes:
       - pgdata:/var/lib/postgresql/data
+    mem_limit: 384m
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d vstep"]
       interval: 5s
@@ -188,8 +196,9 @@ services:
     ports:
       - "8081:8010"
     environment:
-      Java_Xms: 256m
-      Java_Xmx: 512m
+      Java_Xms: 128m
+      Java_Xmx: 256m
+    mem_limit: 384m
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8010/v2/languages"]
       interval: 10s
