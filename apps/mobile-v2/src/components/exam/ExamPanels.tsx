@@ -83,12 +83,9 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
         }
         snd = loaded;
         setSound(loaded);
-        if (!loggedSectionsRef.current.has(sectionId)) {
-          loggedSectionsRef.current.add(sectionId);
-          logPlayedRef.current(sectionId);
-        }
         if (shouldAutoPlayRef.current) {
           shouldAutoPlayRef.current = false;
+          logSectionPlayed(sectionId);
           await loaded.playAsync();
         }
       } catch {
@@ -104,14 +101,24 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
   }, [section?.audioUrl, section?.id, sectionInPartIdx, activeGroup?.sections.length]);
 
   async function togglePlay() {
-    if (!sound) return;
+    if (!sound || !section) return;
     try {
       await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
-      if (playing) await sound.pauseAsync(); else await sound.playAsync();
+      if (playing) await sound.pauseAsync();
+      else {
+        logSectionPlayed(section.id);
+        await sound.playAsync();
+      }
     } catch (e: unknown) {
       setPlaying(false);
       setAudioError(`Không phát được audio: ${e instanceof Error ? e.message : String(e)}`);
     }
+  }
+
+  function logSectionPlayed(sectionId: string) {
+    if (loggedSectionsRef.current.has(sectionId)) return;
+    loggedSectionsRef.current.add(sectionId);
+    logPlayedRef.current(sectionId);
   }
 
   const color = themeColors.light.skillListening;

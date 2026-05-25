@@ -10,7 +10,9 @@ import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { MascotEmpty } from "@/components/MascotStates";
+import { useWalletBalance } from "@/features/wallet/queries";
 import { useThemeColors, colors as themeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { formatNumber } from "@/lib/utils";
 
 type SkillKey = "listening" | "reading" | "writing" | "speaking";
 
@@ -31,6 +33,7 @@ export default function ExamDetailScreen() {
   const { data: detail, isLoading } = useExam(id ?? "");
   const { data: config } = useAppConfig();
   const { data: activeSessions } = useExamSessions("active");
+  const { data: wallet } = useWalletBalance();
   const startMutation = useStartExamSession();
   const abandonMutation = useAbandonExamSession();
 
@@ -62,6 +65,8 @@ export default function ExamDetailScreen() {
   const fullCost = config?.pricing.exam.fullTestCostCoins ?? 25;
   const perSkillCost = config?.pricing.exam.customPerSkillCoins ?? 8;
   const coinCost = isFull ? fullCost : Math.min(fullCost, perSkillCost * selectedSkills.size);
+  const balance = wallet?.balance ?? null;
+  const insufficient = balance != null && balance < coinCost;
 
   const totalMcq =
     version.listeningSections.reduce((sum, sec) => sum + sec.items.length, 0) +
@@ -92,6 +97,17 @@ export default function ExamDetailScreen() {
   }
 
   function handleStart() {
+    if (insufficient) {
+      Alert.alert(
+        "Không đủ xu",
+        `Bạn cần ${formatNumber(coinCost)} xu để mở lượt thi này. Số dư hiện tại: ${formatNumber(balance ?? 0)} xu.`,
+        [
+          { text: "Quay lại", style: "cancel" },
+          { text: "Nạp xu", onPress: () => router.push("/(app)/topup" as never) },
+        ],
+      );
+      return;
+    }
     if (activeSameExam) {
       Alert.alert(
         "Làm mới phiên thi?",
@@ -278,11 +294,7 @@ export default function ExamDetailScreen() {
         onPress={handleStart}
         disabled={startMutation.isPending || abandonMutation.isPending}
       >
-        {startMutation.isPending || abandonMutation.isPending
-          ? "Đang tạo phiên thi..."
-          : activeSameExam
-            ? "Làm mới"
-            : isFull ? "Nhận đề & bắt đầu" : "Bắt đầu làm bài"}
+        {startMutation.isPending || abandonMutation.isPending ? "Đang tạo phiên thi..." : getStartLabel(insufficient, activeSameExam != null, isFull)}
       </DepthButton>
 
       {startMutation.isError && (
@@ -299,6 +311,12 @@ export default function ExamDetailScreen() {
 function getSpeakingTypeLabel(type: string): string {
   const map: Record<string, string> = { social: "Giao tiếp xã hội", solution: "Đề xuất giải pháp", topic: "Thảo luận chủ đề" };
   return map[type] ?? type;
+}
+
+function getStartLabel(insufficient: boolean, hasActiveSession: boolean, isFull: boolean): string {
+  if (insufficient) return "Nạp xu";
+  if (hasActiveSession) return "Làm mới";
+  return isFull ? "Nhận đề & bắt đầu" : "Bắt đầu làm bài";
 }
 
 function MetaPill({ icon, label, unit, c }: { icon: string; label: string; unit: string; c: ReturnType<typeof useThemeColors> }) {

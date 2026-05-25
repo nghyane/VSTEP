@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useReducer, useRef } from "react";
+import { AppState } from "react-native";
 import { api } from "@/lib/api";
 import { saveDraft, loadDraft, clearDraft, type ExamDraft } from "@/lib/exam-draft";
 import type { ExamVersionMcqItem, ExamVersionWritingTask, ExamVersionSpeakingPart } from "@/types/api";
@@ -211,6 +212,7 @@ type ExamPhase = "device-check" | "active" | "submitting" | "submitted";
 type SkillKey = "listening" | "reading" | "writing" | "speaking";
 
 const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"];
+const SERVER_DRAFT_SYNC_MS = 1_500;
 
 interface SpeakingAnswer {
   partId: string;
@@ -227,6 +229,19 @@ interface ExamState {
   speakingAnswers: Map<string, SpeakingAnswer>;
   confirmSubmit: boolean;
   confirmNextSkill: boolean;
+}
+
+function initialExamState(session: ExamSessionData): ExamState {
+  return {
+    phase: "device-check",
+    skillIdx: 0,
+    mcqAnswers: new Map(),
+    writingAnswers: new Map(),
+    speakingDone: new Set(),
+    speakingAnswers: new Map<string, SpeakingAnswer>(),
+    confirmSubmit: false,
+    confirmNextSkill: false,
+  };
 }
 
 type ExamAction =
@@ -269,6 +284,7 @@ function reducer(state: ExamState, action: ExamAction): ExamState {
     case "RESTORE_DRAFT":
       return {
         ...state,
+        phase: "active",
         skillIdx: action.draft.skillIdx,
         mcqAnswers: new Map(Object.entries(action.draft.mcqAnswers)),
         writingAnswers: new Map(Object.entries(action.draft.writingAnswers)),
@@ -325,6 +341,33 @@ function toExamDraft(session: ExamSessionData, draft: ExamServerDraft): ExamDraf
   };
 }
 
+function buildDraft(session: ExamSessionData, state: ExamState): ExamDraft {
+  return {
+    sessionId: session.id,
+    examId: session.examVersionId,
+    skillIdx: state.skillIdx,
+    mcqAnswers: Object.fromEntries(state.mcqAnswers),
+    writingAnswers: Object.fromEntries(state.writingAnswers),
+    speakingMarks: Object.fromEntries(
+      Array.from(state.speakingAnswers.entries()).map(([k, v]) => [k, v.audioUrl ?? ""]),
+    ),
+    savedAt: new Date().toISOString(),
+  };
+}
+
+function buildSaveDraftPayload(state: ExamState): SaveExamDraftPayload {
+  return {
+    skillIdx: state.skillIdx,
+    mcqAnswers: Array.from(state.mcqAnswers, ([itemId, idx]) => ({ itemRefId: itemId, selectedIndex: idx })),
+    writingAnswers: Array.from(state.writingAnswers, ([taskId, text]) => ({ taskId, text })),
+    speakingMarks: Array.from(state.speakingAnswers, ([partId, ans]) => ({
+      partId,
+      audioUrl: ans.audioUrl,
+      durationSeconds: ans.durationSeconds,
+    })),
+  };
+}
+
 export function useExamSessionState(
   session: ExamSessionData,
   listeningItems: ExamVersionMcqItem[],
@@ -333,22 +376,15 @@ export function useExamSessionState(
   speakingParts: ExamVersionSpeakingPart[],
   onSubmitted: (result: SubmitSessionResult) => void,
 ) {
-  const [state, dispatch] = useReducer(reducer, {
-    phase: "device-check",
-    skillIdx: 0,
-    mcqAnswers: new Map(),
-    writingAnswers: new Map(),
-    speakingDone: new Set(),
-    speakingAnswers: new Map<string, SpeakingAnswer>(),
-    confirmSubmit: false,
-    confirmNextSkill: false,
-  } as ExamState);
+  const [state, dispatch] = useReducer(reducer, session, initialExamState);
 
   const submitMutation = useSubmitExamSession(session.id);
   const saveDraftMutation = useSaveExamDraft(session.id);
   const serverDraft = useExamDraft(session.id);
   const restoredDraftRef = useRef(false);
   const localSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const serverSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestStateRef = useRef(state);
 
   const activeSkills = SKILL_ORDER.filter((sk) => session.selectedSkills.includes(sk));
   const currentSkill = activeSkills[state.skillIdx] ?? activeSkills[0];
@@ -357,6 +393,10 @@ export function useExamSessionState(
 
   const hasListening = activeSkills.includes("listening");
   const hasReading = activeSkills.includes("reading");
+
+  useEffect(() => {
+    latestStateRef.current = state;
+  }, [state]);
 
   useEffect(() => {
     if (restoredDraftRef.current || serverDraft.isLoading) return;
@@ -416,63 +456,39 @@ export function useExamSessionState(
   // Persist locally almost immediately so app kill / background does not lose
   // recent answers. Server sync below stays throttled to avoid noisy requests.
   useEffect(() => {
-    if (state.phase === "submitted" || state.phase === "submitting") return;
+    if (state.phase !== "active") return;
     if (localSaveTimerRef.current) clearTimeout(localSaveTimerRef.current);
     localSaveTimerRef.current = setTimeout(() => {
-      const draft: ExamDraft = {
-        sessionId: session.id,
-        examId: session.examVersionId,
-        skillIdx: state.skillIdx,
-        mcqAnswers: Object.fromEntries(state.mcqAnswers),
-        writingAnswers: Object.fromEntries(state.writingAnswers),
-        speakingMarks: Object.fromEntries(
-          Array.from(state.speakingAnswers.entries()).map(([k, v]) => [k, v.audioUrl ?? ""]),
-        ),
-        savedAt: new Date().toISOString(),
-      };
-      void saveDraft(draft);
+      void saveDraft(buildDraft(session, state));
     }, 250);
     return () => {
       if (localSaveTimerRef.current) clearTimeout(localSaveTimerRef.current);
     };
-  }, [session.id, session.examVersionId, state.phase, state.skillIdx, state.mcqAnswers, state.writingAnswers, state.speakingAnswers]);
+  }, [session, state]);
 
-  // Autosave: sync answers to server every 30s
+  const flushDraft = useCallback(() => {
+    const currentState = latestStateRef.current;
+    if (currentState.phase !== "active") return;
+    void saveDraft(buildDraft(session, currentState));
+    saveDraftMutation.mutate(buildSaveDraftPayload(currentState));
+  }, [saveDraftMutation, session]);
+
+  // Autosave: sync answers to server with FE-like debounce so web/mobile share state quickly.
   useEffect(() => {
-    const id = setInterval(() => {
-      const draft: ExamDraft = {
-        sessionId: session.id,
-        examId: session.examVersionId,
-        skillIdx: state.skillIdx,
-        mcqAnswers: Object.fromEntries(state.mcqAnswers),
-        writingAnswers: Object.fromEntries(state.writingAnswers),
-        speakingMarks: Object.fromEntries(
-          Array.from(state.speakingAnswers.entries()).map(([k, v]) => [k, v.audioUrl ?? ""])
-        ),
-        savedAt: new Date().toISOString(),
-      };
-      saveDraft(draft);
-      // BE expects arrays of objects (SaveExamDraftRequest). See
-      // ExamDraftMcq / ExamDraftWriting / ExamDraftSpeakingMark.
-      saveDraftMutation.mutate({
-        skillIdx: state.skillIdx,
-        mcqAnswers: Array.from(state.mcqAnswers, ([itemId, idx]) => ({
-          itemRefId: itemId,
-          selectedIndex: idx,
-        })),
-        writingAnswers: Array.from(state.writingAnswers, ([taskId, text]) => ({
-          taskId,
-          text,
-        })),
-        speakingMarks: Array.from(state.speakingAnswers, ([partId, ans]) => ({
-          partId,
-          audioUrl: ans.audioUrl,
-          durationSeconds: ans.durationSeconds,
-        })),
-      });
-    }, 30_000);
-    return () => clearInterval(id);
-  }, [session.id, session.examVersionId, state.skillIdx, state.mcqAnswers, state.writingAnswers, state.speakingAnswers, saveDraftMutation]);
+    if (state.phase !== "active") return;
+    if (serverSaveTimerRef.current) clearTimeout(serverSaveTimerRef.current);
+    serverSaveTimerRef.current = setTimeout(flushDraft, SERVER_DRAFT_SYNC_MS);
+    return () => {
+      if (serverSaveTimerRef.current) clearTimeout(serverSaveTimerRef.current);
+    };
+  }, [state.phase, state.skillIdx, state.mcqAnswers, state.writingAnswers, state.speakingAnswers, flushDraft]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState !== "active") flushDraft();
+    });
+    return () => subscription.remove();
+  }, [flushDraft]);
 
   return {
     state,

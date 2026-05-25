@@ -66,6 +66,10 @@ export default function SessionScreen() {
     );
   }
 
+  if (sessionData.status !== "active") {
+    return <SubmittedSessionRedirect sessionId={sessionData.id} c={c} />;
+  }
+
   if (submitResult) {
     return (
       <ResultScreen
@@ -88,6 +92,21 @@ export default function SessionScreen() {
       insets={insets}
       router={router}
     />
+  );
+}
+
+function SubmittedSessionRedirect({ sessionId, c }: { sessionId: string; c: ReturnType<typeof useThemeColors> }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace(`/(app)/exam-result/${sessionId}`);
+  }, [router, sessionId]);
+
+  return (
+    <View style={[s.center, { backgroundColor: c.background }]}>
+      <ActivityIndicator color={c.primary} size="large" />
+      <Text style={{ color: c.mutedForeground, marginTop: spacing.md }}>Đang mở kết quả bài thi...</Text>
+    </View>
   );
 }
 
