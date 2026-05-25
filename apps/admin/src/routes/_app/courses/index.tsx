@@ -9,7 +9,7 @@ import {
 } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { Alert, Input as AntInput, Empty, Flex, Space, Table, Tag, Typography } from "antd"
+import { Alert, Input as AntInput, Empty, Flex, Space, Switch as AntdSwitch, Table, Tag, Typography } from "antd"
 import { useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
@@ -285,16 +285,13 @@ function CoursesListPage() {
 								const expired = isExpired(c.end_date)
 								return (
 									<Space orientation="vertical" size={4} align="start">
-										<button
-											type="button"
-											onClick={() => togglePublish(c)}
-											style={{ background: "none", border: 0, padding: 0, cursor: "pointer" }}
-											aria-label="Đổi trạng thái ghi danh"
-										>
-											<Tag color={c.is_published ? "success" : "warning"}>
-												{c.is_published ? "Đang mở" : "Đã đóng"}
-											</Tag>
-										</button>
+										<AntdSwitch
+											checked={c.is_published}
+											onChange={() => togglePublish(c)}
+											checkedChildren="Đang mở"
+											unCheckedChildren="Đã đóng"
+											size="small"
+										/>
 										{expired && c.is_published && (
 											<Tag color="error" style={{ marginInlineEnd: 0 }}>
 												Cần đóng

@@ -218,7 +218,57 @@ Route::prefix('v1')->group(function () {
         });
 
         // Exam management
-        Route::post('/exams/import', [Admin\ExamController::class, 'import']);
+        Route::prefix('exams')->group(function () {
+            Route::post('/import', [Admin\ExamController::class, 'import']);
+            Route::get('/', [Admin\ExamController::class, 'index']);
+            Route::post('/', [Admin\ExamController::class, 'store']);
+            Route::get('/{id}', [Admin\ExamController::class, 'show'])->whereUuid('id');
+            Route::patch('/{id}', [Admin\ExamController::class, 'update'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamController::class, 'destroy'])->whereUuid('id');
+            Route::post('/{id}/publish', [Admin\ExamController::class, 'publish'])->whereUuid('id');
+            Route::post('/{id}/unpublish', [Admin\ExamController::class, 'unpublish'])->whereUuid('id');
+
+            // Version management
+            Route::get('/{examId}/versions', [Admin\ExamVersionController::class, 'index'])->whereUuid('examId');
+            Route::post('/{examId}/versions', [Admin\ExamVersionController::class, 'store'])->whereUuid('examId');
+            Route::get('/{examId}/versions/{versionId}', [Admin\ExamVersionController::class, 'show'])->whereUuid(['examId', 'versionId']);
+            Route::post('/{examId}/versions/{versionId}/activate', [Admin\ExamVersionController::class, 'setActive'])->whereUuid(['examId', 'versionId']);
+            Route::delete('/{examId}/versions/{versionId}', [Admin\ExamVersionController::class, 'destroy'])->whereUuid(['examId', 'versionId']);
+        });
+
+        // Exam content CRUD (child resources of version)
+        Route::prefix('exams/versions/{versionId}')->whereUuid('versionId')->group(function () {
+            Route::post('/listening-sections', [Admin\ExamContentController::class, 'storeListeningSection']);
+            Route::post('/reading-passages', [Admin\ExamContentController::class, 'storeReadingPassage']);
+            Route::post('/writing-tasks', [Admin\ExamContentController::class, 'storeWritingTask']);
+            Route::post('/speaking-parts', [Admin\ExamContentController::class, 'storeSpeakingPart']);
+        });
+        Route::prefix('exams/listening-sections')->group(function () {
+            Route::patch('/{id}', [Admin\ExamContentController::class, 'updateListeningSection'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamContentController::class, 'destroyListeningSection'])->whereUuid('id');
+            Route::post('/{id}/items', [Admin\ExamContentController::class, 'storeListeningItem'])->whereUuid('id');
+        });
+        Route::prefix('exams/listening-items')->group(function () {
+            Route::patch('/{id}', [Admin\ExamContentController::class, 'updateListeningItem'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamContentController::class, 'destroyListeningItem'])->whereUuid('id');
+        });
+        Route::prefix('exams/reading-passages')->group(function () {
+            Route::patch('/{id}', [Admin\ExamContentController::class, 'updateReadingPassage'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamContentController::class, 'destroyReadingPassage'])->whereUuid('id');
+            Route::post('/{id}/items', [Admin\ExamContentController::class, 'storeReadingItem'])->whereUuid('id');
+        });
+        Route::prefix('exams/reading-items')->group(function () {
+            Route::patch('/{id}', [Admin\ExamContentController::class, 'updateReadingItem'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamContentController::class, 'destroyReadingItem'])->whereUuid('id');
+        });
+        Route::prefix('exams/writing-tasks')->group(function () {
+            Route::patch('/{id}', [Admin\ExamContentController::class, 'updateWritingTask'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamContentController::class, 'destroyWritingTask'])->whereUuid('id');
+        });
+        Route::prefix('exams/speaking-parts')->group(function () {
+            Route::patch('/{id}', [Admin\ExamContentController::class, 'updateSpeakingPart'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamContentController::class, 'destroySpeakingPart'])->whereUuid('id');
+        });
 
         // Vocab management — Topics + Words + Exercises
         Route::prefix('vocab')->group(function () {

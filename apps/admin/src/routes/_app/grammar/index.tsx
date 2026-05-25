@@ -1,7 +1,7 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { Input as AntdInput, Empty, Flex, Pagination, Skeleton, Space, Table, Tag, Typography } from "antd"
+import { Input as AntdInput, Empty, Flex, Pagination, Skeleton, Space, Switch as AntdSwitch, Table, Tag, Typography } from "antd"
 import type { ColumnsType } from "antd/es/table"
 import { useState } from "react"
 import { Button } from "#/components/Button"
@@ -149,14 +149,13 @@ function GrammarListPage() {
 			title: "Trạng thái",
 			key: "status",
 			render: (_: unknown, p) => (
-				<button
-					type="button"
-					onClick={() => togglePublish(p)}
-					style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
-					aria-label="Đổi trạng thái xuất bản"
-				>
-					<Tag color={p.is_published ? "success" : "warning"}>{p.is_published ? "Xuất bản" : "Nháp"}</Tag>
-				</button>
+				<AntdSwitch
+					checked={p.is_published}
+					onChange={() => togglePublish(p)}
+					checkedChildren="Xuất bản"
+					unCheckedChildren="Nháp"
+					size="small"
+				/>
 			),
 		},
 		{

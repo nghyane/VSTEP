@@ -4,6 +4,7 @@ import { Suspense, useMemo, useState } from "react"
 import { Header } from "#/components/Header"
 import { Icon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
+import { SegmentedTabs } from "#/components/SegmentedTabs"
 import { type ActiveSummary, ExamCard, type ExamStatus } from "#/features/exam/components/ExamCard"
 import { appConfigQuery, examsQuery, mySessionsQuery } from "#/features/exam/queries"
 import type { SkillKey } from "#/features/exam/types"
@@ -27,8 +28,14 @@ function ThiThuPage() {
 	)
 }
 
-const STATUS_OPTIONS = ["Tất cả", "Chưa làm", "Đang làm dở", "Đã nộp"] as const
-type StatusFilter = (typeof STATUS_OPTIONS)[number]
+type StatusFilter = "Tất cả" | "Chưa làm" | "Đang làm dở" | "Đã nộp"
+
+const STATUS_FILTER_ITEMS: { value: StatusFilter; label: string }[] = [
+	{ value: "Tất cả", label: "Tất cả" },
+	{ value: "Chưa làm", label: "Chưa làm" },
+	{ value: "Đang làm dở", label: "Đang làm dở" },
+	{ value: "Đã nộp", label: "Đã nộp" },
+]
 
 const SKILL_FILTERS: { key: SkillKey; label: string; color: string }[] = [
 	{ key: "listening", label: "Listening", color: "text-skill-listening" },
@@ -39,7 +46,7 @@ const SKILL_FILTERS: { key: SkillKey; label: string; color: string }[] = [
 
 const SKILL_ACTIVE_BG: Record<SkillKey, string> = {
 	listening: "bg-info-tint border-info",
-	reading: "bg-[#f3eeff] border-[#7850c8]",
+	reading: "bg-skill-reading/15 border-skill-reading/40",
 	writing: "bg-primary-tint border-primary",
 	speaking: "bg-warning-tint border-warning",
 }
@@ -163,24 +170,7 @@ function ExamListContent() {
 				{/* Divider */}
 				<div className="w-px h-6 bg-border" />
 
-				{/* Status pills */}
-				<div className="flex items-center gap-1.5">
-					{STATUS_OPTIONS.map((opt) => (
-						<button
-							key={opt}
-							type="button"
-							onClick={() => setStatus(opt)}
-							className={cn(
-								"px-3 py-1.5 rounded-(--radius-button) text-xs font-bold border-2 transition-colors cursor-pointer",
-								status === opt
-									? "bg-primary text-primary-foreground border-primary"
-									: "bg-surface text-muted border-border hover:border-border-focus hover:text-foreground",
-							)}
-						>
-							{opt}
-						</button>
-					))}
-				</div>
+				<SegmentedTabs items={STATUS_FILTER_ITEMS} value={status} onChange={setStatus} />
 
 				{/* Divider */}
 				<div className="w-px h-6 bg-border" />

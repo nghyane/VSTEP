@@ -531,6 +531,8 @@ function ActiveExamRoom({
 		setSubmitResult(result)
 	}
 
+	const remainingSeconds = useExamTimer(session.server_deadline_at)
+
 	const {
 		state,
 		activeSkills,
@@ -540,6 +542,7 @@ function ActiveExamRoom({
 		totalMcq,
 		answeredMcq,
 		isSubmitting,
+		isTimeExpired,
 		handleStartExam,
 		handleAnswerMcq,
 		handleAnswerWriting,
@@ -557,6 +560,7 @@ function ActiveExamRoom({
 		readingItems,
 		writingTasks: version.writing_tasks,
 		initialDraft,
+		remainingSeconds,
 		onSubmitted: handleSubmitted,
 	})
 
@@ -571,8 +575,6 @@ function ActiveExamRoom({
 	)
 
 	const totalDurationMinutes = activeSkills.reduce((sum, sk) => sum + skillDurationMinutes[sk], 0)
-
-	const remainingSeconds = useExamTimer(session.server_deadline_at)
 
 	// Cảnh báo khi user cố đóng tab / refresh / bấm back browser trong lúc làm bài.
 	useEffect(() => {
@@ -642,6 +644,25 @@ function ActiveExamRoom({
 					session={{ ...session, status: "submitted" }}
 				/>
 			</Suspense>
+		)
+	}
+
+	// Hết giờ — hiện overlay thông báo đang nộp bài tự động
+	if (isTimeExpired) {
+		return (
+			<div className="flex h-screen flex-col items-center justify-center gap-6 bg-background">
+				<div className="flex size-20 items-center justify-center rounded-full bg-warning/10">
+					<svg viewBox="0 0 24 24" className="size-10 text-warning" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+						<circle cx="12" cy="12" r="10" />
+						<polyline points="12,6 12,12 16,14" />
+					</svg>
+				</div>
+				<div className="text-center">
+					<h2 className="text-xl font-bold text-foreground">Hết giờ làm bài</h2>
+					<p className="mt-2 text-sm text-muted">Đang nộp bài tự động, vui lòng chờ...</p>
+				</div>
+				<div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+			</div>
 		)
 	}
 
