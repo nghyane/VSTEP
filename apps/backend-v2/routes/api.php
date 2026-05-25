@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\McqPracticeController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OverviewController;
+use App\Http\Controllers\Api\V1\PaymentCallbackController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ShadowingProgressController;
 use App\Http\Controllers\Api\V1\SpeakingConversationController;
@@ -26,6 +27,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/health', [HealthController::class, 'show']);
 
     Route::get('/config', [ConfigController::class, 'show']);
+
+    // Payment gateway callbacks — NO AUTH (server-to-server from PayOS/VNPay).
+    Route::post('/payment/callback/{provider}', [PaymentCallbackController::class, 'handle']);
 
     // Auth (public, rate limited)
     Route::middleware('throttle:10,1')->group(function () {
@@ -64,7 +68,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
         Route::get('/wallet/topup-packages', [WalletController::class, 'topupPackages']);
         Route::post('/wallet/topup', [WalletController::class, 'createTopup']);
-        Route::post('/wallet/topup/{wallet_topup_order}/confirm', [WalletController::class, 'confirmTopup']);
+        Route::get('/wallet/topup/{order}/status', [WalletController::class, 'orderStatus']);
         Route::post('/wallet/promo-redeem', [WalletController::class, 'redeemPromo']);
 
         // Vocabulary foundation.

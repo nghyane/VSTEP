@@ -1,14 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
 import { ScrollArea } from "#/components/ScrollArea"
-import { confirmTopupOrder, createTopupOrder } from "#/features/wallet/actions"
+import { createTopupOrder } from "#/features/wallet/actions"
 import { topupPackagesQuery, walletBalanceQuery } from "#/features/wallet/queries"
-import { TopUpSuccessPopup } from "#/features/wallet/TopUpSuccessPopup"
 import type { TopupPackage } from "#/features/wallet/types"
-import { useCoinGain } from "#/lib/coin-gain"
 import { cn, formatNumber, formatVnd } from "#/lib/utils"
 
 interface Props {
@@ -17,28 +15,12 @@ interface Props {
 }
 
 export function TopUpDialog({ open, onClose }: Props) {
-	const [success, setSuccess] = useState<{ coins: number; balance: number } | null>(null)
-
 	useEffect(() => {
 		if (!open) return
 		const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
 		window.addEventListener("keydown", onKey)
 		return () => window.removeEventListener("keydown", onKey)
 	}, [open, onClose])
-
-	const handleSuccess = (coins: number, balance: number) => {
-		setSuccess({ coins, balance })
-		onClose()
-	}
-
-	const handleSuccessClose = () => {
-		const coins = success?.coins ?? 0
-		setSuccess(null)
-		if (coins > 0) {
-			// Defer until after popup unmount so user sees the header animation clearly.
-			setTimeout(() => useCoinGain.getState().trigger(coins), 220)
-		}
-	}
 
 	if (typeof document === "undefined") return null
 
@@ -61,28 +43,16 @@ export function TopUpDialog({ open, onClose }: Props) {
 							>
 								<Icon name="close" size="sm" className="text-muted" />
 							</button>
-							<DialogBody onSuccess={handleSuccess} onClose={onClose} />
+							<DialogBody onClose={onClose} />
 						</div>
 					</div>,
 					document.body,
 				)}
-			<TopUpSuccessPopup
-				open={success !== null}
-				coinsAdded={success?.coins ?? 0}
-				newBalance={success?.balance ?? 0}
-				onClose={handleSuccessClose}
-			/>
 		</>
 	)
 }
 
-function DialogBody({
-	onClose,
-	onSuccess,
-}: {
-	onClose: () => void
-	onSuccess: (coins: number, balance: number) => void
-}) {
+function DialogBody({ onClose }: { onClose: () => void }) {
 	const { data, isLoading } = useQuery(topupPackagesQuery)
 	const { data: walletData } = useQuery(walletBalanceQuery)
 	const packages = data?.data ?? []
@@ -123,8 +93,6 @@ function DialogBody({
 					selectedId={selectedId}
 					onSelect={setSelectedId}
 					selected={selected}
-					currentBalance={balance}
-					onBuySuccess={onSuccess}
 				/>
 			</ScrollArea>
 		</div>
@@ -220,15 +188,11 @@ function RightPanel({
 	selectedId,
 	onSelect,
 	selected,
-	currentBalance,
-	onBuySuccess,
 }: {
 	packages: TopupPackage[]
 	selectedId: string
 	onSelect: (id: string) => void
 	selected: TopupPackage
-	currentBalance: number
-	onBuySuccess: (coins: number, balance: number) => void
 }) {
 	return (
 		<div className="flex flex-col gap-6 p-6 md:p-8">
@@ -278,7 +242,7 @@ function RightPanel({
 				))}
 			</div>
 
-			<BuyButton pack={selected} currentBalance={currentBalance} onSuccess={onBuySuccess} />
+			<BuyButton pack={selected} />
 		</div>
 	)
 }
@@ -356,25 +320,15 @@ function PackCard({
 	)
 }
 
-function BuyButton({
-	pack,
-	currentBalance,
-	onSuccess,
-}: {
-	pack: TopupPackage
-	currentBalance: number
-	onSuccess: (coins: number, balance: number) => void
-}) {
-	const queryClient = useQueryClient()
-
+function BuyButton({ pack }: { pack: TopupPackage }) {
 	const mutation = useMutation({
 		mutationFn: async () => {
 			const order = await createTopupOrder(pack.id)
-			return confirmTopupOrder(order.id)
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: walletBalanceQuery.queryKey })
-			onSuccess(pack.total_coins, currentBalance + pack.total_coins)
+			if (!order.payment_url) {
+				throw new Error("No payment URL returned")
+			}
+			// Redirect user to payment gateway.
+			window.location.href = order.payment_url
 		},
 	})
 
