@@ -133,34 +133,35 @@ function SkillCard({
   const color = useSkillColor(skill.key);
 
   return (
-    <HapticTouchable
-      style={s.skillCardWrapper}
-      scalePress
-      activeOpacity={0.9}
-      onPress={onPress}
-    >
-      <View
-        style={[
-          s.skillCard,
-          {
-            backgroundColor: active ? color + "12" : c.card,
-            borderColor: active ? color : c.border,
-            borderBottomColor: active ? color : "#CACACA",
-          },
-        ]}
+    <View style={s.skillCardWrapper}>
+      <HapticTouchable
+        scalePress
+        activeOpacity={0.9}
+        onPress={onPress}
       >
-        <View style={[s.skillIconWrap, { backgroundColor: color + "20" }]}>
-          <Ionicons name={skill.icon} size={24} color={color} />
+        <View
+          style={[
+            s.skillCard,
+            {
+              backgroundColor: active ? color + "12" : c.card,
+              borderColor: active ? color : c.border,
+              borderBottomColor: active ? color : "#CACACA",
+            },
+          ]}
+        >
+          <View style={[s.skillIconWrap, { backgroundColor: color + "20" }]}>
+            <Ionicons name={skill.icon} size={24} color={color} />
+          </View>
+          <Text style={[s.skillLabel, { color: active ? color : c.foreground }]}>
+            {skill.label}
+          </Text>
+          <Text style={[s.skillSub, { color: c.subtle }]}>{skill.sub}</Text>
+          <Text style={[s.skillMeta, { color: c.mutedForeground }]} numberOfLines={2}>
+            {skill.meta}
+          </Text>
         </View>
-        <Text style={[s.skillLabel, { color: active ? color : c.foreground }]}>
-          {skill.label}
-        </Text>
-        <Text style={[s.skillSub, { color: c.subtle }]}>{skill.sub}</Text>
-        <Text style={[s.skillMeta, { color: c.mutedForeground }]} numberOfLines={2}>
-          {skill.meta}
-        </Text>
-      </View>
-    </HapticTouchable>
+      </HapticTouchable>
+    </View>
   );
 }
 
@@ -172,19 +173,20 @@ const s = StyleSheet.create({
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   sub: { fontSize: fontSize.sm, lineHeight: 20, marginTop: spacing.xs },
   // Skill grid
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
-  skillCardWrapper: { width: "47%" },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, justifyContent: "space-between" },
+  skillCardWrapper: { width: "48%" },
   skillCard: {
     borderWidth: 2,
     borderBottomWidth: 4,
     borderRadius: radius.xl,
-    padding: spacing.base,
-    gap: 4,
+    padding: spacing.lg,
+    gap: spacing.xs,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
     shadowRadius: 4,
     elevation: 3,
+    minHeight: 150,
   },
   skillIconWrap: {
     width: 44,
@@ -192,7 +194,7 @@ const s = StyleSheet.create({
     borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   skillLabel: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
   skillSub: { fontSize: fontSize.xs },

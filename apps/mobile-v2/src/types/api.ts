@@ -201,6 +201,8 @@ export interface OverviewData {
     targetLevel: string;
     targetDeadline: string | null;
     daysUntilExam: number | null;
+    entryLevel: string | null;
+    predictedLevel: string | null;
   };
   stats: {
     totalTests: number;

@@ -10,7 +10,9 @@ import {
   useStreakMilestones,
   useTodayProgress,
   claimMilestone,
+  type StreakMilestone,
 } from "@/features/streak/streak-store";
+import { showWelcomeGift } from "@/features/onboarding/welcome-gift-store";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
 interface StreakButtonProps {
@@ -62,6 +64,31 @@ function StreakDialog({
   const dailyGoal = useDailyGoal();
   const milestones = useStreakMilestones();
   const weekDays = buildCurrentWeek(activityByDay);
+  const [claiming, setClaiming] = useState(false);
+
+  const done = Math.min(dailyGoal, todayCount);
+  const todayPct = dailyGoal > 0 ? (done / dailyGoal) * 100 : 0;
+  const remaining = Math.max(0, dailyGoal - done);
+  const goalReached = remaining === 0;
+
+  // Mốc có coins lớn nhất → chest popup
+  const chestDays = milestones.length > 0
+    ? milestones.reduce((best, m) => m.coins > best.coins ? m : best).days
+    : null;
+
+  async function handleClaim(m: StreakMilestone) {
+    if (claiming || m.claimed) return;
+    setClaiming(true);
+    try {
+      await claimMilestone(m.days);
+      if (m.days === chestDays) {
+        onClose();
+        setTimeout(() => showWelcomeGift(m.coins, "streak-chest", m.days), 240);
+      }
+    } finally {
+      setClaiming(false);
+    }
+  }
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
@@ -69,13 +96,34 @@ function StreakDialog({
         <View style={[styles.header, { backgroundColor: c.streak + "12" }]}>
           <View style={styles.headerRow}>
             <GameIcon name="fire" size={36} />
-            <Text style={[styles.streakNum, { color: c.streak }]}>{streak} ngay streak</Text>
+            <View>
+              <Text style={[styles.streakNum, { color: c.streak }]}>
+                {streak} <Text style={styles.streakUnit}>ngày</Text>
+              </Text>
+              <Text style={[styles.headerSub, { color: c.mutedForeground }]}>
+                {streak > 0 ? "Tiếp tục học mỗi ngày nhé!" : "Bắt đầu chuỗi học ngay hôm nay!"}
+              </Text>
+            </View>
           </View>
-          <Text style={[styles.headerSub, { color: c.mutedForeground }]}>
-            {streak > 0 ? "Tiep tuc hoc moi ngay nhe!" : "Bat dau chuoi hoc ngay hom nay!"}
+        </View>
+
+        {/* Tiến độ hôm nay */}
+        <View style={[styles.progressCard, { backgroundColor: c.muted }]}>
+          <View style={styles.progressTop}>
+            <Text style={[styles.progressLabel, { color: c.foreground }]}>Tiến độ hôm nay</Text>
+            <Text style={[styles.progressValue, { color: goalReached ? c.success : c.warning }]}>
+              {done}/{dailyGoal} bài thi
+            </Text>
+          </View>
+          <View style={[styles.progressTrack, { backgroundColor: c.border }]}>
+            <View style={[styles.progressFill, { width: `${Math.min(todayPct, 100)}%`, backgroundColor: goalReached ? c.success : c.warning }]} />
+          </View>
+          <Text style={[styles.progressHint, { color: c.mutedForeground }]}>
+            {goalReached ? "Hoàn thành! Streak được giữ hôm nay." : `Còn ${remaining} bài thi nữa để giữ streak`}
           </Text>
         </View>
 
+        {/* Tuần */}
         <View style={styles.weekRow}>
           {weekDays.map((day) => (
             <View key={day.label} style={styles.weekDay}>
@@ -96,44 +144,35 @@ function StreakDialog({
           ))}
         </View>
 
-        <View style={[styles.progressRow, { backgroundColor: c.muted }]}>
-          <Text style={[styles.progressLabel, { color: c.foreground }]}>Hom nay</Text>
-          <Text
-            style={[
-              styles.progressValue,
-              { color: todayCount >= dailyGoal ? c.success : c.primary },
-            ]}
-          >
-            {todayCount}/{dailyGoal} bai tap
-          </Text>
-        </View>
-
+        {/* Mốc phần thưởng */}
+        <Text style={[styles.sectionLabel, { color: c.mutedForeground }]}>Mốc phần thưởng</Text>
         <View style={styles.milestones}>
           {milestones.map((m) => {
             const unlocked = streak >= m.days;
             const isClaimed = m.claimed;
+            const progress = Math.min(m.days, streak);
+            const pct = Math.round((progress / m.days) * 100);
             return (
-              <View key={m.days} style={[styles.milestone, { borderColor: unlocked ? c.coin : c.border }]}>
-                <GameIcon name={unlocked ? "trophy" : "lock"} size={24} />
+              <View key={m.days} style={[styles.milestone, { borderColor: unlocked && !isClaimed ? c.coin : c.border }]}>
+                <GameIcon name={isClaimed ? "trophy" : unlocked ? "chest" : "lock"} size={24} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.msTitle, { color: c.foreground }]}>{m.days} ngay</Text>
+                  <Text style={[styles.msTitle, { color: c.foreground }]}>{m.days} ngày streak</Text>
                   <Text style={[styles.msReward, { color: c.coin }]}>+{m.coins} xu</Text>
+                  {!unlocked && (
+                    <View style={[styles.msTrack, { backgroundColor: c.border }]}>
+                      <View style={[styles.msFill, { width: `${pct}%`, backgroundColor: c.streak }]} />
+                    </View>
+                  )}
                 </View>
                 {unlocked && !isClaimed && (
-                  <DepthButton
-                    variant="coin"
-                    size="sm"
-                    onPress={() => {
-                      void claimMilestone(m.days);
-                    }}
-                  >
-                    Nhan
+                  <DepthButton variant="coin" size="sm" onPress={() => { void handleClaim(m); }} disabled={claiming}>
+                    Nhận xu
                   </DepthButton>
                 )}
                 {isClaimed && <Ionicons name="checkmark-circle" size={24} color={c.success} />}
                 {!unlocked && (
                   <Text style={[styles.msLocked, { color: c.mutedForeground }]}>
-                    {m.days - streak} ngay nua
+                    {progress}/{m.days}
                   </Text>
                 )}
               </View>
@@ -181,17 +220,25 @@ const styles = StyleSheet.create({
   header: { padding: spacing.lg, marginHorizontal: -spacing.xl, marginTop: -6, marginBottom: spacing.lg },
   headerRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   streakNum: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
-  headerSub: { fontSize: fontSize.sm, marginTop: 4 },
+  streakUnit: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
+  headerSub: { fontSize: fontSize.sm, marginTop: 2 },
+  progressCard: { padding: spacing.md, borderRadius: radius.lg, marginBottom: spacing.base, gap: spacing.xs },
+  progressTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  progressLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  progressValue: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  progressTrack: { height: 10, borderRadius: 5, overflow: "hidden" },
+  progressFill: { height: 10, borderRadius: 5 },
+  progressHint: { fontSize: fontSize.xs },
   weekRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: spacing.base },
   weekDay: { alignItems: "center", gap: 6 },
   weekLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   weekCircle: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: "transparent", alignItems: "center", justifyContent: "center" },
-  progressRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: spacing.md, borderRadius: radius.lg, marginBottom: spacing.base },
-  progressLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
-  progressValue: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
+  sectionLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, textTransform: "uppercase", letterSpacing: 1, marginBottom: spacing.sm },
   milestones: { gap: spacing.sm, marginBottom: spacing.sm },
   milestone: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 1, borderRadius: radius.xl, padding: spacing.md },
   msTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   msReward: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  msTrack: { height: 6, borderRadius: 3, overflow: "hidden", marginTop: 4 },
+  msFill: { height: 6, borderRadius: 3 },
   msLocked: { fontSize: fontSize.xs },
 });

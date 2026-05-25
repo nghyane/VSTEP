@@ -14,6 +14,7 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { useAuth } from "@/hooks/use-auth";
 import { completeOnboardingApi } from "@/lib/api";
+import { showWelcomeGift } from "@/features/onboarding/welcome-gift-store";
 import { getRefreshToken, saveTokens } from "@/lib/auth";
 import type { AuthUser } from "@/types/api";
 
@@ -83,6 +84,9 @@ export default function OnboardingScreen() {
         const res = await completeOnboardingApi(defaultNickname(user), target, deadlineToDate(deadline));
         await saveTokens(res.accessToken, refreshToken, user, res.profile);
         await signIn(res.accessToken, refreshToken, user, res.profile);
+        if (res.onboardingBonus?.granted) {
+          showWelcomeGift(res.onboardingBonus.amount);
+        }
         router.replace("/(app)/(tabs)");
       } catch {
         setFinishing(false);

@@ -11,6 +11,7 @@ import { queryClient } from "@/lib/query-client";
 import { saveTokens, clearTokens, getAccessToken, getRefreshToken } from "@/lib/auth";
 import { refreshSession } from "@/lib/api";
 import { HapticsProvider } from "@/contexts/HapticsContext";
+import { WelcomeGiftModal } from "@/features/onboarding/WelcomeGiftModal";
 import { loadCoins } from "@/features/coin/coin-store";
 import { loadStreakData } from "@/features/streak/streak-store";
 import { loadNotifications } from "@/features/notification/notification-store";
@@ -155,6 +156,7 @@ export default function RootLayout() {
               <Stack.Screen name="(app)" />
             </Stack>
             <StatusBar style="dark" />
+            <WelcomeGiftModal />
           </HapticsProvider>
         </AuthContext.Provider>
       </QueryClientProvider>

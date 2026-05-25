@@ -337,7 +337,7 @@ function ReviewBlock({
       <View style={s.reviewStats}>
         <Stat label="Lượt" value={String(summary.userTurnCount)} c={c} />
         <Stat label="Từ vựng" value={`${summary.vocabUsedPct}%`} c={c} />
-        <Stat label="Grammar" value={`${summary.grammarOkPct}%`} c={c} />
+        <Stat label="Ngữ pháp" value={`${summary.grammarOkPct}%`} c={c} />
       </View>
       {loading ? <ActivityIndicator color={c.skillSpeaking} /> : null}
       {review?.strengths?.length ? <ReviewList title="Điểm tốt" items={review.strengths} c={c} /> : null}

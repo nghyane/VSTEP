@@ -18,6 +18,7 @@ import { Logo } from "@/components/Logo";
 import { DepthButton } from "@/components/DepthButton";
 import { Mascot } from "@/components/Mascot";
 import { checkEmailApi, registerApi } from "@/lib/api";
+import { showWelcomeGift } from "@/features/onboarding/welcome-gift-store";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 function targetDeadlineFromNow(): string {
@@ -76,6 +77,9 @@ export default function RegisterScreen() {
       }
       const res = await registerApi(email.trim(), password, fullName.trim(), "B2", targetDeadlineFromNow());
       await signIn(res.accessToken, res.refreshToken, res.user, res.profile);
+      if (res.onboardingBonus?.granted) {
+        showWelcomeGift(res.onboardingBonus.amount);
+      }
       router.replace("/(app)/(tabs)");
     } catch (err) {
       setErrors({ general: err instanceof Error ? err.message : "Đã xảy ra lỗi. Thử lại." });

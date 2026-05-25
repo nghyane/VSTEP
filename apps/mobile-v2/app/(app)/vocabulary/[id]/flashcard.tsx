@@ -65,13 +65,13 @@ export default function FlashcardScreen() {
         score={score}
         total={reviewed}
         onBack={() => router.back()}
-        backLabel="Quay lai"
+        backLabel="Quay lại"
       />
     );
   }
 
   return (
-    <View style={[styles.root, { backgroundColor: c.background }]}>
+    <View style={[styles.root, { backgroundColor: c.background, paddingTop: insets.top }]}>
       <FocusHeader
         current={reviewed}
         total={reviewed + total}
@@ -80,7 +80,7 @@ export default function FlashcardScreen() {
         c={c}
       />
 
-      <View style={[styles.content, { paddingTop: insets.top + spacing.base }]}>
+      <View style={styles.content}>
         {!current ? (
           <View style={styles.doneWrap}>
             <Text style={[styles.doneTitle, { color: c.foreground }]}>Không có từ nào</Text>
@@ -109,7 +109,7 @@ export default function FlashcardScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { flex: 1, paddingHorizontal: spacing.xl, gap: spacing.lg },
+  content: { flex: 1, paddingHorizontal: spacing.xl, justifyContent: "center", gap: spacing.lg },
   doneWrap: { alignItems: "center", gap: spacing.md, paddingVertical: spacing["3xl"] },
   doneTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.bold, textAlign: "center" },
   doneSub: { fontSize: fontSize.sm, textAlign: "center" },

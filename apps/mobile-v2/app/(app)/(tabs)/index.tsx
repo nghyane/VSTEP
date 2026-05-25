@@ -127,11 +127,13 @@ export default function DashboardScreen() {
                   : "Hãy đặt mục tiêu để bắt đầu lộ trình của bạn"}
               </Text>
             </View>
-
-            <View style={styles.bannerMascot}>
-              <Mascot name="hero" size={64} animation="none" />
-            </View>
           </View>
+
+          <LevelProgress
+            entry={overview?.profile?.entryLevel ?? null}
+            predicted={overview?.profile?.predictedLevel ?? null}
+            target={targetLevel}
+          />
 
           <View style={styles.targetRow}>
             <View style={[styles.targetPill, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
@@ -164,10 +166,14 @@ export default function DashboardScreen() {
       </Animated.View>
 
       <Animated.View style={[styles.statsGrid, toAnimStyle(3)]}>
-        <StatCard icon="fire" label="Streak" value={`${streakData?.currentStreak ?? 0} ngày`} accent={c.streak} />
-        <StatCard icon="clock" label="Thời gian học" value={stats ? formatMinutes(stats.totalStudyMinutes) : "—"} accent={c.info} />
-        <StatCard icon="pencil" label="Bài thi" value={stats ? `${stats.totalTests}/${stats.minTestsRequired}` : "—"} accent={c.skillReading} />
-        <StatCard icon="crown" label="Band hiện tại" value={chart ? computeAvgBand(chart) : "—"} accent={c.coin} />
+        {SKILLS.map((skill) => (
+          <SkillStatCard
+            key={skill}
+            skill={skill}
+            score={chart?.[skill] ?? null}
+            targetBand={targetBand}
+          />
+        ))}
       </Animated.View>
 
       <ActivityHeatmap />
@@ -217,24 +223,47 @@ export default function DashboardScreen() {
   );
 }
 
-function StatCard({
-  icon,
-  label,
-  value,
-  accent,
-}: {
-  icon: Parameters<typeof GameIcon>[0]["name"];
-  label: string;
-  value: string;
-  accent: string;
-}) {
+function LevelProgress({ entry, predicted, target }: { entry: string | null; predicted: string | null; target: string }) {
+  const display = predicted ?? entry ?? "—";
+  return (
+    <View style={styles.levelRow}>
+      <LevelDot label="Đầu vào" value={entry ?? "—"} variant="done" />
+      <View style={styles.levelLine} />
+      <LevelDot label="Dự đoán" value={display} variant="active" />
+      <View style={styles.levelLine} />
+      <LevelDot label="Mục tiêu" value={target} variant="target" />
+    </View>
+  );
+}
+
+function LevelDot({ label, value, variant }: { label: string; value: string; variant: "done" | "active" | "target" }) {
+  return (
+    <View style={styles.levelItem}>
+      <Text style={styles.levelLabel}>{label}</Text>
+      <View style={[styles.levelDot, variant === "done" && styles.levelDotDone, variant === "active" && styles.levelDotActive, variant === "target" && styles.levelDotTarget]} />
+      <Text style={[styles.levelValue, variant === "active" && styles.levelValueHighlight]}>{value}</Text>
+    </View>
+  );
+}
+
+function SkillStatCard({ skill, score, targetBand }: { skill: Skill; score: number | null; targetBand: number }) {
   const c = useThemeColors();
+  const color = useSkillColor(skill);
+  const gap = score !== null ? score - targetBand : null;
+  const gapText = score === null ? "Chưa có điểm" : gap !== null && gap >= 0 ? "✓ Đạt mục tiêu" : `Cần +${Math.abs(gap ?? 0).toFixed(1)}`;
+  const gapColor = score === null ? c.mutedForeground : gap !== null && gap >= 0 ? c.success : c.warning;
 
   return (
-    <View style={[styles.statCard, { backgroundColor: c.card, borderColor: accent + "30", borderBottomColor: accent + "60" }]}>
-      <GameIcon name={icon} size={26} />
-      <Text style={[styles.statLabel, { color: c.subtle }]}>{label}</Text>
-      <Text style={[styles.statValue, { color: c.foreground }]}>{value}</Text>
+    <View style={[styles.statCard, { backgroundColor: c.card, borderColor: color + "30", borderBottomColor: color }]}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
+        <SkillIcon skill={skill} size={20} bare />
+        <Text style={[styles.statLabel, { color: c.subtle }]}>{SKILL_META[skill].vi}</Text>
+      </View>
+      <Text style={[styles.statValue, { color: c.foreground }]}>
+        {score !== null ? score.toFixed(1) : "—"}
+        <Text style={{ fontSize: fontSize.xs, color: c.subtle }}> /10</Text>
+      </Text>
+      <Text style={{ fontSize: fontSize.xs, fontFamily: fontFamily.bold, color: gapColor }}>{gapText}</Text>
     </View>
   );
 }
@@ -273,26 +302,6 @@ function SkillCard({
   );
 }
 
-function formatMinutes(mins: number): string {
-  if (mins < 60) return `${mins} phút`;
-  const hours = Math.floor(mins / 60);
-  const minutes = mins % 60;
-  return minutes > 0 ? `${hours}g ${minutes}p` : `${hours} giờ`;
-}
-
-function computeAvgBand(chart: {
-  listening: number | null;
-  reading: number | null;
-  writing: number | null;
-  speaking: number | null;
-}): string {
-  const values = [chart.listening, chart.reading, chart.writing, chart.speaking].filter(
-    (value): value is number => value !== null,
-  );
-  if (!values.length) return "—";
-  return (values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1);
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"] },
@@ -307,7 +316,16 @@ const styles = StyleSheet.create({
   avatarText: { color: "#FFF", fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   bannerHi: { color: "#FFF", fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
   bannerSub: { color: "rgba(255,255,255,0.82)", fontSize: fontSize.xs, marginTop: 2 },
-  bannerMascot: { position: "absolute", right: 0, bottom: -2 },
+  levelRow: { flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.15)", borderRadius: radius.xl, paddingHorizontal: spacing.base, paddingVertical: spacing.sm, marginTop: spacing.xs },
+  levelItem: { alignItems: "center", gap: 3, minWidth: 50 },
+  levelLabel: { fontSize: 10, color: "rgba(255,255,255,0.7)" },
+  levelDot: { width: 10, height: 10, borderRadius: 5, borderWidth: 2, borderColor: "#FFF" },
+  levelDotDone: { backgroundColor: "#FFF" },
+  levelDotActive: { backgroundColor: "#FFF", shadowColor: "#FFF", shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 4 },
+  levelDotTarget: { backgroundColor: "transparent" },
+  levelValue: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, color: "#FFF" },
+  levelValueHighlight: { color: "#B3E5FC" },
+  levelLine: { flex: 1, height: 1, backgroundColor: "rgba(255,255,255,0.3)", marginHorizontal: spacing.xs },
   targetRow: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
   targetPill: { flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full },
   targetPillText: { color: "rgba(255,255,255,0.92)", fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
@@ -320,10 +338,10 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: fontSize.xs },
   statValue: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
   sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, marginBottom: spacing.md },
-  skillGrid: { gap: spacing.sm, marginBottom: spacing.base },
-  skillCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
+  skillGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.base },
+  skillCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.base, gap: spacing.sm, width: "48.5%" },
   skillTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  skillIconBg: { width: 48, height: 48, borderRadius: radius.lg, alignItems: "center", justifyContent: "center" },
+  skillIconBg: { width: 40, height: 40, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
   skillLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   skillScore: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   skillBar: { height: 6, borderRadius: radius.full, overflow: "hidden" },
