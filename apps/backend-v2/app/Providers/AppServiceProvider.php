@@ -6,6 +6,12 @@ namespace App\Providers;
 
 use App\Ai\ChatCompletionsGateway;
 use App\Models\Profile;
+use App\Services\Admin\Course\AdminCourseBookingService;
+use App\Services\Admin\Course\AdminCourseEnrollmentService;
+use App\Services\Admin\Course\AdminCourseScheduleService;
+use App\Services\Admin\Course\Contracts\AdminCourseBookingInterface;
+use App\Services\Admin\Course\Contracts\AdminCourseEnrollmentInterface;
+use App\Services\Admin\Course\Contracts\AdminCourseScheduleInterface;
 use App\Services\ConversationServiceInterface;
 use App\Services\Grading\GradingStrategyResolver;
 use App\Services\Grading\LlmGrader;
@@ -58,6 +64,11 @@ class AppServiceProvider extends ServiceProvider
 
         // Conversation service — interface binding for testability.
         $this->app->bind(ConversationServiceInterface::class, SpeakingConversationService::class);
+
+        // Admin course sub-services for decomposition.
+        $this->app->bind(AdminCourseBookingInterface::class, AdminCourseBookingService::class);
+        $this->app->bind(AdminCourseEnrollmentInterface::class, AdminCourseEnrollmentService::class);
+        $this->app->bind(AdminCourseScheduleInterface::class, AdminCourseScheduleService::class);
 
         $this->app->resolving(AiManager::class, function (AiManager $ai, $app): void {
             $ai->extend('chat-completions', function ($app, array $config) {

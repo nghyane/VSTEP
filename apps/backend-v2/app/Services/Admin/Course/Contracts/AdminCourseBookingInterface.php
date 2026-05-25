@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Services\Admin\Course\Contracts;
+
+use App\Models\Course;
+use App\Models\TeacherBooking;
+use App\Models\TeacherSlot;
+use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+
+interface AdminCourseBookingInterface
+{
+    /** @return Collection<int,TeacherSlot> */
+    public function listSlots(Course $course, ?CarbonImmutable $start = null, ?CarbonImmutable $end = null): Collection;
+
+    public function createSlot(Course $course, array $data): TeacherSlot;
+
+    /** @return array{created: int, skipped: int} */
+    public function bulkCreateSlots(Course $course, array $data): array;
+
+    public function updateSlot(TeacherSlot $slot, array $data): TeacherSlot;
+
+    public function deleteSlot(TeacherSlot $slot): void;
+
+    public function listBookings(Course $course): Builder;
+
+    public function updateBookingMeetUrl(TeacherBooking $booking, ?string $meetUrl): TeacherBooking;
+
+    public function cancelBooking(TeacherBooking $booking): TeacherBooking;
+}
