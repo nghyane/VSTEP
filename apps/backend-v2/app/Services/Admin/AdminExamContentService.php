@@ -14,18 +14,35 @@ use App\Models\ExamVersionWritingTask;
 
 final class AdminExamContentService
 {
+    /**
+     * Guard: block edits on active version of published exam.
+     */
+    public function guardVersionEditable(ExamVersion $version): void
+    {
+        if ($version->is_active) {
+            $isPublished = $version->exam()->value('is_published');
+            if ($isPublished) {
+                abort(422, 'Không thể sửa nội dung phiên bản đang hoạt động của đề thi đã xuất bản.');
+            }
+        }
+    }
+
     // ─── Listening Sections ───
 
     public function createListeningSection(ExamVersion $version, array $data): ExamVersionListeningSection
     {
-        $data['exam_version_id'] = $version->id;
-        $data['display_order'] ??= (int) $version->listeningSections()->max('display_order') + 1;
+        $this->guardVersionEditable($version);
 
-        return ExamVersionListeningSection::create($data);
+        return ExamVersionListeningSection::create([
+            ...$data,
+            'exam_version_id' => $version->id,
+            'display_order' => $data['display_order'] ?? (int) $version->listeningSections()->max('display_order') + 1,
+        ]);
     }
 
     public function updateListeningSection(ExamVersionListeningSection $section, array $data): ExamVersionListeningSection
     {
+        $this->guardVersionEditable($section->version);
         $section->fill($data)->save();
 
         return $section;
@@ -33,6 +50,7 @@ final class AdminExamContentService
 
     public function deleteListeningSection(ExamVersionListeningSection $section): void
     {
+        $this->guardVersionEditable($section->version);
         $section->delete();
     }
 
@@ -40,14 +58,18 @@ final class AdminExamContentService
 
     public function createListeningItem(ExamVersionListeningSection $section, array $data): ExamVersionListeningItem
     {
-        $data['section_id'] = $section->id;
-        $data['display_order'] ??= (int) $section->items()->max('display_order') + 1;
+        $this->guardVersionEditable($section->version);
 
-        return ExamVersionListeningItem::create($data);
+        return ExamVersionListeningItem::create([
+            ...$data,
+            'section_id' => $section->id,
+            'display_order' => $data['display_order'] ?? (int) $section->items()->max('display_order') + 1,
+        ]);
     }
 
     public function updateListeningItem(ExamVersionListeningItem $item, array $data): ExamVersionListeningItem
     {
+        $this->guardVersionEditable($item->section->version);
         $item->fill($data)->save();
 
         return $item;
@@ -55,6 +77,7 @@ final class AdminExamContentService
 
     public function deleteListeningItem(ExamVersionListeningItem $item): void
     {
+        $this->guardVersionEditable($item->section->version);
         $item->delete();
     }
 
@@ -62,14 +85,18 @@ final class AdminExamContentService
 
     public function createReadingPassage(ExamVersion $version, array $data): ExamVersionReadingPassage
     {
-        $data['exam_version_id'] = $version->id;
-        $data['display_order'] ??= (int) $version->readingPassages()->max('display_order') + 1;
+        $this->guardVersionEditable($version);
 
-        return ExamVersionReadingPassage::create($data);
+        return ExamVersionReadingPassage::create([
+            ...$data,
+            'exam_version_id' => $version->id,
+            'display_order' => $data['display_order'] ?? (int) $version->readingPassages()->max('display_order') + 1,
+        ]);
     }
 
     public function updateReadingPassage(ExamVersionReadingPassage $passage, array $data): ExamVersionReadingPassage
     {
+        $this->guardVersionEditable($passage->version);
         $passage->fill($data)->save();
 
         return $passage;
@@ -77,6 +104,7 @@ final class AdminExamContentService
 
     public function deleteReadingPassage(ExamVersionReadingPassage $passage): void
     {
+        $this->guardVersionEditable($passage->version);
         $passage->delete();
     }
 
@@ -84,14 +112,18 @@ final class AdminExamContentService
 
     public function createReadingItem(ExamVersionReadingPassage $passage, array $data): ExamVersionReadingItem
     {
-        $data['passage_id'] = $passage->id;
-        $data['display_order'] ??= (int) $passage->items()->max('display_order') + 1;
+        $this->guardVersionEditable($passage->version);
 
-        return ExamVersionReadingItem::create($data);
+        return ExamVersionReadingItem::create([
+            ...$data,
+            'passage_id' => $passage->id,
+            'display_order' => $data['display_order'] ?? (int) $passage->items()->max('display_order') + 1,
+        ]);
     }
 
     public function updateReadingItem(ExamVersionReadingItem $item, array $data): ExamVersionReadingItem
     {
+        $this->guardVersionEditable($item->passage->version);
         $item->fill($data)->save();
 
         return $item;
@@ -99,6 +131,7 @@ final class AdminExamContentService
 
     public function deleteReadingItem(ExamVersionReadingItem $item): void
     {
+        $this->guardVersionEditable($item->passage->version);
         $item->delete();
     }
 
@@ -106,14 +139,18 @@ final class AdminExamContentService
 
     public function createWritingTask(ExamVersion $version, array $data): ExamVersionWritingTask
     {
-        $data['exam_version_id'] = $version->id;
-        $data['display_order'] ??= (int) $version->writingTasks()->max('display_order') + 1;
+        $this->guardVersionEditable($version);
 
-        return ExamVersionWritingTask::create($data);
+        return ExamVersionWritingTask::create([
+            ...$data,
+            'exam_version_id' => $version->id,
+            'display_order' => $data['display_order'] ?? (int) $version->writingTasks()->max('display_order') + 1,
+        ]);
     }
 
     public function updateWritingTask(ExamVersionWritingTask $task, array $data): ExamVersionWritingTask
     {
+        $this->guardVersionEditable($task->version);
         $task->fill($data)->save();
 
         return $task;
@@ -121,6 +158,7 @@ final class AdminExamContentService
 
     public function deleteWritingTask(ExamVersionWritingTask $task): void
     {
+        $this->guardVersionEditable($task->version);
         $task->delete();
     }
 
@@ -128,14 +166,18 @@ final class AdminExamContentService
 
     public function createSpeakingPart(ExamVersion $version, array $data): ExamVersionSpeakingPart
     {
-        $data['exam_version_id'] = $version->id;
-        $data['display_order'] ??= (int) $version->speakingParts()->max('display_order') + 1;
+        $this->guardVersionEditable($version);
 
-        return ExamVersionSpeakingPart::create($data);
+        return ExamVersionSpeakingPart::create([
+            ...$data,
+            'exam_version_id' => $version->id,
+            'display_order' => $data['display_order'] ?? (int) $version->speakingParts()->max('display_order') + 1,
+        ]);
     }
 
     public function updateSpeakingPart(ExamVersionSpeakingPart $part, array $data): ExamVersionSpeakingPart
     {
+        $this->guardVersionEditable($part->version);
         $part->fill($data)->save();
 
         return $part;
@@ -143,6 +185,7 @@ final class AdminExamContentService
 
     public function deleteSpeakingPart(ExamVersionSpeakingPart $part): void
     {
+        $this->guardVersionEditable($part->version);
         $part->delete();
     }
 }

@@ -15,6 +15,11 @@ use App\Http\Requests\Admin\ExamContent\UpdateMcqItemRequest;
 use App\Http\Requests\Admin\ExamContent\UpdateReadingPassageRequest;
 use App\Http\Requests\Admin\ExamContent\UpdateSpeakingPartRequest;
 use App\Http\Requests\Admin\ExamContent\UpdateWritingTaskRequest;
+use App\Http\Resources\Admin\AdminListeningSectionResource;
+use App\Http\Resources\Admin\AdminMcqItemResource;
+use App\Http\Resources\Admin\AdminReadingPassageResource;
+use App\Http\Resources\Admin\AdminSpeakingPartResource;
+use App\Http\Resources\Admin\AdminWritingTaskResource;
 use App\Models\ExamVersion;
 use App\Models\ExamVersionListeningItem;
 use App\Models\ExamVersionListeningSection;
@@ -39,7 +44,8 @@ final class ExamContentController extends Controller
         $version = ExamVersion::findOrFail($versionId);
         $section = $this->service->createListeningSection($version, $request->validated());
 
-        return response()->json(['data' => $section], 201);
+        return (new AdminListeningSectionResource($section))
+            ->response()->setStatusCode(201);
     }
 
     public function updateListeningSection(UpdateListeningSectionRequest $request, string $sectionId): JsonResponse
@@ -47,7 +53,7 @@ final class ExamContentController extends Controller
         $section = ExamVersionListeningSection::findOrFail($sectionId);
         $section = $this->service->updateListeningSection($section, $request->validated());
 
-        return response()->json(['data' => $section]);
+        return (new AdminListeningSectionResource($section))->response();
     }
 
     public function destroyListeningSection(string $sectionId): Response
@@ -65,7 +71,8 @@ final class ExamContentController extends Controller
         $section = ExamVersionListeningSection::findOrFail($sectionId);
         $item = $this->service->createListeningItem($section, $request->validated());
 
-        return response()->json(['data' => $item], 201);
+        return (new AdminMcqItemResource($item))
+            ->response()->setStatusCode(201);
     }
 
     public function updateListeningItem(UpdateMcqItemRequest $request, string $itemId): JsonResponse
@@ -73,7 +80,7 @@ final class ExamContentController extends Controller
         $item = ExamVersionListeningItem::findOrFail($itemId);
         $item = $this->service->updateListeningItem($item, $request->validated());
 
-        return response()->json(['data' => $item]);
+        return (new AdminMcqItemResource($item))->response();
     }
 
     public function destroyListeningItem(string $itemId): Response
@@ -91,7 +98,8 @@ final class ExamContentController extends Controller
         $version = ExamVersion::findOrFail($versionId);
         $passage = $this->service->createReadingPassage($version, $request->validated());
 
-        return response()->json(['data' => $passage], 201);
+        return (new AdminReadingPassageResource($passage))
+            ->response()->setStatusCode(201);
     }
 
     public function updateReadingPassage(UpdateReadingPassageRequest $request, string $passageId): JsonResponse
@@ -99,7 +107,7 @@ final class ExamContentController extends Controller
         $passage = ExamVersionReadingPassage::findOrFail($passageId);
         $passage = $this->service->updateReadingPassage($passage, $request->validated());
 
-        return response()->json(['data' => $passage]);
+        return (new AdminReadingPassageResource($passage))->response();
     }
 
     public function destroyReadingPassage(string $passageId): Response
@@ -117,7 +125,8 @@ final class ExamContentController extends Controller
         $passage = ExamVersionReadingPassage::findOrFail($passageId);
         $item = $this->service->createReadingItem($passage, $request->validated());
 
-        return response()->json(['data' => $item], 201);
+        return (new AdminMcqItemResource($item))
+            ->response()->setStatusCode(201);
     }
 
     public function updateReadingItem(UpdateMcqItemRequest $request, string $itemId): JsonResponse
@@ -125,7 +134,7 @@ final class ExamContentController extends Controller
         $item = ExamVersionReadingItem::findOrFail($itemId);
         $item = $this->service->updateReadingItem($item, $request->validated());
 
-        return response()->json(['data' => $item]);
+        return (new AdminMcqItemResource($item))->response();
     }
 
     public function destroyReadingItem(string $itemId): Response
@@ -143,7 +152,8 @@ final class ExamContentController extends Controller
         $version = ExamVersion::findOrFail($versionId);
         $task = $this->service->createWritingTask($version, $request->validated());
 
-        return response()->json(['data' => $task], 201);
+        return (new AdminWritingTaskResource($task))
+            ->response()->setStatusCode(201);
     }
 
     public function updateWritingTask(UpdateWritingTaskRequest $request, string $taskId): JsonResponse
@@ -151,7 +161,7 @@ final class ExamContentController extends Controller
         $task = ExamVersionWritingTask::findOrFail($taskId);
         $task = $this->service->updateWritingTask($task, $request->validated());
 
-        return response()->json(['data' => $task]);
+        return (new AdminWritingTaskResource($task))->response();
     }
 
     public function destroyWritingTask(string $taskId): Response
@@ -169,7 +179,8 @@ final class ExamContentController extends Controller
         $version = ExamVersion::findOrFail($versionId);
         $part = $this->service->createSpeakingPart($version, $request->validated());
 
-        return response()->json(['data' => $part], 201);
+        return (new AdminSpeakingPartResource($part))
+            ->response()->setStatusCode(201);
     }
 
     public function updateSpeakingPart(UpdateSpeakingPartRequest $request, string $partId): JsonResponse
@@ -177,7 +188,7 @@ final class ExamContentController extends Controller
         $part = ExamVersionSpeakingPart::findOrFail($partId);
         $part = $this->service->updateSpeakingPart($part, $request->validated());
 
-        return response()->json(['data' => $part]);
+        return (new AdminSpeakingPartResource($part))->response();
     }
 
     public function destroySpeakingPart(string $partId): Response

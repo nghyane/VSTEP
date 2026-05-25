@@ -26,7 +26,7 @@ export function useCreateListeningSection(examId: string, versionId: string) {
 	return useMutation({
 		mutationFn: (input: SectionInput) =>
 			api
-				.post(`admin/exam-versions/${versionId}/listening-sections`, { json: input })
+				.post(`admin/exams/versions/${versionId}/listening-sections`, { json: input })
 				.json<ApiResponse<ListeningSection>>(),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
@@ -36,7 +36,7 @@ export function useUpdateListeningSection(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
 		mutationFn: ({ id, ...input }: Partial<SectionInput> & { id: string }) =>
-			api.patch(`admin/exam-listening-sections/${id}`, { json: input }).json<ApiResponse<ListeningSection>>(),
+			api.patch(`admin/exams/listening-sections/${id}`, { json: input }).json<ApiResponse<ListeningSection>>(),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
@@ -44,7 +44,7 @@ export function useUpdateListeningSection(examId: string, versionId: string) {
 export function useDeleteListeningSection(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
-		mutationFn: (id: string) => api.delete(`admin/exam-listening-sections/${id}`),
+		mutationFn: (id: string) => api.delete(`admin/exams/listening-sections/${id}`),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
@@ -61,7 +61,7 @@ export function useCreateListeningItem(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
 		mutationFn: ({ sectionId, ...input }: McqItemInput & { sectionId: string }) =>
-			api.post(`admin/exam-listening-sections/${sectionId}/items`, { json: input }).json(),
+			api.post(`admin/exams/listening-sections/${sectionId}/items`, { json: input }).json(),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
@@ -70,7 +70,7 @@ export function useUpdateListeningItem(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
 		mutationFn: ({ id, ...input }: Partial<McqItemInput> & { id: string }) =>
-			api.patch(`admin/exam-listening-items/${id}`, { json: input }).json(),
+			api.patch(`admin/exams/listening-items/${id}`, { json: input }).json(),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
@@ -78,7 +78,7 @@ export function useUpdateListeningItem(examId: string, versionId: string) {
 export function useDeleteListeningItem(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
-		mutationFn: (id: string) => api.delete(`admin/exam-listening-items/${id}`),
+		mutationFn: (id: string) => api.delete(`admin/exams/listening-items/${id}`),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
@@ -97,7 +97,7 @@ export function useCreateReadingPassage(examId: string, versionId: string) {
 	return useMutation({
 		mutationFn: (input: PassageInput) =>
 			api
-				.post(`admin/exam-versions/${versionId}/reading-passages`, { json: input })
+				.post(`admin/exams/versions/${versionId}/reading-passages`, { json: input })
 				.json<ApiResponse<ReadingPassage>>(),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
@@ -107,7 +107,7 @@ export function useUpdateReadingPassage(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
 		mutationFn: ({ id, ...input }: Partial<PassageInput> & { id: string }) =>
-			api.patch(`admin/exam-reading-passages/${id}`, { json: input }).json<ApiResponse<ReadingPassage>>(),
+			api.patch(`admin/exams/reading-passages/${id}`, { json: input }).json<ApiResponse<ReadingPassage>>(),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
@@ -115,7 +115,7 @@ export function useUpdateReadingPassage(examId: string, versionId: string) {
 export function useDeleteReadingPassage(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
-		mutationFn: (id: string) => api.delete(`admin/exam-reading-passages/${id}`),
+		mutationFn: (id: string) => api.delete(`admin/exams/reading-passages/${id}`),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
@@ -126,7 +126,7 @@ export function useCreateReadingItem(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
 		mutationFn: ({ passageId, ...input }: McqItemInput & { passageId: string }) =>
-			api.post(`admin/exam-reading-passages/${passageId}/items`, { json: input }).json(),
+			api.post(`admin/exams/reading-passages/${passageId}/items`, { json: input }).json(),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
@@ -135,7 +135,7 @@ export function useUpdateReadingItem(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
 		mutationFn: ({ id, ...input }: Partial<McqItemInput> & { id: string }) =>
-			api.patch(`admin/exam-reading-items/${id}`, { json: input }).json(),
+			api.patch(`admin/exams/reading-items/${id}`, { json: input }).json(),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
@@ -143,7 +143,7 @@ export function useUpdateReadingItem(examId: string, versionId: string) {
 export function useDeleteReadingItem(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
-		mutationFn: (id: string) => api.delete(`admin/exam-reading-items/${id}`),
+		mutationFn: (id: string) => api.delete(`admin/exams/reading-items/${id}`),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
@@ -164,7 +164,7 @@ export function useCreateWritingTask(examId: string, versionId: string) {
 	return useMutation({
 		mutationFn: (input: WritingTaskInput) =>
 			api
-				.post(`admin/exam-versions/${versionId}/writing-tasks`, { json: input })
+				.post(`admin/exams/versions/${versionId}/writing-tasks`, { json: input })
 				.json<ApiResponse<WritingTask>>(),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
@@ -174,7 +174,7 @@ export function useUpdateWritingTask(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
 		mutationFn: ({ id, ...input }: Partial<WritingTaskInput> & { id: string }) =>
-			api.patch(`admin/exam-writing-tasks/${id}`, { json: input }).json<ApiResponse<WritingTask>>(),
+			api.patch(`admin/exams/writing-tasks/${id}`, { json: input }).json<ApiResponse<WritingTask>>(),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
@@ -182,7 +182,7 @@ export function useUpdateWritingTask(examId: string, versionId: string) {
 export function useDeleteWritingTask(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
-		mutationFn: (id: string) => api.delete(`admin/exam-writing-tasks/${id}`),
+		mutationFn: (id: string) => api.delete(`admin/exams/writing-tasks/${id}`),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
@@ -202,7 +202,7 @@ export function useCreateSpeakingPart(examId: string, versionId: string) {
 	return useMutation({
 		mutationFn: (input: SpeakingPartInput) =>
 			api
-				.post(`admin/exam-versions/${versionId}/speaking-parts`, { json: input })
+				.post(`admin/exams/versions/${versionId}/speaking-parts`, { json: input })
 				.json<ApiResponse<SpeakingPart>>(),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
@@ -212,7 +212,7 @@ export function useUpdateSpeakingPart(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
 		mutationFn: ({ id, ...input }: Partial<SpeakingPartInput> & { id: string }) =>
-			api.patch(`admin/exam-speaking-parts/${id}`, { json: input }).json<ApiResponse<SpeakingPart>>(),
+			api.patch(`admin/exams/speaking-parts/${id}`, { json: input }).json<ApiResponse<SpeakingPart>>(),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
@@ -220,7 +220,7 @@ export function useUpdateSpeakingPart(examId: string, versionId: string) {
 export function useDeleteSpeakingPart(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
-		mutationFn: (id: string) => api.delete(`admin/exam-speaking-parts/${id}`),
+		mutationFn: (id: string) => api.delete(`admin/exams/speaking-parts/${id}`),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }
