@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\Http;
 
 final class HealthCheckService
 {
-    /** @return array{status:string,db:string,redis:string,bifrost?:string,languagetool?:string} */
+    /** @return array{status:string,db:string,redis:string,ai?:string,languagetool?:string} */
     public function check(): array
     {
         $checks = [
             'db' => $this->databaseStatus(),
             'redis' => $this->redisStatus(),
-            'bifrost' => $this->bifrostStatus(),
+            'ai' => $this->aiStatus(),
             'languagetool' => $this->languageToolStatus(),
         ];
 
@@ -48,11 +48,11 @@ final class HealthCheckService
         }
     }
 
-    private function bifrostStatus(): string
+    private function aiStatus(): string
     {
         try {
-            $url = rtrim((string) config('ai.providers.bifrost.url'), '/');
-            $response = Http::timeout(3)->get($url.'/models');
+            $url = rtrim((string) config('ai.connections.packy.url'), '/');
+            $response = Http::timeout(3)->get($url.'/v1/models');
 
             return $response->successful() ? 'ok' : 'degraded';
         } catch (\Throwable) {

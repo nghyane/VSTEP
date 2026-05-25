@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Ai\Agents\ConversationReviewAgent;
-use App\Ai\Agents\ConversationTurnAgent;
+use App\Ai\AiClient;
 use App\Enums\ConversationStatus;
 use App\Exceptions\AiServiceUnavailableException;
 use App\Exceptions\ResourceNotActiveException;
@@ -20,14 +19,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use Laravel\Ai\Contracts\Agent;
-use Laravel\Ai\Responses\StructuredAgentResponse;
 
 final class SpeakingConversationService implements ConversationServiceInterface
 {
     public function __construct(
-        private readonly ConversationTurnAgent $turnAgent,
-        private readonly ConversationReviewAgent $reviewAgent,
+        private readonly AiClient $ai,
         private readonly ConversationTurnNormalizer $normalizer,
     ) {}
 
@@ -210,7 +206,7 @@ final class SpeakingConversationService implements ConversationServiceInterface
             'vocabCheck' => $preCheck,
         ])->render();
 
-        $parsed = $this->callAgent($this->turnAgent, $prompt);
+        $structured = $this->callConversation($prompt);
 
         $parsed = $this->normalizer->normalize($structured, $targetVocab, $lowerText, $userText);
         if ($parsed === null) {
@@ -240,7 +236,7 @@ final class SpeakingConversationService implements ConversationServiceInterface
             'userSentences' => $userSentences,
         ])->render();
 
-        $parsed = $this->callAgent($this->reviewAgent, $prompt);
+        $parsed = $this->callConversation($prompt);
 
         if (! isset($parsed['strengths'])) {
             Log::warning('ConversationReview: could not parse', ['parsed' => $parsed]);
@@ -260,7 +256,7 @@ final class SpeakingConversationService implements ConversationServiceInterface
             'transcript' => $transcript,
         ])->render();
 
-        $parsed = $this->callAgent($this->reviewAgent, $prompt);
+        $parsed = $this->callPronunciation($prompt);
 
         if (! isset($parsed['pronunciation'])) {
             throw new AiServiceUnavailableException;
@@ -276,11 +272,11 @@ final class SpeakingConversationService implements ConversationServiceInterface
     public function generateIpa(string $text): ?string
     {
         try {
-            $response = $this->reviewAgent->prompt(
+            $content = $this->ai->text(
+                service: 'pronunciation',
                 prompt: "Convert this English text to IPA phonetic transcription. Respond with ONLY the IPA string, nothing else.\n\nText: \"{$text}\"",
-                provider: 'bifrost',
             );
-            $content = trim((string) $response->text, " \t\n\r\0\x0B/");
+            $content = trim($content, " \t\n\r\0\x0B/");
             if (! empty($content) && mb_strlen($content) > 2) {
                 return $content;
             }
@@ -292,24 +288,40 @@ final class SpeakingConversationService implements ConversationServiceInterface
     }
 
     /**
-     * Call an agent with retry on transient failures (2 retries, exponential backoff).
-     * Throws AiServiceUnavailableException after exhausting retries.
+     * Call conversation service with retry on transient failures.
      *
      * @return array<string,mixed>
      */
-    private function callAgent(Agent $agent, string $prompt): array
+    private function callConversation(string $prompt): array
+    {
+        return $this->callWithRetry('conversation', $prompt);
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function callPronunciation(string $prompt): array
+    {
+        return $this->callWithRetry('pronunciation', $prompt);
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    private function callWithRetry(string $service, string $prompt): array
     {
         $maxRetries = 2;
 
         for ($attempt = 0; $attempt <= $maxRetries; $attempt++) {
             try {
-                $response = $agent->prompt(prompt: $prompt, provider: 'bifrost');
+                $text = $this->ai->text(service: $service, prompt: $prompt);
+                $decoded = json_decode($text, true);
 
-                return $response instanceof StructuredAgentResponse ? $response->structured : [];
+                return is_array($decoded) ? $decoded : [];
             } catch (\Throwable $e) {
                 if ($attempt === $maxRetries) {
-                    Log::warning('AI agent call exhausted retries', [
-                        'agent' => $agent::class,
+                    Log::warning('AI call exhausted retries', [
+                        'service' => $service,
                         'attempts' => $attempt + 1,
                         'error' => $e->getMessage(),
                     ]);
@@ -317,9 +329,9 @@ final class SpeakingConversationService implements ConversationServiceInterface
                     throw new AiServiceUnavailableException;
                 }
 
-                $delay = (int) (1000 * 2 ** $attempt); // 1s → 2s
-                Log::info('AI agent call retrying', [
-                    'agent' => $agent::class,
+                $delay = (int) (1000 * 2 ** $attempt);
+                Log::info('AI call retrying', [
+                    'service' => $service,
                     'attempt' => $attempt + 1,
                     'delay_ms' => $delay,
                 ]);

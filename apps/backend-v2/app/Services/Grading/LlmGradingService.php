@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Grading;
 
-use App\Ai\Agents\StructuredGradingAgent;
+use App\Ai\AiClient;
 use Illuminate\Support\Facades\Log;
-use Laravel\Ai\Responses\StructuredAgentResponse;
 
 /**
  * Shared LLM grading client.
@@ -17,7 +16,7 @@ use Laravel\Ai\Responses\StructuredAgentResponse;
 final class LlmGradingService implements LlmGrader
 {
     public function __construct(
-        private readonly StructuredGradingAgent $agent,
+        private readonly AiClient $ai,
     ) {}
 
     /**
@@ -39,7 +38,9 @@ final class LlmGradingService implements LlmGrader
             'caps' => $caps,
         ])->render();
 
-        return $this->callStructured($prompt, $this->defaultWritingResult());
+        $schema = $this->writingSchema();
+
+        return $this->callStructured($prompt, $schema, $this->defaultWritingResult());
     }
 
     /**
@@ -48,35 +49,39 @@ final class LlmGradingService implements LlmGrader
     public function gradeSpeaking(string $transcript): array
     {
         $prompt = view('ai.grading.speaking', ['transcript' => $transcript])->render();
+        $schema = $this->speakingSchema();
 
-        return $this->callStructured($prompt, $this->defaultSpeakingResult());
+        return $this->callStructured($prompt, $schema, $this->defaultSpeakingResult());
     }
 
     /**
+     * @param  array<string,mixed>  $schema
      * @param  array<string,mixed>  $fallback
      * @return array<string,mixed>
      */
-    private function callStructured(string $prompt, array $fallback): array
+    private function callStructured(string $prompt, array $schema, array $fallback): array
     {
-        $response = $this->agent->prompt(
+        $structured = $this->ai->structured(
+            service: 'grading',
             prompt: $prompt,
-            provider: 'bifrost',
+            schema: $schema,
+            instructions: $this->gradingInstructions(),
         );
 
-        $structured = $response instanceof StructuredAgentResponse
-            ? $response->structured
-            : [];
-
-        if (! is_array($structured) || ! isset($structured['rubric_scores'])) {
+        if (! isset($structured['rubric_scores'])) {
             Log::warning('LLM grading: invalid structured output', [
-                'model' => $this->model(),
-                'response_type' => get_debug_type($structured),
+                'response_keys' => array_keys($structured),
             ]);
 
             throw new \RuntimeException('LLM returned invalid structured output');
         }
 
         return $this->normalize(array_merge($fallback, $structured), $fallback);
+    }
+
+    private function gradingInstructions(): string
+    {
+        return 'You are a VSTEP English exam grader. Score each rubric criterion from 0.0 to 4.0. Be precise and consistent.';
     }
 
     /**
@@ -158,9 +163,86 @@ final class LlmGradingService implements LlmGrader
         }, $items));
     }
 
-    /**
-     * @return array<string,mixed>
-     */
+    /** @return array<string,mixed> */
+    private function writingSchema(): array
+    {
+        return [
+            'rubric_scores' => [
+                'type' => 'object',
+                'properties' => [
+                    'task_achievement' => ['type' => 'number'],
+                    'coherence' => ['type' => 'number'],
+                    'lexical' => ['type' => 'number'],
+                    'grammar' => ['type' => 'number'],
+                ],
+                'required' => ['task_achievement', 'coherence', 'lexical', 'grammar'],
+                'additionalProperties' => false,
+            ],
+            'overall_band' => ['type' => 'number'],
+            'strengths' => ['type' => 'array', 'items' => ['type' => 'string']],
+            'improvements' => [
+                'type' => 'array',
+                'items' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'message' => ['type' => 'string'],
+                        'explanation' => ['type' => 'string'],
+                    ],
+                    'required' => ['message', 'explanation'],
+                    'additionalProperties' => false,
+                ],
+            ],
+            'rewrites' => [
+                'type' => 'array',
+                'items' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'original' => ['type' => 'string'],
+                        'improved' => ['type' => 'string'],
+                        'reason' => ['type' => 'string'],
+                    ],
+                    'required' => ['original', 'improved', 'reason'],
+                    'additionalProperties' => false,
+                ],
+            ],
+            'annotations' => ['type' => 'array', 'items' => ['type' => 'string']],
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    private function speakingSchema(): array
+    {
+        return [
+            'rubric_scores' => [
+                'type' => 'object',
+                'properties' => [
+                    'fluency' => ['type' => 'number'],
+                    'pronunciation' => ['type' => 'number'],
+                    'content' => ['type' => 'number'],
+                    'vocab' => ['type' => 'number'],
+                    'grammar' => ['type' => 'number'],
+                ],
+                'required' => ['fluency', 'pronunciation', 'content', 'vocab', 'grammar'],
+                'additionalProperties' => false,
+            ],
+            'overall_band' => ['type' => 'number'],
+            'strengths' => ['type' => 'array', 'items' => ['type' => 'string']],
+            'improvements' => [
+                'type' => 'array',
+                'items' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'message' => ['type' => 'string'],
+                        'explanation' => ['type' => 'string'],
+                    ],
+                    'required' => ['message', 'explanation'],
+                    'additionalProperties' => false,
+                ],
+            ],
+        ];
+    }
+
+    /** @return array<string,mixed> */
     private function defaultWritingResult(): array
     {
         return [
@@ -173,9 +255,7 @@ final class LlmGradingService implements LlmGrader
         ];
     }
 
-    /**
-     * @return array<string,mixed>
-     */
+    /** @return array<string,mixed> */
     private function defaultSpeakingResult(): array
     {
         return [
