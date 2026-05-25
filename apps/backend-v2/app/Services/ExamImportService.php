@@ -12,6 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 final class ExamImportService
 {
+    public function __construct(
+        private readonly ExamVersionValidator $validator,
+    ) {}
+
     /**
      * Import a complete exam with version and all content.
      *
@@ -24,6 +28,7 @@ final class ExamImportService
      */
     public function importExam(array $examData, array $versionData): Exam
     {
+        $this->validateStructure($versionData);
         $now = now()->toDateTimeString();
 
         return DB::transaction(function () use ($examData, $versionData, $now) {
@@ -139,6 +144,42 @@ final class ExamImportService
                 'content' => json_encode($part['content'], JSON_UNESCAPED_UNICODE),
                 'display_order' => $part['display_order'] ?? $index,
             ]);
+        }
+    }
+
+    /**
+     * Validate VSTEP structure rules before import.
+     *
+     * @param  array<string, mixed>  $versionData
+     *
+     * @throws ValidationException
+     */
+    private function validateStructure(array $versionData): void
+    {
+        $sections = collect($versionData['listening_sections'] ?? []);
+        $listeningItems = collect($versionData['listening_items'] ?? [])
+            ->groupBy('section_index')
+            ->mapWithKeys(fn ($items, $idx) => [$idx => $items]);
+
+        $passages = collect($versionData['reading_passages'] ?? []);
+        $readingItems = collect($versionData['reading_items'] ?? [])
+            ->groupBy('passage_index')
+            ->mapWithKeys(fn ($items, $idx) => [$idx => $items]);
+
+        $writingTasks = collect($versionData['writing_tasks'] ?? []);
+        $speakingParts = collect($versionData['speaking_parts'] ?? []);
+
+        $errors = $this->validator->validateFixtureData(
+            $sections,
+            $listeningItems,
+            $passages,
+            $readingItems,
+            $writingTasks,
+            $speakingParts,
+        );
+
+        if ($errors) {
+            throw ValidationException::withMessages(['exam_version' => $errors]);
         }
     }
 }
