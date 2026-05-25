@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { Header } from "#/components/Header"
 import { Icon } from "#/components/Icon"
+import { SegmentedTabs } from "#/components/SegmentedTabs"
 import { CourseCard } from "#/features/course/components/CourseCard"
 import { HotCoursesDialog } from "#/features/course/components/HotCoursesDialog"
 import { courseListQuery } from "#/features/course/queries"
@@ -15,17 +16,22 @@ const HOT_SNOOZE_HOURS = 24
 const BOOK_HINT_DISMISSED_KEY = "vstep:book-1-1-hint-dismissed:v1"
 
 type Tab = "explore" | "mine"
-const VALID_TABS: readonly Tab[] = ["explore", "mine"]
+
+function normalizeTab(tab: unknown): Tab {
+	if (tab === "mine") return "mine"
+	return "explore"
+}
 
 export const Route = createFileRoute("/_app/khoa-hoc/")({
 	validateSearch: (s: Record<string, unknown>) => ({
-		tab: VALID_TABS.includes(s.tab as Tab) ? (s.tab as Tab) : "explore",
+		tab: normalizeTab(s.tab),
 	}),
 	component: CoursesPage,
 })
 
 function CoursesPage() {
 	const { tab } = Route.useSearch()
+	const navigate = useNavigate()
 	const { data, isLoading } = useQuery(courseListQuery)
 	const courses = data?.data ?? []
 	const enrolledIds = new Set(data?.enrolled_course_ids ?? [])
@@ -44,6 +50,10 @@ function CoursesPage() {
 	const exploreList = courses.filter((c) => !enrolledIds.has(c.id) && !isExpired(c))
 	const mineList = courses.filter((c) => enrolledIds.has(c.id))
 	const list = tab === "mine" ? mineList : exploreList
+	const tabItems: { value: Tab; label: string; count: number }[] = [
+		{ value: "explore", label: "Khám phá", count: exploreList.length },
+		{ value: "mine", label: "Khóa của tôi", count: mineList.length },
+	]
 
 	const hotPair = useMemo<[Course, Course] | null>(() => {
 		const candidates = courses
@@ -96,6 +106,10 @@ function CoursesPage() {
 
 	const [hintPulseKey, setHintPulseKey] = useState(0)
 	const bookHintRef = useRef<HTMLDivElement | null>(null)
+	const changeTab = (nextTab: Tab) => {
+		navigate({ to: "/khoa-hoc", search: { tab: nextTab } })
+	}
+
 	const triggerHintPulse = () => {
 		if (bookHintDismissed) {
 			localStorage.removeItem(BOOK_HINT_DISMISSED_KEY)
@@ -112,19 +126,9 @@ function CoursesPage() {
 			<Header title="Khóa học" />
 			{hotPair && <HotCoursesDialog open={hotOpen} onClose={dismissHot} courses={hotPair} />}
 			<div className="px-10 pb-12 space-y-6 max-w-5xl mx-auto w-full">
-				<div className="flex flex-wrap items-center gap-3">
-					<div className="inline-flex items-center gap-1 p-1 rounded-full bg-surface border-2 border-border shrink-0">
-						<TabLink tab="explore" active={tab === "explore"} count={exploreList.length}>
-							Khám phá
-						</TabLink>
-						<TabLink tab="mine" active={tab === "mine"} count={mineList.length}>
-							Khóa của tôi
-						</TabLink>
-						<BookOneOnOneCta enrolledCourses={mineList} onLockedClick={triggerHintPulse} />
-					</div>
-					<p className="text-base text-muted max-w-md leading-relaxed">
-						Học cùng giáo viên chấm thi VSTEP — ôn trúng đề sát ngày thi.
-					</p>
+				<div className="flex flex-wrap items-center gap-2">
+					<SegmentedTabs items={tabItems} value={tab} onChange={changeTab} />
+					<BookOneOnOneCta enrolledCourses={mineList} onLockedClick={triggerHintPulse} />
 				</div>
 
 				{mineList.length === 0 && exploreList.length > 0 && !bookHintDismissed && (
@@ -206,39 +210,41 @@ function CoursesPage() {
 					</button>
 				)}
 
-				{isLoading ? (
-					<div className="grid gap-4 sm:grid-cols-2 items-stretch">
-						{Array.from({ length: 4 }, (_, i) => (
-							<div key={i} className="card h-64 animate-pulse bg-surface" />
-						))}
-					</div>
-				) : list.length === 0 ? (
-					<div className="card p-12 text-center">
-						<p className="font-bold text-foreground">
-							{tab === "mine" ? "Chưa có khóa học nào" : "Chưa có khóa nào đang mở"}
-						</p>
-						{tab === "mine" && (
-							<Link
-								to="/khoa-hoc"
-								search={{ tab: "explore" }}
-								className="text-sm font-bold text-primary mt-2 inline-block"
-							>
-								Khám phá khóa học →
-							</Link>
-						)}
-					</div>
-				) : (
-					<div className="grid gap-4 sm:grid-cols-2 items-stretch">
-						{list.map((c) => (
-							<CourseCard
-								key={c.id}
-								course={c}
-								enrolled={enrolledIds.has(c.id)}
-								enrollment={enrollments[c.id] ?? null}
-							/>
-						))}
-					</div>
-				)}
+				<div className="min-h-[360px] transition-all duration-200 ease-out">
+					{isLoading ? (
+						<div className="grid gap-4 sm:grid-cols-2 items-stretch">
+							{Array.from({ length: 4 }, (_, i) => (
+								<div key={i} className="card h-64 animate-pulse bg-surface" />
+							))}
+						</div>
+					) : list.length === 0 ? (
+						<div className="card p-12 text-center">
+							<p className="font-bold text-foreground">
+								{tab === "mine" ? "Chưa có khóa học nào" : "Chưa có khóa nào đang mở"}
+							</p>
+							{tab === "mine" && (
+								<Link
+									to="/khoa-hoc"
+									search={{ tab: "explore" }}
+									className="text-sm font-bold text-primary mt-2 inline-block"
+								>
+									Khám phá khóa học →
+								</Link>
+							)}
+						</div>
+					) : (
+						<div className="grid gap-4 sm:grid-cols-2 items-stretch">
+							{list.map((c) => (
+								<CourseCard
+									key={c.id}
+									course={c}
+									enrolled={enrolledIds.has(c.id)}
+									enrollment={enrollments[c.id] ?? null}
+								/>
+							))}
+						</div>
+					)}
+				</div>
 			</div>
 		</>
 	)
@@ -264,7 +270,7 @@ function BookOneOnOneCta({
 					setShakeKey((k) => k + 1)
 					onLockedClick()
 				}}
-				className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-extrabold leading-none text-muted/80 hover:text-warning transition-colors border-l-2 border-border ml-1 pl-3"
+				className="inline-flex min-h-11 items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2 text-sm font-extrabold text-muted transition-all hover:bg-background hover:text-foreground active:translate-y-[2px] active:border-b-2"
 			>
 				<svg
 					key={shakeKey}
@@ -283,7 +289,7 @@ function BookOneOnOneCta({
 					<rect x="4" y="11" width="16" height="9" rx="2" />
 					<path d="M8 11V7a4 4 0 1 1 8 0v4" />
 				</svg>
-				<span className="translate-y-px">Đặt lịch 1-1</span>
+				Đặt lịch 1-1
 			</button>
 		)
 	}
@@ -293,10 +299,10 @@ function BookOneOnOneCta({
 			<Link
 				to="/khoa-hoc/$courseId/dat-lich-1-1"
 				params={{ courseId: enrolledCourses[0].id }}
-				className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-extrabold leading-none text-primary-dark hover:bg-primary-tint/70 transition-colors border-l-2 border-border ml-1 pl-3"
+				className="inline-flex min-h-11 items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2 text-sm font-extrabold text-foreground transition-all hover:bg-background active:translate-y-[2px] active:border-b-2"
 			>
-				<Icon name="graduation" size="xs" className="h-4 w-auto shrink-0" />
-				<span className="translate-y-px">Đặt lịch 1-1</span>
+				<Icon name="graduation" size="xs" className="h-4 w-auto shrink-0 text-muted" />
+				Đặt lịch 1-1
 			</Link>
 		)
 	}
@@ -306,13 +312,10 @@ function BookOneOnOneCta({
 			<button
 				type="button"
 				onClick={() => setPickerOpen(true)}
-				className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-extrabold leading-none text-primary-dark hover:bg-primary-tint/70 transition-colors border-l-2 border-border ml-1 pl-3"
+				className="inline-flex min-h-11 items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2 text-sm font-extrabold text-foreground transition-all hover:bg-background active:translate-y-[2px] active:border-b-2"
 			>
-				<Icon name="graduation" size="xs" className="h-4 w-auto shrink-0" />
-				<span className="translate-y-px">Đặt lịch 1-1</span>
-				<span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-primary/15 text-primary text-[10px] font-extrabold leading-none tabular-nums">
-					{enrolledCourses.length}
-				</span>
+				<Icon name="graduation" size="xs" className="h-4 w-auto shrink-0 text-muted" />
+				Đặt lịch 1-1
 			</button>
 			<BookCoursePicker open={pickerOpen} courses={enrolledCourses} onClose={() => setPickerOpen(false)} />
 		</>
@@ -394,40 +397,5 @@ function BookCoursePicker({
 			</div>
 		</div>,
 		document.body,
-	)
-}
-
-function TabLink({
-	tab,
-	active,
-	count,
-	children,
-}: {
-	tab: Tab
-	active: boolean
-	count: number
-	children: React.ReactNode
-}) {
-	return (
-		<Link
-			to="/khoa-hoc"
-			search={{ tab }}
-			className={cn(
-				"inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-extrabold transition-all",
-				active
-					? "bg-background text-foreground border-2 border-border border-b-4 -translate-y-px"
-					: "text-muted hover:text-foreground",
-			)}
-		>
-			{children}
-			<span
-				className={cn(
-					"inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-xs tabular-nums leading-none",
-					active ? "bg-primary/15 text-primary" : "bg-border/70 text-muted",
-				)}
-			>
-				{count}
-			</span>
-		</Link>
 	)
 }
