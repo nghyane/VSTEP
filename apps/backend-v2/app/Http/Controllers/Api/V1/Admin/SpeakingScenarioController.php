@@ -9,7 +9,7 @@ use App\Http\Requests\Admin\Practice\StoreScenarioRequest;
 use App\Http\Requests\Admin\Practice\UpdateScenarioRequest;
 use App\Http\Resources\Admin\AdminSpeakingScenarioResource;
 use App\Models\PracticeSpeakingScenario;
-use App\Services\SpeakingConversationService;
+use App\Services\ConversationServiceInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -18,7 +18,7 @@ use Illuminate\Http\Response;
 final class SpeakingScenarioController extends Controller
 {
     public function __construct(
-        private readonly SpeakingConversationService $conversationService,
+        private readonly ConversationServiceInterface $conversationService,
     ) {}
 
     public function index(Request $request): ResourceCollection

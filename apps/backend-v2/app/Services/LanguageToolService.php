@@ -6,6 +6,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
  * LanguageTool integration — rule-based grammar checker.
@@ -20,7 +21,7 @@ final class LanguageToolService
 {
     private function baseUrl(): string
     {
-        return rtrim(env('LANGUAGETOOL_URL', 'http://localhost:8081'), '/');
+        return rtrim((string) config('services.languagetool.url'), '/');
     }
 
     /**
@@ -80,7 +81,7 @@ final class LanguageToolService
             'start' => $m['offset'],
             'end' => $m['offset'] + $m['length'],
             'severity' => $this->mapSeverity($m['category']),
-            'category' => strtolower(str_replace(' ', '_', $m['category'])),
+            'category' => Str::lower(Str::replace(' ', '_', $m['category'])),
             'message' => $m['message'],
             'suggestion' => $m['replacements'][0] ?? null,
         ], $matches);
@@ -99,11 +100,13 @@ final class LanguageToolService
 
     private function mapSeverity(string $category): string
     {
+        $cat = Str::lower($category);
+
         return match (true) {
-            str_contains(strtolower($category), 'grammar') => 'error',
-            str_contains(strtolower($category), 'typo') => 'error',
-            str_contains(strtolower($category), 'punctuation') => 'suggestion',
-            str_contains(strtolower($category), 'style') => 'suggestion',
+            Str::contains($cat, 'grammar') => 'error',
+            Str::contains($cat, 'typo') => 'error',
+            Str::contains($cat, 'punctuation') => 'suggestion',
+            Str::contains($cat, 'style') => 'suggestion',
             default => 'error',
         };
     }

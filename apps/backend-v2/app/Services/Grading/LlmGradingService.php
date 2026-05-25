@@ -20,11 +20,6 @@ final class LlmGradingService implements LlmGrader
         private readonly StructuredGradingAgent $agent,
     ) {}
 
-    private function model(): string
-    {
-        return (string) config('grading.llm.model', 'gemini-3-flash-preview');
-    }
-
     /**
      * @param  array<int,array<string,mixed>>  $grammarErrors
      * @param  array{caps: array<string,float|null>, metrics: array<string,mixed>, flags: list<string>}  $ruleAnalysis
@@ -32,10 +27,19 @@ final class LlmGradingService implements LlmGrader
      */
     public function gradeWriting(string $text, string $promptText, array $grammarErrors, array $ruleAnalysis): array
     {
-        $context = $this->buildWritingContext($grammarErrors, $ruleAnalysis);
-        $userMessage = "Task prompt: {$promptText}\n\nStudent's writing:\n{$text}\n\nWord count: ".str_word_count($text).$context;
+        $caps = array_filter($ruleAnalysis['caps'], fn ($v) => $v !== null);
+        $grammarErrors = array_slice($grammarErrors, 0, 10);
 
-        return $this->callStructured($userMessage, $this->defaultWritingResult());
+        $prompt = view('ai.grading.writing', [
+            'promptText' => $promptText,
+            'text' => $text,
+            'wordCount' => str_word_count($text),
+            'grammarErrors' => $grammarErrors,
+            'metrics' => $ruleAnalysis['metrics'],
+            'caps' => $caps,
+        ])->render();
+
+        return $this->callStructured($prompt, $this->defaultWritingResult());
     }
 
     /**
@@ -43,7 +47,9 @@ final class LlmGradingService implements LlmGrader
      */
     public function gradeSpeaking(string $transcript): array
     {
-        return $this->callStructured("Transcript:\n{$transcript}", $this->defaultSpeakingResult());
+        $prompt = view('ai.grading.speaking', ['transcript' => $transcript])->render();
+
+        return $this->callStructured($prompt, $this->defaultSpeakingResult());
     }
 
     /**
@@ -54,8 +60,7 @@ final class LlmGradingService implements LlmGrader
     {
         $response = $this->agent->prompt(
             prompt: $prompt,
-            provider: 'llm',
-            model: $this->model(),
+            provider: 'bifrost',
         );
 
         $structured = $response instanceof StructuredAgentResponse
@@ -72,38 +77,6 @@ final class LlmGradingService implements LlmGrader
         }
 
         return $this->normalize(array_merge($fallback, $structured), $fallback);
-    }
-
-    /**
-     * @param  array<int,array<string,mixed>>  $grammarErrors
-     * @param  array<string,mixed>  $ruleAnalysis
-     */
-    private function buildWritingContext(array $grammarErrors, array $ruleAnalysis): string
-    {
-        $context = '';
-        if (! empty($grammarErrors)) {
-            $errorSummary = array_map(
-                fn ($e) => "- \"{$e['message']}\" (offset {$e['offset']})",
-                array_slice($grammarErrors, 0, 10),
-            );
-            $context = "\n\nGrammar errors detected by automated checker:\n".implode("\n", $errorSummary);
-        }
-
-        $metrics = $ruleAnalysis['metrics'];
-        $context .= "\n\nText metrics:";
-        $context .= "\n- Words: {$metrics['word_count']}, Sentences: {$metrics['sentence_count']}, Paragraphs: {$metrics['paragraph_count']}";
-        $context .= "\n- Errors/sentence: {$metrics['errors_per_sentence']}, Unique word ratio: {$metrics['unique_ratio']}";
-        $context .= "\n- Linking words found: {$metrics['linking_word_count']}";
-
-        $capContext = array_filter($ruleAnalysis['caps'], fn ($v) => $v !== null);
-        if (! empty($capContext)) {
-            $context .= "\n\nScore constraints (do NOT exceed these):";
-            foreach ($capContext as $criterion => $cap) {
-                $context .= "\n- {$criterion} max: {$cap}";
-            }
-        }
-
-        return $context;
     }
 
     /**

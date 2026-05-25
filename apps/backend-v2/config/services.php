@@ -36,8 +36,12 @@ return [
     ],
 
     'azure_speech' => [
-        'key' => env('AZURE_SPEECH_KEY'),
+        'key' => env('AZURE_SPEECH_KEY', ''),
         'region' => env('AZURE_SPEECH_REGION', 'southeastasia'),
+    ],
+
+    'languagetool' => [
+        'url' => env('LANGUAGETOOL_URL', 'http://localhost:8081'),
     ],
 
     'google' => [

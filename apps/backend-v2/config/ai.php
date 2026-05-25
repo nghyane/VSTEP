@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => 'openai',
+    'default' => 'bifrost',
     'default_for_images' => 'gemini',
     'default_for_audio' => 'openai',
     'default_for_transcription' => 'openai',
@@ -105,40 +105,21 @@ return [
             'url' => env('OLLAMA_BASE_URL', 'http://localhost:11434'),
         ],
 
-        'llm' => [
+        'bifrost' => [
             'driver' => 'chat-completions',
-            'key' => env('LLM_API_KEY'),
-            'url' => env('LLM_BASE_URL', 'https://gateway.ai.cloudflare.com/v1/<account_id>/default/compat'),
-            'auth_header' => env('LLM_AUTH_HEADER', 'cf-aig-authorization'),
+            'key' => env('BIFROST_API_KEY', ''),
+            'url' => env('BIFROST_URL', 'http://localhost:8080/v1'),
             'models' => [
                 'text' => [
-                    'default' => env('LLM_MODEL', 'gpt-5.4'),
-                    'cheapest' => env('LLM_MODEL', 'gpt-5.4'),
-                    'smartest' => env('LLM_MODEL', 'gpt-5.4'),
-                ],
-            ],
-        ],
-
-        'workers-ai' => [
-            'driver' => 'chat-completions',
-            'key' => env('LLM_API_KEY'),
-            'url' => env('WORKERS_AI_URL', 'https://gateway.ai.cloudflare.com/v1/11a58966d1289d0387eebba638a19cc3/vstep/workers-ai/v1'),
-            'auth_header' => env('LLM_AUTH_HEADER', 'cf-aig-authorization'),
-            'models' => [
-                'text' => [
-                    'default' => env('WORKERS_AI_MODEL', '@cf/meta/llama-4-scout-17b-16e-instruct'),
+                    'default' => env('BIFROST_GRADING_MODEL', 'Packyapi/gpt-5.4'),
+                    'grading' => env('BIFROST_GRADING_MODEL', 'Packyapi/gpt-5.4'),
+                    'conversation' => env('BIFROST_CONVERSATION_MODEL', 'Packyapi/gpt-5.4-mini'),
                 ],
             ],
         ],
 
         'openai' => [
             'driver' => 'openai',
-            'key' => env('OPENAI_API_KEY'),
-            'url' => env('OPENAI_BASE_URL'),
-        ],
-
-        'local' => [
-            'driver' => 'local',
             'key' => env('OPENAI_API_KEY'),
             'url' => env('OPENAI_BASE_URL'),
         ],

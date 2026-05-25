@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Ai\ChatCompletionsGateway;
-use App\Ai\LocalOpenAiGateway;
 use App\Models\Profile;
+use App\Services\ConversationServiceInterface;
 use App\Services\Grading\GradingStrategyResolver;
 use App\Services\Grading\LlmGrader;
 use App\Services\Grading\LlmGradingService;
 use App\Services\Grading\SpeakingGradingStrategy;
 use App\Services\Grading\WritingGradingStrategy;
+use App\Services\SpeakingConversationService;
 use App\Services\SpeechToText;
 use App\Services\SpeechToTextService;
 use App\Srs\FsrsConfig;
@@ -55,15 +56,10 @@ class AppServiceProvider extends ServiceProvider
             $app->make(SpeakingGradingStrategy::class),
         ]));
 
-        $this->app->resolving(AiManager::class, function (AiManager $ai, $app): void {
-            $ai->extend('local', function ($app, array $config) {
-                return new OpenAiProvider(
-                    new LocalOpenAiGateway($app['events']),
-                    $config,
-                    $app->make(Dispatcher::class),
-                );
-            });
+        // Conversation service — interface binding for testability.
+        $this->app->bind(ConversationServiceInterface::class, SpeakingConversationService::class);
 
+        $this->app->resolving(AiManager::class, function (AiManager $ai, $app): void {
             $ai->extend('chat-completions', function ($app, array $config) {
                 return new OpenAiProvider(
                     new ChatCompletionsGateway($app['events']),

@@ -20,12 +20,12 @@ final class SpeechToTextService implements SpeechToText
 {
     private function key(): string
     {
-        return config('services.azure_speech.key', env('AZURE_SPEECH_KEY', ''));
+        return (string) config('services.azure_speech.key');
     }
 
     private function region(): string
     {
-        return config('services.azure_speech.region', env('AZURE_SPEECH_REGION', 'southeastasia'));
+        return (string) config('services.azure_speech.region');
     }
 
     /**

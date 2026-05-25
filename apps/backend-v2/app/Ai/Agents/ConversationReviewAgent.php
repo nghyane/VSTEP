@@ -18,12 +18,12 @@ class ConversationReviewAgent implements Agent, HasStructuredOutput
 
     public function provider(): string
     {
-        return 'workers-ai';
+        return 'bifrost';
     }
 
     public function model(): string
     {
-        return (string) config('ai.providers.workers-ai.models.text.default', '@cf/meta/llama-4-scout-17b-16e-instruct');
+        return (string) config('ai.providers.bifrost.models.text.conversation', 'Packyapi/gpt-5.4-mini');
     }
 
     public function timeout(): int

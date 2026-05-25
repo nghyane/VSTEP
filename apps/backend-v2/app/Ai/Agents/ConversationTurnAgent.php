@@ -19,12 +19,12 @@ class ConversationTurnAgent implements Agent, HasStructuredOutput
 
     public function provider(): string
     {
-        return 'workers-ai';
+        return 'bifrost';
     }
 
     public function model(): string
     {
-        return (string) config('ai.providers.workers-ai.models.text.default', '@cf/meta/llama-4-scout-17b-16e-instruct');
+        return (string) config('ai.providers.bifrost.models.text.conversation', 'Packyapi/gpt-5.4-mini');
     }
 
     public function timeout(): int
@@ -70,8 +70,11 @@ class ConversationTurnAgent implements Agent, HasStructuredOutput
                     ])->withoutAdditionalProperties()
                 ),
                 'better' => $schema->string(),
+                'user_ipa' => $schema->string(),
+                'better_ipa' => $schema->string(),
             ])->withoutAdditionalProperties(),
             'reply' => $schema->string(),
+            'reply_ipa' => $schema->string(),
             'suggested_words' => $schema->array()->items($schema->string()),
         ];
     }

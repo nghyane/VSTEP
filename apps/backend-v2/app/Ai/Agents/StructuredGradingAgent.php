@@ -15,12 +15,12 @@ class StructuredGradingAgent implements Agent, HasStructuredOutput
 
     public function provider(): string
     {
-        return 'llm';
+        return 'bifrost';
     }
 
     public function model(): string
     {
-        return (string) config('ai.providers.llm.models.text.default', 'openai/gpt-5.4-mini');
+        return (string) config('ai.providers.bifrost.models.text.grading', 'Packyapi/gpt-5.4');
     }
 
     public function timeout(): int

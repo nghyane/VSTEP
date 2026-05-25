@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use Illuminate\Support\Str;
+
 /**
  * Rule-based scoring — deterministic caps + penalties.
  *
@@ -15,6 +17,13 @@ namespace App\Services;
  */
 final class RuleBasedScoringService
 {
+    private const LINKING_WORDS = [
+        'however', 'moreover', 'furthermore', 'therefore', 'consequently',
+        'nevertheless', 'although', 'despite', 'in addition', 'on the other hand',
+        'firstly', 'secondly', 'finally', 'in conclusion', 'for example',
+        'as a result', 'in contrast', 'meanwhile', 'similarly',
+    ];
+
     /**
      * @param  array<int,array<string,mixed>>  $languageToolErrors
      * @return array{caps: array<string,float|null>, metrics: array<string,mixed>, flags: string[]}
@@ -64,19 +73,14 @@ final class RuleBasedScoringService
 
         $avgSentenceLength = $wordCount / $sentenceCount;
 
-        $grammarErrors = array_filter($errors, fn ($e) => str_contains(strtolower($e['category'] ?? ''), 'grammar'));
+        $grammarErrors = array_filter($errors, fn ($e) => Str::contains(Str::lower($e['category'] ?? ''), 'grammar'));
         $grammarErrorCount = count($grammarErrors);
         $totalErrorCount = count($errors);
         $errorsPerSentence = $totalErrorCount / $sentenceCount;
 
-        // Linking words detection
-        $linkingWords = ['however', 'moreover', 'furthermore', 'therefore', 'consequently',
-            'nevertheless', 'although', 'despite', 'in addition', 'on the other hand',
-            'firstly', 'secondly', 'finally', 'in conclusion', 'for example',
-            'as a result', 'in contrast', 'meanwhile', 'similarly'];
-        $textLower = strtolower($text);
+        $textLower = Str::lower($text);
         $linkingCount = 0;
-        foreach ($linkingWords as $lw) {
+        foreach (self::LINKING_WORDS as $lw) {
             $linkingCount += substr_count($textLower, $lw);
         }
 

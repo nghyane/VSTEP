@@ -15,14 +15,15 @@ use App\Models\PracticeSpeakingScenario;
 use App\Models\Profile;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Responses\StructuredAgentResponse;
 
-final class SpeakingConversationService
+final class SpeakingConversationService implements ConversationServiceInterface
 {
     public function __construct(
         private readonly ConversationTurnAgent $turnAgent,
@@ -77,14 +78,10 @@ final class SpeakingConversationService
 
                 return ['session' => $session, 'turns' => [$turn]];
             });
-        } catch (QueryException $e) {
-            // Partial unique index — already has active session for (profile, scenario).
-            if (($e->errorInfo[0] ?? null) === '23505') {
-                throw ValidationException::withMessages([
-                    'session' => ['Bạn đang có 1 cuộc hội thoại đang diễn ra với scenario này. Hãy kết thúc trước khi bắt đầu mới.'],
-                ]);
-            }
-            throw $e;
+        } catch (UniqueConstraintViolationException) {
+            throw ValidationException::withMessages([
+                'session' => ['Bạn đang có 1 cuộc hội thoại đang diễn ra với scenario này. Hãy kết thúc trước khi bắt đầu mới.'],
+            ]);
         }
     }
 
@@ -203,36 +200,16 @@ final class SpeakingConversationService
             'pre_match' => Str::contains($lowerText, Str::lower($phrase)),
         ])->toArray();
 
-        $prompt = "You are {$scenario->character_name}. {$scenario->system_prompt}\n"
-            ."Speaker level: {$scenario->level}.\n"
-            ."Conversation so far:\n{$turnsSerialized}\n"
-            ."User just said: \"{$userText}\"\n\n"
-            ."INSTRUCTIONS (follow exactly):\n"
-            ."1. GRADE the user's sentence:\n"
-            .'   - Target phrases: '.json_encode($preCheck)."\n"
-            ."   - For each phrase, set used=true if user said it or a close paraphrase.\n"
-            ."   - grammar_ok: set false if there are grammatical errors.\n"
-            ."   - grammar_corrections: array of {wrong, correct, explanation(in Vietnamese)} for each grammar mistake. Empty array if no errors.\n"
-            ."   - better: rewrite the user's sentence in natural English. Always provide this.\n"
-            ."   - user_ipa: IPA phonetic transcription of the user's ORIGINAL sentence as they said it. Always provide this.\n"
-            ."   - better_ipa: IPA phonetic transcription of the 'better' sentence (e.g. \"aɪ wʊd laɪk tuː ɡoʊ\"). Always provide this.\n"
-            ."2. REPLY as {$scenario->character_name}:\n"
-            ."   - Write 1-2 natural sentences (max 30 words).\n"
-            ."   - Your reply MUST be grammatically correct English.\n"
-            ."   - Your reply MUST end with a question to continue the conversation.\n"
-            ."   - Do NOT repeat phrases or stutter.\n"
-            ."3. SUGGEST 2-4 short phrases the user could say next (each ≤ 4 words).\n"
-            .'4. REPLY_IPA: provide IPA phonetic transcription of your reply as "reply_ipa" field. Always provide this.';
+        $prompt = view('ai.conversation.turn', [
+            'character' => $scenario->character_name,
+            'systemPrompt' => $scenario->system_prompt,
+            'level' => $scenario->level,
+            'history' => $turnsSerialized,
+            'userText' => $userText,
+            'vocabCheck' => $preCheck,
+        ])->render();
 
-        try {
-            $structured = $this->callConversationLlm(
-                $prompt."\n\nRespond ONLY with valid JSON, no markdown.",
-                maxTokens: 800,
-            );
-        } catch (\Throwable $e) {
-            Log::warning('ConversationTurn LLM failed', ['error' => $e->getMessage()]);
-            throw new AiServiceUnavailableException;
-        }
+        $parsed = $this->callAgent($this->turnAgent, $prompt);
 
         $parsed = $this->normalizeTurnResponse($structured, $targetVocab, $lowerText, $userText);
         if ($parsed === null) {
@@ -255,23 +232,14 @@ final class SpeakingConversationService
         $turnsSerialized = $turns->map(fn ($t) => ($t->role === 'ai' ? $scenario->character_name : 'User').': '.$t->text)->implode("\n");
         $userSentences = $turns->where('role', 'user')->pluck('text')->implode("\n");
 
-        $prompt = "You are an English teacher reviewing a conversation practice.\n"
-            ."Scenario: {$scenario->title} (level {$scenario->level})\n"
-            ."Full conversation:\n{$turnsSerialized}\n\n"
-            ."User's sentences:\n{$userSentences}\n\n"
-            ."Analyze the user's English. Be specific — reference actual sentences the user said.\n"
-            ."Respond ONLY with valid JSON (no markdown, no code blocks), with these fields:\n"
-            ."- strengths: array of 2-3 specific things the user did well (in Vietnamese, reference actual phrases)\n"
-            ."- improvements: array of 2-3 specific things to improve (in Vietnamese, reference actual mistakes)\n"
-            ."- corrected_sentences: array of {original, corrected, explanation} for EACH user sentence that has errors (in Vietnamese). Skip correct sentences.\n"
-            .'- tip: one practical actionable tip (in Vietnamese)';
+        $prompt = view('ai.conversation.review', [
+            'title' => $scenario->title,
+            'level' => $scenario->level,
+            'history' => $turnsSerialized,
+            'userSentences' => $userSentences,
+        ])->render();
 
-        try {
-            $parsed = $this->callConversationLlm($prompt, maxTokens: 1000);
-        } catch (\Throwable $e) {
-            Log::warning('ConversationReview LLM failed', ['error' => $e->getMessage()]);
-            throw new AiServiceUnavailableException;
-        }
+        $parsed = $this->callAgent($this->reviewAgent, $prompt);
 
         if (! isset($parsed['strengths'])) {
             Log::warning('ConversationReview: could not parse', ['parsed' => $parsed]);
@@ -282,9 +250,10 @@ final class SpeakingConversationService
     }
 
     /**
-     * Normalize LLM response — handles varying key names (feedback/grade, reply/response, etc.)
+     * Reconcile LLM vocab check with pre-check results.
+     * Agent schema guarantees correct shape — this only fills gaps.
      *
-     * @return array{feedback: array, reply: string, suggested_words: string[]}|null
+     * @return array{feedback: array, reply: string, reply_ipa: string|null, suggested_words: string[]}|null
      */
     private function normalizeTurnResponse(?array $data, array $targetVocab, string $lowerText, string $userText): ?array
     {
@@ -292,80 +261,47 @@ final class SpeakingConversationService
             return null;
         }
 
-        // Flatten if nested under a single wrapper key (e.g. "response": {...})
-        if (count($data) === 1 && is_array(reset($data))) {
-            $data = reset($data);
-        }
-
-        // Find feedback/grade object
-        $feedback = $data['feedback'] ?? $data['grade'] ?? $data['grading'] ?? null;
-
-        // Find reply string
-        $reply = $data['reply'] ?? $data['response'] ?? $data['message'] ?? null;
-        if (is_array($reply)) {
-            $reply = $reply['text'] ?? $reply['message'] ?? null;
-        }
-
-        // Find suggestions
-        $suggestions = $data['suggested_words'] ?? $data['suggestions'] ?? $data['suggest'] ?? [];
+        $feedback = $data['feedback'] ?? null;
+        $reply = $data['reply'] ?? null;
 
         if (! is_array($feedback) || ! is_string($reply)) {
             return null;
         }
 
-        // Normalize better
-        $better = $feedback['better'] ?? $feedback['rewrite'] ?? $feedback['correction'] ?? '';
-        if (empty($better) || $better === $userText) {
-            $better = $userText;
-        }
+        // Reconcile vocab: fill any phrases LLM missed with pre-check fallback.
+        $llmVocab = collect($feedback['vocab_check'] ?? [])->keyBy(
+            fn ($v) => Str::lower((string) ($v['phrase'] ?? '')),
+        );
 
-        // Normalize vocab_check — handles multiple formats from LLM
-        $rawVocab = $feedback['vocab_check'] ?? $feedback['used'] ?? $feedback['vocabulary'] ?? [];
-        $llmVocab = collect([]);
-        if (is_array($rawVocab)) {
-            foreach ($rawVocab as $key => $val) {
-                if (is_array($val) && isset($val['phrase'])) {
-                    // Format: [{phrase: "...", used: true}] or [{phrase: "...", pre_match: true}]
-                    $used = $val['used'] ?? $val['pre_match'] ?? false;
-                    $llmVocab->push(['phrase' => $val['phrase'], 'used' => (bool) $used]);
-                } elseif (is_string($key)) {
-                    // Format: {"phrase": true/false}
-                    $llmVocab->push(['phrase' => $key, 'used' => (bool) $val]);
-                }
-            }
-        }
-
-        // Ensure all target phrases present
         $completeVocab = collect($targetVocab)->map(function ($phrase) use ($llmVocab, $lowerText) {
-            $entry = $llmVocab->first(fn ($v) => Str::lower($v['phrase']) === Str::lower($phrase));
-            if ($entry) {
-                return ['phrase' => $phrase, 'used' => (bool) $entry['used']];
-            }
+            $entry = $llmVocab->get(Str::lower($phrase));
 
-            return ['phrase' => $phrase, 'used' => Str::contains($lowerText, Str::lower($phrase))];
+            return [
+                'phrase' => $phrase,
+                'used' => $entry ? (bool) ($entry['used'] ?? false) : Str::contains($lowerText, Str::lower($phrase)),
+            ];
         })->toArray();
 
         $usedCount = count(array_filter($completeVocab, fn ($v) => $v['used']));
 
-        // Normalize grammar_corrections
-        $grammarCorrections = $feedback['grammar_corrections'] ?? $feedback['corrections'] ?? [];
-        if (! is_array($grammarCorrections)) {
-            $grammarCorrections = [];
+        $better = $feedback['better'] ?? '';
+        if (empty($better) || $better === $userText) {
+            $better = $userText;
         }
 
         return [
             'feedback' => [
                 'word_count' => ['used' => $usedCount, 'target' => count($targetVocab)],
                 'grammar_ok' => (bool) ($feedback['grammar_ok'] ?? true),
-                'grammar_corrections' => $grammarCorrections,
+                'grammar_corrections' => $feedback['grammar_corrections'] ?? [],
                 'vocab_check' => $completeVocab,
                 'better' => $better,
                 'user_ipa' => $feedback['user_ipa'] ?? null,
                 'better_ipa' => $feedback['better_ipa'] ?? null,
             ],
             'reply' => $reply,
-            'reply_ipa' => $data['reply_ipa'] ?? $data['ipa'] ?? null,
-            'suggested_words' => is_array($suggestions) ? array_values($suggestions) : [],
+            'reply_ipa' => $data['reply_ipa'] ?? null,
+            'suggested_words' => is_array($data['suggested_words'] ?? null) ? array_values($data['suggested_words']) : [],
         ];
     }
 
@@ -374,20 +310,12 @@ final class SpeakingConversationService
      */
     public function pronunciationReview(string $original, string $transcript): array
     {
-        $prompt = "You are an English pronunciation coach.\n"
-            ."Original sentence: \"{$original}\"\n"
-            ."Student said: \"{$transcript}\"\n\n"
-            ."Compare and analyze. Respond ONLY with valid JSON (no markdown), with these fields:\n"
-            ."- pronunciation: specific feedback on which words were mispronounced and how to fix (in Vietnamese, 2-3 sentences)\n"
-            ."- intonation: feedback on rhythm, stress, linking sounds (in Vietnamese, 1-2 sentences)\n"
-            .'- tip: one practical tip to improve (in Vietnamese, 1 sentence)';
+        $prompt = view('ai.conversation.pronunciation', [
+            'original' => $original,
+            'transcript' => $transcript,
+        ])->render();
 
-        try {
-            $parsed = $this->callConversationLlm($prompt, maxTokens: 500);
-        } catch (\Throwable $e) {
-            Log::warning('PronunciationReview LLM failed', ['error' => $e->getMessage()]);
-            throw new AiServiceUnavailableException;
-        }
+        $parsed = $this->callAgent($this->reviewAgent, $prompt);
 
         if (! isset($parsed['pronunciation'])) {
             throw new AiServiceUnavailableException;
@@ -403,24 +331,11 @@ final class SpeakingConversationService
     public function generateIpa(string $text): ?string
     {
         try {
-            $url = rtrim((string) config('ai.providers.workers-ai.url', ''), '/').'/chat/completions';
-            $key = (string) config('ai.providers.workers-ai.key', '');
-            $authHeader = (string) config('ai.providers.workers-ai.auth_header', 'cf-aig-authorization');
-            $model = (string) config('ai.providers.workers-ai.models.text.default');
-
-            $httpResponse = Http::withHeaders([
-                $authHeader => 'Bearer '.$key,
-            ])->timeout(10)->post($url, [
-                'model' => $model,
-                'messages' => [['role' => 'user', 'content' => "Convert this English text to IPA phonetic transcription. Respond with ONLY the IPA string, nothing else.\n\nText: \"{$text}\""]],
-                'max_tokens' => 200,
-            ]);
-
-            $content = data_get($httpResponse->json(), 'choices.0.message.content', '');
-            if (is_array($content)) {
-                $content = collect($content)->pluck('text')->implode('');
-            }
-            $content = trim((string) $content, " \t\n\r\0\x0B/");
+            $response = $this->reviewAgent->prompt(
+                prompt: "Convert this English text to IPA phonetic transcription. Respond with ONLY the IPA string, nothing else.\n\nText: \"{$text}\"",
+                provider: 'bifrost',
+            );
+            $content = trim((string) $response->text, " \t\n\r\0\x0B/");
             if (! empty($content) && mb_strlen($content) > 2) {
                 return $content;
             }
@@ -432,46 +347,41 @@ final class SpeakingConversationService
     }
 
     /**
-     * Shared LLM call helper — Workers AI returns `content` as array.
-     * Throws \RuntimeException on HTTP/parse failure so caller decides
-     * (throw AiServiceUnavailableException OR fallback for optional ops).
+     * Call an agent with retry on transient failures (2 retries, exponential backoff).
+     * Throws AiServiceUnavailableException after exhausting retries.
      *
      * @return array<string,mixed>
      */
-    private function callConversationLlm(string $prompt, int $maxTokens): array
+    private function callAgent(Agent $agent, string $prompt): array
     {
-        $url = rtrim((string) config('ai.providers.workers-ai.url', ''), '/').'/chat/completions';
-        $key = (string) config('ai.providers.workers-ai.key', '');
-        $authHeader = (string) config('ai.providers.workers-ai.auth_header', 'cf-aig-authorization');
-        $model = (string) config('ai.providers.workers-ai.models.text.default');
+        $maxRetries = 2;
 
-        $response = Http::withHeaders([$authHeader => 'Bearer '.$key])
-            ->timeout(30)
-            ->post($url, [
-                'model' => $model,
-                'messages' => [['role' => 'user', 'content' => $prompt]],
-                'max_tokens' => $maxTokens,
-            ]);
+        for ($attempt = 0; $attempt <= $maxRetries; $attempt++) {
+            try {
+                $response = $agent->prompt(prompt: $prompt, provider: 'bifrost');
 
-        if (! $response->successful()) {
-            throw new \RuntimeException("Conversation LLM HTTP {$response->status()}");
+                return $response instanceof StructuredAgentResponse ? $response->structured : [];
+            } catch (\Throwable $e) {
+                if ($attempt === $maxRetries) {
+                    Log::warning('AI agent call exhausted retries', [
+                        'agent' => $agent::class,
+                        'attempts' => $attempt + 1,
+                        'error' => $e->getMessage(),
+                    ]);
+
+                    throw new AiServiceUnavailableException;
+                }
+
+                $delay = (int) (1000 * 2 ** $attempt); // 1s → 2s
+                Log::info('AI agent call retrying', [
+                    'agent' => $agent::class,
+                    'attempt' => $attempt + 1,
+                    'delay_ms' => $delay,
+                ]);
+                usleep($delay * 1000);
+            }
         }
 
-        $content = data_get($response->json(), 'choices.0.message.content', '');
-        if (is_array($content)) {
-            $content = json_encode($content);
-        }
-
-        // Strip markdown wrapper if present.
-        if (preg_match('/```(?:json)?\s*([\s\S]*?)```/', $content, $m)) {
-            $content = trim($m[1]);
-        }
-
-        $parsed = json_decode((string) $content, true);
-        if (! is_array($parsed)) {
-            throw new \RuntimeException('Conversation LLM returned non-JSON');
-        }
-
-        return $parsed;
+        throw new AiServiceUnavailableException;
     }
 }

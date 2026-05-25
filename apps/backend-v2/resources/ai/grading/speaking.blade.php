@@ -1,0 +1,2 @@
+Transcript:
+{{ $transcript }}
