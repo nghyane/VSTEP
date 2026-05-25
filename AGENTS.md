@@ -27,3 +27,11 @@ Each active app has its own `AGENTS.md` with commands, architecture, and code ru
 
 - `git pull --no-rebase` (merge) by default. Never rebase, force-push, or `reset --hard` without asking.
 - Stage only files related to the current change.
+
+## Conventions
+
+Before writing code, activate the relevant convention skill:
+- `convention-check` — scan for violations before commit
+- `convention-service` — pattern for new services or refactoring
+- `convention-ai` — pattern for AI agents, gateways, prompts
+- `convention-test` — pattern for tests, factories, fakes
