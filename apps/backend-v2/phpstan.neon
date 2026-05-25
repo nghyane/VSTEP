@@ -1,0 +1,8 @@
+parameters:
+    level: 5
+    paths:
+        - app/
+    excludePaths:
+        - app/Console/
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
