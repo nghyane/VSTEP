@@ -151,18 +151,13 @@ export default function DashboardScreen() {
       </Animated.View>
 
       <Animated.View style={toAnimStyle(2)}>
-        <DepthCard style={styles.nextCard}>
-          <View style={[styles.nextIcon, { backgroundColor: c.primaryTint }]}>
-            <SkillIcon skill={weakest} size={22} bare />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.nextTitle, { color: c.foreground }]}>Bài gợi ý hôm nay</Text>
-            <Text style={[styles.nextSub, { color: c.subtle }]}>Luyện {SKILL_META[weakest].vi} trong 15 phút để duy trì chuỗi học tập.</Text>
-          </View>
-          <DepthButton onPress={() => router.push(`/(app)/practice/${weakest}` as any)} size="sm">
-            Bắt đầu
-          </DepthButton>
-        </DepthCard>
+        <NextActionCard
+          totalTests={stats?.totalTests ?? 0}
+          todaySessions={streakData?.todaySessions ?? 0}
+          dailyGoal={streakData?.dailyGoal ?? 1}
+          currentStreak={streakData?.currentStreak ?? 0}
+          weakest={weakest}
+        />
       </Animated.View>
 
       <Animated.View style={[styles.statsGrid, toAnimStyle(3)]}>
@@ -299,6 +294,76 @@ function SkillCard({
         <View style={[styles.skillBarFill, { backgroundColor: color, width: score !== null ? `${Math.min(score / 10 * 100, 100)}%` : "0%" }]} />
       </View>
     </HapticTouchable>
+  );
+}
+
+function NextActionCard({
+  totalTests,
+  todaySessions,
+  dailyGoal,
+  currentStreak,
+  weakest,
+}: {
+  totalTests: number;
+  todaySessions: number;
+  dailyGoal: number;
+  currentStreak: number;
+  weakest: Skill;
+}) {
+  const c = useThemeColors();
+  const router = useRouter();
+
+  // Case 1: No tests yet — onboarding prompt
+  if (totalTests === 0) {
+    return (
+      <DepthCard style={styles.nextCard}>
+        <View style={[styles.nextIcon, { backgroundColor: c.primaryTint }]}>
+          <GameIcon name="target" size={22} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.nextTitle, { color: c.foreground }]}>Hãy làm bài thi đầu tiên để xem trình độ thật</Text>
+          <Text style={[styles.nextSub, { color: c.subtle }]}>Sau bài full-test đầu, dashboard sẽ ước tính band và chỉ ra kỹ năng cần luyện</Text>
+        </View>
+        <DepthButton onPress={() => router.push("/(app)/(tabs)/exams" as any)} size="sm">
+          Bắt đầu
+        </DepthButton>
+      </DepthCard>
+    );
+  }
+
+  // Case 2: Today goal not met — streak nudge
+  if (todaySessions < dailyGoal) {
+    const remaining = dailyGoal - todaySessions;
+    return (
+      <DepthCard style={styles.nextCard}>
+        <View style={[styles.nextIcon, { backgroundColor: c.streak + "18" }]}>
+          <GameIcon name="fire" size={22} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.nextTitle, { color: c.foreground }]}>Hôm nay chưa làm bài thi nào!</Text>
+          <Text style={[styles.nextSub, { color: c.subtle }]}>Cần {remaining} bài full-test để giữ streak {currentStreak + 1} ngày</Text>
+        </View>
+        <DepthButton onPress={() => router.push("/(app)/(tabs)/exams" as any)} size="sm">
+          Bắt đầu
+        </DepthButton>
+      </DepthCard>
+    );
+  }
+
+  // Case 3: Goal met — suggest practice weakest skill
+  return (
+    <DepthCard style={styles.nextCard}>
+      <View style={[styles.nextIcon, { backgroundColor: c.primaryTint }]}>
+        <SkillIcon skill={weakest} size={22} bare />
+      </View>
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.nextTitle, { color: c.foreground }]}>Bài gợi ý hôm nay</Text>
+        <Text style={[styles.nextSub, { color: c.subtle }]}>Luyện {SKILL_META[weakest].vi} trong 15 phút để duy trì chuỗi học tập.</Text>
+      </View>
+      <DepthButton onPress={() => router.push(`/(app)/practice/${weakest}` as any)} size="sm">
+        Bắt đầu
+      </DepthButton>
+    </DepthCard>
   );
 }
 
