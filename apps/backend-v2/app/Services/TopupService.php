@@ -12,6 +12,7 @@ use App\Enums\PaymentProvider;
 use App\Models\Profile;
 use App\Models\WalletTopupOrder;
 use App\Models\WalletTopupPackage;
+use App\Services\Payment\OrderNotFoundAfterValidation;
 use App\Services\Payment\PaymentGatewayRegistry;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -125,7 +126,7 @@ final class TopupService
                 ->first();
 
             if (! $order) {
-                throw new \RuntimeException("Order not found: order_code={$orderCode}");
+                throw new OrderNotFoundAfterValidation($orderCode);
             }
 
             // Idempotent: already confirmed.

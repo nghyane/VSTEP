@@ -32,6 +32,15 @@ final class PaymentCallbackController extends Controller
             $topup->handleCallback($paymentProvider, $request->all());
 
             return response()->json(['success' => true]);
+        } catch (\App\Services\Payment\OrderNotFoundAfterValidation $e) {
+            // Signature valid but order not in DB yet (e.g. PayOS confirm-webhook test).
+            // Return 200 so PayOS accepts the webhook URL.
+            Log::info('Payment callback: valid signature, order not found', [
+                'provider' => $provider,
+                'order_code' => $e->orderCode,
+            ]);
+
+            return response()->json(['success' => true]);
         } catch (\RuntimeException $e) {
             Log::error('Payment callback failed', [
                 'provider' => $provider,
