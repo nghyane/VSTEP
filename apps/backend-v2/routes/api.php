@@ -201,6 +201,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/content-status', [Admin\DashboardController::class, 'contentStatus']);
         Route::get('/recent-activity', [Admin\DashboardController::class, 'recentActivity']);
 
+        // Audio upload (presigned PUT to R2) — staff only.
+        Route::post('/audio/presign-upload', [Admin\AudioUploadController::class, 'presignUpload']);
+
         // System config — ADMIN ONLY (nested middleware role:admin overrides parent role:staff)
         Route::middleware('role:admin')->prefix('system-config')->group(function () {
             Route::get('/', [Admin\SystemConfigController::class, 'index']);

@@ -1,41 +1,41 @@
 import { Alert, Select as AntdSelect, Divider, Flex, InputNumber } from "antd"
 import { type FormEvent, useState } from "react"
-import { AudioUploader } from "#/components/AudioUploader"
 import { Button } from "#/components/Button"
 import { FormField } from "#/components/FormField"
 import { Input } from "#/components/Input"
+import { Textarea } from "#/components/Textarea"
 import { extractError } from "#/lib/api"
 
-interface SectionFormInput {
+interface PassageFormInput {
 	part: number
-	part_title: string
+	title: string
 	duration_minutes: number
-	audio_url: string
+	passage: string
 }
 
 interface Props {
 	initial?: {
 		part: number
-		part_title: string | null
+		title: string | null
 		duration_minutes: number | null
-		audio_url: string | null
+		passage: string
 	}
-	onSubmit: (input: SectionFormInput) => Promise<unknown>
+	onSubmit: (input: PassageFormInput) => Promise<unknown>
 	onCancel: () => void
 	submitting?: boolean
 }
 
-export function ListeningSectionForm({ initial, onSubmit, onCancel, submitting }: Props) {
-	const [state, setState] = useState<SectionFormInput>({
+export function ReadingPassageForm({ initial, onSubmit, onCancel, submitting }: Props) {
+	const [state, setState] = useState<PassageFormInput>({
 		part: initial?.part ?? 1,
-		part_title: initial?.part_title ?? "",
-		duration_minutes: initial?.duration_minutes ?? 5,
-		audio_url: initial?.audio_url ?? "",
+		title: initial?.title ?? "",
+		duration_minutes: initial?.duration_minutes ?? 15,
+		passage: initial?.passage ?? "",
 	})
 	const [errors, setErrors] = useState<Record<string, string[]>>({})
 	const [generic, setGeneric] = useState<string | null>(null)
 
-	function set<K extends keyof SectionFormInput>(key: K, value: SectionFormInput[K]) {
+	function set<K extends keyof PassageFormInput>(key: K, value: PassageFormInput[K]) {
 		setState((s) => ({ ...s, [key]: value }))
 	}
 
@@ -65,6 +65,7 @@ export function ListeningSectionForm({ initial, onSubmit, onCancel, submitting }
 							{ value: 1, label: "Part 1" },
 							{ value: 2, label: "Part 2" },
 							{ value: 3, label: "Part 3" },
+							{ value: 4, label: "Part 4" },
 						]}
 					/>
 				</FormField>
@@ -77,14 +78,15 @@ export function ListeningSectionForm({ initial, onSubmit, onCancel, submitting }
 					/>
 				</FormField>
 			</Flex>
-			<FormField label="Tiêu đề" required error={errors.part_title}>
-				<Input value={state.part_title} onChange={(e) => set("part_title", e.target.value)} />
+			<FormField label="Tiêu đề bài đọc" required error={errors.title}>
+				<Input value={state.title} onChange={(e) => set("title", e.target.value)} />
 			</FormField>
-			<FormField label="File audio" error={errors.audio_url}>
-				<AudioUploader
-					value={state.audio_url || null}
-					onChange={(key) => set("audio_url", key ?? "")}
-					context="exam_listening"
+			<FormField label="Nội dung bài đọc" required error={errors.passage}>
+				<Textarea
+					value={state.passage}
+					onChange={(e) => set("passage", e.target.value)}
+					autoSize={{ minRows: 10, maxRows: 16 }}
+					placeholder="Dán toàn bộ nội dung bài đọc vào đây..."
 				/>
 			</FormField>
 			<Divider style={{ margin: "8px 0 16px" }} />
