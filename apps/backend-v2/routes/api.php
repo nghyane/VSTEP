@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\McqPracticeController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OverviewController;
+use App\Http\Controllers\Api\V1\PaymentCallbackController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ShadowingProgressController;
 use App\Http\Controllers\Api\V1\SpeakingConversationController;
@@ -26,6 +27,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/health', [HealthController::class, 'show']);
 
     Route::get('/config', [ConfigController::class, 'show']);
+
+    // Payment gateway callbacks — NO AUTH (server-to-server from PayOS/VNPay).
+    Route::post('/payment/callback/{provider}', [PaymentCallbackController::class, 'handle']);
 
     // Auth (public, rate limited)
     Route::middleware('throttle:10,1')->group(function () {
@@ -65,7 +69,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
         Route::get('/wallet/topup-packages', [WalletController::class, 'topupPackages']);
         Route::post('/wallet/topup', [WalletController::class, 'createTopup']);
-        Route::post('/wallet/topup/{wallet_topup_order}/confirm', [WalletController::class, 'confirmTopup']);
+        Route::get('/wallet/topup/{order}/status', [WalletController::class, 'orderStatus']);
         Route::post('/wallet/promo-redeem', [WalletController::class, 'redeemPromo']);
 
         // Vocabulary foundation.
@@ -235,6 +239,40 @@ Route::prefix('v1')->group(function () {
             Route::get('/{examId}/versions/{versionId}', [Admin\ExamVersionController::class, 'show'])->whereUuid(['examId', 'versionId']);
             Route::post('/{examId}/versions/{versionId}/activate', [Admin\ExamVersionController::class, 'setActive'])->whereUuid(['examId', 'versionId']);
             Route::delete('/{examId}/versions/{versionId}', [Admin\ExamVersionController::class, 'destroy'])->whereUuid(['examId', 'versionId']);
+        });
+
+        // Exam content CRUD (child resources of version)
+        Route::prefix('exams/versions/{versionId}')->whereUuid('versionId')->group(function () {
+            Route::post('/listening-sections', [Admin\ExamContentController::class, 'storeListeningSection']);
+            Route::post('/reading-passages', [Admin\ExamContentController::class, 'storeReadingPassage']);
+            Route::post('/writing-tasks', [Admin\ExamContentController::class, 'storeWritingTask']);
+            Route::post('/speaking-parts', [Admin\ExamContentController::class, 'storeSpeakingPart']);
+        });
+        Route::prefix('exams/listening-sections')->group(function () {
+            Route::patch('/{id}', [Admin\ExamContentController::class, 'updateListeningSection'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamContentController::class, 'destroyListeningSection'])->whereUuid('id');
+            Route::post('/{id}/items', [Admin\ExamContentController::class, 'storeListeningItem'])->whereUuid('id');
+        });
+        Route::prefix('exams/listening-items')->group(function () {
+            Route::patch('/{id}', [Admin\ExamContentController::class, 'updateListeningItem'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamContentController::class, 'destroyListeningItem'])->whereUuid('id');
+        });
+        Route::prefix('exams/reading-passages')->group(function () {
+            Route::patch('/{id}', [Admin\ExamContentController::class, 'updateReadingPassage'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamContentController::class, 'destroyReadingPassage'])->whereUuid('id');
+            Route::post('/{id}/items', [Admin\ExamContentController::class, 'storeReadingItem'])->whereUuid('id');
+        });
+        Route::prefix('exams/reading-items')->group(function () {
+            Route::patch('/{id}', [Admin\ExamContentController::class, 'updateReadingItem'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamContentController::class, 'destroyReadingItem'])->whereUuid('id');
+        });
+        Route::prefix('exams/writing-tasks')->group(function () {
+            Route::patch('/{id}', [Admin\ExamContentController::class, 'updateWritingTask'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamContentController::class, 'destroyWritingTask'])->whereUuid('id');
+        });
+        Route::prefix('exams/speaking-parts')->group(function () {
+            Route::patch('/{id}', [Admin\ExamContentController::class, 'updateSpeakingPart'])->whereUuid('id');
+            Route::delete('/{id}', [Admin\ExamContentController::class, 'destroySpeakingPart'])->whereUuid('id');
         });
 
         // Vocab management — Topics + Words + Exercises

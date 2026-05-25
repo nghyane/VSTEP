@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\PaymentProvider;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Wallet\CreateTopupOrderRequest;
 use App\Http\Requests\Wallet\PromoRedeemRequest;
@@ -75,12 +76,10 @@ final class WalletController extends Controller
         $profile = $request->profile();
         /** @var WalletTopupPackage $package */
         $package = WalletTopupPackage::query()->findOrFail($request->validated('package_id'));
+        $provider = PaymentProvider::from($request->validated('payment_provider'));
+        $returnUrl = $request->validated('return_url');
 
-        $order = $this->topupService->createOrder(
-            $profile,
-            $package,
-            $request->validated('payment_provider', 'mock'),
-        );
+        [$order, $paymentUrl] = $this->topupService->createOrder($profile, $package, $provider, $returnUrl);
 
         return response()->json([
             'data' => new WalletTopupOrderResource($order),
@@ -88,18 +87,16 @@ final class WalletController extends Controller
     }
 
     /**
-     * Mock confirm endpoint. Real gateway sẽ dùng webhook riêng.
+     * Poll order status — for frontend to check after returning from gateway.
      */
-    public function confirmTopup(Request $request, WalletTopupOrder $walletTopupOrder): JsonResponse
+    public function orderStatus(Request $request, WalletTopupOrder $order): JsonResponse
     {
-        if ($walletTopupOrder->profile_id !== $request->profile()->id) {
+        if ($order->profile_id !== $request->profile()->id) {
             abort(403, 'Order does not belong to active profile.');
         }
 
-        $confirmed = $this->topupService->confirm($walletTopupOrder);
-
         return response()->json([
-            'data' => new WalletTopupOrderResource($confirmed),
+            'data' => new WalletTopupOrderResource($order),
         ]);
     }
 

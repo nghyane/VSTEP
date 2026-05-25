@@ -70,18 +70,6 @@ class Profile extends BaseModel
 
     // ── Teachers ──
 
-    public function teacherReviews(): HasMany
-    {
-        return $this->hasManyThrough(
-            TeacherReview::class,
-            TeacherBooking::class,
-            'profile_id',    // Foreign key on teacher_bookings...
-            'booking_id',    // Foreign key on teacher_reviews...
-            'id',            // Local key on profiles...
-            'id',            // Local key on teacher_bookings...
-        );
-    }
-
     public function dailyActivities(): HasMany
     {
         return $this->hasMany(ProfileDailyActivity::class);

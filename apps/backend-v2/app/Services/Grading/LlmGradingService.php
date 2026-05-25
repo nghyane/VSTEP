@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Services\Grading;
 
 use App\Ai\AiClient;
+use App\Models\GradingRubric;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Shared LLM grading client.
  *
- * Encapsulates: prompt template + structured response + normalization.
+ * Prompt + schema derived from GradingRubric entity.
  * Throws on hard failure so caller (strategy) can decide retry vs fallback.
  */
 final class LlmGradingService implements LlmGrader
@@ -19,12 +20,7 @@ final class LlmGradingService implements LlmGrader
         private readonly AiClient $ai,
     ) {}
 
-    /**
-     * @param  array<int,array<string,mixed>>  $grammarErrors
-     * @param  array{caps: array<string,float|null>, metrics: array<string,mixed>, flags: list<string>}  $ruleAnalysis
-     * @return array{rubric_scores: array<string,float>, overall_band: float, strengths: list<string>, improvements: list<array<string,mixed>>, rewrites: list<array<string,mixed>>, annotations: list<array<string,mixed>>}
-     */
-    public function gradeWriting(string $text, string $promptText, array $grammarErrors, array $ruleAnalysis): array
+    public function gradeWriting(string $text, string $promptText, array $grammarErrors, array $ruleAnalysis, GradingRubric $rubric): array
     {
         $caps = array_filter($ruleAnalysis['caps'], fn ($v) => $v !== null);
         $grammarErrors = array_slice($grammarErrors, 0, 10);
@@ -38,34 +34,29 @@ final class LlmGradingService implements LlmGrader
             'caps' => $caps,
         ])->render();
 
-        $schema = $this->writingSchema();
-
-        return $this->callStructured($prompt, $schema, $this->defaultWritingResult());
+        return $this->callStructured($prompt, $rubric);
     }
 
-    /**
-     * @return array{rubric_scores: array<string,float>, overall_band: float, strengths: list<string>, improvements: list<array<string,mixed>>}
-     */
-    public function gradeSpeaking(string $transcript): array
+    public function gradeSpeaking(string $transcript, GradingRubric $rubric): array
     {
-        $prompt = view('ai.grading.speaking', ['transcript' => $transcript])->render();
-        $schema = $this->speakingSchema();
+        $prompt = view('ai.grading.speaking', [
+            'transcript' => $transcript,
+        ])->render();
 
-        return $this->callStructured($prompt, $schema, $this->defaultSpeakingResult());
+        return $this->callStructured($prompt, $rubric);
     }
 
-    /**
-     * @param  array<string,mixed>  $schema
-     * @param  array<string,mixed>  $fallback
-     * @return array<string,mixed>
-     */
-    private function callStructured(string $prompt, array $schema, array $fallback): array
+    private function callStructured(string $prompt, GradingRubric $rubric): array
     {
+        $schema = $this->schemaFromRubric($rubric);
+        $instructions = view('ai.grading.system-instruction', ['rubric' => $rubric])->render();
+        $fallback = $this->defaultFromRubric($rubric);
+
         $structured = $this->ai->structured(
             service: 'grading',
             prompt: $prompt,
             schema: $schema,
-            instructions: $this->gradingInstructions(),
+            instructions: $instructions,
         );
 
         if (! isset($structured['rubric_scores'])) {
@@ -76,47 +67,31 @@ final class LlmGradingService implements LlmGrader
             throw new \RuntimeException('LLM returned invalid structured output');
         }
 
-        return $this->normalize(array_merge($fallback, $structured), $fallback);
-    }
-
-    private function gradingInstructions(): string
-    {
-        return 'You are a VSTEP English exam grader. Score each rubric criterion from 0.0 to 4.0. Be precise and consistent.';
+        return $this->normalize(array_merge($fallback, $structured), $rubric);
     }
 
     /**
      * @param  array<string,mixed>  $result
-     * @param  array<string,mixed>  $fallback
      * @return array<string,mixed>
      */
-    private function normalize(array $result, array $fallback): array
+    private function normalize(array $result, GradingRubric $rubric): array
     {
         $rubricScores = is_array($result['rubric_scores'] ?? null) ? $result['rubric_scores'] : [];
-        $fallbackScores = is_array($fallback['rubric_scores'] ?? null) ? $fallback['rubric_scores'] : [];
-
-        // LLM sometimes returns synonyms — map back to canonical keys.
-        $keyMap = [
-            'task_completion' => 'task_achievement',
-            'task_response' => 'task_achievement',
-            'content' => 'task_achievement',
-            'clarity' => 'coherence',
-            'organization' => 'coherence',
-            'style' => 'lexical',
-            'vocab' => 'lexical',
-            'vocabulary' => 'lexical',
-        ];
-
-        foreach ($keyMap as $from => $to) {
-            if (! array_key_exists($to, $rubricScores) && array_key_exists($from, $rubricScores)) {
-                $rubricScores[$to] = $rubricScores[$from];
-            }
+        $maxScoreMap = [];
+        foreach ($rubric->criteria as $criterion) {
+            $maxScoreMap[$criterion['key']] = (float) $criterion['max_score'];
         }
 
-        foreach ($fallbackScores as $key => $value) {
-            $rubricScores[$key] = $this->clampScore($rubricScores[$key] ?? $value, $value);
+        // Clamp each score to [0, max_score] for that criterion.
+        $clamped = [];
+        foreach ($maxScoreMap as $key => $max) {
+            $value = $rubricScores[$key] ?? ($max / 2);
+            $clamped[$key] = is_numeric($value)
+                ? max(0.0, min($max, (float) $value))
+                : $max / 2;
         }
 
-        $result['rubric_scores'] = $rubricScores;
+        $result['rubric_scores'] = $clamped;
         $result['overall_band'] = is_numeric($result['overall_band'] ?? null)
             ? (float) $result['overall_band']
             : 5.0;
@@ -126,18 +101,9 @@ final class LlmGradingService implements LlmGrader
         ));
         $result['rewrites'] = array_values(is_array($result['rewrites'] ?? null) ? $result['rewrites'] : []);
         $result['annotations'] = array_values(is_array($result['annotations'] ?? null) ? $result['annotations'] : []);
-        $result['improvements'] = $this->normalizeImprovements($result['improvements'] ?? $fallback['improvements'] ?? []);
+        $result['improvements'] = $this->normalizeImprovements($result['improvements'] ?? []);
 
         return $result;
-    }
-
-    private function clampScore(mixed $value, float $fallback): float
-    {
-        if (! is_numeric($value)) {
-            return $fallback;
-        }
-
-        return max(0.0, min(4.0, (float) $value));
     }
 
     /**
@@ -164,20 +130,10 @@ final class LlmGradingService implements LlmGrader
     }
 
     /** @return array<string,mixed> */
-    private function writingSchema(): array
+    private function schemaFromRubric(GradingRubric $rubric): array
     {
         return [
-            'rubric_scores' => [
-                'type' => 'object',
-                'properties' => [
-                    'task_achievement' => ['type' => 'number'],
-                    'coherence' => ['type' => 'number'],
-                    'lexical' => ['type' => 'number'],
-                    'grammar' => ['type' => 'number'],
-                ],
-                'required' => ['task_achievement', 'coherence', 'lexical', 'grammar'],
-                'additionalProperties' => false,
-            ],
+            'rubric_scores' => $rubric->toRubricScoresSchema(),
             'overall_band' => ['type' => 'number'],
             'strengths' => ['type' => 'array', 'items' => ['type' => 'string']],
             'improvements' => [
@@ -210,59 +166,20 @@ final class LlmGradingService implements LlmGrader
     }
 
     /** @return array<string,mixed> */
-    private function speakingSchema(): array
+    private function defaultFromRubric(GradingRubric $rubric): array
     {
-        return [
-            'rubric_scores' => [
-                'type' => 'object',
-                'properties' => [
-                    'fluency' => ['type' => 'number'],
-                    'pronunciation' => ['type' => 'number'],
-                    'content' => ['type' => 'number'],
-                    'vocab' => ['type' => 'number'],
-                    'grammar' => ['type' => 'number'],
-                ],
-                'required' => ['fluency', 'pronunciation', 'content', 'vocab', 'grammar'],
-                'additionalProperties' => false,
-            ],
-            'overall_band' => ['type' => 'number'],
-            'strengths' => ['type' => 'array', 'items' => ['type' => 'string']],
-            'improvements' => [
-                'type' => 'array',
-                'items' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'message' => ['type' => 'string'],
-                        'explanation' => ['type' => 'string'],
-                    ],
-                    'required' => ['message', 'explanation'],
-                    'additionalProperties' => false,
-                ],
-            ],
-        ];
-    }
+        $scores = [];
+        foreach ($rubric->criteria as $criterion) {
+            $scores[$criterion['key']] = (float) $criterion['max_score'] / 2;
+        }
 
-    /** @return array<string,mixed> */
-    private function defaultWritingResult(): array
-    {
         return [
-            'rubric_scores' => ['task_achievement' => 2.0, 'coherence' => 2.0, 'lexical' => 2.0, 'grammar' => 2.0],
+            'rubric_scores' => $scores,
             'overall_band' => 5.0,
             'strengths' => [],
             'improvements' => [],
             'rewrites' => [],
             'annotations' => [],
-        ];
-    }
-
-    /** @return array<string,mixed> */
-    private function defaultSpeakingResult(): array
-    {
-        return [
-            'rubric_scores' => ['fluency' => 2.0, 'pronunciation' => 2.0, 'content' => 2.0, 'vocab' => 2.0, 'grammar' => 2.0],
-            'overall_band' => 5.0,
-            'strengths' => [],
-            'improvements' => [],
         ];
     }
 }

@@ -1,24 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
 import { ScrollArea } from "#/components/ScrollArea"
-import { confirmTopupOrder, createTopupOrder } from "#/features/wallet/actions"
-import { topupPackagesQuery, walletBalanceQuery } from "#/features/wallet/queries"
-import { TopUpSuccessPopup } from "#/features/wallet/TopUpSuccessPopup"
-import type { TopupPackage } from "#/features/wallet/types"
-import { useCoinGain } from "#/lib/coin-gain"
+import { createTopupOrder } from "#/features/wallet/actions"
+import { type EnrichedPackage, useTopupDialog } from "#/features/wallet/use-topup-dialog"
 import { cn, formatNumber, formatVnd } from "#/lib/utils"
 
-interface Props {
-	open: boolean
-	onClose: () => void
-}
+// ─── Shell ────────────────────────────────────────────────
 
-export function TopUpDialog({ open, onClose }: Props) {
-	const [success, setSuccess] = useState<{ coins: number; balance: number } | null>(null)
-
+export function TopUpDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
 	useEffect(() => {
 		if (!open) return
 		const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
@@ -26,68 +18,37 @@ export function TopUpDialog({ open, onClose }: Props) {
 		return () => window.removeEventListener("keydown", onKey)
 	}, [open, onClose])
 
-	const handleSuccess = (coins: number, balance: number) => {
-		setSuccess({ coins, balance })
-		onClose()
-	}
-
-	const handleSuccessClose = () => {
-		const coins = success?.coins ?? 0
-		setSuccess(null)
-		if (coins > 0) {
-			// Defer until after popup unmount so user sees the header animation clearly.
-			setTimeout(() => useCoinGain.getState().trigger(coins), 220)
-		}
-	}
-
 	if (typeof document === "undefined") return null
 
-	return (
-		<>
-			{open &&
-				createPortal(
-					<div
-						className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeIn_200ms_ease-out] p-4"
-						role="dialog"
-						aria-modal="true"
-						aria-label="Nạp xu"
-					>
-						<div className="card relative w-full max-w-5xl max-h-[92vh] overflow-hidden animate-[popIn_300ms_cubic-bezier(0.34,1.56,0.64,1)]">
-							<button
-								type="button"
-								onClick={onClose}
-								aria-label="Đóng"
-								className="absolute top-4 right-4 p-2 rounded-full hover:bg-background transition z-10"
-							>
-								<Icon name="close" size="sm" className="text-muted" />
-							</button>
-							<DialogBody onSuccess={handleSuccess} onClose={onClose} />
-						</div>
-					</div>,
-					document.body,
-				)}
-			<TopUpSuccessPopup
-				open={success !== null}
-				coinsAdded={success?.coins ?? 0}
-				newBalance={success?.balance ?? 0}
-				onClose={handleSuccessClose}
-			/>
-		</>
-	)
+	return open
+		? createPortal(
+				<div
+					className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-[fadeIn_200ms_ease-out] p-4"
+					role="dialog"
+					aria-modal="true"
+					aria-label="Nạp xu"
+				>
+					<div className="card relative w-full max-w-5xl max-h-[92vh] overflow-hidden animate-[popIn_300ms_cubic-bezier(0.34,1.56,0.64,1)]">
+						<button
+							type="button"
+							onClick={onClose}
+							aria-label="Đóng"
+							className="absolute top-4 right-4 p-2 rounded-full hover:bg-background transition z-10"
+						>
+							<Icon name="close" size="sm" className="text-muted" />
+						</button>
+						<Body onClose={onClose} />
+					</div>
+				</div>,
+				document.body,
+			)
+		: null
 }
 
-function DialogBody({
-	onClose,
-	onSuccess,
-}: {
-	onClose: () => void
-	onSuccess: (coins: number, balance: number) => void
-}) {
-	const { data, isLoading } = useQuery(topupPackagesQuery)
-	const { data: walletData } = useQuery(walletBalanceQuery)
-	const packages = data?.data ?? []
-	const balance = walletData?.data.balance ?? 0
+// ─── Body ─────────────────────────────────────────────────
 
+function Body({ onClose }: { onClose: () => void }) {
+	const { packages, balance, isLoading } = useTopupDialog()
 	const defaultId = packages[Math.floor(packages.length / 2)]?.id ?? packages[0]?.id ?? ""
 	const [selectedId, setSelectedId] = useState<string>(defaultId)
 
@@ -95,14 +56,12 @@ function DialogBody({
 		if (!selectedId && defaultId) setSelectedId(defaultId)
 	}, [defaultId, selectedId])
 
-	if (isLoading) {
+	if (isLoading)
 		return (
 			<div className="p-12 flex items-center justify-center">
 				<Loading />
 			</div>
 		)
-	}
-
 	if (packages.length === 0) {
 		return (
 			<div className="p-10 text-center">
@@ -123,13 +82,13 @@ function DialogBody({
 					selectedId={selectedId}
 					onSelect={setSelectedId}
 					selected={selected}
-					currentBalance={balance}
-					onBuySuccess={onSuccess}
 				/>
 			</ScrollArea>
 		</div>
 	)
 }
+
+// ─── Left Panel ───────────────────────────────────────────
 
 function LeftPanel({ balance, onClose }: { balance: number; onClose: () => void }) {
 	const isEmpty = balance === 0
@@ -173,25 +132,25 @@ function LeftPanel({ balance, onClose }: { balance: number; onClose: () => void 
 
 			<div className="w-full rounded-(--radius-card) border-2 border-dashed border-border bg-surface/60 p-4 space-y-2">
 				<p className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-primary-dark">
-					<Icon name="lightning" size="xs" />
-					Xu dùng để làm gì?
+					<Icon name="lightning" size="xs" /> Xu dùng để làm gì?
 				</p>
 				<ul className="space-y-1.5 text-xs text-muted">
-					<TipRow
-						text={
-							<>
-								<span className="font-extrabold text-foreground">Full-test</span>: 25 xu / đề
-							</>
-						}
-					/>
-					<TipRow
-						text={
-							<>
-								Thi theo kỹ năng riêng: <span className="font-extrabold text-foreground">8 xu / kỹ năng</span>
-							</>
-						}
-					/>
-					<TipRow text="Nhận xét AI chi tiết sau mỗi bài Viết / Nói" />
+					<li className="flex items-start gap-1.5">
+						<span className="mt-1 size-1 shrink-0 rounded-full bg-subtle" />
+						<span>
+							<span className="font-extrabold text-foreground">Full-test</span>: 25 xu / đề
+						</span>
+					</li>
+					<li className="flex items-start gap-1.5">
+						<span className="mt-1 size-1 shrink-0 rounded-full bg-subtle" />
+						<span>
+							Thi theo kỹ năng riêng: <span className="font-extrabold text-foreground">8 xu / kỹ năng</span>
+						</span>
+					</li>
+					<li className="flex items-start gap-1.5">
+						<span className="mt-1 size-1 shrink-0 rounded-full bg-subtle" />
+						<span>Nhận xét AI chi tiết sau mỗi bài Viết / Nói</span>
+					</li>
 				</ul>
 			</div>
 
@@ -206,38 +165,24 @@ function LeftPanel({ balance, onClose }: { balance: number; onClose: () => void 
 	)
 }
 
-function TipRow({ text }: { text: React.ReactNode }) {
-	return (
-		<li className="flex items-start gap-1.5">
-			<span className="mt-1 size-1 shrink-0 rounded-full bg-subtle" />
-			<span>{text}</span>
-		</li>
-	)
-}
+// ─── Right Panel ──────────────────────────────────────────
 
 function RightPanel({
 	packages,
 	selectedId,
 	onSelect,
 	selected,
-	currentBalance,
-	onBuySuccess,
 }: {
-	packages: TopupPackage[]
+	packages: EnrichedPackage[]
 	selectedId: string
 	onSelect: (id: string) => void
-	selected: TopupPackage
-	currentBalance: number
-	onBuySuccess: (coins: number, balance: number) => void
+	selected: EnrichedPackage
 }) {
 	return (
 		<div className="flex flex-col gap-6 p-6 md:p-8">
-			<div>
-				<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-coin-tint text-xs font-extrabold uppercase tracking-wider text-coin-dark">
-					<StaticIcon name="coin" size="xs" />
-					Nạp xu
-				</span>
-			</div>
+			<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-coin-tint text-xs font-extrabold uppercase tracking-wider text-coin-dark self-start">
+				<StaticIcon name="coin" size="xs" /> Nạp xu
+			</span>
 
 			<div className="space-y-2">
 				<h1 className="text-2xl md:text-3xl font-extrabold leading-tight text-foreground">
@@ -250,17 +195,17 @@ function RightPanel({
 			</div>
 
 			<ul className="space-y-3">
-				<BenefitRow
+				<Benefit
 					icon="target"
 					title="Luyện tập & thi thử không giới hạn"
 					body="Làm toàn bộ đề full-test hoặc từng kỹ năng tuỳ nhu cầu."
 				/>
-				<BenefitRow
+				<Benefit
 					icon="pencil"
 					title="Chấm điểm + nhận xét AI chi tiết"
 					body="Phân tích lỗi sai, gợi ý cải thiện ở từng tiêu chí VSTEP."
 				/>
-				<BenefitRow
+				<Benefit
 					icon="lightning"
 					title="Tặng thêm xu theo streak học tập"
 					body="Duy trì chuỗi 7 / 14 / 30 ngày để nhận thưởng xu cộng dồn."
@@ -278,12 +223,12 @@ function RightPanel({
 				))}
 			</div>
 
-			<BuyButton pack={selected} currentBalance={currentBalance} onSuccess={onBuySuccess} />
+			<BuyButton pack={selected} />
 		</div>
 	)
 }
 
-function BenefitRow({
+function Benefit({
 	icon,
 	title,
 	body,
@@ -305,19 +250,17 @@ function BenefitRow({
 	)
 }
 
+// ─── Pack Card ────────────────────────────────────────────
+
 function PackCard({
 	pack,
 	selected,
 	onSelect,
 }: {
-	pack: TopupPackage
+	pack: EnrichedPackage
 	selected: boolean
 	onSelect: () => void
 }) {
-	const highlight = pack.bonus_coins > 0 && pack.bonus_coins >= 100
-	const pricePerCoin = Math.round(pack.amount_vnd / pack.total_coins)
-	const savingsPct = pack.bonus_coins > 0 ? Math.max(0, Math.round(((300 - pricePerCoin) / 300) * 100)) : 0
-
 	return (
 		<button
 			type="button"
@@ -330,10 +273,9 @@ function PackCard({
 					: "border-border border-b-4 hover:border-primary/40",
 			)}
 		>
-			{highlight && (
+			{pack.isBestValue && (
 				<span className="absolute -top-2.5 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
-					<StaticIcon name="trophy" size="xs" className="h-3 w-auto" />
-					Best value
+					<StaticIcon name="trophy" size="xs" className="h-3 w-auto" /> Best value
 				</span>
 			)}
 			<p className="text-[11px] font-extrabold uppercase tracking-wider text-subtle">{pack.label}</p>
@@ -345,36 +287,24 @@ function PackCard({
 				<span className="text-xs font-bold text-subtle">xu</span>
 			</div>
 			<p className="text-base font-bold text-foreground">{formatVnd(pack.amount_vnd)}</p>
-			{savingsPct > 0 ? (
+			{pack.savingsPct > 0 ? (
 				<span className="inline-flex px-2 py-0.5 rounded-full bg-primary-tint text-[11px] font-extrabold text-primary-dark">
-					Tặng +{formatNumber(pack.bonus_coins)} xu · tiết kiệm {savingsPct}%
+					Tặng +{formatNumber(pack.bonus_coins)} xu · tiết kiệm {pack.savingsPct}%
 				</span>
 			) : (
-				<span className="text-[11px] font-bold text-subtle">{formatNumber(pricePerCoin)}đ / xu</span>
+				<span className="text-[11px] font-bold text-subtle">{formatNumber(pack.pricePerCoin)}đ / xu</span>
 			)}
 		</button>
 	)
 }
 
-function BuyButton({
-	pack,
-	currentBalance,
-	onSuccess,
-}: {
-	pack: TopupPackage
-	currentBalance: number
-	onSuccess: (coins: number, balance: number) => void
-}) {
-	const queryClient = useQueryClient()
+// ─── Buy Button ───────────────────────────────────────────
 
+function BuyButton({ pack }: { pack: EnrichedPackage }) {
 	const mutation = useMutation({
-		mutationFn: async () => {
-			const order = await createTopupOrder(pack.id)
-			return confirmTopupOrder(order.id)
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: walletBalanceQuery.queryKey })
-			onSuccess(pack.total_coins, currentBalance + pack.total_coins)
+		mutationFn: () => createTopupOrder(pack.id),
+		onSuccess: (order) => {
+			if (order.payment_url) window.location.href = order.payment_url
 		},
 	})
 

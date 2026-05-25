@@ -18,8 +18,12 @@ use App\Services\ConversationServiceInterface;
 use App\Services\Grading\GradingStrategyResolver;
 use App\Services\Grading\LlmGrader;
 use App\Services\Grading\LlmGradingService;
+use App\Services\Grading\RubricResolver;
 use App\Services\Grading\SpeakingGradingStrategy;
 use App\Services\Grading\WritingGradingStrategy;
+use App\Services\Payment\PaymentGatewayRegistry;
+use App\Services\Payment\PayOsGateway;
+use App\Services\Payment\VnPayGateway;
 use App\Services\SpeakingConversationService;
 use App\Services\SpeechToText;
 use App\Services\SpeechToTextService;
@@ -58,6 +62,9 @@ class AppServiceProvider extends ServiceProvider
         // Default Speech-to-Text implementation.
         $this->app->bind(SpeechToText::class, SpeechToTextService::class);
 
+        // Rubric resolver — scoped so cache resets per request (Octane-safe).
+        $this->app->scoped(RubricResolver::class);
+
         // Grading strategy registry — explicit list, ordered.
         $this->app->singleton(GradingStrategyResolver::class, fn ($app) => new GradingStrategyResolver([
             $app->make(WritingGradingStrategy::class),
@@ -71,6 +78,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AdminCourseBookingInterface::class, AdminCourseBookingService::class);
         $this->app->bind(AdminCourseEnrollmentInterface::class, AdminCourseEnrollmentService::class);
         $this->app->bind(AdminCourseScheduleInterface::class, AdminCourseScheduleService::class);
+
+        // Payment gateway registry.
+        $this->app->singleton(PaymentGatewayRegistry::class, fn () => new PaymentGatewayRegistry([
+            'payos' => $this->app->make(PayOsGateway::class),
+            'vnpay' => $this->app->make(VnPayGateway::class),
+        ]));
     }
 
     public function boot(): void

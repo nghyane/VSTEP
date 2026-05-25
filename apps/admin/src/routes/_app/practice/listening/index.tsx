@@ -1,7 +1,7 @@
 import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { Input as AntInput, Empty, Flex, Space, Table, Tag, Typography } from "antd"
+import { Input as AntInput, Empty, Flex, Space, Switch as AntdSwitch, Table, Tag, Typography } from "antd"
 import { useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
@@ -162,16 +162,13 @@ function ListeningListPage() {
 						{
 							title: "Trạng thái",
 							render: (_, t: AdminListeningExercise) => (
-								<button
-									type="button"
-									onClick={() => togglePublish(t)}
-									style={{ background: "none", border: 0, padding: 0, cursor: "pointer" }}
-									aria-label="Đổi trạng thái xuất bản"
-								>
-									<Tag color={t.is_published ? "success" : "warning"}>
-										{t.is_published ? "Xuất bản" : "Nháp"}
-									</Tag>
-								</button>
+								<AntdSwitch
+									checked={t.is_published}
+									onChange={() => togglePublish(t)}
+									checkedChildren="Xuất bản"
+									unCheckedChildren="Nháp"
+									size="small"
+								/>
 							),
 						},
 						{

@@ -18,7 +18,7 @@ import { useToast } from "#/lib/toast"
 
 // ─── State ────────────────────────────────────────────────────────────────────
 
-type ExamPhase = "device-check" | "active" | "submitting" | "submitted"
+type ExamPhase = "device-check" | "active" | "expired" | "submitting" | "submitted"
 
 interface ExamState {
 	phase: ExamPhase
@@ -43,6 +43,7 @@ type ExamAction =
 	| { type: "HIDE_CONFIRM_NEXT" }
 	| { type: "SUBMITTING" }
 	| { type: "SUBMITTED" }
+	| { type: "TIME_EXPIRED" }
 
 function examReducer(state: ExamState, action: ExamAction): ExamState {
 	switch (action.type) {
@@ -82,6 +83,9 @@ function examReducer(state: ExamState, action: ExamAction): ExamState {
 			return { ...state, phase: "submitting", confirmSubmit: false }
 		case "SUBMITTED":
 			return { ...state, phase: "submitted" }
+		case "TIME_EXPIRED":
+			if (state.phase !== "active") return state
+			return { ...state, phase: "expired" }
 		default:
 			return state
 	}
@@ -160,6 +164,7 @@ interface UseExamSessionOptions {
 	readingItems: ExamVersionMcqItem[]
 	writingTasks: ExamVersionWritingTask[]
 	initialDraft: ExamDraft | null
+	remainingSeconds: number
 	onSubmitted: (result: SubmitSessionResult) => void
 }
 
@@ -169,6 +174,7 @@ export function useExamSession({
 	readingItems,
 	writingTasks,
 	initialDraft,
+	remainingSeconds,
 	onSubmitted,
 }: UseExamSessionOptions) {
 	const activeSkills = SKILL_ORDER.filter((sk) => session.selected_skills.includes(sk))
@@ -204,6 +210,8 @@ export function useExamSession({
 		},
 		onError: (error: unknown) => {
 			if (error instanceof HTTPError && error.response.status === 429) return
+			// Đã hết giờ → autosave reject là bình thường, không hiện toast
+			if (state.phase === "expired" || state.phase === "submitting") return
 			const now = Date.now()
 			if (now - lastDraftToastAt.current < 60_000) return
 			lastDraftToastAt.current = now
@@ -224,6 +232,13 @@ export function useExamSession({
 		}
 	}, [state, draftMutate])
 
+	// Khi timer hết giờ → chuyển sang phase expired (dừng autosave, trigger auto-submit)
+	useEffect(() => {
+		if (remainingSeconds <= 0 && state.phase === "active") {
+			dispatch({ type: "TIME_EXPIRED" })
+		}
+	}, [remainingSeconds, state.phase])
+
 	const submitMutation = useMutation({
 		mutationFn: (payload: SubmitSessionPayload) => submitExamSession(session.id, payload),
 		onSuccess: (result) => {
@@ -241,9 +256,39 @@ export function useExamSession({
 			qc.invalidateQueries({ queryKey: ["booking"] })
 			onSubmitted(result)
 		},
+		onError: () => {
+			// Submit thất bại sau hết giờ (server đã auto-submit trước) → coi như submitted
+			if (state.phase === "expired" || state.phase === "submitting") {
+				dispatch({ type: "SUBMITTED" })
+				qc.invalidateQueries({ queryKey: ["exam-sessions"] })
+				onSubmitted({ session_id: session.id } as SubmitSessionResult)
+			}
+		},
 	})
 
 	const handleStartExam = useCallback(() => dispatch({ type: "START_EXAM" }), [])
+
+	// Auto-submit khi hết giờ (phase = expired). BE cho phép 30s grace.
+	const autoSubmitFired = useRef(false)
+	useEffect(() => {
+		if (state.phase !== "expired" || autoSubmitFired.current) return
+		autoSubmitFired.current = true
+		dispatch({ type: "SUBMITTING" })
+		const mcq_answers: McqAnswerPayload[] = [
+			...buildMcqPayload(listeningItems, "exam_listening_item", state.mcqAnswers),
+			...buildMcqPayload(readingItems, "exam_reading_item", state.mcqAnswers),
+		]
+		const writing_answers: WritingAnswerPayload[] = activeSkills.includes("writing")
+			? writingTasks
+					.map((task) => {
+						const text = (state.writingAnswers.get(task.id) ?? "").trim()
+						if (text.length === 0) return null
+						return { task_id: task.id, text, word_count: text.split(/\s+/).filter(Boolean).length }
+					})
+					.filter((x): x is WritingAnswerPayload => x !== null)
+			: []
+		submitMutation.mutate({ mcq_answers, writing_answers })
+	}, [state.phase])
 
 	const handleAnswerMcq = useCallback((itemId: string, selectedIndex: number) => {
 		dispatch({ type: "ANSWER_MCQ", itemId, selectedIndex })
@@ -314,6 +359,7 @@ export function useExamSession({
 		totalMcq,
 		answeredMcq,
 		isSubmitting: submitMutation.isPending,
+		isTimeExpired: state.phase === "expired" || (state.phase === "submitting" && autoSubmitFired.current),
 		handleStartExam,
 		handleAnswerMcq,
 		handleAnswerWriting,

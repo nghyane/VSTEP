@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\ScoringPolicy;
 use Illuminate\Support\Str;
 
 /**
  * Rule-based scoring — deterministic caps + penalties.
  *
- * Dùng output từ LanguageTool (error count/types) + text metrics
- * để tạo score caps. LLM không được vượt caps này.
- *
- * Triết lý: LLM giỏi đánh giá tổng thể nhưng hay "generous".
- * Rules đảm bảo: nhiều lỗi grammar → grammar score PHẢI thấp.
+ * Evaluates structured cap rules from ScoringPolicy entity.
+ * LLM scores are capped by these rules to prevent inflation.
  */
 final class RuleBasedScoringService
 {
@@ -28,18 +26,17 @@ final class RuleBasedScoringService
      * @param  array<int,array<string,mixed>>  $languageToolErrors
      * @return array{caps: array<string,float|null>, metrics: array<string,mixed>, flags: string[]}
      */
-    public function analyze(string $text, array $languageToolErrors): array
+    public function analyze(string $text, array $languageToolErrors, ScoringPolicy $policy): array
     {
         $metrics = $this->computeMetrics($text, $languageToolErrors);
-        $caps = $this->computeCaps($metrics);
-        $flags = $this->computeFlags($metrics, $caps);
+        $caps = $this->computeCaps($metrics, $policy);
+        $flags = $this->computeFlags($metrics);
 
         return ['caps' => $caps, 'metrics' => $metrics, 'flags' => $flags];
     }
 
     /**
      * Reconcile LLM scores with rule-based caps.
-     * final = min(llm_score, cap) for each criterion.
      *
      * @param  array<string,float>  $llmScores
      * @param  array<string,float|null>  $caps  null = no cap
@@ -57,8 +54,68 @@ final class RuleBasedScoringService
     }
 
     /**
-     * @return array<string,mixed>
+     * Evaluate caps from ScoringPolicy structured rules.
+     *
+     * @return array<string,float|null>
      */
+    private function computeCaps(array $metrics, ScoringPolicy $policy): array
+    {
+        $caps = [];
+        $rules = $policy->rules['caps'] ?? [];
+
+        foreach ($rules as $criterion => $criterionRules) {
+            $cap = null;
+            foreach ($criterionRules as $rule) {
+                if ($this->evaluateRule($rule, $metrics)) {
+                    $ruleMax = (float) $rule['max'];
+                    $cap = $cap !== null ? min($cap, $ruleMax) : $ruleMax;
+                }
+            }
+            $caps[$criterion] = $cap;
+        }
+
+        return $caps;
+    }
+
+    /**
+     * Evaluate a single structured rule against metrics.
+     *
+     * Rule format (single): ['metric' => 'x', 'op' => '>', 'value' => 1.0, 'max' => 2.5]
+     * Rule format (compound): ['all' => [...conditions], 'max' => 2.5]
+     */
+    private function evaluateRule(array $rule, array $metrics): bool
+    {
+        if (isset($rule['all'])) {
+            foreach ($rule['all'] as $sub) {
+                if (! $this->evaluateComparison($sub, $metrics)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        return $this->evaluateComparison($rule, $metrics);
+    }
+
+    private function evaluateComparison(array $rule, array $metrics): bool
+    {
+        $metricValue = $metrics[$rule['metric']] ?? 0;
+        $op = $rule['op'];
+        $threshold = (float) $rule['value'];
+
+        return match ($op) {
+            '>' => $metricValue > $threshold,
+            '<' => $metricValue < $threshold,
+            '>=' => $metricValue >= $threshold,
+            '<=' => $metricValue <= $threshold,
+            '==' => $metricValue == $threshold,
+            '!=' => $metricValue != $threshold,
+            default => false,
+        };
+    }
+
+    /** @return array<string,mixed> */
     private function computeMetrics(string $text, array $errors): array
     {
         $words = Str::of($text)->trim()->split('/\s+/');
@@ -97,66 +154,8 @@ final class RuleBasedScoringService
         ];
     }
 
-    /**
-     * @param  array<string,mixed>  $metrics
-     * @return array<string,float|null> null = no cap
-     */
-    private function computeCaps(array $metrics): array
-    {
-        $caps = [
-            'task_achievement' => null,
-            'coherence' => null,
-            'lexical' => null,
-            'grammar' => null,
-        ];
-
-        // Grammar cap based on error rate per sentence.
-        $eps = $metrics['errors_per_sentence'];
-        if ($eps > 1.0) {
-            $caps['grammar'] = 1.5;
-        } elseif ($eps > 0.5) {
-            $caps['grammar'] = 2.5;
-        } elseif ($eps > 0.2) {
-            $caps['grammar'] = 3.0;
-        }
-
-        // Word count penalty → task achievement cap.
-        // VSTEP Part 1: min 100, Part 2: min 200.
-        if ($metrics['word_count'] < 80) {
-            $caps['task_achievement'] = 2.0;
-        } elseif ($metrics['word_count'] < 100) {
-            $caps['task_achievement'] = 2.5;
-        }
-
-        // Vocabulary diversity.
-        if ($metrics['unique_ratio'] < 0.4) {
-            $caps['lexical'] = 2.0;
-        } elseif ($metrics['unique_ratio'] < 0.5) {
-            $caps['lexical'] = 2.5;
-        }
-
-        // Sentence variety — all very short = limited range.
-        if ($metrics['avg_sentence_length'] < 6) {
-            $caps['grammar'] = min($caps['grammar'] ?? 4.0, 2.0);
-        }
-
-        // Paragraph structure.
-        if ($metrics['paragraph_count'] < 2) {
-            $caps['coherence'] = 2.0;
-        }
-
-        // No linking words at all.
-        if ($metrics['linking_word_count'] === 0 && $metrics['sentence_count'] > 3) {
-            $caps['coherence'] = min($caps['coherence'] ?? 4.0, 2.5);
-        }
-
-        return $caps;
-    }
-
-    /**
-     * @return string[]
-     */
-    private function computeFlags(array $metrics, array $caps): array
+    /** @return string[] */
+    private function computeFlags(array $metrics): array
     {
         $flags = [];
 

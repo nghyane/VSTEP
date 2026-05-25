@@ -22,13 +22,16 @@ export interface PromoRedeemResult {
 
 export interface TopupOrder {
 	id: string
+	order_code: number
 	profile_id: string
 	package_id: string
 	amount_vnd: number
 	coins_to_credit: number
-	status: "pending" | "paid" | "failed" | "cancelled"
+	status: "pending" | "paid" | "failed" | "cancelled" | "expired"
 	payment_provider: string
+	payment_url: string | null
 	provider_ref: string | null
 	paid_at: string | null
+	expires_at: string | null
 	created_at: string
 }

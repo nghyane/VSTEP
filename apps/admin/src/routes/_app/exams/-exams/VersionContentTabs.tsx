@@ -28,25 +28,29 @@ export function VersionContentTabs({ examId, versionId, tab }: Props) {
 			key: "listening",
 			label: "Listening",
 			icon: <SoundOutlined />,
-			children: <ListeningTab sections={version.listening_sections ?? []} />,
+			children: (
+				<ListeningTab sections={version.listening_sections ?? []} examId={examId} versionId={versionId} />
+			),
 		},
 		{
 			key: "reading",
 			label: "Reading",
 			icon: <ReadOutlined />,
-			children: <ReadingTab passages={version.reading_passages ?? []} />,
+			children: (
+				<ReadingTab passages={version.reading_passages ?? []} examId={examId} versionId={versionId} />
+			),
 		},
 		{
 			key: "writing",
 			label: "Writing",
 			icon: <EditOutlined />,
-			children: <WritingTab tasks={version.writing_tasks ?? []} />,
+			children: <WritingTab tasks={version.writing_tasks ?? []} examId={examId} versionId={versionId} />,
 		},
 		{
 			key: "speaking",
 			label: "Speaking",
 			icon: <AudioOutlined />,
-			children: <SpeakingTab parts={version.speaking_parts ?? []} />,
+			children: <SpeakingTab parts={version.speaking_parts ?? []} examId={examId} versionId={versionId} />,
 		},
 	]
 

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'job_id', 'submission_type', 'submission_id', 'version', 'is_active',
+    'job_id', 'rubric_id', 'submission_type', 'submission_id', 'version', 'is_active',
     'rubric_scores', 'overall_band', 'strengths', 'improvements',
     'pronunciation_report', 'transcript',
 ])]
