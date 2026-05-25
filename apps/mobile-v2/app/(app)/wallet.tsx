@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { GameIcon } from "@/components/GameIcon";
-import { PromoRedeemCard } from "@/features/wallet/PromoRedeemCard";
 import { TopUpSheet } from "@/features/wallet/TopUpSheet";
 import { TopUpSuccessPopup } from "@/features/wallet/TopUpSuccessPopup";
 import { useWalletBalance, useWalletTransactions } from "@/features/wallet/queries";
@@ -40,8 +39,6 @@ export default function WalletScreen() {
       <DepthButton variant="coin" fullWidth onPress={() => setTopUpVisible(true)}>
         Nạp xu
       </DepthButton>
-
-      <PromoRedeemCard />
 
       <Text style={[styles.sectionTitle, { color: c.foreground }]}>Lịch sử giao dịch</Text>
 
