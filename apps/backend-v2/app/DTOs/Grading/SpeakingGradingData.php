@@ -19,8 +19,9 @@ final class SpeakingGradingData extends GradingResultData
         array $improvements,
         public readonly string $transcript,
         public readonly array $pronunciationReport,
+        ?string $rubricId = null,
     ) {
-        parent::__construct($rubricScores, $overallBand, $strengths, $improvements);
+        parent::__construct($rubricScores, $overallBand, $strengths, $improvements, $rubricId);
     }
 
     public function toModelAttributes(): array
@@ -32,6 +33,7 @@ final class SpeakingGradingData extends GradingResultData
             'improvements' => $this->improvements,
             'transcript' => $this->transcript,
             'pronunciation_report' => $this->pronunciationReport,
+            'rubric_id' => $this->rubricId,
         ];
     }
 }

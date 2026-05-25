@@ -7,6 +7,7 @@ namespace Tests;
 use App\Ai\AiClient;
 use App\Services\Grading\LlmGrader;
 use App\Services\SpeechToText;
+use Database\Seeders\GradingRubricSeeder;
 use Database\Seeders\SystemConfigSeeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Tests\Support\FakeAiClient;
@@ -19,6 +20,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
         $this->seed(SystemConfigSeeder::class);
+        $this->seed(GradingRubricSeeder::class);
 
         $this->app->bind(LlmGrader::class, FakeLlmGrader::class);
         $this->app->bind(SpeechToText::class, FakeSpeechToText::class);

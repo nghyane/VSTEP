@@ -21,6 +21,7 @@ abstract class GradingResultData
         public readonly float $overallBand,
         public readonly array $strengths,
         public readonly array $improvements,
+        public readonly ?string $rubricId = null,
     ) {}
 
     /**

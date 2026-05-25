@@ -20,8 +20,9 @@ final class WritingGradingData extends GradingResultData
         array $improvements,
         public readonly array $rewrites,
         public readonly array $annotations,
+        ?string $rubricId = null,
     ) {
-        parent::__construct($rubricScores, $overallBand, $strengths, $improvements);
+        parent::__construct($rubricScores, $overallBand, $strengths, $improvements, $rubricId);
     }
 
     public function toModelAttributes(): array
@@ -34,6 +35,7 @@ final class WritingGradingData extends GradingResultData
             'rewrites' => $this->rewrites,
             'annotations' => $this->annotations,
             'paragraph_feedback' => [],
+            'rubric_id' => $this->rubricId,
         ];
     }
 }

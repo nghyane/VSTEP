@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Support;
 
+use App\Models\GradingRubric;
 use App\Services\Grading\LlmGrader;
 
 /**
@@ -12,7 +13,7 @@ use App\Services\Grading\LlmGrader;
  */
 final class FakeLlmGrader implements LlmGrader
 {
-    public function gradeWriting(string $text, string $promptText, array $grammarErrors, array $ruleAnalysis): array
+    public function gradeWriting(string $text, string $promptText, array $grammarErrors, array $ruleAnalysis, GradingRubric $rubric): array
     {
         return [
             'rubric_scores' => ['task_achievement' => 3.0, 'coherence' => 3.0, 'lexical' => 3.0, 'grammar' => 3.0],
@@ -24,7 +25,7 @@ final class FakeLlmGrader implements LlmGrader
         ];
     }
 
-    public function gradeSpeaking(string $transcript): array
+    public function gradeSpeaking(string $transcript, GradingRubric $rubric): array
     {
         return [
             'rubric_scores' => ['fluency' => 3.0, 'pronunciation' => 3.0, 'content' => 3.0, 'vocab' => 3.0, 'grammar' => 3.0],

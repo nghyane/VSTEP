@@ -23,6 +23,7 @@ final class WritingGradingStrategy implements GradingStrategy
         private readonly LanguageToolService $languageTool,
         private readonly RuleBasedScoringService $ruleScoring,
         private readonly LlmGrader $llm,
+        private readonly RubricResolver $rubricResolver,
     ) {}
 
     public function supports(): array
@@ -46,6 +47,8 @@ final class WritingGradingStrategy implements GradingStrategy
             throw new GradingFailedException('Writing submission has no text');
         }
 
+        $rubric = $this->rubricResolver->active('writing');
+
         $promptText = match (true) {
             $submission instanceof PracticeWritingSubmission => (string) ($submission->prompt?->prompt ?? ''),
             $submission instanceof ExamWritingSubmission => (string) ($submission->task?->prompt ?? ''),
@@ -56,11 +59,15 @@ final class WritingGradingStrategy implements GradingStrategy
         $ltMatches = $this->languageTool->check($text);
         $annotations = $this->languageTool->toAnnotations($text, $ltMatches);
 
-        // Layer 2: Rule-based caps.
-        $ruleAnalysis = $this->ruleScoring->analyze($text, $ltMatches);
+        // Layer 2: Rule-based caps (from scoring policy).
+        $policy = $rubric->activePolicy;
+        if ($policy === null) {
+            throw new GradingFailedException("No active scoring policy for rubric '{$rubric->name}'. Run the rubric seeder.");
+        }
+        $ruleAnalysis = $this->ruleScoring->analyze($text, $ltMatches, $policy);
 
-        // Layer 3: LLM grading (throws on failure → job retries).
-        $llmResult = $this->llm->gradeWriting($text, $promptText, $ltMatches, $ruleAnalysis);
+        // Layer 3: LLM grading with rubric context.
+        $llmResult = $this->llm->gradeWriting($text, $promptText, $ltMatches, $ruleAnalysis, $rubric);
 
         // Layer 4: Reconcile — cap LLM with rule-based limits.
         $reconciledScores = $this->ruleScoring->reconcile(
@@ -70,11 +77,12 @@ final class WritingGradingStrategy implements GradingStrategy
 
         return new WritingGradingData(
             rubricScores: $reconciledScores,
-            overallBand: $this->computeOverallBand($reconciledScores),
+            overallBand: $rubric->computeOverallBand($reconciledScores),
             strengths: $llmResult['strengths'],
             improvements: $llmResult['improvements'],
             rewrites: $llmResult['rewrites'],
             annotations: array_merge($annotations, $llmResult['annotations']),
+            rubricId: $rubric->id,
         );
     }
 
@@ -110,20 +118,5 @@ final class WritingGradingStrategy implements GradingStrategy
                 'completed_at' => now(),
             ]);
         });
-    }
-
-    /**
-     * @param  array<string,float>  $scores
-     */
-    private function computeOverallBand(array $scores): float
-    {
-        $count = count($scores);
-        if ($count === 0) {
-            return 5.0;
-        }
-
-        $raw = (array_sum($scores) / ($count * 4)) * 10;
-
-        return round($raw * 2) / 2;
     }
 }

@@ -23,6 +23,7 @@ final class SpeakingGradingStrategy implements GradingStrategy
         private readonly SpeechToText $stt,
         private readonly AudioStorageService $audio,
         private readonly LlmGrader $llm,
+        private readonly RubricResolver $rubricResolver,
     ) {}
 
     public function supports(): array
@@ -46,6 +47,8 @@ final class SpeakingGradingStrategy implements GradingStrategy
             throw new GradingFailedException('Speaking submission missing audio_url');
         }
 
+        $rubric = $this->rubricResolver->active('speaking');
+
         // Step 1: STT (throws on failure → job retries).
         $sttResult = $this->stt->transcribeFromStorage($audioUrl, $this->audio);
         if ($sttResult === null) {
@@ -55,20 +58,20 @@ final class SpeakingGradingStrategy implements GradingStrategy
         $transcript = (string) $sttResult['text'];
         $pronunciationScore = (int) ($sttResult['confidence'] * 100);
 
-        // Side effect: persist transcript on submission for reuse (not in transaction —
-        // it's idempotent and useful even if grading retries).
+        // Side effect: persist transcript on submission for reuse.
         $submission->update(['transcript' => $transcript]);
 
-        // Step 2: LLM grading (throws on failure → job retries).
-        $llmResult = $this->llm->gradeSpeaking($transcript);
+        // Step 2: LLM grading with rubric context.
+        $llmResult = $this->llm->gradeSpeaking($transcript, $rubric);
 
         return new SpeakingGradingData(
             rubricScores: $llmResult['rubric_scores'],
-            overallBand: $this->computeOverallBand($llmResult['rubric_scores']),
+            overallBand: $rubric->computeOverallBand($llmResult['rubric_scores']),
             strengths: $llmResult['strengths'],
             improvements: $llmResult['improvements'],
             transcript: $transcript,
             pronunciationReport: ['accuracy_score' => $pronunciationScore],
+            rubricId: $rubric->id,
         );
     }
 
@@ -103,20 +106,5 @@ final class SpeakingGradingStrategy implements GradingStrategy
                 'completed_at' => now(),
             ]);
         });
-    }
-
-    /**
-     * @param  array<string,float>  $scores
-     */
-    private function computeOverallBand(array $scores): float
-    {
-        $count = count($scores);
-        if ($count === 0) {
-            return 5.0;
-        }
-
-        $raw = (array_sum($scores) / ($count * 4)) * 10;
-
-        return round($raw * 2) / 2;
     }
 }
