@@ -1,7 +1,7 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { Input as AntdInput, Empty, Flex, Pagination, Skeleton, Space, Table, Tag, Typography } from "antd"
+import { Input as AntdInput, Empty, Flex, Pagination, Skeleton, Space, Switch as AntdSwitch, Table, Tag, Typography } from "antd"
 import type { ColumnsType } from "antd/es/table"
 import { useState } from "react"
 import { Button } from "#/components/Button"
@@ -116,14 +116,13 @@ function VocabListPage() {
 			title: "Trạng thái",
 			key: "status",
 			render: (_: unknown, t) => (
-				<button
-					type="button"
-					onClick={() => togglePublish(t)}
-					style={{ background: "none", border: "none", padding: 0, cursor: "pointer" }}
-					aria-label="Đổi trạng thái xuất bản"
-				>
-					<Tag color={t.is_published ? "success" : "warning"}>{t.is_published ? "Xuất bản" : "Nháp"}</Tag>
-				</button>
+				<AntdSwitch
+					checked={t.is_published}
+					onChange={() => togglePublish(t)}
+					checkedChildren="Xuất bản"
+					unCheckedChildren="Nháp"
+					size="small"
+				/>
 			),
 		},
 		{
