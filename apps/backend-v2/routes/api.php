@@ -116,14 +116,17 @@ Route::prefix('v1')->group(function () {
         // Practice Speaking — conversation roleplay.
         Route::get('/practice/speaking/scenarios', [SpeakingConversationController::class, 'listScenarios']);
         Route::get('/practice/speaking/scenarios/{id}', [SpeakingConversationController::class, 'showScenario']);
-        Route::post('/practice/speaking/conversations', [SpeakingConversationController::class, 'start']);
-        Route::get('/practice/speaking/conversations/history', [SpeakingConversationController::class, 'history']);
-        Route::get('/practice/speaking/conversations/{conversation_session}', [SpeakingConversationController::class, 'show']);
-        Route::post('/practice/speaking/conversations/{conversation_session}/turn', [SpeakingConversationController::class, 'submitTurn']);
-        Route::post('/practice/speaking/conversations/{conversation_session}/end', [SpeakingConversationController::class, 'end']);
-        Route::get('/practice/speaking/conversations/{conversation_session}/review', [SpeakingConversationController::class, 'review']);
+        Route::middleware('ai-circuit-breaker')->group(function () {
+            Route::post('/practice/speaking/conversations', [SpeakingConversationController::class, 'start']);
+            Route::get('/practice/speaking/conversations/history', [SpeakingConversationController::class, 'history']);
+            Route::get('/practice/speaking/conversations/{conversation_session}', [SpeakingConversationController::class, 'show']);
+            Route::post('/practice/speaking/conversations/{conversation_session}/turn', [SpeakingConversationController::class, 'submitTurn']);
+            Route::post('/practice/speaking/conversations/{conversation_session}/end', [SpeakingConversationController::class, 'end']);
+            Route::get('/practice/speaking/conversations/{conversation_session}/review', [SpeakingConversationController::class, 'review']);
+        });
         Route::post('/practice/speaking/pronunciation-review', [SpeakingConversationController::class, 'pronunciationReview'])
-            ->middleware('throttle:'.config('practice.rate_limits.pronunciation_review'));
+            ->middleware('throttle:'.config('practice.rate_limits.pronunciation_review'))
+            ->middleware('ai-circuit-breaker');
 
         // Practice Speaking — shadowing progress.
         Route::get('/practice/speaking/shadowing/progress', [ShadowingProgressController::class, 'index']);

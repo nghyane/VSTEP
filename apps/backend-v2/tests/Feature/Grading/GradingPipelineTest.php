@@ -6,13 +6,18 @@ namespace Tests\Feature\Grading;
 
 use App\Enums\GradingJobStatus;
 use App\Models\PracticeSession;
+use App\Models\PracticeSpeakingSubmission;
+use App\Models\PracticeSpeakingTask;
 use App\Models\PracticeWritingPrompt;
 use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
+use App\Models\SpeakingGradingResult;
 use App\Models\User;
 use App\Models\WritingGradingResult;
 use App\Services\Grading\GradingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class GradingPipelineTest extends TestCase
@@ -136,6 +141,40 @@ class GradingPipelineTest extends TestCase
     private function createWritingSubmission(): PracticeWritingSubmission
     {
         return $this->createWritingSubmissionWithOwner()[0];
+    }
+
+    public function test_speaking_grading_enqueues_job(): void
+    {
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+
+        $task = PracticeSpeakingTask::factory()->create();
+        $sessionId = Str::uuid()->toString();
+        DB::table('practice_sessions')->insert([
+            'id' => $sessionId, 'profile_id' => $profile->id, 'module' => 'speaking',
+            'content_ref_type' => 'practice_speaking_task', 'content_ref_id' => $task->id,
+            'started_at' => now(), 'ended_at' => now(), 'duration_seconds' => 60,
+        ]);
+
+        $submissionId = Str::uuid()->toString();
+        DB::table('practice_speaking_submissions')->insert([
+            'id' => $submissionId, 'session_id' => $sessionId, 'profile_id' => $profile->id,
+            'task_ref_type' => 'practice_speaking_task', 'task_ref_id' => $task->id,
+            'audio_url' => 'r2://test-audio.webm', 'duration_seconds' => 30, 'submitted_at' => now(),
+        ]);
+
+        $submission = PracticeSpeakingSubmission::query()->find($submissionId);
+        $job = $this->app->make(GradingService::class)->enqueue('practice_speaking', $submission->id);
+
+        $this->assertSame(GradingJobStatus::Ready, $job->status);
+
+        $result = SpeakingGradingResult::query()
+            ->where('submission_type', 'practice_speaking')->where('submission_id', $submission->id)
+            ->where('is_active', true)->first();
+
+        $this->assertNotNull($result);
+        $this->assertTrue($result->overall_band >= 0);
+        $this->assertArrayHasKey('fluency', $result->rubric_scores);
     }
 
     /**

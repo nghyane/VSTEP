@@ -18,9 +18,10 @@ Tài liệu tổng quan kiến trúc backend cho hội đồng chấm đồ án.
 
 ## Quy mô
 
-- 73 database tables, 7 bounded contexts + 2 cross-cutting
-- 88 API routes under `api/v1` (learner + staff/admin)
-- 88 feature tests, 112 tests total
+- 85 database tables, 7 bounded contexts + 2 cross-cutting
+- 271 API routes under `api/v1` (learner + staff/admin)
+- 188 tests (187 Feature + 1 Unit) — 600 assertions, 6.2s runtime
+- 79 Models, 46 Services, 33 Controllers, 15 Enums
 - 4 roles: Learner → Teacher → Staff → Admin
 
 ## Kiến trúc tổng quan

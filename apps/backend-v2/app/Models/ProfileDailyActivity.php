@@ -8,24 +8,13 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 
 #[Fillable([
-    'profile_id',
-    'date_local',
-    'drill_session_count',
-    'drill_duration_seconds',
-    'mcq_count',
-    'mcq_correct_count',
-    'reading_exercise_count',
-    'listening_exercise_count',
-    'writing_submission_count',
-    'speaking_submission_count',
-    'vocab_review_count',
-    'exam_session_count',
-    'total_duration_seconds',
-    'coins_earned',
-    'coins_spent',
+    'profile_id', 'date_local', 'drill_session_count', 'drill_duration_seconds',
+    'mcq_count', 'mcq_correct_count', 'reading_exercise_count',
+    'listening_exercise_count', 'writing_submission_count',
+    'speaking_submission_count', 'vocab_review_count', 'exam_session_count',
+    'total_duration_seconds', 'coins_earned', 'coins_spent',
 ])]
 class ProfileDailyActivity extends Model
 {
@@ -49,10 +38,6 @@ class ProfileDailyActivity extends Model
         return $date->format(\DateTimeInterface::ATOM);
     }
 
-    /**
-     * Activity types hợp lệ khi gọi increment().
-     * Map: type → [count_column, duration_column?]
-     */
     public const ACTIVITY_TYPES = [
         'mcq' => ['count' => 'mcq_count'],
         'reading' => ['count' => 'reading_exercise_count'],
@@ -64,76 +49,43 @@ class ProfileDailyActivity extends Model
         'exam_session' => ['count' => 'exam_session_count'],
     ];
 
-    /**
-     * Atomic increment cho daily activity row của (profile_id, date_local).
-     * Upsert nếu row chưa tồn tại.
-     */
     public static function addActivity(
-        string $profileId,
-        string $activityType,
-        int $count = 1,
-        int $durationSeconds = 0,
-        int $coinsEarned = 0,
+        string $profileId, string $activityType,
+        int $count = 1, int $durationSeconds = 0, int $coinsEarned = 0,
     ): void {
         $typeConfig = self::ACTIVITY_TYPES[$activityType]
             ?? throw new \InvalidArgumentException("Unknown activity type: {$activityType}");
-
         $date = Carbon::now()->toDateString();
+        $query = self::query()->where('profile_id', $profileId)->where('date_local', $date);
 
-        // Try atomic increment on existing row
-        $affected = DB::table('profile_daily_activity')
-            ->where('profile_id', $profileId)
-            ->where('date_local', $date)
-            ->increment($typeConfig['count'], $count);
-
-        // If row didn't exist, insert it
-        if ($affected === 0) {
-            DB::table('profile_daily_activity')->insert([
-                'profile_id' => $profileId,
-                'date_local' => $date,
+        if (! $query->exists()) {
+            self::query()->insert([
+                'profile_id' => $profileId, 'date_local' => $date,
                 $typeConfig['count'] => $count,
                 'total_duration_seconds' => $durationSeconds,
-                'coins_earned' => $coinsEarned,
-                'updated_at' => now(),
-                ...(isset($typeConfig['duration'])
-                    ? [$typeConfig['duration'] => $durationSeconds]
-                    : []),
+                'coins_earned' => $coinsEarned, 'updated_at' => now(),
+                ...(isset($typeConfig['duration']) ? [$typeConfig['duration'] => $durationSeconds] : []),
             ]);
-        } else {
-            // Update duration, coins, timestamp for existing row
-            DB::table('profile_daily_activity')
-                ->where('profile_id', $profileId)
-                ->where('date_local', $date)
-                ->update([
-                    'total_duration_seconds' => DB::raw("total_duration_seconds + {$durationSeconds}"),
-                    'coins_earned' => DB::raw("coins_earned + {$coinsEarned}"),
-                    'updated_at' => now(),
-                    ...(isset($typeConfig['duration'])
-                        ? [$typeConfig['duration'] => DB::raw("{$typeConfig['duration']} + {$durationSeconds}")]
-                        : []),
-                ]);
+
+            return;
         }
+
+        $increments = [$typeConfig['count'] => $count, 'total_duration_seconds' => $durationSeconds, 'coins_earned' => $coinsEarned];
+        if (isset($typeConfig['duration'])) {
+            $increments[$typeConfig['duration']] = $durationSeconds;
+        }
+        $query->incrementEach($increments, ['updated_at' => now()]);
     }
 
-    /**
-     * Track spending (xu tiêu) cho ngày hiện tại.
-     */
     public static function trackSpending(string $profileId, int $coinsSpent): void
     {
         $date = Carbon::now()->toDateString();
+        $query = self::query()->where('profile_id', $profileId)->where('date_local', $date);
+        if (! $query->exists()) {
+            self::query()->insert(['profile_id' => $profileId, 'date_local' => $date, 'coins_spent' => $coinsSpent, 'updated_at' => now()]);
 
-        $affected = DB::table('profile_daily_activity')
-            ->where('profile_id', $profileId)
-            ->where('date_local', $date)
-            ->increment('coins_spent', $coinsSpent);
-
-        if ($affected === 0) {
-            DB::table('profile_daily_activity')->insert([
-                'profile_id' => $profileId,
-                'date_local' => $date,
-                'coins_spent' => $coinsSpent,
-                'updated_at' => now(),
-            ]);
+            return;
         }
+        $query->incrementEach(['coins_spent' => $coinsSpent], ['updated_at' => now()]);
     }
 }
