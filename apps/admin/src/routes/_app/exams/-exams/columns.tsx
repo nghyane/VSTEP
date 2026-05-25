@@ -1,5 +1,5 @@
 import { DeleteOutlined } from "@ant-design/icons"
-import { Switch as AntdSwitch, Tag, Typography } from "antd"
+import { Switch as AntdSwitch, Tag, Tooltip, Typography } from "antd"
 import type { ColumnsType } from "antd/es/table"
 import { Button } from "#/components/Button"
 import type { AdminExam } from "#/features/admin-exams/types"
@@ -46,15 +46,23 @@ export function getExamColumns({ togglePublish, setDeleting }: ColumnActions): C
 		{
 			title: "Trạng thái",
 			key: "status",
-			render: (_: unknown, t) => (
-				<AntdSwitch
-					checked={t.is_published}
-					onChange={() => togglePublish(t)}
-					checkedChildren="Xuất bản"
-					unCheckedChildren="Nháp"
-					size="small"
-				/>
-			),
+			render: (_: unknown, t) => {
+				const hasVersion = t.active_version !== null
+				const sw = (
+					<AntdSwitch
+						checked={t.is_published}
+						onChange={() => togglePublish(t)}
+						checkedChildren="Xuất bản"
+						unCheckedChildren="Nháp"
+						size="small"
+						disabled={!hasVersion && !t.is_published}
+					/>
+				)
+				if (!hasVersion && !t.is_published) {
+					return <Tooltip title="Cần import nội dung trước khi xuất bản">{sw}</Tooltip>
+				}
+				return sw
+			},
 		},
 		{
 			title: "",

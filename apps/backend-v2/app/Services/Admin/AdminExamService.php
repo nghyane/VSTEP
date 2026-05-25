@@ -56,6 +56,10 @@ final class AdminExamService
 
     public function setPublished(Exam $exam, bool $published): Exam
     {
+        if ($published && $exam->activeVersion() === null) {
+            abort(422, 'Không thể xuất bản đề thi chưa có phiên bản nội dung.');
+        }
+
         $exam->is_published = $published;
         $exam->save();
 

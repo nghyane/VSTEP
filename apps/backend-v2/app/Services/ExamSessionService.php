@@ -40,6 +40,7 @@ final class ExamSessionService
     {
         return Exam::query()
             ->where('is_published', true)
+            ->whereHas('versions', fn ($q) => $q->where('is_active', true))
             ->withCount(['sessions as attempts_count' => fn ($q) => $q->whereIn('status', ExamSessionStatus::countableValues())])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -51,7 +52,7 @@ final class ExamSessionService
         $exam = Exam::query()->findOrFail($examId);
         $version = $exam->activeVersion();
         if ($version === null) {
-            throw ValidationException::withMessages(['exam' => ['Không có phiên bản đang hoạt động.']]);
+            abort(404, 'Đề thi chưa có phiên bản hoạt động.');
         }
         $version->load([
             'listeningSections.items', 'readingPassages.items',
