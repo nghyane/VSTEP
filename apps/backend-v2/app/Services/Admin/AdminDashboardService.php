@@ -75,18 +75,6 @@ final class AdminDashboardService
             ];
         }
 
-        $stuckSessions = ExamSession::query()
-            ->where('status', ExamSessionStatus::Active)
-            ->where('server_deadline_at', '<', now())
-            ->count();
-        if ($stuckSessions > 0) {
-            $alerts[] = [
-                'type' => 'warning',
-                'message' => "{$stuckSessions} phiên thi đã quá hạn, chưa nộp",
-                'action' => '/exams/sessions',
-            ];
-        }
-
         $missingAudio = ExamVersionListeningSection::query()
             ->whereNull('audio_url')
             ->orWhere('audio_url', '')

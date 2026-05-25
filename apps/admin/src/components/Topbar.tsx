@@ -6,7 +6,6 @@ import {
 	UserOutlined,
 	WarningOutlined,
 } from "@ant-design/icons"
-import { useNavigate } from "@tanstack/react-router"
 import { Avatar, Badge, Button, Dropdown, Empty, Input, Space, Spin, Tag, Typography } from "antd"
 import { useState } from "react"
 import { ChangeMyPasswordModal } from "#/features/admin-users/ChangeMyPasswordModal"
@@ -17,7 +16,6 @@ import type { AlertItem } from "#/routes/_app/-dashboard/types"
 export function Topbar() {
 	const user = useAuth((s) => s.user)
 	const clear = useAuth((s) => s.clear)
-	const navigate = useNavigate()
 	const { data: alerts, isLoading } = useAlerts()
 	const count = alerts?.length ?? 0
 	const [changePwOpen, setChangePwOpen] = useState(false)
@@ -49,13 +47,7 @@ export function Topbar() {
 					trigger={["click"]}
 					placement="bottomRight"
 					popupRender={() => (
-						<AlertsPanel
-							alerts={alerts}
-							isLoading={isLoading}
-							onSelect={(action) => {
-								if (action) navigate({ to: action })
-							}}
-						/>
+						<AlertsPanel alerts={alerts} isLoading={isLoading} />
 					)}
 				>
 					<Badge count={count} size="small" offset={[-2, 4]} overflowCount={9}>
@@ -88,11 +80,9 @@ export function Topbar() {
 function AlertsPanel({
 	alerts,
 	isLoading,
-	onSelect,
 }: {
 	alerts: AlertItem[] | undefined
 	isLoading: boolean
-	onSelect: (action: string | undefined) => void
 }) {
 	return (
 		<div
@@ -118,10 +108,8 @@ function AlertsPanel({
 			) : (
 				<Space orientation="vertical" size={8} style={{ width: "100%" }}>
 					{alerts.map((a, idx) => (
-						<button
+						<div
 							key={`${a.message}-${idx}`}
-							type="button"
-							onClick={() => onSelect(a.action)}
 							style={{
 								display: "flex",
 								gap: 10,
@@ -131,7 +119,6 @@ function AlertsPanel({
 								background: a.type === "error" ? "#fff1f0" : "#fffbe6",
 								border: `1px solid ${a.type === "error" ? "#ffa39e" : "#ffe58f"}`,
 								borderRadius: 6,
-								cursor: a.action ? "pointer" : "default",
 								textAlign: "left",
 							}}
 						>
@@ -149,7 +136,7 @@ function AlertsPanel({
 									</Tag>
 								</div>
 							</div>
-						</button>
+						</div>
 					))}
 				</Space>
 			)}
