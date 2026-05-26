@@ -49,8 +49,13 @@ final class SpeakingGradingStrategy implements GradingStrategy
 
         $rubric = $this->rubricResolver->active('speaking');
 
-        // Step 1: STT (throws on failure → job retries).
-        $sttResult = $this->stt->transcribeFromStorage($audioUrl, $this->audio);
+        // Step 1: STT (throws GradingFailedException on failure → job retries).
+        try {
+            $sttResult = $this->stt->transcribeFromStorage($audioUrl, $this->audio);
+        } catch (\RuntimeException $e) {
+            throw new GradingFailedException($e->getMessage(), previous: $e);
+        }
+
         if ($sttResult === null) {
             throw new GradingFailedException('Speech-to-text transcription failed');
         }
@@ -62,7 +67,11 @@ final class SpeakingGradingStrategy implements GradingStrategy
         $submission->update(['transcript' => $transcript]);
 
         // Step 2: LLM grading with rubric context.
-        $llmResult = $this->llm->gradeSpeaking($transcript, $rubric);
+        $llmResult = $this->llm->gradeSpeaking(
+            $transcript,
+            $rubric,
+            ['accuracy_score' => $pronunciationScore],
+        );
 
         return new SpeakingGradingData(
             rubricScores: $llmResult['rubric_scores'],

@@ -174,7 +174,11 @@ class GradingPipelineTest extends TestCase
 
         $this->assertNotNull($result);
         $this->assertTrue($result->overall_band >= 0);
+        $this->assertArrayHasKey('grammar', $result->rubric_scores);
+        $this->assertArrayHasKey('vocabulary', $result->rubric_scores);
+        $this->assertArrayHasKey('pronunciation', $result->rubric_scores);
         $this->assertArrayHasKey('fluency', $result->rubric_scores);
+        $this->assertArrayHasKey('discourse_management', $result->rubric_scores);
     }
 
     /**

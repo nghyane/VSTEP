@@ -16,7 +16,8 @@ interface LlmGrader
     public function gradeWriting(string $text, string $promptText, array $grammarErrors, array $ruleAnalysis, GradingRubric $rubric): array;
 
     /**
+     * @param  array{accuracy_score?: int}|null  $pronunciationData  STT confidence data
      * @return array{rubric_scores: array<string,float>, overall_band: float, strengths: list<string>, improvements: list<array<string,mixed>>}
      */
-    public function gradeSpeaking(string $transcript, GradingRubric $rubric): array;
+    public function gradeSpeaking(string $transcript, GradingRubric $rubric, ?array $pronunciationData = null): array;
 }

@@ -37,10 +37,11 @@ final class LlmGradingService implements LlmGrader
         return $this->callStructured($prompt, $rubric);
     }
 
-    public function gradeSpeaking(string $transcript, GradingRubric $rubric): array
+    public function gradeSpeaking(string $transcript, GradingRubric $rubric, ?array $pronunciationData = null): array
     {
         $prompt = view('ai.grading.speaking', [
             'transcript' => $transcript,
+            'pronunciationScore' => $pronunciationData['accuracy_score'] ?? null,
         ])->render();
 
         return $this->callStructured($prompt, $rubric);
@@ -52,10 +53,12 @@ final class LlmGradingService implements LlmGrader
         $instructions = view('ai.grading.system-instruction', ['rubric' => $rubric])->render();
         $fallback = $this->defaultFromRubric($rubric);
 
-        $structured = $this->ai->structured(
+        $structured = $this->ai->toolCall(
             service: 'grading',
             prompt: $prompt,
-            schema: $schema,
+            toolName: "grade_{$rubric->skill}_response",
+            toolDescription: "Submit the grading result for a VSTEP {$rubric->skill} assessment. Call this function once with the complete evaluation.",
+            parametersSchema: $schema,
             instructions: $instructions,
         );
 
