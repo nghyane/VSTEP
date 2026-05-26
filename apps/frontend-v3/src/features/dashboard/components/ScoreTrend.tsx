@@ -50,7 +50,7 @@ export function ScoreTrend() {
 						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
 						style={{ color: s.color }}
 					>
-						<SkillIcon name={s.pngIcon} size="xs" />
+						<SkillIcon name={s.pngIcon} size="sm" />
 						{s.label}
 					</span>
 				))}
@@ -103,7 +103,7 @@ export function ScoreTrend() {
 									/>
 								)
 							})}
-							<text x={cx} y={198} textAnchor="middle" fontSize="10" fill="var(--color-subtle)">
+							<text x={cx} y={210} textAnchor="middle" fontSize="10" fill="var(--color-subtle)">
 								{test.submitted_at ? formatShortDate(test.submitted_at) : ""}
 							</text>
 							{/* Hover hit-area: full chart-height column. Pointer-events visible only on this rect. */}

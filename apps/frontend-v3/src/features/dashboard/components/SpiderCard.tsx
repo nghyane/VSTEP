@@ -47,11 +47,11 @@ export function SpiderCard() {
 		: `Cần thêm ${Math.max(0, minTests - totalTests)} bài thi để hiện biểu đồ`
 
 	return (
-		<div className="card p-6">
+		<div className="card p-6 flex flex-col">
 			<h3 className="font-extrabold text-lg text-foreground">Năng lực 4 kỹ năng</h3>
 			<p className="text-sm text-subtle mt-1">{subtitle}</p>
 
-			<div className="flex justify-center mt-4">
+			<div className="flex-1 flex items-center justify-center py-4">
 				<SpiderChart values={values} targetBand={targetBand} hasData={hasData} />
 			</div>
 
@@ -219,12 +219,12 @@ function SpiderAxisLabel({ index, skill, value }: SpiderAxisLabelProps) {
 
 function SpiderLegend({ values }: { values: number[] }) {
 	return (
-		<div className="mt-4 grid grid-cols-2 gap-2">
+		<div className="mt-2 grid grid-cols-2 gap-2">
 			{skills.map((s, i) => {
 				const v = values[i] ?? 0
 				return (
 					<div key={s.key} className="flex items-center gap-2 rounded-(--radius-button) p-2 text-sm">
-						<SkillIcon name={s.pngIcon} size="xs" />
+						<SkillIcon name={s.pngIcon} size="sm" />
 						<span className="font-bold text-foreground">{s.label}</span>
 						<span
 							className="ml-auto text-base font-extrabold tabular-nums"
