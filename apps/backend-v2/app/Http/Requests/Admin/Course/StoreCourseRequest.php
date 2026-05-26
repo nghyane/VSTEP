@@ -6,6 +6,7 @@ namespace App\Http\Requests\Admin\Course;
 
 use App\Enums\Role;
 use App\Enums\VstepLevel;
+use App\Models\Course;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -37,7 +38,19 @@ final class StoreCourseRequest extends FormRequest
             'max_slots_per_student' => ['nullable', 'integer', 'min:1'],
             'booking_coin_cost' => ['nullable', 'integer', 'min:0', 'max:10000'],
             'start_date' => ['required', 'date', 'after_or_equal:today'],
-            'end_date' => ['required', 'date', 'after:start_date'],
+            'end_date' => [
+                'required', 'date', 'after:start_date',
+                function (string $attr, mixed $value, \Closure $fail) {
+                    $start = $this->input('start_date');
+                    if (! $start || ! strtotime($start) || ! strtotime((string) $value)) {
+                        return; // other rules handle format
+                    }
+                    $maxEnd = date('Y-m-d', strtotime('+'.Course::MAX_DURATION_DAYS.' days', strtotime($start)));
+                    if ($value > $maxEnd) {
+                        $fail('Khóa học không được kéo dài quá '.Course::MAX_DURATION_DAYS.' ngày.');
+                    }
+                },
+            ],
             'required_full_tests' => ['required', 'integer', 'min:0'],
             'commitment_window_days' => ['required', 'integer', 'min:0'],
             'livestream_url' => ['nullable', 'string', 'max:500'],

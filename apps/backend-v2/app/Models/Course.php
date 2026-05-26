@@ -17,6 +17,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 ])]
 class Course extends BaseModel
 {
+    /** Khóa cấp tốc VSTEP tối đa 90 ngày. */
+    public const MAX_DURATION_DAYS = 90;
+
+    /** Không cho đổi start_date khi còn <= 10 ngày trước khóa bắt đầu. */
+    public const START_DATE_LOCK_DAYS = 10;
+
     protected function casts(): array
     {
         return [

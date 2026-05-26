@@ -112,8 +112,17 @@ export function CourseForm({ initial, onSubmit, onCancel, submitting }: Props) {
 
 	// Create mode: start_date không được trước hôm nay. Edit mode: cho phép giữ ngày cũ.
 	const minStart = initial ? undefined : todayISO()
-	// end_date phải sau start_date ít nhất 1 ngày.
+	// end_date phải sau start_date ít nhất 1 ngày, tối đa 90 ngày.
 	const minEnd = state.start_date ? addDaysISO(state.start_date, 1) : undefined
+	const maxEnd = state.start_date ? addDaysISO(state.start_date, 90) : undefined
+	// Lock start_date nếu còn <= 10 ngày trước khóa bắt đầu (edit mode).
+	const startDateLocked = (() => {
+		if (!initial?.start_date) return false
+		const startMs = new Date(initial.start_date).getTime()
+		const nowMs = new Date(todayISO()).getTime()
+		const daysUntil = Math.floor((startMs - nowMs) / 86_400_000)
+		return daysUntil <= 10
+	})()
 
 	return (
 		<form onSubmit={handle}>
@@ -221,17 +230,26 @@ export function CourseForm({ initial, onSubmit, onCancel, submitting }: Props) {
 				<SectionTitle>Lịch & sĩ số</SectionTitle>
 				<Row gutter={16}>
 					<Col span={12}>
-						<FormField label="Ngày bắt đầu" htmlFor="start_date" required error={errors.start_date}>
+						<FormField
+							label="Ngày bắt đầu"
+							htmlFor="start_date"
+							required
+							error={errors.start_date}
+							helper={startDateLocked ? "Không thể đổi khi còn ≤ 10 ngày trước khóa bắt đầu" : undefined}
+						>
 							<Input
 								id="start_date"
 								type="date"
 								min={minStart}
 								value={state.start_date}
+								disabled={startDateLocked}
 								onChange={(e) => {
 									const next = e.target.value
 									set("start_date", next)
 									if (state.end_date && next && state.end_date <= next) {
 										set("end_date", addDaysISO(next, 1))
+									} else if (state.end_date && next && state.end_date > addDaysISO(next, 90)) {
+										set("end_date", addDaysISO(next, 90))
 									}
 								}}
 								invalid={!!errors.start_date}
@@ -239,11 +257,18 @@ export function CourseForm({ initial, onSubmit, onCancel, submitting }: Props) {
 						</FormField>
 					</Col>
 					<Col span={12}>
-						<FormField label="Ngày kết thúc" htmlFor="end_date" required error={errors.end_date}>
+						<FormField
+							label="Ngày kết thúc"
+							htmlFor="end_date"
+							required
+							error={errors.end_date}
+							helper="Tối đa 90 ngày kể từ ngày bắt đầu"
+						>
 							<Input
 								id="end_date"
 								type="date"
 								min={minEnd}
+								max={maxEnd}
 								value={state.end_date}
 								onChange={(e) => set("end_date", e.target.value)}
 								invalid={!!errors.end_date}

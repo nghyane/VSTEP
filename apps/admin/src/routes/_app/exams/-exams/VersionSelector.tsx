@@ -1,7 +1,9 @@
 import {
 	BranchesOutlined,
+	CheckCircleFilled,
 	CheckCircleOutlined,
 	ClockCircleOutlined,
+	CloseCircleFilled,
 	DeleteOutlined,
 	PlusOutlined,
 	RocketOutlined,
@@ -26,7 +28,8 @@ export function VersionSelector({ examId, versions, selectedId }: Props) {
 	const create = useCreateVersion(examId)
 	const activate = useSetVersionActive(examId)
 	const remove = useDeleteVersion(examId)
-	const { message } = App.useApp()
+	const { message, modal } = App.useApp()
+	const { token } = theme.useToken()
 
 	async function handleCreate(): Promise<void> {
 		try {
@@ -45,7 +48,53 @@ export function VersionSelector({ examId, versions, selectedId }: Props) {
 			message.success("Đã kích hoạt phiên bản.")
 		} catch (err) {
 			const e = await extractError(err)
-			showError(e.message)
+			const data = (err as { data?: { checklist?: { label: string; pass: boolean }[] } }).data
+			const checklist = data?.checklist
+
+			if (checklist && checklist.length > 0) {
+				modal.error({
+					title: "Chưa thể kích hoạt phiên bản",
+					content: (
+						<Flex vertical gap={4} style={{ marginTop: 8 }}>
+							<Typography.Text type="secondary">
+								Đề thi chưa đủ nội dung theo cấu trúc VSTEP. Vui lòng bổ sung các mục còn thiếu:
+							</Typography.Text>
+							<div style={{ marginTop: 8 }}>
+								{checklist.map((item, i) => (
+									<Flex key={i} gap={8} align="start" style={{ marginBottom: 6 }}>
+										{item.pass ? (
+											<CheckCircleFilled style={{ color: token.colorSuccess, marginTop: 3, flexShrink: 0 }} />
+										) : (
+											<CloseCircleFilled style={{ color: token.colorError, marginTop: 3, flexShrink: 0 }} />
+										)}
+										<span style={{ color: item.pass ? token.colorTextSecondary : token.colorText }}>
+											{item.label}
+										</span>
+									</Flex>
+								))}
+							</div>
+						</Flex>
+					),
+					okText: "Đã hiểu",
+					centered: true,
+					width: 560,
+				})
+			} else if (e.errors?.exam_version) {
+				modal.error({
+					title: "Chưa thể kích hoạt phiên bản",
+					content: (
+						<ul style={{ margin: "8px 0", paddingLeft: 20 }}>
+							{e.errors.exam_version.map((msg, i) => (
+								<li key={i} style={{ marginBottom: 4 }}>{msg}</li>
+							))}
+						</ul>
+					),
+					okText: "Đã hiểu",
+					centered: true,
+				})
+			} else {
+				showError(e.message)
+			}
 		}
 	}
 

@@ -12,6 +12,10 @@ use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 #[Fillable(['slug', 'title', 'source_school', 'tags', 'total_duration_minutes', 'is_published'])]
 class Exam extends BaseModel
 {
+    protected $attributes = [
+        'total_duration_minutes' => 0,
+    ];
+
     protected function casts(): array
     {
         return ['tags' => 'array', 'is_published' => 'boolean'];

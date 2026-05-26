@@ -301,6 +301,9 @@ final class CourseService
         if ($slot->starts_at->isPast()) {
             throw ValidationException::withMessages(['slot' => ['Slot đã qua.']]);
         }
+        if ($slot->starts_at->lt($course->start_date->startOfDay())) {
+            throw ValidationException::withMessages(['slot' => ['Slot nằm trước ngày bắt đầu khóa học.']]);
+        }
 
         $commitment = $this->commitmentStatus($profile, $course);
         if ($commitment['phase'] !== 'met') {
@@ -386,6 +389,11 @@ final class CourseService
         $now = now();
         $windowStart = $now->copy()->subDays(self::BOOKING_GRID_PAST_DAYS)->startOfDay();
         $windowEnd = $now->copy()->addDays(self::BOOKING_GRID_FUTURE_DAYS)->endOfDay();
+        // Student chỉ thấy slot từ ngày khóa bắt đầu trở đi.
+        $courseStart = $course->start_date->startOfDay();
+        if ($windowStart->lt($courseStart)) {
+            $windowStart = $courseStart;
+        }
 
         /** @var Collection<int,TeacherSlot> $slots */
         $slots = TeacherSlot::query()
