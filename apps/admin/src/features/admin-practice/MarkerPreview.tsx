@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { AdminWritingMarker } from "#/features/admin-practice/types"
 import { useMarkerDrag } from "#/features/admin-practice/useMarkerDrag"
 
@@ -77,6 +77,7 @@ interface Props {
 export function MarkerPreview({ sampleAnswer, markers, activeMarkerId, onMarkerClick, onTextSelect, onReorder }: Props) {
 	const containerRef = useRef<HTMLDivElement>(null)
 	const contentRef = useRef<HTMLDivElement>(null)
+	const [lines, setLines] = useState<{ id: string; d: string }[]>([])
 
 	const segments = useMemo(() => buildSegments(sampleAnswer, markers), [sampleAnswer, markers])
 	const leftMarkers = useMemo(

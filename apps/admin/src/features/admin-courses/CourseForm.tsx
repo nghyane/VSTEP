@@ -110,8 +110,8 @@ export function CourseForm({ initial, onSubmit, onCancel, submitting }: Props) {
 		}
 	}
 
-	// Create mode: start_date không được trước hôm nay. Edit mode: cho phép giữ ngày cũ.
-	const minStart = initial ? undefined : todayISO()
+	// start_date không được trước hôm nay (cả create lẫn edit).
+	const minStart = todayISO()
 	// end_date phải sau start_date ít nhất 1 ngày, tối đa 90 ngày.
 	const minEnd = state.start_date ? addDaysISO(state.start_date, 1) : undefined
 	const maxEnd = state.start_date ? addDaysISO(state.start_date, 90) : undefined

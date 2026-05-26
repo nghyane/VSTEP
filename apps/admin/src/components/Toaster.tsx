@@ -1,17 +1,17 @@
-import { message } from "antd"
+import { notification } from "antd"
 
 export function Toaster() {
 	return null
 }
 
 export function showSuccess(text: string, description?: string) {
-	message.success(description ? `${text} — ${description}` : text)
+	notification.success({ message: text, description, duration: 3 })
 }
 
 export function showError(text: string, description?: string) {
-	message.error(description ? `${text} — ${description}` : text)
+	notification.error({ message: text, description, duration: 5 })
 }
 
 export function showInfo(text: string, description?: string) {
-	message.info(description ? `${text} — ${description}` : text)
+	notification.info({ message: text, description, duration: 3 })
 }
