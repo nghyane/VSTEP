@@ -8,7 +8,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "@tanstack/react-query";
 import { Audio } from "expo-av";
-import * as Speech from "expo-speech";
 import { resolveAssetUrl } from "@/lib/asset-url";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
@@ -17,11 +16,13 @@ import { FocusHeader, TtsBar } from "@/components/FocusHeader";
 import { McqQuestionCard } from "@/components/McqQuestionCard";
 import { McqResultCard } from "@/components/McqResultCard";
 import { SubmitFooter } from "@/components/SubmitFooter";
-import { SupportPanel } from "@/components/SupportPanel";
+import { TTSSubtitlePanel } from "@/components/TTSSubtitle";
 import {
   useListeningExerciseDetail, useMcqSession,
   startListeningSession, submitListeningSession,
 } from "@/hooks/use-practice";
+import { useTTSPlayer } from "@/hooks/use-tts-player";
+import { useSmoothProgressBar } from "@/hooks/use-smooth-progress-bar";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { McqQuestion } from "@/hooks/use-practice";
 
@@ -114,14 +115,23 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
   const [audioError, setAudioError] = useState<string | null>(null);
-  const [unlockedSupport, setUnlockedSupport] = useState<number[]>([]);
   const [showSub, setShowSub] = useState(false);
-  const [ttsPlaying, setTtsPlaying] = useState(false);
   const progressAnim = useRef(new Animated.Value(0)).current;
 
   const hasSub = !!exercise.transcript || (exercise.wordTimestamps ?? []).length > 0;
   const hasAudio = !!exercise.audioUrl;
   const hasTTS = !hasAudio && !!exercise.transcript;
+
+  // ── TTS player ──
+  const ttsPlayer = useTTSPlayer(hasTTS ? exercise.transcript : null);
+  const ttsFillAnim = useRef(new Animated.Value(0)).current;
+  useSmoothProgressBar({
+    fillAnim: ttsFillAnim,
+    playing: ttsPlayer.playing,
+    activeWordIndex: ttsPlayer.activeWordIndex,
+    totalWords: ttsPlayer.totalWords,
+    wordDuration: ttsPlayer.wordDuration,
+  });
 
   useEffect(() => {
     if (!hasAudio) {
@@ -164,19 +174,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
 
   async function togglePlay() {
     if (hasTTS) {
-      // TTS mode — read transcript aloud
-      if (ttsPlaying) {
-        Speech.stop();
-        setTtsPlaying(false);
-      } else {
-        Speech.speak(exercise.transcript, {
-          language: "en-US",
-          onDone: () => setTtsPlaying(false),
-          onStopped: () => setTtsPlaying(false),
-          onError: () => setTtsPlaying(false),
-        });
-        setTtsPlaying(true);
-      }
+      ttsPlayer.toggle();
       return;
     }
     if (!sound) return;
@@ -209,13 +207,24 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
         topInset={insets.top}
       />
 
-      {/* Subtitle toggle */}
+      {/* Subtitle panel */}
       {showSub && hasSub && (
-        <View style={[s.subCard, { backgroundColor: c.surface, borderColor: c.borderLight }]}>
-          <Text style={[s.subText, { color: c.mutedForeground }]}>
-            {exercise.vietnameseTranscript ?? exercise.transcript ?? "(Không có bản dịch)"}
-          </Text>
-        </View>
+        hasTTS ? (
+          <TTSSubtitlePanel
+            turns={ttsPlayer.turns}
+            activeWordIndex={ttsPlayer.activeWordIndex}
+            activeTurnIndex={ttsPlayer.activeTurnIndex}
+            playing={ttsPlayer.playing}
+            c={c}
+            accentColor={COLOR}
+          />
+        ) : (
+          <View style={[s.subCard, { backgroundColor: c.surface, borderColor: c.borderLight }]}>
+            <Text style={[s.subText, { color: c.mutedForeground }]}>
+              {exercise.vietnameseTranscript ?? exercise.transcript ?? "(Không có bản dịch)"}
+            </Text>
+          </View>
+        )
       )}
 
       <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]}>
@@ -227,12 +236,23 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
             {exercise.description && (
               <Text style={[s.audioDesc, { color: c.mutedForeground }]}>{exercise.description}</Text>
             )}
-            <TtsBar
-              playing={ttsPlaying}
-              onToggle={togglePlay}
-              accentColor={COLOR}
-              c={c}
-            />
+            <View style={s.audioControls}>
+              <View style={{ flex: 1 }}>
+                <TtsBar
+                  playing={ttsPlayer.playing}
+                  onToggle={togglePlay}
+                  accentColor={COLOR}
+                  c={c}
+                  fillAnim={ttsFillAnim}
+                />
+              </View>
+              <HapticTouchable onPress={() => setShowSub(!showSub)} style={s.subToggle}>
+                <Text style={[s.ccBtn, {
+                  color: showSub ? COLOR : c.subtle,
+                  borderColor: showSub ? COLOR : c.muted,
+                }]}>CC</Text>
+              </HapticTouchable>
+            </View>
           </View>
         ) : (
         <View style={[s.audioCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
@@ -271,24 +291,6 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
         {/* Result — mirrors FE v3 ListeningInProgress celebration card */}
         {session.result && (
           <McqResultCard result={session.result} accentColor={COLOR} onBack={onBack} />
-        )}
-
-        {/* Support panel */}
-        {!session.result && (
-          <SupportPanel
-            skill="listening"
-            sessionId={sessionId}
-            hasTranscript={hasSub}
-            hasKeywords={(exercise.keywords ?? []).length > 0}
-            accentColor={COLOR}
-            unlockedLevels={unlockedSupport}
-            onUnlock={(level) => {
-              setUnlockedSupport((prev) => (prev.includes(level) ? prev : [...prev, level]));
-              if (level === 2) {
-                setShowSub(true);
-              }
-            }}
-          />
         )}
 
         {/* Questions — McqQuestionCard mirrors FE v3 QuestionList */}
@@ -349,5 +351,14 @@ const s = StyleSheet.create({
   audioTime: { fontSize: 10 },
   audioError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   subToggle: { padding: spacing.xs },
+  ccBtn: {
+    fontSize: 10,
+    fontFamily: fontFamily.extraBold,
+    borderWidth: 2,
+    borderRadius: radius.full,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    overflow: "hidden",
+  },
   footer: { backgroundColor: "#FFFFFF" },
 });

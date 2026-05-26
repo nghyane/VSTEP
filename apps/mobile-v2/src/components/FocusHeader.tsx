@@ -38,9 +38,12 @@ interface TtsBarProps {
   onToggle: () => void;
   accentColor: string;
   c: ThemeColors;
+  fillAnim: Animated.Value;
 }
 
-export function TtsBar({ playing, onToggle, accentColor, c }: TtsBarProps) {
+export function TtsBar({
+  playing, onToggle, accentColor, c, fillAnim,
+}: TtsBarProps) {
   return (
     <View style={[ttsStyles.card, { backgroundColor: c.card, borderColor: c.border }]}>
       <HapticTouchable
@@ -55,11 +58,18 @@ export function TtsBar({ playing, onToggle, accentColor, c }: TtsBarProps) {
       </HapticTouchable>
       <View style={{ flex: 1 }}>
         <View style={[ttsStyles.track, { backgroundColor: c.muted }]}>
-          {playing ? (
-            <Animated.View
-              style={[ttsStyles.fill, { backgroundColor: accentColor }]}
-            />
-          ) : null}
+          <Animated.View
+            style={[
+              ttsStyles.fillAnim,
+              {
+                backgroundColor: accentColor,
+                width: fillAnim.interpolate({
+                  inputRange: [0, 100],
+                  outputRange: ["0%", "100%"],
+                }),
+              },
+            ]}
+          />
         </View>
         <View style={ttsStyles.row}>
           <Text style={[ttsStyles.label, { color: c.subtle }]}>
@@ -123,10 +133,9 @@ const ttsStyles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 6,
   },
-  fill: {
+  fillAnim: {
     height: "100%",
     borderRadius: 3,
-    width: "60%",
   },
   row: {
     flexDirection: "row",

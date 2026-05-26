@@ -39,7 +39,10 @@ services:
         -c max_connections=30
     volumes:
       - pgdata:/var/lib/postgresql/data
-    mem_limit: 384m
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d vstep"]
       interval: 5s
@@ -142,6 +145,11 @@ services:
       - traefik.http.routers.frontend.rule=Host(`${FRONTEND_DOMAIN:-vstepgo.com}`)
       - traefik.http.routers.frontend.entrypoints=web,websecure
       - traefik.http.services.frontend.loadbalancer.server.port=80
+    healthcheck:
+      test: ["CMD", "/bin/sh", "-c", "test -f /usr/share/nginx/html/index.html"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
     networks:
       - default
       - traefik
@@ -158,6 +166,11 @@ services:
       - traefik.http.routers.admin.rule=Host(`${ADMIN_DOMAIN:-admin.vstepgo.com}`)
       - traefik.http.routers.admin.entrypoints=web,websecure
       - traefik.http.services.admin.loadbalancer.server.port=80
+    healthcheck:
+      test: ["CMD", "/bin/sh", "-c", "test -f /usr/share/nginx/html/index.html"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
     networks:
       - default
       - traefik
@@ -199,7 +212,10 @@ services:
     environment:
       Java_Xms: 128m
       Java_Xmx: 256m
-    mem_limit: 384m
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8010/v2/languages"]
       interval: 10s

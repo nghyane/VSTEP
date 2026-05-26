@@ -35,15 +35,19 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
 
     public function listSlots(Course $course, ?CarbonImmutable $start = null, ?CarbonImmutable $end = null): Collection
     {
-        $start ??= CarbonImmutable::now()->subDays(7)->startOfDay();
-        $end ??= CarbonImmutable::now()->addDays(35)->endOfDay();
-
-        return TeacherSlot::query()
+        $query = TeacherSlot::query()
             ->where('course_id', $course->id)
-            ->whereBetween('starts_at', [$start, $end])
             ->with(['bookings.profile.account:id,full_name,email'])
-            ->orderBy('starts_at')
-            ->get();
+            ->orderBy('starts_at');
+
+        // Admin cần thấy toàn bộ slots — chỉ filter date khi client truyền explicit.
+        if ($start || $end) {
+            $start ??= CarbonImmutable::now()->subDays(7)->startOfDay();
+            $end ??= CarbonImmutable::now()->addDays(365)->endOfDay();
+            $query->whereBetween('starts_at', [$start, $end]);
+        }
+
+        return $query->get();
     }
 
     public function createSlot(Course $course, array $data): TeacherSlot
