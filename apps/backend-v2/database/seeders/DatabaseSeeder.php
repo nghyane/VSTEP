@@ -13,10 +13,12 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SystemConfigSeeder::class,
             WalletSeeder::class,
+            GradingRubricSeeder::class,
             ContentSeeder::class,
             UserSeeder::class,
             CourseSeeder::class,
             DashboardDemoSeeder::class,
+            NotificationSeeder::class,
         ]);
     }
 }
