@@ -76,6 +76,15 @@ final class PayOsGateway implements PaymentGateway
 
         $data = $response->json('data');
 
+        if (! is_array($data)) {
+            Log::error('PayOS create payment: missing data in response', [
+                'order_code' => $order->order_code,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            throw new \RuntimeException('PayOS create payment failed: invalid response structure');
+        }
+
         return new PaymentGatewayResponse(
             paymentUrl: $data['checkoutUrl'],
             gatewayTransactionId: $data['paymentLinkId'],
