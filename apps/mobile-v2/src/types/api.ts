@@ -35,6 +35,7 @@ export interface AuthUser {
   fullName: string | null;
   avatarKey: AvatarKey | null;
   avatarUrl: string | null;
+  hasPassword: boolean;
 }
 
 export interface Profile {
@@ -44,6 +45,8 @@ export interface Profile {
   targetDeadline: string | null;
   entryLevel: string | null;
   avatarColor: string | null;
+  avatarKey: AvatarKey | null;
+  avatarUrl: string | null;
   isInitialProfile: boolean;
   createdAt: string;
   updatedAt: string;
