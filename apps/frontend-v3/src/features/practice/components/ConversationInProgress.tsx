@@ -43,6 +43,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	const transcriptRef = useRef("")
 	const submittedRef = useRef(false)
 	const stoppedRef = useRef(false)
+	const autoRestartRef = useRef(0)
 
 	useEffect(() => {
 		if (voice) return
@@ -208,6 +209,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 		transcriptRef.current = ""
 		submittedRef.current = false
 		stoppedRef.current = false
+		autoRestartRef.current = 0
 		setElapsed(0)
 
 		recognition.onresult = (e: Event) => {
@@ -219,16 +221,26 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 			transcriptRef.current = full
 		}
 
-		recognition.onerror = () => {}
+		recognition.onerror = () => {
+			// Stop auto-restart on error (permission denied, no microphone, etc).
+			// On Mac/Edge, permission prompts cause immediate error → onend loop.
+			stoppedRef.current = true
+		}
 
 		recognition.onend = () => {
 			if (!stoppedRef.current && !submittedRef.current) {
-				try {
-					recognition.start()
-					return
-				} catch {
-					cleanup()
-					setMic("idle")
+				// Auto-restart only if we have less than 3 consecutive restarts
+				// (browsers may auto-stop recognition on silence, especially Edge/Mac).
+				autoRestartRef.current += 1
+				if (autoRestartRef.current <= 3) {
+					try {
+						recognition.start()
+						return
+					} catch {
+						cleanup()
+						setMic("idle")
+						return
+					}
 				}
 			}
 			cleanup()

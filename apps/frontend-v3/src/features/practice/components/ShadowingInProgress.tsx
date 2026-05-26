@@ -34,6 +34,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 	const [emptyWarning, setEmptyWarning] = useState(false)
 	const recognitionRef = useRef<{ stop: () => void } | null>(null)
 	const stoppedRef = useRef(false)
+	const autoRestartRef = useRef(0)
 	const timerRef = useRef<number | null>(null)
 	const autoPlayedRef = useRef(false)
 
@@ -121,6 +122,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 		recognition.maxAlternatives = 1
 		recognitionRef.current = recognition
 		stoppedRef.current = false
+		autoRestartRef.current = 0
 		setElapsed(0)
 
 		let transcript = ""
@@ -130,14 +132,19 @@ export function ShadowingInProgress({ lesson }: Props) {
 			for (let i = 0; i < evt.results.length; i++) full += evt.results[i][0].transcript
 			transcript = full
 		}
-		recognition.onerror = () => {}
+		recognition.onerror = () => {
+			stoppedRef.current = true
+		}
 		recognition.onend = () => {
 			if (!stoppedRef.current) {
-				try {
-					recognition.start()
-					return
-				} catch {
-					/* fall through */
+				autoRestartRef.current += 1
+				if (autoRestartRef.current <= 3) {
+					try {
+						recognition.start()
+						return
+					} catch {
+						/* fall through */
+					}
 				}
 			}
 			if (timerRef.current) clearInterval(timerRef.current)
