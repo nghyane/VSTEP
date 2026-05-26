@@ -25,6 +25,78 @@ final class SpeakingConversationService implements ConversationServiceInterface
         private readonly ConversationTurnNormalizer $normalizer,
     ) {}
 
+    // ── Schema definitions ────────────────────────────────────────
+
+    /** @return array<string,mixed> */
+    private function turnSchema(): array
+    {
+        return [
+            'feedback' => [
+                'type' => 'object',
+                'properties' => [
+                    'vocab_check' => ['type' => 'array', 'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'phrase' => ['type' => 'string'],
+                            'used' => ['type' => 'boolean'],
+                        ],
+                        'required' => ['phrase', 'used'],
+                        'additionalProperties' => false,
+                    ]],
+                    'grammar_ok' => ['type' => 'boolean'],
+                    'grammar_corrections' => ['type' => 'array', 'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'wrong' => ['type' => 'string'],
+                            'correct' => ['type' => 'string'],
+                            'explanation' => ['type' => 'string'],
+                        ],
+                        'required' => ['wrong', 'correct', 'explanation'],
+                        'additionalProperties' => false,
+                    ]],
+                    'better' => ['type' => 'string'],
+                    'user_ipa' => ['type' => 'string'],
+                    'better_ipa' => ['type' => 'string'],
+                ],
+                'required' => ['vocab_check', 'grammar_ok', 'grammar_corrections', 'better', 'user_ipa', 'better_ipa'],
+                'additionalProperties' => false,
+            ],
+            'reply' => ['type' => 'string'],
+            'reply_ipa' => ['type' => 'string'],
+            'suggested_words' => ['type' => 'array', 'items' => ['type' => 'string']],
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    private function reviewSchema(): array
+    {
+        return [
+            'strengths' => ['type' => 'array', 'items' => ['type' => 'string']],
+            'improvements' => ['type' => 'array', 'items' => ['type' => 'string']],
+            'corrected_sentences' => ['type' => 'array', 'items' => [
+                'type' => 'object',
+                'properties' => [
+                    'original' => ['type' => 'string'],
+                    'corrected' => ['type' => 'string'],
+                    'explanation' => ['type' => 'string'],
+                ],
+                'required' => ['original', 'corrected', 'explanation'],
+                'additionalProperties' => false,
+            ]],
+            'tip' => ['type' => 'string'],
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    private function pronunciationSchema(): array
+    {
+        return [
+            'pronunciation' => ['type' => 'string'],
+            'intonation' => ['type' => 'string'],
+            'tip' => ['type' => 'string'],
+        ];
+    }
+
     /** @return Collection<int,PracticeSpeakingScenario> */
     public function listScenarios(?string $level): Collection
     {
@@ -236,7 +308,13 @@ final class SpeakingConversationService implements ConversationServiceInterface
             'userSentences' => $userSentences,
         ])->render();
 
-        $parsed = $this->callConversation($prompt);
+        $parsed = $this->callWithTool(
+            service: 'conversation',
+            toolName: 'conversation_review',
+            toolDescription: 'Review a completed conversation session with feedback',
+            parametersSchema: $this->reviewSchema(),
+            prompt: $prompt,
+        );
 
         if (! isset($parsed['strengths'])) {
             Log::warning('ConversationReview: could not parse', ['parsed' => $parsed]);
@@ -288,13 +366,19 @@ final class SpeakingConversationService implements ConversationServiceInterface
     }
 
     /**
-     * Call conversation service with retry on transient failures.
+     * Call conversation service for a turn.
      *
      * @return array<string,mixed>
      */
     private function callConversation(string $prompt): array
     {
-        return $this->callWithRetry('conversation', $prompt);
+        return $this->callWithTool(
+            service: 'conversation',
+            toolName: 'conversation_turn',
+            toolDescription: 'Grade the user turn and reply as the conversation character',
+            parametersSchema: $this->turnSchema(),
+            prompt: $prompt,
+        );
     }
 
     /**
@@ -302,65 +386,41 @@ final class SpeakingConversationService implements ConversationServiceInterface
      */
     private function callPronunciation(string $prompt): array
     {
-        return $this->callWithRetry('pronunciation', $prompt);
+        return $this->callWithTool(
+            service: 'pronunciation',
+            toolName: 'pronunciation_review',
+            toolDescription: 'Analyze pronunciation accuracy',
+            parametersSchema: $this->pronunciationSchema(),
+            prompt: $prompt,
+        );
     }
 
     /**
-     * Strip markdown fences and preamble text from LLM response,
-     * extracting the first valid JSON object.
-     */
-    private function extractJson(string $text): string
-    {
-        $text = trim($text);
-
-        // 1. Try to find JSON between ```json ... ``` fences (non-greedy)
-        if (preg_match('/```(?:json)?\s*\n?(.+?)\n?\s*```/s', $text, $m)) {
-            return trim($m[1]);
-        }
-
-        // 2. Fallback: extract the first {...} or [...] block
-        if (preg_match('/[\[{].*[\]}]/s', $text, $m)) {
-            return $m[0];
-        }
-
-        return $text;
-    }
-
-    /**
+     * Call AI via tool calling (function calling) for structured JSON output.
+     * Retries on transient HTTP failures; surface-level JSON errors throw immediately.
+     *
+     * @param  array<string,mixed>  $parametersSchema
      * @return array<string,mixed>
      */
-    private function callWithRetry(string $service, string $prompt): array
+    private function callWithTool(string $service, string $toolName, string $toolDescription, array $parametersSchema, string $prompt, ?string $instructions = null): array
     {
         $maxRetries = 2;
 
         for ($attempt = 0; $attempt <= $maxRetries; $attempt++) {
             try {
-                $text = $this->ai->text(service: $service, prompt: $prompt);
-
-                $json = $this->extractJson($text);
-
-                $decoded = json_decode($json, true);
-
-                if (! is_array($decoded)) {
-                    $snippet = mb_substr($text, 0, 200);
-                    throw new \RuntimeException("AI returned non-JSON: {$snippet}");
-                }
-
-                return $decoded;
+                return $this->ai->toolCall(
+                    service: $service,
+                    prompt: $prompt,
+                    toolName: $toolName,
+                    toolDescription: $toolDescription,
+                    parametersSchema: $parametersSchema,
+                    instructions: $instructions,
+                );
             } catch (\Throwable $e) {
-                // Don't retry non-transient errors (JSON parse failures, bad prompts)
-                if ($e instanceof \RuntimeException && str_contains($e->getMessage(), 'non-JSON')) {
-                    Log::warning('AI call: non-JSON response (not retrying)', [
-                        'service' => $service,
-                        'error' => $e->getMessage(),
-                    ]);
-
-                    throw new AiServiceUnavailableException;
-                }
-
                 if ($attempt === $maxRetries) {
-                    Log::warning('AI call exhausted retries', [
+                    Log::warning('AI tool call exhausted retries', [
                         'service' => $service,
+                        'tool' => $toolName,
                         'attempts' => $attempt + 1,
                         'error' => $e->getMessage(),
                     ]);
@@ -369,8 +429,9 @@ final class SpeakingConversationService implements ConversationServiceInterface
                 }
 
                 $delayMs = 1000 * (2 ** $attempt);
-                Log::info('AI call retrying', [
+                Log::info('AI tool call retrying', [
                     'service' => $service,
+                    'tool' => $toolName,
                     'attempt' => $attempt + 1,
                     'delay_ms' => $delayMs,
                 ]);
