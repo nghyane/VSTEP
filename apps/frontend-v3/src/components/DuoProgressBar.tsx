@@ -1,6 +1,6 @@
 import { cn } from "#/lib/utils"
 
-type Tone = "primary" | "coin" | "warning" | "info" | "streak"
+type Tone = "primary" | "coin" | "warning" | "info" | "streak" | "muted"
 
 interface Props {
 	/** 0–100. Tự clamp về [0,100]. */
@@ -19,6 +19,7 @@ const TONE: Record<Tone, { fill: string; highlight: string }> = {
 	warning: { fill: "bg-warning", highlight: "bg-warning-light" },
 	info: { fill: "bg-info", highlight: "bg-info-light" },
 	streak: { fill: "bg-streak", highlight: "bg-streak-light" },
+	muted: { fill: "bg-border", highlight: "bg-border-light" },
 }
 
 /**

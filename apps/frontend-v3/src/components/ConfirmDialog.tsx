@@ -1,5 +1,6 @@
 import { type ReactNode, useEffect, useState } from "react"
 import { createPortal } from "react-dom"
+import { Icon } from "#/components/Icon"
 import { cn } from "#/lib/utils"
 
 interface Props {
@@ -77,20 +78,10 @@ export function ConfirmDialog({
 					className="absolute right-3 top-3 flex size-8 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface hover:text-foreground"
 					aria-label="Đóng"
 				>
-					<svg
-						viewBox="0 0 16 16"
-						className="size-4"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2.2"
-						strokeLinecap="round"
-						aria-hidden="true"
-					>
-						<path d="M3 3l10 10M13 3L3 13" />
-					</svg>
+					<Icon name="close" size="xs" />
 				</button>
 
-				<div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full border-2 border-b-4 border-warning/30 bg-warning-tint">
+				<div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-warning-tint">
 					<svg
 						viewBox="0 0 24 24"
 						className="size-7 text-warning"

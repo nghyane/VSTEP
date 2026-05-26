@@ -19,6 +19,8 @@ interface GoogleAccountsId {
 		callback: (resp: GoogleCredentialResponse) => void
 		auto_select?: boolean
 		cancel_on_tap_outside?: boolean
+		use_fedcm_for_prompt?: boolean
+		use_fedcm_for_button?: boolean
 	}) => void
 	renderButton: (parent: HTMLElement, options: GsiButtonConfig) => void
 	prompt: () => void

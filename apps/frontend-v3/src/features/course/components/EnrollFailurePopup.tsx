@@ -72,7 +72,7 @@ export function EnrollFailurePopup({ open, title, message, loading, onClose, onR
 						type="button"
 						onClick={onClose}
 						disabled={loading}
-						className="w-full rounded-(--radius-button) border-2 border-b-4 border-border bg-surface py-3 text-sm font-extrabold text-foreground transition-all hover:border-primary/40 active:translate-y-[2px] active:border-b-2 disabled:opacity-60"
+						className="btn btn-secondary w-full text-sm"
 					>
 						Đóng
 					</button>

@@ -11,25 +11,30 @@ interface Props {
 export function CommitmentGate({ commitment }: Props) {
 	if (commitment.phase === "met") return null
 
-	const variant = VARIANTS[commitment.phase]
-	const remaining = Math.max(0, commitment.required - commitment.completed)
+	const variant = VARIANTS[commitment.phase as keyof typeof VARIANTS]
 	const progress = commitment.required > 0 ? (commitment.completed / commitment.required) * 100 : 0
 
+	// Violated: chỉ notice gọn — thông tin chi tiết đã có ở trang khóa học.
+	if (commitment.phase === "violated") {
+		return (
+			<div className="rounded-(--radius-card) bg-destructive/5 px-5 py-4">
+				<p className="text-sm text-foreground leading-relaxed">
+					<span className="font-bold text-destructive/80">Hết hạn cam kết.</span> Hạn cam kết đã qua (
+					{commitment.deadline_at ? formatVnDate(commitment.deadline_at) : "—"}) nhưng bạn chỉ hoàn thành{" "}
+					{commitment.completed}/{commitment.required} đề thi đầy đủ. Liên hệ trung tâm nếu muốn được hỗ trợ
+					thêm.
+				</p>
+			</div>
+		)
+	}
+
 	return (
-		<section
-			className={cn(
-				"card p-5 space-y-4 border-2 border-b-4 rounded-(--radius-card)",
-				variant.surface,
-				variant.border,
-			)}
-			aria-live="polite"
-		>
+		<section className="card p-5 space-y-4">
 			<header className="flex items-center gap-3">
 				<span
 					className={cn(
-						"inline-flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-b-4",
+						"inline-flex size-11 shrink-0 items-center justify-center rounded-xl",
 						variant.iconBg,
-						variant.border,
 					)}
 				>
 					<Icon name={variant.icon} size="md" className={variant.iconFg} />
@@ -39,7 +44,6 @@ export function CommitmentGate({ commitment }: Props) {
 						{variant.eyebrowText}
 					</p>
 					<h2 className="text-base font-extrabold text-foreground leading-snug">{variant.title}</h2>
-					<p className="text-sm text-muted leading-relaxed">{variant.body(commitment, remaining)}</p>
 				</div>
 			</header>
 
@@ -87,58 +91,34 @@ export function CommitmentGate({ commitment }: Props) {
 type ProgressTone = "primary" | "coin" | "warning" | "info" | "streak"
 
 interface Variant {
-	surface: string
-	border: string
 	iconBg: string
 	icon: "lightning" | "close" | "book"
 	iconFg: string
 	eyebrow: string
 	eyebrowText: string
 	title: string
-	body: (c: BookingCommitment, remaining: number) => string
 	bar: ProgressTone
 	cta: { to: "/thi-thu" | "/khoa-hoc"; label: string } | null
 }
 
-const VARIANTS: Record<Exclude<CommitmentPhase, "met">, Variant> = {
+const VARIANTS: Record<Exclude<CommitmentPhase, "met" | "violated">, Variant> = {
 	pending: {
-		surface: "bg-coin-tint/40",
-		border: "border-coin/40",
-		iconBg: "bg-coin-tint border-coin/50",
+		iconBg: "bg-coin/10",
 		icon: "lightning",
 		iconFg: "text-coin-dark",
 		eyebrow: "text-coin-dark",
 		eyebrowText: "Cam kết khóa học",
 		title: "Hoàn thành đề thi đầy đủ để mở khóa đặt lịch 1-1",
-		body: (_c, remaining) =>
-			`Bạn cần hoàn thành thêm ${remaining} đề thi đầy đủ trong thời gian cam kết để được đặt lịch học 1-1 với giảng viên.`,
 		bar: "coin",
 		cta: { to: "/thi-thu", label: "Vào thi thử ngay" },
 	},
-	violated: {
-		surface: "bg-destructive/10",
-		border: "border-destructive/40",
-		iconBg: "bg-destructive/15 border-destructive/50",
-		icon: "close",
-		iconFg: "text-destructive",
-		eyebrow: "text-destructive",
-		eyebrowText: "Hết hạn cam kết",
-		title: "Bạn đã hết quyền đặt lịch 1-1 cho khóa này",
-		body: (c) =>
-			`Hạn cam kết đã qua (${c.deadline_at ? formatVnDate(c.deadline_at) : "—"}) nhưng bạn chỉ hoàn thành ${c.completed}/${c.required} đề thi đầy đủ. Liên hệ trung tâm nếu muốn được hỗ trợ thêm.`,
-		bar: "warning",
-		cta: null,
-	},
 	not_enrolled: {
-		surface: "bg-surface",
-		border: "border-border",
-		iconBg: "bg-background border-border",
+		iconBg: "bg-border-light",
 		icon: "book",
 		iconFg: "text-muted",
 		eyebrow: "text-muted",
 		eyebrowText: "Chưa ghi danh",
 		title: "Bạn cần ghi danh khóa học trước",
-		body: () => "Đặt lịch 1-1 chỉ dành cho học viên đã tham gia khóa. Quay lại trang khóa học để ghi danh.",
 		bar: "primary",
 		cta: { to: "/khoa-hoc", label: "Tới danh sách khóa học" },
 	},

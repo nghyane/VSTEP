@@ -23,12 +23,12 @@ export function CourseCard({ course, enrolled, enrollment }: Props) {
 	const full = remaining === 0
 	const ctaDisabled = full
 
-	const cta = ctaDisabled ? "Chọn khóa khác" : "Xem chi tiết →"
+	const cta = ctaDisabled ? "Chọn khóa khác" : "Xem chi tiết"
 
 	const card = (
-		<div className={cn("p-6 flex flex-col gap-4", ctaDisabled ? "card opacity-75" : "card-interactive")}>
+		<div className={cn("p-5 flex flex-col gap-4", ctaDisabled ? "card opacity-75" : "card-interactive")}>
 			<div className="flex items-center justify-between gap-2">
-				<span className="inline-flex items-center rounded-full border-2 border-border bg-surface px-2.5 py-0.5 text-xs font-bold text-foreground">
+				<span className="inline-flex items-center rounded-full bg-surface px-2.5 py-0.5 text-xs font-bold text-foreground">
 					{COURSE_LEVEL_LABELS[course.target_level] ?? course.target_level}
 				</span>
 				<SlotBadge full={full} remaining={remaining} />
@@ -41,13 +41,13 @@ export function CourseCard({ course, enrolled, enrollment }: Props) {
 
 			<MetaRows course={course} sold={sold} />
 
-			<div className="border-t-2 border-border pt-4 flex items-center justify-between gap-3">
+			<div className="flex items-center justify-between gap-3 mt-auto pt-1">
 				<PriceBlock course={course} />
-				<span
-					className={cn("text-xs font-bold whitespace-nowrap", ctaDisabled ? "text-muted" : "text-primary")}
-				>
-					{cta}
-				</span>
+				{ctaDisabled ? (
+					<span className="text-xs font-bold text-muted whitespace-nowrap">{cta}</span>
+				) : (
+					<span className="btn btn-primary text-sm py-2 px-4">{cta}</span>
+				)}
 			</div>
 		</div>
 	)
@@ -64,18 +64,18 @@ export function CourseCard({ course, enrolled, enrollment }: Props) {
 function MetaRows({ course, sold }: { course: Course; sold: number | undefined }) {
 	const sessions = course.schedule_items_count
 	return (
-		<ul className="space-y-1.5 text-sm text-foreground">
-			<li>
+		<div className="space-y-1.5 text-sm text-foreground">
+			<div>
 				Khai giảng <span className="font-bold tabular-nums">{formatDate(course.start_date)}</span>
 				{sessions !== undefined && <span className="text-muted"> · {sessions} buổi</span>}
-			</li>
+			</div>
 			{course.teacher && (
-				<li>
+				<div>
 					Giáo viên: <span className="font-bold">{course.teacher.full_name}</span>
-				</li>
+				</div>
 			)}
 			{sold !== undefined && (
-				<li className="space-y-1.5 pt-0.5">
+				<div className="space-y-1.5 pt-0.5">
 					<div className="flex items-baseline justify-between">
 						<span>
 							<span className="tabular-nums font-bold">{sold}</span>
@@ -90,9 +90,9 @@ function MetaRows({ course, sold }: { course: Course; sold: number | undefined }
 						heightPx={8}
 						label="Tỉ lệ ghế đã đăng ký"
 					/>
-				</li>
+				</div>
 			)}
-		</ul>
+		</div>
 	)
 }
 
@@ -183,7 +183,7 @@ function EnrolledCard({ course, enrollment }: { course: Course; enrollment: Enro
 			</div>
 
 			<div>
-				<p className="text-base font-extrabold leading-tight text-foreground">{course.title}</p>
+				<h3 className="text-base font-extrabold leading-tight text-foreground">{course.title}</h3>
 				<p className="text-xs text-muted mt-1.5 tabular-nums">
 					{formatDate(course.start_date)} — {formatDate(course.end_date)}
 				</p>
@@ -245,8 +245,8 @@ function NextSessionTile({
 
 	if (ended) {
 		return (
-			<div className="rounded-(--radius-card) border-2 border-border bg-background px-4 py-3 flex items-start gap-3">
-				<div className="size-9 shrink-0 rounded-xl bg-border text-muted flex items-center justify-center">
+			<div className="rounded-(--radius-card) bg-border-light px-4 py-3 flex items-start gap-3">
+				<div className="size-9 shrink-0 rounded-xl bg-border/60 text-muted flex items-center justify-center">
 					<Icon name="check" size="xs" className="text-muted" />
 				</div>
 				<div className="flex-1 min-w-0 space-y-0.5">
@@ -262,8 +262,8 @@ function NextSessionTile({
 
 	if (!next) {
 		return (
-			<div className="rounded-(--radius-card) border-2 border-border bg-background px-4 py-3 flex items-start gap-3">
-				<div className="size-9 shrink-0 rounded-xl bg-border text-muted flex items-center justify-center">
+			<div className="rounded-(--radius-card) bg-border-light px-4 py-3 flex items-start gap-3">
+				<div className="size-9 shrink-0 rounded-xl bg-border/60 text-muted flex items-center justify-center">
 					<Icon name="timer" size="xs" className="text-muted" />
 				</div>
 				<div className="flex-1 min-w-0 space-y-0.5">
@@ -281,7 +281,7 @@ function NextSessionTile({
 		: `Buổi tiếp theo · Buổi ${String(next.session_number).padStart(2, "0")}`
 
 	return (
-		<div className="rounded-(--radius-card) border-2 border-primary/20 bg-primary-tint/40 px-4 py-3 flex items-start gap-3">
+		<div className="rounded-(--radius-card) bg-primary-tint px-4 py-3 flex items-start gap-3">
 			<div
 				className={cn(
 					"size-9 shrink-0 rounded-xl text-white flex items-center justify-center",
