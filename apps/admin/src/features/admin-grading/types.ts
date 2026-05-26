@@ -3,20 +3,17 @@ export interface ScoringPolicy {
 	rubric_id: string
 	version: number
 	name: string
-	rules: { caps?: CapRule[] }
+	rules: { caps?: Record<string, CapRule[]> }
 	is_active: boolean
 	created_at: string
 }
 
 export interface CapRule {
-	criterion: string
-	condition: string
-	max_score: number
-}
-
-export interface BandDescriptor {
-	band: number
-	description: string
+	metric: string
+	op: string
+	value: number
+	max: number
+	all?: { metric: string; op: string; value: number }[]
 }
 
 export interface Criterion {
@@ -25,7 +22,7 @@ export interface Criterion {
 	name_vi?: string
 	max_score: number
 	weight: number
-	band_descriptors: BandDescriptor[]
+	band_descriptors: string[]
 }
 
 export interface GradingRubric {

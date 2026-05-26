@@ -3,7 +3,7 @@ import { Link, createFileRoute } from "@tanstack/react-router"
 import { Button, Card, Collapse, Descriptions, Flex, Result, Skeleton, Table, Tag, Typography } from "antd"
 import { useQuery } from "@tanstack/react-query"
 import { rubricDetailQuery } from "#/features/admin-grading/queries"
-import type { BandDescriptor, Criterion, ScoringPolicy } from "#/features/admin-grading/types"
+import type { Criterion, ScoringPolicy, CapRule } from "#/features/admin-grading/types"
 import { PageHeader } from "#/components/PageHeader"
 
 export const Route = createFileRoute("/_app/grading/$rubricId")({
@@ -83,12 +83,13 @@ function RubricDetailPage() {
 	)
 }
 
-function BandDescriptorTable({ descriptors }: { descriptors: BandDescriptor[] }) {
+function BandDescriptorTable({ descriptors }: { descriptors: string[] }) {
+	const rows = descriptors.map((desc, idx) => ({ band: idx, description: desc }))
 	return (
 		<Table
 			size="small"
 			pagination={false}
-			dataSource={descriptors}
+			dataSource={rows}
 			rowKey="band"
 			columns={[
 				{ title: "Band", dataIndex: "band", width: 70 },
@@ -99,19 +100,31 @@ function BandDescriptorTable({ descriptors }: { descriptors: BandDescriptor[] })
 }
 
 function PolicyRules({ rules }: { rules: ScoringPolicy["rules"] }) {
-	if (!rules.caps || rules.caps.length === 0) {
+	if (!rules.caps || Object.keys(rules.caps).length === 0) {
 		return <Typography.Text type="secondary">Không có cap rules.</Typography.Text>
 	}
+
+	const rows = Object.entries(rules.caps).flatMap(([criterion, caps]) =>
+		caps.map((cap: CapRule, idx: number) => ({
+			key: `${criterion}-${idx}`,
+			criterion,
+			condition: cap.all
+				? cap.all.map((c) => `${c.metric} ${c.op} ${c.value}`).join(" AND ")
+				: `${cap.metric} ${cap.op} ${cap.value}`,
+			max: cap.max,
+		})),
+	)
+
 	return (
 		<Table
 			size="small"
 			pagination={false}
-			dataSource={rules.caps}
-			rowKey={(r) => `${r.criterion}-${r.condition}`}
+			dataSource={rows}
+			rowKey="key"
 			columns={[
 				{ title: "Tiêu chí", dataIndex: "criterion", width: 160 },
 				{ title: "Điều kiện", dataIndex: "condition" },
-				{ title: "Max score", dataIndex: "max_score", width: 100 },
+				{ title: "Max score", dataIndex: "max", width: 100 },
 			]}
 		/>
 	)
