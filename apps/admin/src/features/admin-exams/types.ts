@@ -28,7 +28,6 @@ export interface ExamFormInput {
 	title: string
 	source_school: string
 	tags: string[]
-	total_duration_minutes: number
 	is_published: boolean
 }
 
