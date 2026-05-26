@@ -140,6 +140,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 				err.error === "service-not-allowed" ||
 				err.error === "audio-capture"
 			) {
+				stoppedRef.current = true
 				recognition.abort()
 				setMic("idle")
 				if (timerRef.current) clearInterval(timerRef.current)
@@ -148,6 +149,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 				return
 			}
 			if (err.error === "network") {
+				stoppedRef.current = true
 				recognition.abort()
 				setMic("idle")
 				if (timerRef.current) clearInterval(timerRef.current)

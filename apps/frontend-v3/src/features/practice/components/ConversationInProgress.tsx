@@ -228,6 +228,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 				err.error === "service-not-allowed" ||
 				err.error === "audio-capture"
 			) {
+				stoppedRef.current = true
 				recognition.abort()
 				setMic("idle")
 				cleanup()
@@ -235,6 +236,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 				return
 			}
 			if (err.error === "network") {
+				stoppedRef.current = true
 				recognition.abort()
 				setMic("idle")
 				cleanup()
