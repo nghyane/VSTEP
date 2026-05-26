@@ -65,13 +65,13 @@ class DashboardDemoSeeder extends Seeder
 
     private const GRADING_DURATION_RANGE_SECONDS = [5, 30];
 
-    private const RUBRIC_SCORE_RANGE = [1.5, 3.5];
+    private const RUBRIC_SCORE_RANGE = [3.5, 9.0];
 
     /** Writing thường yếu hơn — narrower low band để spider chart show gap rõ. */
-    private const WRITING_OVERALL_BAND_RANGE = [3.5, 7.0];
+    private const WRITING_OVERALL_BAND_RANGE = [4.0, 9.0];
 
     /** Speaking band — moderate. */
-    private const SPEAKING_OVERALL_BAND_RANGE = [4.0, 7.5];
+    private const SPEAKING_OVERALL_BAND_RANGE = [4.0, 9.0];
 
     private const SPEAKING_PRONUNCIATION_RANGE = [0.55, 0.92];
 
@@ -306,9 +306,9 @@ class DashboardDemoSeeder extends Seeder
             'version' => 1,
             'is_active' => true,
             'rubric_scores' => [
-                'task_achievement' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
-                'coherence' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
-                'lexical' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
+                'task_fulfillment' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
+                'organization' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
+                'vocabulary' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
                 'grammar' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
             ],
             'overall_band' => $this->randomFloat(self::WRITING_OVERALL_BAND_RANGE),
@@ -349,10 +349,11 @@ class DashboardDemoSeeder extends Seeder
             'version' => 1,
             'is_active' => true,
             'rubric_scores' => [
+                'grammar' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
+                'vocabulary' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
                 'pronunciation' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
                 'fluency' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
-                'lexical' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
-                'grammar' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
+                'discourse_management' => $this->randomFloat(self::RUBRIC_SCORE_RANGE),
             ],
             'overall_band' => $this->randomFloat(self::SPEAKING_OVERALL_BAND_RANGE),
             'strengths' => ['Clear delivery'],

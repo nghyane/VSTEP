@@ -215,6 +215,12 @@ Route::prefix('v1')->group(function () {
             Route::post('/{id}/deactivate', [Admin\TopupPackageController::class, 'deactivate']);
         });
 
+        // Grading rubrics (read-only — reference data).
+        Route::prefix('grading-rubrics')->group(function () {
+            Route::get('/', [Admin\GradingRubricController::class, 'index']);
+            Route::get('/{id}', [Admin\GradingRubricController::class, 'show'])->whereUuid('id');
+        });
+
         // System config — ADMIN ONLY (nested middleware role:admin overrides parent role:staff)
         Route::middleware('role:admin')->prefix('system-config')->group(function () {
             Route::get('/', [Admin\SystemConfigController::class, 'index']);

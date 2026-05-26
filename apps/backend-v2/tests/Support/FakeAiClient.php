@@ -12,7 +12,7 @@ use App\Ai\AiClient;
  */
 final class FakeAiClient implements AiClient
 {
-    public function structured(string $service, string $prompt, array $schema, ?string $instructions = null): array
+    public function toolCall(string $service, string $prompt, string $toolName, string $toolDescription, array $parametersSchema, ?string $instructions = null): array
     {
         return match ($service) {
             'grading' => $this->fakeGradingResponse(),
@@ -35,14 +35,14 @@ final class FakeAiClient implements AiClient
     {
         return [
             'rubric_scores' => [
-                'task_achievement' => 3.0,
-                'coherence' => 2.5,
-                'lexical' => 2.5,
-                'grammar' => 3.0,
+                'task_fulfillment' => 7.5,
+                'organization' => 6.0,
+                'vocabulary' => 6.0,
+                'grammar' => 7.5,
             ],
             'overall_band' => 7.0,
-            'strengths' => ['Good structure'],
-            'improvements' => [['message' => 'Use more linking words', 'explanation' => 'Improve coherence']],
+            'strengths' => ['Bố cục bài viết rõ ràng'],
+            'improvements' => [['message' => 'Sử dụng thêm từ nối', 'explanation' => 'Dùng however, moreover để liên kết ý']],
             'rewrites' => [],
             'annotations' => [],
         ];

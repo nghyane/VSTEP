@@ -11,12 +11,15 @@ namespace App\Ai;
 interface AiClient
 {
     /**
-     * Send a prompt and get structured (JSON) output.
+     * Send a prompt and get structured (JSON) output via tool calling.
      *
-     * @param  array<string,mixed>  $schema  JSON Schema definition for the response
+     * Uses function-calling / tool_use across all providers for maximum
+     * compatibility — avoids response_format: json_schema provider-specific issues.
+     *
+     * @param  array<string,mixed>  $parametersSchema  JSON Schema definition for the function parameters
      * @return array<string,mixed>
      */
-    public function structured(string $service, string $prompt, array $schema, ?string $instructions = null): array;
+    public function toolCall(string $service, string $prompt, string $toolName, string $toolDescription, array $parametersSchema, ?string $instructions = null): array;
 
     /**
      * Send a prompt and get plain text output.

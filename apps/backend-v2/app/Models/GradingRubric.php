@@ -45,7 +45,7 @@ class GradingRubric extends BaseModel
     }
 
     /**
-     * Criteria keys for this rubric (e.g. ['task_achievement', 'coherence', ...]).
+     * Criteria keys for this rubric (e.g. ['task_fulfillment', 'organization', ...]).
      *
      * @return list<string>
      */

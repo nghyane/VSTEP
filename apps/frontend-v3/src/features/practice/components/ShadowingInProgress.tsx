@@ -9,6 +9,7 @@ import {
 import { ShadowingSidebar } from "#/features/practice/components/ShadowingSidebar"
 import { shadowingProgressQuery, useMarkShadowingDone } from "#/features/practice/shadowing-progress"
 import type { ShadowingLessonDetail } from "#/features/practice/types"
+import { useToast } from "#/lib/toast"
 import { cn, compareWords, pickEnglishVoice, speak, stopSpeaking, warmupTTS } from "#/lib/utils"
 
 interface Props {
@@ -34,6 +35,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 	const [emptyWarning, setEmptyWarning] = useState(false)
 	const recognitionRef = useRef<{ stop: () => void } | null>(null)
 	const stoppedRef = useRef(false)
+	const autoRestartRef = useRef(0)
 	const timerRef = useRef<number | null>(null)
 	const autoPlayedRef = useRef(false)
 
@@ -121,6 +123,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 		recognition.maxAlternatives = 1
 		recognitionRef.current = recognition
 		stoppedRef.current = false
+		autoRestartRef.current = 0
 		setElapsed(0)
 
 		let transcript = ""
@@ -130,14 +133,48 @@ export function ShadowingInProgress({ lesson }: Props) {
 			for (let i = 0; i < evt.results.length; i++) full += evt.results[i][0].transcript
 			transcript = full
 		}
-		recognition.onerror = () => {}
+		recognition.onerror = (e: Event) => {
+			const err = e as unknown as { error: string; message?: string }
+			if (
+				err.error === "not-allowed" ||
+				err.error === "service-not-allowed" ||
+				err.error === "audio-capture"
+			) {
+				stoppedRef.current = true
+				recognition.abort()
+				setMic("idle")
+				if (timerRef.current) clearInterval(timerRef.current)
+				timerRef.current = null
+				useToast.getState().add("Không thể truy cập microphone. Kiểm tra cài đặt trình duyệt.")
+				return
+			}
+			if (err.error === "network") {
+				stoppedRef.current = true
+				recognition.abort()
+				setMic("idle")
+				if (timerRef.current) clearInterval(timerRef.current)
+				timerRef.current = null
+				const isEdge = /Edg\//.test(navigator.userAgent)
+				useToast
+					.getState()
+					.add(
+						isEdge
+							? "Edge trên Mac không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome."
+							: "Không kết nối được dịch vụ nhận dạng giọng nói. Kiểm tra mạng và thử lại.",
+					)
+				return
+			}
+		}
 		recognition.onend = () => {
 			if (!stoppedRef.current) {
-				try {
-					recognition.start()
-					return
-				} catch {
-					/* fall through */
+				autoRestartRef.current += 1
+				if (autoRestartRef.current <= 3) {
+					try {
+						recognition.start()
+						return
+					} catch {
+						/* fall through */
+					}
 				}
 			}
 			if (timerRef.current) clearInterval(timerRef.current)

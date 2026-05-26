@@ -9,7 +9,8 @@ use RuntimeException;
 
 /**
  * OpenAI Responses API — POST /v1/responses
- * Native structured output via json_schema.
+ * Structured output via tool calling (function calling) instead of
+ * response_format: json_schema which has stricter schema validation.
  */
 final class ResponsesWire implements WireFormat
 {
@@ -25,14 +26,13 @@ final class ResponsesWire implements WireFormat
         }
 
         if ($request->schema !== null) {
-            $body['text'] = [
-                'format' => [
-                    'type' => 'json_schema',
-                    'name' => 'structured_output',
-                    'schema' => $this->buildSchema($request->schema),
-                    'strict' => true,
-                ],
-            ];
+            $toolName = $request->toolName ?? 'structured_output';
+            $body['tools'] = [$this->buildToolDefinition(
+                $toolName,
+                $request->toolDescription ?? 'Return structured data',
+                $request->schema,
+            )];
+            $body['tool_choice'] = 'required';
         }
 
         if ($request->temperature !== null) {
@@ -44,11 +44,16 @@ final class ResponsesWire implements WireFormat
 
         $this->validateResponse($data);
 
-        $text = $this->extractText($data);
+        $structured = $request->schema !== null
+            ? $this->extractToolArguments($data)
+            : null;
+        $text = $structured !== null
+            ? json_encode($structured)
+            : $this->extractText($data);
 
         return new WireResponse(
             text: $text,
-            structured: $request->schema !== null ? json_decode($text, true) : null,
+            structured: $structured,
             usage: $this->extractUsage($data),
             model: $data['model'] ?? $request->model,
         );
@@ -67,29 +72,44 @@ final class ResponsesWire implements WireFormat
         return $input;
     }
 
-    private function buildSchema(array $schema): array
+    /**
+     * @param  array<string,mixed>  $parametersSchema
+     * @return array<string,mixed>
+     */
+    private function buildToolDefinition(string $name, string $description, array $parametersSchema): array
     {
         return [
-            'type' => 'object',
-            'properties' => $schema,
-            'required' => array_keys($schema),
-            'additionalProperties' => false,
+            'type' => 'function',
+            'name' => $name,
+            'description' => $description,
+            'parameters' => [
+                'type' => 'object',
+                'properties' => $parametersSchema,
+                'required' => array_keys($parametersSchema),
+                'additionalProperties' => false,
+            ],
+            'strict' => true,
         ];
     }
 
-    private function validateResponse(mixed $data): void
+    private function extractToolArguments(array $data): ?array
     {
-        if (! is_array($data) || isset($data['error'])) {
-            throw new RuntimeException(sprintf(
-                'OpenAI Responses API error: %s',
-                $data['error']['message'] ?? 'Unknown error',
-            ));
+        foreach ($data['output'] ?? [] as $output) {
+            if (($output['type'] ?? '') === 'function_call') {
+                $arguments = $output['arguments'] ?? null;
+                if (is_string($arguments) && $arguments !== '') {
+                    $decoded = json_decode($arguments, true);
+
+                    return is_array($decoded) ? $decoded : null;
+                }
+            }
         }
+
+        return null;
     }
 
     private function extractText(array $data): string
     {
-        // Responses API returns output[].content[].text
         foreach ($data['output'] ?? [] as $output) {
             if (($output['type'] ?? '') !== 'message') {
                 continue;
@@ -102,6 +122,16 @@ final class ResponsesWire implements WireFormat
         }
 
         return '';
+    }
+
+    private function validateResponse(mixed $data): void
+    {
+        if (! is_array($data) || isset($data['error'])) {
+            throw new RuntimeException(sprintf(
+                'OpenAI Responses API error: %s',
+                $data['error']['message'] ?? 'Unknown error',
+            ));
+        }
     }
 
     private function extractUsage(array $data): array

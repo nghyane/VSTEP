@@ -16,22 +16,22 @@ final class FakeLlmGrader implements LlmGrader
     public function gradeWriting(string $text, string $promptText, array $grammarErrors, array $ruleAnalysis, GradingRubric $rubric): array
     {
         return [
-            'rubric_scores' => ['task_achievement' => 3.0, 'coherence' => 3.0, 'lexical' => 3.0, 'grammar' => 3.0],
+            'rubric_scores' => ['task_fulfillment' => 7.5, 'organization' => 7.5, 'vocabulary' => 7.5, 'grammar' => 7.5],
             'overall_band' => 7.5,
-            'strengths' => ['Clear task response'],
-            'improvements' => [['message' => 'More linking words', 'explanation' => 'Use however, moreover.']],
+            'strengths' => ['Trả lời đúng yêu cầu đề bài'],
+            'improvements' => [['message' => 'Dùng thêm từ nối', 'explanation' => 'Sử dụng however, moreover.']],
             'rewrites' => [],
             'annotations' => [],
         ];
     }
 
-    public function gradeSpeaking(string $transcript, GradingRubric $rubric): array
+    public function gradeSpeaking(string $transcript, GradingRubric $rubric, ?array $pronunciationData = null): array
     {
         return [
-            'rubric_scores' => ['fluency' => 3.0, 'pronunciation' => 3.0, 'content' => 3.0, 'vocab' => 3.0, 'grammar' => 3.0],
+            'rubric_scores' => ['grammar' => 7.5, 'vocabulary' => 7.5, 'pronunciation' => 7.5, 'fluency' => 7.5, 'discourse_management' => 7.5],
             'overall_band' => 7.5,
-            'strengths' => ['Natural delivery'],
-            'improvements' => [['message' => 'Expand vocabulary', 'explanation' => 'Use synonyms.']],
+            'strengths' => ['Phát âm tự nhiên'],
+            'improvements' => [['message' => 'Mở rộng từ vựng', 'explanation' => 'Sử dụng từ đồng nghĩa.']],
         ];
     }
 }

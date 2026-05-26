@@ -14,7 +14,7 @@ import { FocusHeader } from "@/components/FocusHeader";
 import { McqQuestionCard } from "@/components/McqQuestionCard";
 import { McqResultCard } from "@/components/McqResultCard";
 import { SubmitFooter } from "@/components/SubmitFooter";
-import { SupportPanel } from "@/components/SupportPanel";
+import { PassageWordView } from "@/components/PassageWordView";
 import {
   useReadingExerciseDetail, useMcqSession,
   startReadingSession, submitReadingSession,
@@ -107,8 +107,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
   const { exercise, questions } = detail;
   const session = useMcqSession(sessionId, submitReadingSession, "reading");
   const [showPassage, setShowPassage] = useState(true);
-  const [unlockedSupport, setUnlockedSupport] = useState<number[]>([]);
-  const hasTranslation = !!exercise.vietnameseTranslation && unlockedSupport.includes(2);
+  const [wordTapMode, setWordTapMode] = useState(false);
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>
@@ -142,35 +141,28 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
         {/* Passage card */}
         {showPassage && (
           <View style={[s.passageCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-            <Text style={[s.passageTitle, { color: COLOR }]}>Part {exercise.part} · {exercise.title}</Text>
-            {exercise.passage.split(/\n\n+/).map((para: string, i: number) => (
-              <Text key={i} style={[s.passagePara, { color: c.foreground }]}>{para}</Text>
-            ))}
-            {hasTranslation && (
-              <View style={s.translationWrap}>
-                <Ionicons name="chatbubble-ellipses-outline" size={14} color={COLOR} />
-                <Text style={[s.translationText, { color: c.mutedForeground }]}>{exercise.vietnameseTranslation}</Text>
-              </View>
-            )}
+            <View style={s.passageHeader}>
+              <Text style={[s.passageTitle, { color: COLOR }]}>Part {exercise.part} · {exercise.title}</Text>
+              <HapticTouchable onPress={() => setWordTapMode(!wordTapMode)} style={s.wtapToggle}>
+                <Text style={[s.wtapBtn, {
+                  color: wordTapMode ? "#FFF" : c.subtle,
+                  backgroundColor: wordTapMode ? COLOR : "transparent",
+                  borderColor: wordTapMode ? COLOR : c.muted,
+                }]}>Từ điển</Text>
+              </HapticTouchable>
+            </View>
+            <PassageWordView
+              passage={exercise.passage}
+              wordTapMode={wordTapMode}
+              accentColor={COLOR}
+              c={c}
+            />
           </View>
         )}
 
         {/* Result — mirrors FE v3 ReadingInProgress celebration card */}
         {session.result && (
           <McqResultCard result={session.result} accentColor={COLOR} onBack={onBack} />
-        )}
-
-        {/* Support panel */}
-        {!session.result && (
-          <SupportPanel
-            skill="reading"
-            sessionId={sessionId}
-            hasTranscript={!!exercise.vietnameseTranslation}
-            hasKeywords={(exercise.keywords ?? []).length > 0}
-            accentColor={COLOR}
-            unlockedLevels={unlockedSupport}
-            onUnlock={(level) => setUnlockedSupport((prev) => (prev.includes(level) ? prev : [...prev, level]))}
-          />
         )}
 
         {/* Questions — McqQuestionCard mirrors FE v3 QuestionList */}
@@ -221,9 +213,17 @@ const s = StyleSheet.create({
   toggleText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   panelScroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, gap: spacing.md },
   passageCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
+  passageHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   passageTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
-  passagePara: { fontSize: fontSize.sm, lineHeight: 22 },
-  translationWrap: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xs, marginTop: spacing.sm, padding: spacing.sm, backgroundColor: "#F7F6F3", borderRadius: radius.md },
-  translationText: { flex: 1, fontSize: fontSize.xs, lineHeight: 18, fontStyle: "italic" },
+  wtapToggle: { padding: spacing.xs },
+  wtapBtn: {
+    fontSize: 10,
+    fontFamily: fontFamily.extraBold,
+    borderWidth: 2,
+    borderRadius: radius.full,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    overflow: "hidden",
+  },
   footer: { backgroundColor: "#FFFFFF" },
 });

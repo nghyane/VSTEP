@@ -43,6 +43,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	const transcriptRef = useRef("")
 	const submittedRef = useRef(false)
 	const stoppedRef = useRef(false)
+	const autoRestartRef = useRef(0)
 
 	useEffect(() => {
 		if (voice) return
@@ -208,6 +209,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 		transcriptRef.current = ""
 		submittedRef.current = false
 		stoppedRef.current = false
+		autoRestartRef.current = 0
 		setElapsed(0)
 
 		recognition.onresult = (e: Event) => {
@@ -219,16 +221,52 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 			transcriptRef.current = full
 		}
 
-		recognition.onerror = () => {}
+		recognition.onerror = (e: Event) => {
+			const err = e as unknown as { error: string; message?: string }
+			if (
+				err.error === "not-allowed" ||
+				err.error === "service-not-allowed" ||
+				err.error === "audio-capture"
+			) {
+				stoppedRef.current = true
+				recognition.abort()
+				setMic("idle")
+				cleanup()
+				useToast.getState().add("Không thể truy cập microphone. Kiểm tra cài đặt trình duyệt.")
+				return
+			}
+			if (err.error === "network") {
+				stoppedRef.current = true
+				recognition.abort()
+				setMic("idle")
+				cleanup()
+				const isEdge = /Edg\//.test(navigator.userAgent)
+				useToast
+					.getState()
+					.add(
+						isEdge
+							? "Edge trên Mac không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome."
+							: "Không kết nối được dịch vụ nhận dạng giọng nói. Kiểm tra mạng và thử lại.",
+					)
+				return
+			}
+			// "no-speech" / "aborted": recoverable, onend will auto-restart (capped)
+		}
 
 		recognition.onend = () => {
 			if (!stoppedRef.current && !submittedRef.current) {
-				try {
-					recognition.start()
-					return
-				} catch {
-					cleanup()
-					setMic("idle")
+				// Auto-restart only if we have less than 3 consecutive restarts
+				// (browsers may auto-stop recognition on silence, especially Edge/Mac).
+				autoRestartRef.current += 1
+				if (autoRestartRef.current <= 3) {
+					try {
+						recognition.start()
+						return
+					} catch {
+						cleanup()
+						setMic("idle")
+						return
+					}
 				}
 			}
 			cleanup()

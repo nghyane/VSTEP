@@ -10,7 +10,7 @@ namespace App\Ai\Wire;
 final readonly class WireRequest
 {
     /**
-     * @param  array<string,mixed>|null  $schema  JSON Schema for structured output
+     * @param  array<string,mixed>|null  $schema  JSON Schema for structured output (via tool call)
      * @param  'none'|'low'|'medium'|'high'  $thinking  Reasoning effort level
      */
     public function __construct(
@@ -18,6 +18,8 @@ final readonly class WireRequest
         public string $prompt,
         public ?string $instructions = null,
         public ?array $schema = null,
+        public ?string $toolName = null,
+        public ?string $toolDescription = null,
         public ?float $temperature = null,
         public int $timeout = 60,
         public string $thinking = 'none',

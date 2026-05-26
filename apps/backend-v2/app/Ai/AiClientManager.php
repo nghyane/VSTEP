@@ -33,7 +33,7 @@ final class AiClientManager implements AiClient
         ];
     }
 
-    public function structured(string $service, string $prompt, array $schema, ?string $instructions = null): array
+    public function toolCall(string $service, string $prompt, string $toolName, string $toolDescription, array $parametersSchema, ?string $instructions = null): array
     {
         $config = $this->resolveService($service);
 
@@ -41,7 +41,9 @@ final class AiClientManager implements AiClient
             model: $config['model_id'],
             prompt: $prompt,
             instructions: $instructions,
-            schema: $schema,
+            schema: $parametersSchema,
+            toolName: $toolName,
+            toolDescription: $toolDescription,
             timeout: $config['timeout'],
             thinking: $config['thinking'],
         );
@@ -49,7 +51,7 @@ final class AiClientManager implements AiClient
         $response = $this->send($service, $config, $request);
 
         if (! is_array($response->structured)) {
-            throw new RuntimeException("AI service [{$service}]: structured output was not valid JSON");
+            throw new RuntimeException("AI service [{$service}]: tool call returned invalid arguments");
         }
 
         return $response->structured;

@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\Log;
 /**
  * Azure Speech-to-Text service.
  *
- * Uses Azure Cognitive Services Speech REST API (batch or real-time).
- * Phase 1: simple REST endpoint for short audio (< 60s segments).
- * Phase 2: batch transcription for longer audio.
+ * Uses Azure Cognitive Services Speech REST API.
+ * Throws RuntimeException when AZURE_SPEECH_KEY is not configured —
+ * no mock fallback. Use FakeSpeechToText for tests.
  *
  * Env: AZURE_SPEECH_KEY, AZURE_SPEECH_REGION (default: southeastasia).
  */
@@ -39,9 +39,7 @@ final class SpeechToTextService implements SpeechToText
     {
         $key = $this->key();
         if ($key === '') {
-            Log::warning('SpeechToTextService: AZURE_SPEECH_KEY not configured, returning mock.');
-
-            return $this->mockTranscribe();
+            throw new \RuntimeException('AZURE_SPEECH_KEY is not configured. Speech-to-text cannot run without Azure credentials.');
         }
 
         $region = $this->region();
@@ -99,17 +97,5 @@ final class SpeechToTextService implements SpeechToText
 
             return null;
         }
-    }
-
-    /**
-     * @return array{text: string, confidence: float, duration_ms: int}
-     */
-    private function mockTranscribe(): array
-    {
-        return [
-            'text' => 'Mock transcript from Azure Speech-to-Text.',
-            'confidence' => 0.85,
-            'duration_ms' => 5000,
-        ];
     }
 }
