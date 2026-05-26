@@ -223,14 +223,27 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 
 		recognition.onerror = (e: Event) => {
 			const err = e as unknown as { error: string; message?: string }
-			console.warn("[SpeechRecognition]", err.error, err.message ?? "")
-			// "not-allowed" / "service-not-allowed" / "audio-capture": permanent, don't retry
+			console.warn("[SpeechRecognition] error:", err.error, err.message ?? "")
 			if (err.error === "not-allowed" || err.error === "service-not-allowed" || err.error === "audio-capture") {
 				stoppedRef.current = true
 				setMic("idle")
 				cleanup()
+				useToast.getState().add("Không thể truy cập microphone. Kiểm tra cài đặt trình duyệt.")
+				return
 			}
-			// "no-speech" / "network" / "aborted": recoverable, onend will auto-restart (capped)
+			if (err.error === "network") {
+				// Edge on Mac: cloud speech service unreachable — retry won't help.
+				stoppedRef.current = true
+				setMic("idle")
+				cleanup()
+				useToast.getState().add("Không kết nối được dịch vụ nhận dạng giọng nói. Thử dùng Chrome hoặc kiểm tra mạng.")
+				return
+			}
+			// "no-speech" / "aborted": recoverable, onend will auto-restart (capped)
+		}
+
+		recognition.onstart = () => {
+			console.log("[SpeechRecognition] started")
 		}
 
 		recognition.onend = () => {
