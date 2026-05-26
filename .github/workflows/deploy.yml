@@ -40,6 +40,6 @@ jobs:
 
             # Backend + horizon: build locally (PHP/Octane is light), then
             # recreate. FE/admin are untouched here.
-            docker compose --env-file .env up -d --build --force-recreate backend horizon
+            docker compose -f docker-compose.yml --env-file .env up -d --build --force-recreate backend horizon
 
             docker image prune -f

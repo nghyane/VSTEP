@@ -78,6 +78,6 @@ jobs:
           script: |
             cd /opt/vstep
             git pull origin main
-            docker compose --env-file .env pull frontend admin
-            docker compose --env-file .env up -d --no-build frontend admin
+            docker compose -f docker-compose.yml --env-file .env pull frontend admin
+            docker compose -f docker-compose.yml --env-file .env up -d --no-build frontend admin
             docker image prune -f
