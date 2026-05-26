@@ -1,5 +1,6 @@
 import {
 	BookOutlined,
+	CheckSquareOutlined,
 	DatabaseOutlined,
 	DollarOutlined,
 	EditOutlined,
@@ -39,6 +40,7 @@ function buildItems(isAdmin: boolean): ItemType[] {
 			label: "Đề thi",
 			children: [
 				{ key: "/exams", icon: <ProfileOutlined />, label: <Link to={t("/exams")}>Danh sách đề</Link> },
+				{ key: "/grading", icon: <CheckSquareOutlined />, label: <Link to={t("/grading")}>Tiêu chí chấm điểm</Link> },
 			],
 		},
 		{
@@ -108,6 +110,7 @@ const FLAT_KEYS = [
 	"/vocab",
 	"/grammar",
 	"/exams",
+	"/grading",
 	"/practice/listening",
 	"/practice/reading",
 	"/practice/writing",
