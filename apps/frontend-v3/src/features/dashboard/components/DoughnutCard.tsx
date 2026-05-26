@@ -110,7 +110,7 @@ export function DoughnutCard() {
 					const value = counts[s.key] ?? 0
 					return (
 						<div key={s.key} className="flex items-center gap-2 rounded-(--radius-button) p-2 text-sm">
-							<SkillIcon name={s.pngIcon} size="xs" />
+							<SkillIcon name={s.pngIcon} size="sm" />
 							<span className="font-bold text-foreground">{s.label}</span>
 							<span className="ml-auto text-lg tabular-nums font-extrabold" style={{ color: s.color }}>
 								{value}

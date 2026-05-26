@@ -73,18 +73,6 @@ export function Sidebar() {
 					</span>
 					<span className="text-base">Hồ sơ</span>
 				</Link>
-
-				<button
-					type="button"
-					className="flex items-center gap-4 px-4 py-3 rounded-xl text-muted font-bold w-full opacity-50 cursor-not-allowed"
-					disabled
-					title="Sắp ra mắt"
-				>
-					<span className="w-8 h-6 flex items-center justify-center shrink-0">
-						<Icon name="more" size="sm" className="text-more" />
-					</span>
-					<span className="text-base">Xem thêm</span>
-				</button>
 			</nav>
 		</aside>
 	)
