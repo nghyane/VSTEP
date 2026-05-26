@@ -157,4 +157,17 @@ class ConversationPracticeTest extends TestCase
             ])
             ->assertStatus(409);
     }
+
+    public function test_pronunciation_review_renders_ai_prompt_view(): void
+    {
+        ['token' => $token] = $this->actingAsLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/speaking/pronunciation-review', [
+                'original' => 'Hello world.',
+                'transcript' => 'Hello world.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.pronunciation', 'Phát âm tốt');
+    }
 }

@@ -14,11 +14,9 @@ use App\Models\PracticeSpeakingScenario;
 use App\Models\Profile;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 
 final class SpeakingConversationService implements ConversationServiceInterface
 {
@@ -55,31 +53,33 @@ final class SpeakingConversationService implements ConversationServiceInterface
         // Fallback to runtime generation for backward compat.
         $openingIpa = $scenario->opening_line_ipa ?: $this->generateIpa($scenario->opening_line);
 
-        try {
-            return DB::transaction(function () use ($profile, $scenario, $openingIpa) {
-                $session = PracticeSpeakingConversationSession::create([
-                    'profile_id' => $profile->id,
-                    'scenario_id' => $scenario->id,
-                    'status' => ConversationStatus::Active,
-                    'started_at' => now(),
-                ]);
+        return DB::transaction(function () use ($profile, $scenario, $openingIpa) {
+            // Auto-end any existing active session for this user+scenario.
+            // Set ended_at = null to mark as abandoned (not user-ended).
+            PracticeSpeakingConversationSession::query()
+                ->where('profile_id', $profile->id)
+                ->where('scenario_id', $scenario->id)
+                ->where('status', ConversationStatus::Active)
+                ->update(['status' => ConversationStatus::Ended]);
 
-                $turn = PracticeSpeakingConversationTurn::create([
-                    'session_id' => $session->id,
-                    'turn_index' => 0,
-                    'role' => 'ai',
-                    'text' => $scenario->opening_line,
-                    'suggested_words' => $scenario->target_vocab ?? [],
-                ]);
-                $turn->setAttribute('ipa', $openingIpa);
-
-                return ['session' => $session, 'turns' => [$turn]];
-            });
-        } catch (UniqueConstraintViolationException) {
-            throw ValidationException::withMessages([
-                'session' => ['Bạn đang có 1 cuộc hội thoại đang diễn ra với scenario này. Hãy kết thúc trước khi bắt đầu mới.'],
+            $session = PracticeSpeakingConversationSession::create([
+                'profile_id' => $profile->id,
+                'scenario_id' => $scenario->id,
+                'status' => ConversationStatus::Active,
+                'started_at' => now(),
             ]);
-        }
+
+            $turn = PracticeSpeakingConversationTurn::create([
+                'session_id' => $session->id,
+                'turn_index' => 0,
+                'role' => 'ai',
+                'text' => $scenario->opening_line,
+                'suggested_words' => $scenario->target_vocab ?? [],
+            ]);
+            $turn->setAttribute('ipa', $openingIpa);
+
+            return ['session' => $session, 'turns' => [$turn]];
+        });
     }
 
     /**
@@ -306,6 +306,27 @@ final class SpeakingConversationService implements ConversationServiceInterface
     }
 
     /**
+     * Strip markdown fences and preamble text from LLM response,
+     * extracting the first valid JSON object.
+     */
+    private function extractJson(string $text): string
+    {
+        $text = trim($text);
+
+        // 1. Try to find JSON between ```json ... ``` fences (non-greedy)
+        if (preg_match('/```(?:json)?\s*\n?(.+?)\n?\s*```/s', $text, $m)) {
+            return trim($m[1]);
+        }
+
+        // 2. Fallback: extract the first {...} or [...] block
+        if (preg_match('/[\[{].*[\]}]/s', $text, $m)) {
+            return $m[0];
+        }
+
+        return $text;
+    }
+
+    /**
      * @return array<string,mixed>
      */
     private function callWithRetry(string $service, string $prompt): array
@@ -315,10 +336,28 @@ final class SpeakingConversationService implements ConversationServiceInterface
         for ($attempt = 0; $attempt <= $maxRetries; $attempt++) {
             try {
                 $text = $this->ai->text(service: $service, prompt: $prompt);
-                $decoded = json_decode($text, true);
 
-                return is_array($decoded) ? $decoded : [];
+                $json = $this->extractJson($text);
+
+                $decoded = json_decode($json, true);
+
+                if (! is_array($decoded)) {
+                    $snippet = mb_substr($text, 0, 200);
+                    throw new \RuntimeException("AI returned non-JSON: {$snippet}");
+                }
+
+                return $decoded;
             } catch (\Throwable $e) {
+                // Don't retry non-transient errors (JSON parse failures, bad prompts)
+                if ($e instanceof \RuntimeException && str_contains($e->getMessage(), 'non-JSON')) {
+                    Log::warning('AI call: non-JSON response (not retrying)', [
+                        'service' => $service,
+                        'error' => $e->getMessage(),
+                    ]);
+
+                    throw new AiServiceUnavailableException;
+                }
+
                 if ($attempt === $maxRetries) {
                     Log::warning('AI call exhausted retries', [
                         'service' => $service,
@@ -329,13 +368,13 @@ final class SpeakingConversationService implements ConversationServiceInterface
                     throw new AiServiceUnavailableException;
                 }
 
-                $delay = (int) (1000 * 2 ** $attempt);
+                $delayMs = 1000 * (2 ** $attempt);
                 Log::info('AI call retrying', [
                     'service' => $service,
                     'attempt' => $attempt + 1,
-                    'delay_ms' => $delay,
+                    'delay_ms' => $delayMs,
                 ]);
-                usleep($delay * 1000);
+                usleep($delayMs * 1000);
             }
         }
 

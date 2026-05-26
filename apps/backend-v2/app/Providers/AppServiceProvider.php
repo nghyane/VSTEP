@@ -33,6 +33,7 @@ use Google\Client as GoogleClient;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -90,6 +91,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Model::shouldBeStrict(! app()->isProduction());
         Date::use(CarbonImmutable::class);
+
+        View::addLocation(resource_path());
 
         // Fail-fast: validate AI config at boot.
         (new AiConfigValidator)->validate();

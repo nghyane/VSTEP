@@ -11,7 +11,8 @@ services:
     build:
       context: ./apps/frontend-v3
       args:
-        VITE_API_URL: http://localhost:8000
+        VITE_API_URL: http://localhost:8000/api/v1
+        VITE_GOOGLE_CLIENT_ID: 644444548899-q6kldv6576f2gjoccrm3i3s9sqlbetce.apps.googleusercontent.com
 
   backend:
     ports:
