@@ -26,6 +26,12 @@ const SKILL_META: Record<SkillKey, { label: string; color: string; icon: string 
 
 const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"];
 
+const DURATION_MODES: { key: "standard" | "slow" | "fast"; label: string; desc: string }[] = [
+  { key: "standard", label: "Chuẩn", desc: "" },
+  { key: "slow", label: "Luyện chậm", desc: "+20 phút" },
+  { key: "fast", label: "Ôn tập nhanh", desc: "−10 phút" },
+];
+
 export default function ExamDetailScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -40,6 +46,7 @@ export default function ExamDetailScreen() {
 
   const [selectedSkills, setSelectedSkills] = useState<Set<SkillKey>>(new Set(SKILL_ORDER));
   const [expanded, setExpanded] = useState<Set<SkillKey>>(new Set());
+  const [durationMode, setDurationMode] = useState<"standard" | "slow" | "fast">("standard");
 
   const version = detail?.version;
   const availableSkills = SKILL_ORDER.filter((sk) => {
@@ -73,6 +80,7 @@ export default function ExamDetailScreen() {
   const totalMinutes = availableSkills.reduce((sum, sk) => sum + skillTotals[sk].minutes, 0);
   const totalMcq = skillTotals.listening.count + skillTotals.reading.count;
   const totalFreeResponse = version.writingTasks.length + version.speakingParts.length;
+  const displayMinutes = durationMode === "slow" ? totalMinutes + 20 : durationMode === "fast" ? Math.max(1, totalMinutes - 10) : totalMinutes;
 
   function toggleSkill(sk: SkillKey) {
     setSelectedSkills((prev) => {
@@ -218,6 +226,31 @@ export default function ExamDetailScreen() {
           })}
         </DepthCard>
 
+        {/* Duration mode selector */}
+        <DepthCard style={s.durationCard}>
+          <Text style={[s.durationTitle, { color: c.mutedForeground }]}>THỜI GIAN LUYỆN TẬP</Text>
+          {DURATION_MODES.map(({ key, label, desc }) => {
+            const mins = key === "slow" ? totalMinutes + 20 : key === "fast" ? Math.max(1, totalMinutes - 10) : totalMinutes;
+            const active = durationMode === key;
+            return (
+              <HapticTouchable key={key} onPress={() => setDurationMode(key)} style={[s.modeRow, active && { backgroundColor: `${c.primary}10`, borderColor: `${c.primary}40` }]}>
+                <View style={[s.radio, { borderColor: active ? c.primary : c.border }]}>
+                  {active && <View style={[s.radioDot, { backgroundColor: c.primary }]} />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.modeLabel, { color: active ? c.primaryDark : c.foreground }]}>{label}</Text>
+                  {desc !== "" && <Text style={[s.modeDesc, { color: c.subtle }]}>{desc}</Text>}
+                </View>
+                <Text style={[s.modeMins, { color: c.foreground }]}>{mins} phút</Text>
+              </HapticTouchable>
+            );
+          })}
+          <View style={[s.totalRow, { backgroundColor: c.background, borderColor: c.borderLight }]}>
+            <Text style={[s.totalLabel, { color: c.mutedForeground }]}>Tổng</Text>
+            <Text style={[s.totalValue, { color: c.foreground }]}>{displayMinutes} phút</Text>
+          </View>
+        </DepthCard>
+
         {/* Notes */}
         <DepthCard style={s.notesCard}>
           <Text style={[s.notesTitle, { color: c.subtle }]}>LƯU Ý</Text>
@@ -357,5 +390,16 @@ const s = StyleSheet.create({
   notesTitle: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1 },
   noteRow: { flexDirection: "row", gap: spacing.sm, alignItems: "flex-start" },
   noteText: { flex: 1, fontSize: fontSize.xs, lineHeight: 18 },
+  durationCard: { gap: spacing.sm },
+  durationTitle: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1 },
+  modeRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1.5, borderColor: "transparent" },
+  radio: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  radioDot: { width: 8, height: 8, borderRadius: 4 },
+  modeLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
+  modeDesc: { fontSize: fontSize.xs, marginTop: 1 },
+  modeMins: { fontSize: fontSize.sm, fontFamily: fontFamily.extraBold },
+  totalRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1 },
+  totalLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
+  totalValue: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
   bottomBar: { position: "absolute", bottom: 0, left: 0, right: 0, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, borderTopWidth: 1 },
 });
