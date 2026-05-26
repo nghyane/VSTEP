@@ -11,6 +11,7 @@ import { ConversationTurnView } from "#/features/practice/components/Conversatio
 import type { ConversationSessionDetail, ConversationTurn } from "#/features/practice/types"
 import { extractFirstName, getAvatarUrl } from "#/lib/avatar"
 import { useToast } from "#/lib/toast"
+import { tokens } from "#/lib/tokens"
 import { pickEnglishVoice, shortVoiceName, speak, stopSpeaking, warmupTTS } from "#/lib/utils"
 
 interface Props {
@@ -142,13 +143,29 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 			setMic("idle")
 			submittedRef.current = false
 
-			// 503: AI service unavailable → show retry message
-			if (error instanceof HTTPError && error.response.status === 503) {
+			if (error instanceof HTTPError) {
 				const body = (await error.response.json().catch(() => null)) as { message?: string } | null
-				useToast.getState().add(body?.message ?? "AI tạm thời không phản hồi. Vui lòng thử lại sau.")
+				const msg = body?.message
+
+				// 503: AI service unavailable → show retry message
+				if (error.response.status === 503) {
+					useToast.getState().add(msg ?? "AI tạm thời không phản hồi. Vui lòng thử lại sau.")
+					return
+				}
+
+				// 409: session already ended
+				if (error.response.status === 409) {
+					setSessionState("completed")
+					useToast.getState().add(msg ?? "Phiên hội thoại đã kết thúc.")
+					return
+				}
+
+				// Other HTTP errors — show backend message
+				useToast.getState().add(msg ?? `Lỗi server (${error.response.status}). Vui lòng thử lại.`)
 				return
 			}
 
+			// Network error, timeout, or other non-HTTP failure
 			useToast.getState().add("Không gửi được câu trả lời. Vui lòng thử lại.")
 		},
 	})
@@ -272,6 +289,33 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 		endConversation(sessionId).then(onEnd)
 	}
 
+	// Auto-end session on browser tab close via fetch keepalive.
+	// SPA navigation (unmount) only cleans up local resources — backend
+	// auto-ends any stale active session when user starts a new one.
+	const endedRef = useRef(false)
+	useEffect(() => {
+		const sid = sessionId
+		const apiUrl = import.meta.env.VITE_API_URL ?? ""
+
+		const handleBeforeUnload = () => {
+			if (endedRef.current) return
+			endedRef.current = true
+			const token = tokens.getAccess()
+			fetch(`${apiUrl}/practice/speaking/conversations/${sid}/end`, {
+				method: "POST",
+				keepalive: true,
+				headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+			}).catch(() => {})
+		}
+
+		window.addEventListener("beforeunload", handleBeforeUnload)
+
+		return () => {
+			window.removeEventListener("beforeunload", handleBeforeUnload)
+			stopSpeaking()
+		}
+	}, [sessionId])
+
 	return (
 		<div className="flex flex-col h-screen bg-background">
 			<ConversationHeader
@@ -373,7 +417,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 										<button
 											type="button"
 											onClick={handleMic}
-											className="relative w-16 h-16 rounded-full bg-destructive text-primary-foreground flex items-center justify-center shadow-[0_4px_0_#b5322a] active:translate-y-[2px] active:shadow-[0_2px_0_#b5322a] transition"
+											className="relative w-16 h-16 rounded-full bg-destructive text-primary-foreground flex items-center justify-center shadow-[0_4px_0_var(--color-destructive-dark)] active:translate-y-[2px] active:shadow-[0_2px_0_var(--color-destructive-dark)] transition"
 										>
 											<div className="w-5 h-5 rounded-sm bg-primary-foreground" />
 										</button>
@@ -451,7 +495,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 								style={
 									{
 										background: "var(--color-destructive)",
-										"--btn-shadow": "#b5322a",
+										"--btn-shadow": "var(--color-destructive-dark)",
 									} as React.CSSProperties
 								}
 							>

@@ -45,6 +45,7 @@
   --color-primary-tint: #e6f8d4;
 
   --color-destructive: #ea4335;
+  --color-destructive-dark: color-mix(in oklch, #ea4335 70%, black);
   --color-destructive-tint: #ffe6e4;
 
   --color-warning: #ff9b00;
