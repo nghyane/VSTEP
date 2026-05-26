@@ -62,9 +62,16 @@ final class RuleBasedScoringService
         $totalChars = $words->map(fn (string $w): int => mb_strlen($w))->sum();
         $avgWordLength = $wordCount > 0 ? round($totalChars / $wordCount, 1) : 0;
 
-        // Sentence length variety: std dev / mean (coefficient of variation)
         $sentenceLengths = $sentences->map(fn (string $s): int => str_word_count(trim($s)));
         $sentenceVariety = $this->stdDev($sentenceLengths, $avgSentenceLength);
+
+        // Flesch-Kincaid readability grade: higher = more complex
+        $readability = $wordCount > 0 && $sentenceCount > 0
+            ? round(4.71 * ($totalChars / $wordCount) + 0.5 * ($wordCount / $sentenceCount) - 21.43, 1)
+            : 0;
+
+        // Complex vocabulary count (academic/formal words)
+        $complexVocabCount = $this->countComplexVocab($textLower);
 
         return [
             'word_count' => $wordCount,
@@ -74,6 +81,8 @@ final class RuleBasedScoringService
             'avg_sentence_length' => round($avgSentenceLength, 1),
             'sentence_variety' => round($sentenceVariety, 2),
             'avg_word_length' => $avgWordLength,
+            'readability_grade' => $readability,
+            'complex_vocab_count' => $complexVocabCount,
             'grammar_error_count' => $grammarErrorCount,
             'total_error_count' => $totalErrorCount,
             'errors_per_sentence' => round($errorsPerSentence, 2),
@@ -114,5 +123,33 @@ final class RuleBasedScoringService
         $sumSquaredDiff = $values->reduce(fn (float $carry, $v) => $carry + (($v - $mean) ** 2), 0.0);
 
         return sqrt($sumSquaredDiff / $count);
+    }
+
+    /**
+     * Count academic/formal vocabulary words in text.
+     * Based on VSTEP B1-C1 vocabulary expectations.
+     */
+    private function countComplexVocab(string $text): int
+    {
+        $words = [
+            'therefore', 'however', 'moreover', 'furthermore', 'nevertheless', 'consequently',
+            'significant', 'demonstrate', 'sufficient', 'approximately', 'subsequently',
+            'particularly', 'fundamentally', 'essentially', 'inevitably', 'predominantly',
+            'acquisition', 'implementation', 'interpretation', 'investigation', 'participation',
+            'beneficial', 'challenging', 'comprehensive', 'considerable', 'detrimental',
+            'advantageous', 'disadvantageous', 'substantial', 'conventional', 'alternative',
+            'phenomenon', 'perspective', 'consequence', 'inequality', 'sustainability',
+            'globalization', 'urbanization', 'industrialization', 'technological',
+            'deterioration', 'enhancement', 'diversity', 'accessibility', 'affordability',
+        ];
+
+        $count = 0;
+        foreach ($words as $word) {
+            if (str_contains($text, $word)) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 }

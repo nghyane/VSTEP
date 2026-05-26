@@ -76,6 +76,7 @@ final class ImportExamRequest extends FormRequest
             'version.speaking_parts.*.duration_minutes' => ['required', 'integer', 'min:0'],
             'version.speaking_parts.*.speaking_seconds' => ['required', 'integer', 'min:1'],
             'version.speaking_parts.*.content' => ['required', 'array'],
+            'version.speaking_parts.*.requirements' => ['required', 'array', 'min:1'],
             'version.speaking_parts.*.display_order' => ['nullable', 'integer'],
         ];
     }

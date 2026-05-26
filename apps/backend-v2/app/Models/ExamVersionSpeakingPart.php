@@ -7,14 +7,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['exam_version_id', 'part', 'type', 'duration_minutes', 'speaking_seconds', 'content', 'display_order'])]
+#[Fillable(['exam_version_id', 'part', 'type', 'duration_minutes', 'speaking_seconds', 'content', 'requirements', 'display_order'])]
 class ExamVersionSpeakingPart extends BaseModel
 {
     public $timestamps = false;
 
     protected function casts(): array
     {
-        return ['content' => 'array'];
+        return ['content' => 'array', 'requirements' => 'array'];
     }
 
     public function version(): BelongsTo

@@ -6,9 +6,16 @@ namespace App\Services\Grading;
 
 use App\Models\GradingRubric;
 
-final class WritingScoringFormula
+/**
+ * Deterministic speaking scoring formulas driven by rubric params.
+ *
+ * 4/5 criteria are deterministic (grammar, vocabulary, fluency, discourse).
+ * Pronunciation uses LLM scoring (the only subjective criterion).
+ * All thresholds from rubric params — configurable without code change.
+ */
+final class SpeakingScoringFormula
 {
-    /** @var array<string, array> Cached criterion params keyed by criterion key. */
+    /** @var array<string, array> */
     private array $params = [];
 
     public function __construct(
@@ -22,6 +29,7 @@ final class WritingScoringFormula
         }
     }
 
+    /** Grammar: same formula as writing — structure range + accuracy. */
     public function grammar(array $syntax, int $languageToolErrors, int $sentenceCount): float
     {
         $p = $this->params['grammar'];
@@ -37,6 +45,7 @@ final class WritingScoringFormula
         return $this->clampRound(($gRange + $gAccuracy) / 2);
     }
 
+    /** Vocabulary: unique ratio + word length + readability + complex words. */
     public function vocabulary(array $metrics): float
     {
         $p = $this->params['vocabulary'];
@@ -52,12 +61,33 @@ final class WritingScoringFormula
         $complexCount = (int) ($metrics['complex_vocab_count'] ?? 0);
         $complexBonus = $complexCount > 5 ? 2 : ($complexCount > 2 ? 1 : 0);
 
-        $base = (int) $p['base'];
-        $cap = (float) $p['cap'];
-
-        return min($cap, $this->clampRound($base + $uniqueBonus + $lengthBonus + $readabilityBonus + $complexBonus));
+        return min((float) $p['cap'], $this->clampRound((int) $p['base'] + $uniqueBonus + $lengthBonus + $readabilityBonus + $complexBonus));
     }
 
+    /** Fluency: speaking rate + pause frequency from STT word-level timing. */
+    public function fluency(float $speakingRate, int $pauseCount, int $wordCount): float
+    {
+        $p = $this->params['fluency'];
+        $rateBonus = $this->resolveThreshold($speakingRate, $p['wpm_thresholds']);
+
+        // Pause penalty: pauses per 100 words
+        $pausesPer100 = $wordCount > 0 ? ($pauseCount / $wordCount) * 100 : 0;
+        $pausePenalty = $pausesPer100 > 15 ? 2 : ($pausesPer100 > 8 ? 1 : 0);
+
+        return $this->clampRound((int) $p['base'] + $rateBonus - $pausePenalty);
+    }
+
+    /** Discourse: linking words + sentence variety — similar to writing organization. */
+    public function discourse(int $linkingWordCount, float $sentenceVariety): float
+    {
+        $p = $this->params['discourse_management'];
+        $linkingBonus = min((float) $p['linking_cap'], $linkingWordCount * (float) $p['linking_factor']);
+        $varietyBonus = $this->resolveThreshold($sentenceVariety, $p['variety_thresholds']);
+
+        return $this->clampRound((int) $p['base'] + $linkingBonus + $varietyBonus);
+    }
+
+    /** Task Fulfillment: LLM evidence (same formula as writing). */
     public function taskFulfillment(array $evidence): float
     {
         $p = $this->params['task_fulfillment'];
@@ -73,17 +103,13 @@ final class WritingScoringFormula
         );
     }
 
-    public function organization(int $paragraphCount, int $linkingWordCount, int $sentenceCount, float $sentenceVariety = 0): float
+    /** Pronunciation: Azure PA score or STT confidence fallback. */
+    public function pronunciation(float $llmScore): float
     {
-        $p = $this->params['organization'];
-        $paraBonus = (int) ($p['para_bonus'][$paragraphCount] ?? $p['para_bonus'][1]);
-        $linkingBonus = min((float) $p['linking_cap'], $linkingWordCount * (float) $p['linking_factor']);
-        $varietyBonus = $this->resolveThreshold($sentenceVariety, $p['variety_thresholds']);
-        $compactPenalty = ($sentenceCount > (int) $p['compact_threshold'] && $paragraphCount === 1)
-            ? (float) $p['compact_penalty'] : 0;
-
-        return $this->clampRound((float) $p['base'] + $paraBonus + $linkingBonus + $varietyBonus - $compactPenalty);
+        return $this->clampRound($llmScore);
     }
+
+    /* ─── Helpers ─── */
 
     private function resolveBand(int $value, array $thresholds): int
     {

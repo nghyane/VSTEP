@@ -1,0 +1,21 @@
+# Wiki Log
+
+- 2026-05-26: Created grading-architecture.md — pipeline 4-layer, queue-based async grading, strategy pattern
+- 2026-05-26: Created scoring-formulas.md — metrics, cap rules, reconcile formula, overall band
+- 2026-05-26: Created vstep-exam-structure.md — 4-skill model hierarchy, versioning, MCQ scoring
+- 2026-05-26: Created demo-slide-script.md — 14-slide demo script
+- 2026-05-26: Fixed pre-existing test failures, Conversation session resume, IPA persistence
+- 2026-05-27: **Major refactor** — scoring architecture v4:
+  - Removed hard caps (RuleBasedScoringService.reconcile + ScoringPolicy)
+  - Removed LLM direct scoring → LLM only extracts evidence (requirements met/total)
+  - Added SyntaxAnalyzer (10 structure types, <1ms, deterministic)
+  - Added WritingScoringFormula (reads rubric params from DB, configurable)
+  - Added rubric v4 with quantitative params + _sources documentation
+  - Added continuous sanity penalty (W × min(1, w/120))
+  - Added pronunciation fix (confidence × 10, removed 0.4/0.6 fusion)
+  - Added Task 2 weight (W₁ + 2W₂)/3 composite (ULIS-VNU paper)
+  - Added temperature=0, deepseek-v4-flash model
+  - Added task-specific requirements (ExamVersionWritingTask.requirements, PracticeWritingPrompt.required_points)
+  - Added 10-essay validation (5 model + 5 student, 10/10 CEFR match)
+  - 293 tests passing, 0 failures
+  - Updated all wiki docs to reflect current architecture

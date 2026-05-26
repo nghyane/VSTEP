@@ -23,6 +23,7 @@ use App\Services\Grading\RubricResolver;
 use App\Services\Grading\SpeakingGradingStrategy;
 use App\Services\Grading\WritingGradingStrategy;
 use App\Services\Grading\WritingScoringFormula;
+use App\Services\Grading\SpeakingScoringFormula;
 use App\Services\LearningPathService;
 use App\Services\Payment\PaymentGatewayRegistry;
 use App\Services\Payment\PayOsGateway;
@@ -63,7 +64,7 @@ class AppServiceProvider extends ServiceProvider
         // Default LLM grader implementation.
         $this->app->bind(LlmGrader::class, LlmGradingService::class);
 
-        // Default Speech-to-Text implementation.
+        // STT: Azure Speech-to-Text. Required for speaking grading.
         $this->app->bind(SpeechToText::class, SpeechToTextService::class);
 
         // Rubric resolver — scoped so cache resets per request (Octane-safe).
@@ -72,6 +73,11 @@ class AppServiceProvider extends ServiceProvider
         // Writing scoring formula — reads params from active rubric.
         $this->app->scoped(WritingScoringFormula::class, fn ($app) => new WritingScoringFormula(
             $app->make(RubricResolver::class)->active('writing'),
+        ));
+
+        // Speaking scoring formula — reads params from active rubric.
+        $this->app->scoped(SpeakingScoringFormula::class, fn ($app) => new SpeakingScoringFormula(
+            $app->make(RubricResolver::class)->active('speaking'),
         ));
 
         // Grading strategy registry — explicit list, ordered.

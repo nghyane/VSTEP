@@ -48,21 +48,91 @@ class GradingRubricSeeder extends Seeder
 
     private function seedSpeakingRubric(): void
     {
-        if (GradingRubric::where('skill', 'speaking')->where('version', 2)->exists()) {
+        if (GradingRubric::where('skill', 'speaking')->where('version', 3)->exists()) {
             return;
         }
 
+        GradingRubric::where('skill', 'speaking')->where('is_active', true)->update(['is_active' => false]);
+
         GradingRubric::create([
             'skill' => 'speaking',
-            'version' => 2,
-            'name' => 'VSTEP Speaking Rubric v2',
+            'version' => 3,
+            'name' => 'VSTEP Speaking Rubric v3',
             'source_reference' => 'Thông tư 23/2017/TT-BGDĐT, Phụ lục III. '
-                .'Speaking assessment criteria VSTEP B1-C1 (scale 0-10).',
-            'criteria' => $this->speakingCriteria(),
+                .'v3: band descriptors + quantitative params for deterministic formula.',
+            'criteria' => $this->speakingCriteriaV3(),
             'scoring_formula' => 'mean_rounded_half',
             'is_active' => true,
             'effective_from' => '2017-09-01',
         ]);
+    }
+
+    /** @return list<array<string,mixed>> */
+    private function speakingCriteriaV3(): array
+    {
+        return [
+            $this->criterionV4('grammar', 'Grammar', 'Ngữ pháp', [
+                '10' => 'Uses flexibly and accurately a wide range of grammatical forms and hardly makes mistakes.',
+                '0' => 'Không có thông tin.',
+            ], [
+                'type' => 'structure_count',
+                'band_thresholds' => [0 => 5, 1 => 6, 3 => 7, 5 => 8, 6 => 9, 7 => 10],
+                'accuracy_factor' => 5,
+                'max_accuracy' => ['0-2' => 7, '3-4' => 9, '5+' => 10],
+            ]),
+            $this->criterionV4('vocabulary', 'Vocabulary', 'Từ vựng', [
+                '10' => 'Has a good command of broad vocabulary, including less common words, idiomatic expressions and collocations.',
+                '0' => 'Không có thông tin.',
+            ], [
+                'base' => 3,
+                'cap' => 8,
+                'unique_thresholds' => [
+                    ['threshold' => 0.45, 'bonus' => 1],
+                    ['threshold' => 0.55, 'bonus' => 2],
+                    ['threshold' => 0.65, 'bonus' => 3],
+                ],
+                'length_thresholds' => [
+                    ['threshold' => 4.5, 'bonus' => 1],
+                    ['threshold' => 5.5, 'bonus' => 2],
+                ],
+            ]),
+            $this->criterionV4('fluency', 'Fluency', 'Độ trôi chảy', [
+                '10' => 'Frequently produces extended stretches of language with very little hesitation.',
+                '0' => 'Không có thông tin.',
+            ], [
+                'base' => 3,
+                'cap' => 10,
+                'wpm_thresholds' => [
+                    ['threshold' => 60, 'bonus' => 1],
+                    ['threshold' => 90, 'bonus' => 2],
+                    ['threshold' => 120, 'bonus' => 3],
+                    ['threshold' => 150, 'bonus' => 4],
+                ],
+                'sentence_length_thresholds' => [
+                    ['threshold' => 8, 'bonus' => 1],
+                    ['threshold' => 12, 'bonus' => 2],
+                ],
+            ]),
+            $this->criterionV4('discourse_management', 'Discourse Management', 'Kiểm soát diễn ngôn', [
+                '10' => 'Coherently and easily develops ideas with elaborative details and some examples.',
+                '0' => 'Không có thông tin.',
+            ], [
+                'base' => 1,
+                'linking_factor' => 0.5,
+                'linking_cap' => 3,
+                'variety_thresholds' => [
+                    ['threshold' => 4, 'bonus' => 1],
+                    ['threshold' => 6, 'bonus' => 2],
+                ],
+            ]),
+            $this->criterionV4('pronunciation', 'Pronunciation', 'Phát âm', [
+                '10' => 'Is intelligible with individual sounds clearly articulated, sentence and word stress accurately placed.',
+                '0' => 'Không có thông tin.',
+            ], [
+                'type' => 'llm_scored',
+                'stt_weight' => 0.3,
+            ]),
+        ];
     }
 
     /** @return list<array<string,mixed>> */
@@ -182,113 +252,6 @@ class GradingRubricSeeder extends Seeder
             'max_score' => 10,
             'weight' => 1.0,
             'band_descriptors' => $descriptors,
-        ];
-    }
-
-    /** @return list<array<string,mixed>> */
-    private function speakingCriteria(): array
-    {
-        return [
-            [
-                'key' => 'grammar',
-                'name' => 'Grammar',
-                'name_vi' => 'Ngữ pháp',
-                'max_score' => 10,
-                'weight' => 1.0,
-                'band_descriptors' => [
-                    '10' => 'Uses flexibly and accurately a wide range of grammatical forms and hardly makes mistakes.',
-                    '9' => 'Uses flexibly and accurately a wide range of grammatical structures; occasional non-systematic errors may occur.',
-                    '8' => 'Uses flexibly and accurately simple structures and a range of complex structures; non-systematic errors may occur with instances of self-correction.',
-                    '7' => 'Uses flexibly and accurately simple structures and shows a good control of complex structures; non-systematic errors sometimes occur but do not lead to misunderstanding.',
-                    '6' => 'Uses relatively accurately simple structures and shows some control of some complex structures; non-systematic errors occur but do not lead to misunderstanding.',
-                    '5' => 'Uses relatively accurately frequently used simple structures; some errors occur but he or she can make himself easily understood; shows some attempts to use complex sentences but makes many errors.',
-                    '4' => 'Uses relatively accurately frequently used simple structures; some errors occur but he or she can make himself or herself easily understood.',
-                    '3' => 'Uses some simple structures correctly but still systematically makes basic mistakes; however he or she can manage to make himself or herself understood.',
-                    '2' => 'Shows only limited control of a few simple grammatical structures and sentence patterns in a learned repertoire.',
-                    '1' => 'Performance does not satisfy band 2 descriptors.',
-                    '0' => 'Không có thông tin.',
-                ],
-            ],
-            [
-                'key' => 'vocabulary',
-                'name' => 'Vocabulary',
-                'name_vi' => 'Từ vựng',
-                'max_score' => 10,
-                'weight' => 1.0,
-                'band_descriptors' => [
-                    '10' => 'Has a good command of broad vocabulary, including less common words, idiomatic expressions and collocations; possibly searches for other expressions and/or avoidance strategies with few insignificant pauses; makes almost no minor slips but there are no significant lexical errors.',
-                    '9' => 'Has a good command of broad vocabulary, including less common words, idiomatic expressions and collocations; possibly searches for other expressions and/or avoidance strategies despite some pauses; occasionally makes minor slips but there are no significant lexical errors.',
-                    '8' => 'Uses a wide range of vocabulary of most topics and shows great efforts of avoiding lexical repetition for unfamiliar topics; attempts to use a few less common words and idiomatic expressions; has high lexical accuracy despite occasional confusion and incorrect word choices.',
-                    '7' => 'Uses a wide range of vocabulary of most topics and shows some efforts of avoiding lexical repetition for unfamiliar topics; has generally high lexical accuracy despite some confusion and incorrect word choices.',
-                    '6' => 'Uses a range of vocabulary of most topics but occasionally shows efforts to avoid lexical repetition for unfamiliar topics; has relatively high lexical accuracy (incorrect word choice and wrong word forms are found).',
-                    '5' => 'Uses a range of vocabulary of familiar topics and occasionally uses them repetitively; has some difficulty with unfamiliar topics and makes some lexical errors.',
-                    '4' => 'Uses sufficient vocabulary of familiar topics and at times uses them repeatedly; has some difficulty with unfamiliar topics and makes many lexical errors.',
-                    '3' => 'Uses appropriate vocabulary and can control a narrow repertoire dealing with familiar situations.',
-                    '2' => 'Only uses a basic vocabulary repertoire of isolated words and phrases related to particular concrete topics.',
-                    '1' => 'Performance does not satisfy band 2 descriptors.',
-                    '0' => 'Không có thông tin.',
-                ],
-            ],
-            [
-                'key' => 'pronunciation',
-                'name' => 'Pronunciation',
-                'name_vi' => 'Phát âm',
-                'max_score' => 10,
-                'weight' => 1.0,
-                'band_descriptors' => [
-                    '10' => 'Is intelligible with individual sounds clearly articulated, sentence and word stress accurately placed; has appropriate intonation; places sentence stress flexibly and correctly to express different meanings.',
-                    '9' => 'Is intelligible and has acquired a very clear and natural pronunciation; clearly articulates individual sounds; generally places word and sentence stress; shows efforts with intonation.',
-                    '8' => 'Is intelligible and has acquired a quite clear and natural pronunciation; generally clearly articulates individual sounds; generally places stress and shows efforts with sentence stress despite rather low accuracy; shows some efforts with intonation.',
-                    '7' => 'Is intelligible and has acquired a little clear and natural pronunciation; generally clearly articulates individual sounds; generally places word stress but does not show efforts to sentence stress; shows few efforts with intonation.',
-                    '6' => 'Is mostly intelligible and has acquired a clear pronunciation; makes occasional errors with individual sounds; shows efforts in word stress despite some mispronunciation.',
-                    '5' => 'Is mostly intelligible and has acquired a quite clear pronunciation; makes some errors with individual sounds; shows some efforts in word stress despite frequent mispronunciation.',
-                    '4' => 'Is mostly intelligible; can articulate simple words and phrases but conversational partners will need to ask for repetition from time to time.',
-                    '3' => 'Can articulate a very limited repertoire of learned words and phrases with limited accuracy.',
-                    '2' => 'Is often unintelligible.',
-                    '1' => 'Performance does not satisfy band 2 descriptors.',
-                    '0' => 'Không có thông tin.',
-                ],
-            ],
-            [
-                'key' => 'fluency',
-                'name' => 'Fluency',
-                'name_vi' => 'Độ trôi chảy',
-                'max_score' => 10,
-                'weight' => 1.0,
-                'band_descriptors' => [
-                    '10' => 'Frequently produces extended stretches of language with very little hesitation and maintains an easy, fluent and natural flow with little repetition or error correction; uses the pauses (if any) to search for appropriate ideas for difficult concepts.',
-                    '9' => 'Frequently produces extended stretches of language with little hesitation and maintains an easy, fluent and natural flow with occasional repetition or error correction; uses the pauses (if any) to search for appropriate ideas for difficult topics.',
-                    '8' => 'Deals with familiar and unfamiliar topics with ease, remarkable fluency and a fairly even tempo; hesitation may occur for grammatical and lexical planning but is rarely noticeable; produces extended stretches of language with rare repetition and self-correction.',
-                    '7' => 'Deals with familiar and unfamiliar topics with ease, remarkable fluency and a fairly even tempo; hesitation may occur for grammatical and lexical planning but are occasionally noticeable; produces extended stretches of language with occasional repetition and self-correction.',
-                    '6' => 'Deals with familiar and unfamiliar topics with relative ease; hesitation may occur for grammatical and lexical planning but not too noticeable; produces extended stretches of language but shows some evidence of error correction.',
-                    '5' => 'Keeps speaking comprehensively on familiar and unfamiliar topics despite some hesitations for grammatical and lexical planning; produces extended responses that shows clear evidence of error corrections.',
-                    '4' => 'Keeps speaking comprehensively on familiar topics and shows some attempts to express complex ideas despite evident hesitations for grammatical and lexical planning; produces extended responses using simple structures.',
-                    '3' => 'Can construct words and phrases with noticeable hesitation, frequent false starts and repetition.',
-                    '2' => 'Can only manage very short isolated words and phrases, mainly learned utterances, with much pausing.',
-                    '1' => 'Performance does not satisfy band 2 descriptors.',
-                    '0' => 'Không có thông tin.',
-                ],
-            ],
-            [
-                'key' => 'discourse_management',
-                'name' => 'Discourse Management',
-                'name_vi' => 'Kiểm soát diễn ngôn',
-                'max_score' => 10,
-                'weight' => 1.0,
-                'band_descriptors' => [
-                    '10' => 'Coherently and easily develops ideas with elaborative details and some examples; can round off with an appropriate conclusion; produces clear and smoothly flowing, well-structured speech, showing efficiently and controlled use of organizational patterns, connectors and cohesive devices.',
-                    '9' => 'Generally coherently develops ideas with elaborated details and examples and can round off with an appropriate conclusion; produces clear and smoothly flowing, well-structured speech, showing rather efficiently and controlled use of organizational patterns, connectors and cohesive devices.',
-                    '8' => 'Relevantly develops ideas with ease, elaborating on ideas with appropriate details and examples; uses a variety of linking words and efficiently to mark clearly the relationships between ideas.',
-                    '7' => 'Relevantly develops ideas with relative ease, elaborating on ideas with many appropriate details and examples; uses a variety of linking words to mark clearly the relationships between ideas.',
-                    '6' => 'Relevantly develops ideas with relative ease, elaborating on ideas with some appropriate details and examples; uses more complex connectors to link his or her utterances but fails to mark clearly the relationships between ideas.',
-                    '5' => 'Relevantly responds to questions and can develop ideas in a simple list of points; even though some attempts of idea elaboration (details and examples) are evident, they are either vaguely or repetitively expressed; flexibly links ideas with some simple connectors.',
-                    '4' => 'Relevantly responds to questions and can develop ideas in a simple list of points; shows some attempts at idea elaboration; links ideas with some simple connectors but repetition is still common.',
-                    '3' => 'Expresses ideas with limited language and cannot develop ideas without relying heavily on the repetition of the prompts; links groups of words with simple connectors like and, but, because.',
-                    '2' => 'Hardly expresses or develops his or her ideas; only links words or groups of words with very basic connectors like and, or, then.',
-                    '1' => 'Performance does not satisfy band 2 descriptors.',
-                    '0' => 'Không có thông tin.',
-                ],
-            ],
         ];
     }
 }
