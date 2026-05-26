@@ -221,10 +221,16 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 			transcriptRef.current = full
 		}
 
-		recognition.onerror = () => {
-			// Stop auto-restart on error (permission denied, no microphone, etc).
-			// On Mac/Edge, permission prompts cause immediate error → onend loop.
-			stoppedRef.current = true
+		recognition.onerror = (e: Event) => {
+			const err = e as unknown as { error: string; message?: string }
+			console.warn("[SpeechRecognition]", err.error, err.message ?? "")
+			// "not-allowed" / "service-not-allowed" / "audio-capture": permanent, don't retry
+			if (err.error === "not-allowed" || err.error === "service-not-allowed" || err.error === "audio-capture") {
+				stoppedRef.current = true
+				setMic("idle")
+				cleanup()
+			}
+			// "no-speech" / "network" / "aborted": recoverable, onend will auto-restart (capped)
 		}
 
 		recognition.onend = () => {

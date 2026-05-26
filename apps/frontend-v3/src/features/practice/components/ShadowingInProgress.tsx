@@ -132,8 +132,15 @@ export function ShadowingInProgress({ lesson }: Props) {
 			for (let i = 0; i < evt.results.length; i++) full += evt.results[i][0].transcript
 			transcript = full
 		}
-		recognition.onerror = () => {
-			stoppedRef.current = true
+		recognition.onerror = (e: Event) => {
+			const err = e as unknown as { error: string; message?: string }
+			console.warn("[SpeechRecognition]", err.error, err.message ?? "")
+			if (err.error === "not-allowed" || err.error === "service-not-allowed" || err.error === "audio-capture") {
+				stoppedRef.current = true
+				setMic("idle")
+				if (timerRef.current) clearInterval(timerRef.current)
+				timerRef.current = null
+			}
 		}
 		recognition.onend = () => {
 			if (!stoppedRef.current) {
