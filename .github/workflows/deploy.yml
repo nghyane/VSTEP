@@ -38,8 +38,9 @@ jobs:
               rm apps/backend-v2/.env.deploy-backup
             fi
 
-            # Backend + horizon: build locally (PHP/Octane is light), then
-            # recreate. FE/admin are untouched here.
-            docker compose -f docker-compose.yml --env-file .env up -d --build --force-recreate backend horizon
+            # Backend + horizon + dependencies: rebuild locally, then recreate all.
+            # --force-recreate on backend alone can cause postgres/redis to stop
+            # without restarting → 500. Always include infrastructure.
+            docker compose -f docker-compose.yml --env-file .env up -d --build --force-recreate --remove-orphans backend horizon postgres redis
 
             docker image prune -f
