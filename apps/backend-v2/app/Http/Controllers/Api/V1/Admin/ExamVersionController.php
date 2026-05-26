@@ -9,6 +9,7 @@ use App\Http\Resources\Admin\AdminExamVersionResource;
 use App\Models\Exam;
 use App\Models\ExamVersion;
 use App\Services\Admin\AdminExamVersionService;
+use App\Services\ExamVersionValidator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 
@@ -51,7 +52,10 @@ final class ExamVersionController extends Controller
     {
         $version = ExamVersion::query()
             ->where('exam_id', $examId)
+            ->with(['listeningSections.items', 'readingPassages.items', 'writingTasks', 'speakingParts'])
             ->findOrFail($versionId);
+
+        (new ExamVersionValidator)->validateForVersion($version);
 
         $version = $this->service->setActive($version);
 
