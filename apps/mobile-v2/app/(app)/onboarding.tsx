@@ -14,6 +14,7 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { useAuth } from "@/hooks/use-auth";
 import { completeOnboardingApi } from "@/lib/api";
+import { showWelcomeGift } from "@/features/onboarding/welcome-gift-store";
 import { getRefreshToken, saveTokens } from "@/lib/auth";
 import type { AuthUser } from "@/types/api";
 
@@ -83,6 +84,9 @@ export default function OnboardingScreen() {
         const res = await completeOnboardingApi(defaultNickname(user), target, deadlineToDate(deadline));
         await saveTokens(res.accessToken, refreshToken, user, res.profile);
         await signIn(res.accessToken, refreshToken, user, res.profile);
+        if (res.onboardingBonus?.granted) {
+          showWelcomeGift(res.onboardingBonus.amount);
+        }
         router.replace("/(app)/(tabs)");
       } catch {
         setFinishing(false);
@@ -101,13 +105,17 @@ export default function OnboardingScreen() {
       {/* Header */}
       <View style={[s.header, { paddingTop: insets.top + spacing.base }]}>
         {step > 0 ? (
-          <HapticTouchable onPress={back} style={s.backBtn} scalePress>
-            <Text style={[s.backText, { color: c.mutedForeground }]}>Quay lại</Text>
-          </HapticTouchable>
+          <View style={s.backBtn}>
+            <HapticTouchable onPress={back} scalePress>
+              <Text style={[s.backText, { color: c.mutedForeground }]}>Quay lại</Text>
+            </HapticTouchable>
+          </View>
         ) : (
-          <HapticTouchable onPress={() => router.replace("/(app)/(tabs)")} style={s.backBtn} scalePress>
-            <Text style={[s.backText, { color: c.mutedForeground }]}>Bỏ qua</Text>
-          </HapticTouchable>
+          <View style={s.backBtn}>
+            <HapticTouchable onPress={() => router.replace("/(app)/(tabs)")} scalePress>
+              <Text style={[s.backText, { color: c.mutedForeground }]}>Bỏ qua</Text>
+            </HapticTouchable>
+          </View>
         )}
         <Text style={[s.stepText, { color: c.subtle }]}>
           {step + 1}/{STEP_META.length}
@@ -167,10 +175,8 @@ export default function OnboardingScreen() {
               {(["B1", "B2", "C1"] as Level[]).map((lvl, i) => {
                 const selected = target === lvl;
                 return (
-                  <HapticTouchable
+                  <View
                     key={lvl}
-                    onPress={() => setTarget(lvl)}
-                    scalePress
                     style={[
                       s.optionCard,
                       {
@@ -180,6 +186,8 @@ export default function OnboardingScreen() {
                       },
                     ]}
                   >
+                    <HapticTouchable onPress={() => setTarget(lvl)} scalePress>
+                      <View style={s.optionCardInner}>
                     <Text style={[s.optionLevel, { color: selected ? c.primary : c.foreground }]}>
                       {lvl}
                     </Text>
@@ -191,7 +199,9 @@ export default function OnboardingScreen() {
                         <Text style={s.checkMark}>✓</Text>
                       </View>
                     )}
-                  </HapticTouchable>
+                  </View>
+                </HapticTouchable>
+              </View>
                 );
               })}
             </View>
@@ -203,10 +213,8 @@ export default function OnboardingScreen() {
               {([15, 30, 45, 60] as StudyTime[]).map((mins) => {
                 const selected = studyTime === mins;
                 return (
-                  <HapticTouchable
+                  <View
                     key={mins}
-                    onPress={() => setStudyTime(mins)}
-                    scalePress
                     style={[
                       s.timeCard,
                       {
@@ -216,13 +224,17 @@ export default function OnboardingScreen() {
                       },
                     ]}
                   >
-                    <Text style={[s.timeValue, { color: selected ? c.primary : c.foreground }]}>
-                      {mins}
-                    </Text>
-                    <Text style={[s.timeUnit, { color: selected ? c.primaryDark : c.mutedForeground }]}>
-                      phút/ngày
-                    </Text>
-                  </HapticTouchable>
+                    <HapticTouchable onPress={() => setStudyTime(mins)} scalePress>
+                      <View style={s.timeCardInner}>
+                        <Text style={[s.timeValue, { color: selected ? c.primary : c.foreground }]}>
+                          {mins}
+                        </Text>
+                        <Text style={[s.timeUnit, { color: selected ? c.primaryDark : c.mutedForeground }]}>
+                          phút/ngày
+                        </Text>
+                      </View>
+                    </HapticTouchable>
+                  </View>
                 );
               })}
             </View>
@@ -238,10 +250,8 @@ export default function OnboardingScreen() {
               ]).map(({ key, label, desc }) => {
                 const selected = deadline === key;
                 return (
-                  <HapticTouchable
+                  <View
                     key={key}
-                    onPress={() => setDeadline(key)}
-                    scalePress
                     style={[
                       s.optionCard,
                       {
@@ -251,6 +261,8 @@ export default function OnboardingScreen() {
                       },
                     ]}
                   >
+                    <HapticTouchable onPress={() => setDeadline(key)} scalePress>
+                      <View style={s.optionCardInner}>
                     <Text style={[s.optionLevel, { color: selected ? c.primary : c.foreground }]}>
                       {label}
                     </Text>
@@ -262,7 +274,9 @@ export default function OnboardingScreen() {
                         <Text style={s.checkMark}>✓</Text>
                       </View>
                     )}
-                  </HapticTouchable>
+                  </View>
+                </HapticTouchable>
+              </View>
                 );
               })}
             </View>
@@ -296,12 +310,15 @@ const s = StyleSheet.create({
   welcomeItem: { fontSize: fontSize.base, lineHeight: 24 },
   optionList: { gap: spacing.sm },
   optionCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
     borderWidth: 2,
     borderBottomWidth: 4,
     borderRadius: radius.xl,
+    overflow: "hidden",
+  },
+  optionCardInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
   },
@@ -315,8 +332,11 @@ const s = StyleSheet.create({
     borderWidth: 2,
     borderBottomWidth: 4,
     borderRadius: radius.xl,
+    overflow: "hidden",
+  },
+  timeCardInner: {
     paddingVertical: spacing.lg,
-    alignItems: "center",
+    alignItems: "center" as const,
   },
   timeValue: { fontSize: 32, fontFamily: fontFamily.extraBold },
   timeUnit: { fontSize: fontSize.xs, marginTop: spacing.xs },

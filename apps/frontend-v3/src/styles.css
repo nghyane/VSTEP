@@ -172,6 +172,11 @@
 		50% { transform: translateY(-12px) rotate(4deg); opacity: 0.7; }
 	}
 
+	@keyframes landingFloat {
+		0%, 100% { transform: translateY(0) rotate(-4deg); }
+		50% { transform: translateY(-10px) rotate(4deg); }
+	}
+
 	@keyframes dotBounce {
 		0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
 		40% { transform: translateY(-8px); opacity: 1; }

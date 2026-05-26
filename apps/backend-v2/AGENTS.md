@@ -26,6 +26,7 @@ Commands: `php artisan serve` · `./vendor/bin/pint` · `php artisan test` · `p
 
 - **`./vendor/bin/pint` pass trước commit.**
 - **Test behavior, không line count.** New behavior + bugfix cần ít nhất một test.
+- **`php artisan test` trong container = WIPE DB DEV.** Container env `DB_DATABASE=vstep` (từ docker-compose) load vào `$_SERVER` trước PHP start. **`phpunit.xml force="true"` KHÔNG override được container env** vì Laravel ưu tiên server vars. `RefreshDatabase` chạy trên `vstep` thật → wipe sạch. Cách đúng: chạy ngoài container hoặc override CLI: `docker exec -e DB_DATABASE=vstep_test vstep-backend-1 php artisan test` (cần DB `vstep_test` đã tạo + migrate). Thấy ai đó chạy test trên dev DB → STOP.
 - **No raw SQL.** Eloquent/Query Builder.
 - **Hard delete + CASCADE.** Không soft deletes.
 - **YAGNI.** Chỉ viết khi có consumer thật.

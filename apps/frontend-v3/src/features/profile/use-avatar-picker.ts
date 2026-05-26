@@ -1,27 +1,29 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { updateAvatar, uploadAvatar } from "#/features/profile/actions"
 import { useAuth } from "#/lib/auth"
-import { getAvatarUrl, getUserAvatarSrc } from "#/lib/avatar"
-import type { AvatarKey, User } from "#/types/auth"
+import { getAvatarUrl, getProfileAvatarSrc } from "#/lib/avatar"
+import type { AvatarKey, Profile } from "#/types/auth"
 
 export function useAvatarPicker() {
 	const user = useAuth((s) => (s.status === "authenticated" ? s.user : null))
 	const profile = useAuth((s) => (s.status === "authenticated" ? s.profile : null))
 	const setAuthenticated = useAuth((s) => s._setAuthenticated)
+	const queryClient = useQueryClient()
 	const [pendingKey, setPendingKey] = useState<AvatarKey | null>(null)
 	const [pendingFile, setPendingFile] = useState<File | null>(null)
 	const [pendingFileUrl, setPendingFileUrl] = useState<string | null>(null)
 	const [showPresets, setShowPresets] = useState(false)
 
-	const syncUser = (updated: Partial<User>) => {
-		if (user && profile) setAuthenticated({ ...user, ...updated }, profile)
+	const syncProfile = (updated: Partial<Profile>) => {
+		if (user && profile) setAuthenticated(user, { ...profile, ...updated })
+		queryClient.invalidateQueries({ queryKey: ["profiles"] })
 	}
 
 	const presetMutation = useMutation({
 		mutationFn: (key: AvatarKey) => updateAvatar(key),
 		onSuccess: (res) => {
-			syncUser({ avatar_key: res.data.avatar_key, avatar_url: null })
+			syncProfile({ avatar_key: res.data.avatar_key, avatar_url: res.data.avatar_url })
 			setPendingKey(null)
 		},
 	})
@@ -29,7 +31,7 @@ export function useAvatarPicker() {
 	const uploadMutation = useMutation({
 		mutationFn: (file: File) => uploadAvatar(file),
 		onSuccess: (res) => {
-			syncUser({ avatar_url: res.data.avatar_url, avatar_key: null })
+			syncProfile({ avatar_url: res.data.avatar_url, avatar_key: res.data.avatar_key })
 			setPendingFile(null)
 			setPendingFileUrl(null)
 		},
@@ -65,12 +67,13 @@ export function useAvatarPicker() {
 	}
 
 	const previewSrc = pendingFileUrl ?? (pendingKey ? getAvatarUrl(pendingKey) : null)
-	const currentSrc = previewSrc ?? (user ? getUserAvatarSrc(user) : null)
+	const currentSrc = previewSrc ?? (profile ? getProfileAvatarSrc(profile) : null)
 	const isPending = presetMutation.isPending || uploadMutation.isPending
 	const isDirty = pendingKey !== null || pendingFile !== null
 
 	return {
 		user,
+		profile,
 		currentSrc,
 		pendingKey,
 		pendingFile,

@@ -63,6 +63,9 @@ export default function ExamResultScreen() {
   const mcqTotal = data.mcq?.total ?? (mcqListening.total + mcqReading.total);
   const mcqCorrect = data.mcq?.score ?? (mcqListening.correct + mcqReading.correct);
   const mcqPct = mcqTotal > 0 ? Math.round((mcqCorrect / mcqTotal) * 100) : 0;
+  const selectedSkills = data.session.selectedSkills ?? [];
+  const shouldShowWriting = selectedSkills.includes("writing") || data.writingFeedback.length > 0;
+  const shouldShowSpeaking = selectedSkills.includes("speaking") || data.speakingFeedback.length > 0;
 
   return (
     <ScrollView
@@ -111,7 +114,7 @@ export default function ExamResultScreen() {
         </View>
       ) : null}
 
-      {data.writingFeedback.length > 0 ? (
+      {shouldShowWriting ? (
         <GradingCard
           skill="writing"
           label="Viết"
@@ -125,7 +128,7 @@ export default function ExamResultScreen() {
         />
       ) : null}
 
-      {data.speakingFeedback.length > 0 ? (
+      {shouldShowSpeaking ? (
         <GradingCard
           skill="speaking"
           label="Nói"

@@ -273,7 +273,7 @@ function PackCard({
 					: "border-border border-b-4 hover:border-primary/40",
 			)}
 		>
-			{pack.isBestValue && (
+			{pack.is_best_value && (
 				<span className="absolute -top-2.5 left-3 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
 					<StaticIcon name="trophy" size="xs" className="h-3 w-auto" /> Best value
 				</span>

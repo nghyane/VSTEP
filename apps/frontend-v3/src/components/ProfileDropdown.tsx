@@ -9,7 +9,7 @@ import type { Notification, UnreadCount } from "#/features/notifications/types"
 import { visualForType } from "#/features/notifications/visuals"
 import type { ApiResponse, PaginatedResponse } from "#/lib/api"
 import { useAuth, useSession } from "#/lib/auth"
-import { getUserAvatarSrc } from "#/lib/avatar"
+import { getProfileAvatarSrc } from "#/lib/avatar"
 import { useToast } from "#/lib/toast"
 import { useClickOutside } from "#/lib/use-click-outside"
 import { cn } from "#/lib/utils"
@@ -125,7 +125,7 @@ interface Props {
 
 export function ProfileDropdown({ unread, initial }: Props) {
 	const { profile, user } = useSession()
-	const avatarSrc = getUserAvatarSrc(user)
+	const avatarSrc = getProfileAvatarSrc(profile)
 	const logout = useAuth((s) => s.logout)
 	const { data: notifsData } = useQuery({ ...notificationsQuery, enabled: false })
 	const navigate = useNavigate()

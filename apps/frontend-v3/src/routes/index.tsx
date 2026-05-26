@@ -1,19 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
-import { Logo } from "#/components/Logo"
-import { AuthShell } from "#/features/auth/AuthShell"
-import { LoginForm } from "#/features/auth/LoginForm"
-import { RegisterForm } from "#/features/auth/RegisterForm"
-import {
-	LandingCTA,
-	LandingFeatures,
-	LandingHero,
-	LandingSkills,
-	LandingSocial,
-} from "#/features/landing/sections"
+import { type LandingAuthMode, LandingAuthOverlay } from "#/features/landing/components/LandingAuthOverlay"
+import { LandingCTA } from "#/features/landing/components/LandingCTA"
+import { LandingFAQ } from "#/features/landing/components/LandingFAQ"
+import { LandingFeatures } from "#/features/landing/components/LandingFeatures"
+import { LandingHero } from "#/features/landing/components/LandingHero"
+import { LandingNav } from "#/features/landing/components/LandingNav"
+import { LandingSkills } from "#/features/landing/components/LandingSkills"
+import { LandingSocial } from "#/features/landing/components/LandingSocial"
 import { useAuth } from "#/lib/auth"
 
-type AuthParam = "login" | "register" | undefined
+type AuthParam = LandingAuthMode | undefined
 
 export const Route = createFileRoute("/")({
 	validateSearch: (
@@ -50,42 +47,20 @@ function LandingPage() {
 
 	return (
 		<div className="min-h-screen bg-surface">
-			<nav
-				className="sticky top-0 z-40 bg-surface/95 backdrop-blur-sm border-b border-transparent transition-colors"
-				style={showBtn ? { borderBottomColor: "var(--color-border)" } : undefined}
-			>
-				<div className="flex items-center justify-between px-8 py-4 max-w-6xl mx-auto">
-					<Logo size="lg" />
-					<div
-						className={`transition-all duration-300 ${showBtn ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"}`}
-					>
-						<button
-							type="button"
-							onClick={() => navigate({ to: "/", search: { auth: "register" } })}
-							className="btn btn-primary text-sm px-6 py-2.5"
-						>
-							Bắt đầu
-						</button>
-					</div>
-				</div>
-			</nav>
+			<LandingNav showCta={showBtn} />
 
 			<LandingHero ctaRef={ctaRef} />
 			<LandingSkills />
 			<LandingFeatures />
 			<LandingSocial />
+			<LandingFAQ />
 			<LandingCTA />
 
 			<footer className="border-t border-border py-8 text-center text-sm text-subtle">
 				© 2025 VSTEP · Luyện thi chứng chỉ tiếng Anh quốc gia
 			</footer>
 
-			{auth && (
-				<AuthShell onClose={() => navigate({ to: "/", search: {} })}>
-					{auth === "login" && <LoginForm />}
-					{auth === "register" && <RegisterForm onboardingOnly={onboarding === true} />}
-				</AuthShell>
-			)}
+			{auth && <LandingAuthOverlay mode={auth} onboarding={onboarding === true} />}
 		</div>
 	)
 }

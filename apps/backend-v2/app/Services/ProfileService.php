@@ -18,7 +18,9 @@ use App\Models\ProfileStreakState;
 use App\Models\ProfileVocabSrsState;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -62,6 +64,29 @@ final class ProfileService
         $this->assertNicknameUnique($profile->account_id, $data['nickname'] ?? null, exceptId: $profile->id);
 
         $profile->fill($data);
+        $profile->save();
+
+        return $profile->refresh();
+    }
+
+    public function chooseAvatar(Profile $profile, string $avatarKey): Profile
+    {
+        $this->deleteUploadedAvatar($profile);
+
+        $profile->avatar_key = $avatarKey;
+        $profile->avatar_url = null;
+        $profile->save();
+
+        return $profile->refresh();
+    }
+
+    public function uploadAvatar(Profile $profile, UploadedFile $avatar): Profile
+    {
+        $this->deleteUploadedAvatar($profile);
+
+        $path = $avatar->store('avatars', 'public');
+        $profile->avatar_url = Storage::disk('public')->url($path);
+        $profile->avatar_key = null;
         $profile->save();
 
         return $profile->refresh();
@@ -183,6 +208,28 @@ final class ProfileService
             throw ValidationException::withMessages([
                 'nickname' => ['Nickname already in use within this account.'],
             ]);
+        }
+    }
+
+    private function deleteUploadedAvatar(Profile $profile): void
+    {
+        if ($profile->avatar_url === null) {
+            return;
+        }
+
+        $isUsedByAnotherProfile = Profile::query()
+            ->where('id', '!=', $profile->id)
+            ->where('avatar_url', $profile->avatar_url)
+            ->exists();
+
+        if ($isUsedByAnotherProfile) {
+            return;
+        }
+
+        $publicUrl = Storage::disk('public')->url('');
+        $oldPath = str_replace($publicUrl, '', $profile->avatar_url);
+        if (Storage::disk('public')->exists($oldPath)) {
+            Storage::disk('public')->delete($oldPath);
         }
     }
 }

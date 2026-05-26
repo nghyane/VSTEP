@@ -49,8 +49,6 @@ Route::prefix('v1')->group(function () {
 
         // Self-service account ops (mọi role dùng được).
         Route::post('/me/change-password', [AccountController::class, 'changePassword']);
-        Route::patch('/me/avatar', [AccountController::class, 'updateAvatar']);
-        Route::post('/me/avatar', [AccountController::class, 'uploadAvatar']);
 
         // Profile CRUD — scoped by authenticated account.
         Route::get('/profiles', [ProfileController::class, 'index']);
@@ -64,6 +62,9 @@ Route::prefix('v1')->group(function () {
 
     // Learner routes requiring active profile context.
     Route::middleware(['auth:api', 'active-profile'])->group(function () {
+        Route::patch('/me/avatar', [AccountController::class, 'updateAvatar']);
+        Route::post('/me/avatar', [AccountController::class, 'uploadAvatar']);
+
         Route::get('/wallet/balance', [WalletController::class, 'balance']);
         Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
         Route::get('/wallet/topup-packages', [WalletController::class, 'topupPackages']);
@@ -199,6 +200,20 @@ Route::prefix('v1')->group(function () {
         Route::get('/action-items', [Admin\DashboardController::class, 'actionItems']);
         Route::get('/content-status', [Admin\DashboardController::class, 'contentStatus']);
         Route::get('/recent-activity', [Admin\DashboardController::class, 'recentActivity']);
+
+        // Audio upload (presigned PUT to R2) — staff only.
+        Route::post('/audio/presign-upload', [Admin\AudioUploadController::class, 'presignUpload']);
+
+        // Top-up packages CRUD (Plans tab).
+        Route::prefix('topup-packages')->group(function () {
+            Route::get('/', [Admin\TopupPackageController::class, 'index']);
+            Route::post('/', [Admin\TopupPackageController::class, 'store']);
+            Route::get('/{id}', [Admin\TopupPackageController::class, 'show']);
+            Route::patch('/{id}', [Admin\TopupPackageController::class, 'update']);
+            Route::delete('/{id}', [Admin\TopupPackageController::class, 'destroy']);
+            Route::post('/{id}/activate', [Admin\TopupPackageController::class, 'activate']);
+            Route::post('/{id}/deactivate', [Admin\TopupPackageController::class, 'deactivate']);
+        });
 
         // System config — ADMIN ONLY (nested middleware role:admin overrides parent role:staff)
         Route::middleware('role:admin')->prefix('system-config')->group(function () {

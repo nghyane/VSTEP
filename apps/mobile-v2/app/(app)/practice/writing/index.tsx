@@ -46,13 +46,14 @@ export default function WritingListScreen() {
           <Text style={[s.title, { color: c.foreground }]}>Luyện viết</Text>
           <Text style={[s.sub, { color: c.mutedForeground }]}>Thư + luận · AI chấm theo rubric Bộ GD</Text>
         </View>
-        <HapticTouchable
-          scalePress
-          style={[s.historyBtn, { borderColor: c.border }]}
-          onPress={() => router.push("/(app)/practice/writing/history" as any)}
-        >
-          <Ionicons name="time-outline" size={18} color={c.primary} />
-        </HapticTouchable>
+        <View style={[s.historyBtn, { borderColor: c.border }]}>
+          <HapticTouchable
+            scalePress
+            onPress={() => router.push("/(app)/practice/writing/history" as any)}
+          >
+            <Ionicons name="time-outline" size={18} color={c.primary} />
+          </HapticTouchable>
+        </View>
       </View>
 
       {isLoading && (
@@ -78,12 +79,11 @@ export default function WritingListScreen() {
             ) : (
               <View style={s.cardGrid}>
                 {list.map((p) => (
-                  <HapticTouchable
-                    key={p.id}
-                    scalePress
-                    style={s.cardWrapper}
-                    onPress={() => router.push(`/(app)/practice/writing/${p.id}` as any)}
-                  >
+                  <View key={p.id} style={s.cardWrapper}>
+                    <HapticTouchable
+                      scalePress
+                      onPress={() => router.push(`/(app)/practice/writing/${p.id}` as any)}
+                    >
                     <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
                       <View style={[s.taskBadge, { backgroundColor: COLOR + "18" }]}>
                         <Text style={[s.taskBadgeText, { color: COLOR }]}>Task {p.part}</Text>
@@ -97,6 +97,7 @@ export default function WritingListScreen() {
                       </View>
                     </View>
                   </HapticTouchable>
+                </View>
                 ))}
               </View>
             )}

@@ -3,7 +3,7 @@ import { Icon } from "#/components/Icon"
 import { ConversationFeedback } from "#/features/practice/components/ConversationFeedback"
 import type { ConversationTurn } from "#/features/practice/types"
 import { useAuth } from "#/lib/auth"
-import { getAvatarUrl, getUserAvatarSrc } from "#/lib/avatar"
+import { getAvatarUrl, getProfileAvatarSrc } from "#/lib/avatar"
 import { cn, translateText } from "#/lib/utils"
 
 interface Props {
@@ -128,8 +128,8 @@ function HighlightText({ text, charIndex }: { text: string; charIndex: number })
 }
 
 export function ConversationTurnView({ turn, aiName, isSpeaking, highlightCharIndex = -1 }: Props) {
-	const user = useAuth((s) => (s.status === "authenticated" ? s.user : null))
-	const userAvatarSrc = user ? getUserAvatarSrc(user) : null
+	const profile = useAuth((s) => (s.status === "authenticated" ? s.profile : null))
+	const userAvatarSrc = profile ? getProfileAvatarSrc(profile) : null
 
 	if (turn.role === "ai") {
 		return (

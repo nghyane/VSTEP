@@ -1,6 +1,7 @@
 import {
 	BookOutlined,
 	DatabaseOutlined,
+	DollarOutlined,
 	EditOutlined,
 	GiftOutlined,
 	HomeOutlined,
@@ -79,6 +80,11 @@ function buildItems(isAdmin: boolean): ItemType[] {
 					icon: <GiftOutlined />,
 					label: <Link to={t("/promo")}>Khuyến mãi</Link>,
 				},
+				{
+					key: "/topup-packages",
+					icon: <DollarOutlined />,
+					label: <Link to={t("/topup-packages")}>Gói nạp</Link>,
+				},
 			],
 		},
 	]
@@ -110,6 +116,7 @@ const FLAT_KEYS = [
 	"/users",
 	"/courses",
 	"/promo",
+	"/topup-packages",
 	"/settings",
 ]
 

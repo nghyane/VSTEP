@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query"
+import { keepPreviousData, queryOptions } from "@tanstack/react-query"
 import type { AdminExam, ExamVersion, ListExamsFilters } from "#/features/admin-exams/types"
 import { type ApiResponse, api, type PaginatedResponse } from "#/lib/api"
 
@@ -37,4 +37,6 @@ export const adminExamVersionDetailQuery = (examId: string, versionId: string) =
 		queryKey: ["admin", "exams", examId, "versions", versionId],
 		queryFn: () => api.get(`admin/exams/${examId}/versions/${versionId}`).json<ApiResponse<ExamVersion>>(),
 		enabled: !!versionId,
+		staleTime: 30_000,
+		placeholderData: keepPreviousData,
 	})

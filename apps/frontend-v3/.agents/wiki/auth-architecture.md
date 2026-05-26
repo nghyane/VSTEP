@@ -41,6 +41,8 @@ Không component/hook nào import `tokens` trực tiếp (chỉ `auth.ts` và `a
 - 1 User → nhiều Profile. 1 Profile = 1 Target.
 - Đổi target = tạo profile mới, không update.
 - Switch profile = `auth.switchProfile()` → reissue JWT.
+- Learner avatar (`avatar_key`, `avatar_url`) thuộc `Profile`, không thuộc `User`; đổi ảnh chỉ tác động active profile.
+- Khi migrate avatar upload cũ sang nhiều profile, không xóa file vật lý cho tới khi không còn profile nào tham chiếu URL đó.
 
 ## 401 handling
 

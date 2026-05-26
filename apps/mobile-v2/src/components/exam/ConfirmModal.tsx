@@ -1,6 +1,7 @@
 import { Modal, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { DepthButton } from "@/components/DepthButton";
+import { HapticTouchable } from "@/components/HapticTouchable";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 interface ConfirmModalProps {
@@ -31,8 +32,18 @@ export function ConfirmModal({ visible, title, message, warning, confirmLabel, o
             </View>
           )}
           <View style={s.modalBtns}>
-            <DepthButton variant="secondary" onPress={onCancel} style={{ flex: 1 }}>Ở lại</DepthButton>
-            <DepthButton onPress={onConfirm} style={{ flex: 1 }}>{confirmLabel}</DepthButton>
+            <HapticTouchable
+              onPress={onCancel}
+              style={[s.modalBtn, { backgroundColor: c.surface, borderColor: c.border, borderBottomColor: c.border }]}
+            >
+              <Text style={[s.modalBtnText, { color: c.foreground }]}>Ở lại</Text>
+            </HapticTouchable>
+            <HapticTouchable
+              onPress={onConfirm}
+              style={[s.modalBtn, { backgroundColor: c.primary, borderColor: c.primary, borderBottomColor: c.primaryDark }]}
+            >
+              <Text style={[s.modalBtnText, { color: c.primaryForeground }]}>{confirmLabel}</Text>
+            </HapticTouchable>
           </View>
         </View>
       </View>
@@ -47,14 +58,16 @@ export function ResultScreen({
   onGoToResult,
   onGoToExams,
 }: {
-  result: { mcqScore: number; mcqTotal: number; sessionId: string };
+  result: { mcq?: { score: number; total: number }; mcqScore?: number; mcqTotal?: number; sessionId: string };
   sessionId: string;
   examTitle: string;
   onGoToResult: () => void;
   onGoToExams: () => void;
 }) {
   const c = useThemeColors();
-  const pct = result.mcqTotal > 0 ? Math.round((result.mcqScore / result.mcqTotal) * 100) : 0;
+  const mcqScore = result.mcq?.score ?? result.mcqScore ?? 0;
+  const mcqTotal = result.mcq?.total ?? result.mcqTotal ?? 0;
+  const pct = mcqTotal > 0 ? Math.round((mcqScore / mcqTotal) * 100) : 0;
 
   return (
     <View style={[s.center, { backgroundColor: c.background, paddingHorizontal: spacing.xl }]}>
@@ -65,7 +78,7 @@ export function ResultScreen({
       <Text style={[s.resultExam, { color: c.mutedForeground }]}>{examTitle}</Text>
       <View style={[s.resultCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.border }]}>
         <Text style={[s.resultScoreLabel, { color: c.mutedForeground }]}>Điểm MCQ (Nghe + Đọc)</Text>
-        <Text style={[s.resultScore, { color: c.primary }]}>{result.mcqScore}<Text style={[s.resultTotal, { color: c.subtle }]}>/{result.mcqTotal}</Text></Text>
+        <Text style={[s.resultScore, { color: c.primary }]}>{mcqScore}<Text style={[s.resultTotal, { color: c.subtle }]}>/{mcqTotal}</Text></Text>
         <View style={[s.resultBar, { backgroundColor: c.muted }]}>
           <View style={[s.resultFill, { backgroundColor: c.primary, width: `${pct}%` }]} />
         </View>
@@ -87,6 +100,8 @@ const s = StyleSheet.create({
   modalWarning: { borderRadius: radius.md, padding: spacing.sm },
   modalWarningText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   modalBtns: { flexDirection: "row", gap: spacing.md },
+  modalBtn: { flex: 1, minHeight: 48, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.button, alignItems: "center", justifyContent: "center", paddingHorizontal: spacing.sm },
+  modalBtnText: { fontSize: fontSize.sm, fontFamily: fontFamily.extraBold, textAlign: "center", textTransform: "uppercase" },
   resultIcon: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center", marginBottom: spacing.lg },
   resultTitle: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   resultExam: { fontSize: fontSize.sm, marginTop: spacing.xs },

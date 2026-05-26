@@ -11,6 +11,7 @@ export interface ShadowingAttemptResult {
 	transcript: string
 	wordResults: WordCompareResult[]
 	correctCount: number
+	accuracyPercent: number | null
 }
 
 interface Props {
@@ -153,6 +154,7 @@ function ReviewPopup({
 export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, onListen, attempt }: Props) {
 	const [showIpa, setShowIpa] = useState(false)
 	const [showReview, setShowReview] = useState(false)
+	const accuracyPercent = attempt?.accuracyPercent ?? null
 
 	const reviewMutation = useMutation({
 		mutationFn: () => getPronunciationReview(segment.text, attempt?.transcript ?? ""),
@@ -218,14 +220,16 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 						<span
 							className={cn(
 								"text-xs font-bold px-2 py-0.5 rounded-full",
-								attempt.correctCount / segment.word_count >= 0.7
+								accuracyPercent === null
+									? "bg-border/30 text-muted"
+									: accuracyPercent >= 70
 									? "bg-success/15 text-success"
-									: attempt.correctCount / segment.word_count >= 0.4
+									: accuracyPercent >= 40
 										? "bg-warning/15 text-warning"
 										: "bg-destructive/15 text-destructive",
 							)}
 						>
-							{Math.round((attempt.correctCount / segment.word_count) * 100)}%
+							{accuracyPercent !== null ? `${accuracyPercent}%` : "--"}
 						</span>
 					</div>
 

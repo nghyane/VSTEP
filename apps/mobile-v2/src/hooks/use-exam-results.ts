@@ -8,6 +8,7 @@ export interface ExamSessionResults {
     id: string;
     status: string;
     submittedAt: string | null;
+    selectedSkills?: string[];
   };
   scores: {
     listening: number | null;

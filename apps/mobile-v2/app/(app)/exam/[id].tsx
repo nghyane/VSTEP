@@ -1,16 +1,18 @@
 import { useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
-import { useExam } from "@/hooks/use-exams";
-import { useStartExamSession } from "@/hooks/use-exam-session";
+import { useAppConfig, useExam, useExamSessions } from "@/hooks/use-exams";
+import { useAbandonExamSession, useStartExamSession } from "@/hooks/use-exam-session";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { MascotEmpty } from "@/components/MascotStates";
+import { useWalletBalance } from "@/features/wallet/queries";
 import { useThemeColors, colors as themeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { formatNumber } from "@/lib/utils";
 
 type SkillKey = "listening" | "reading" | "writing" | "speaking";
 
@@ -29,7 +31,11 @@ export default function ExamDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: detail, isLoading } = useExam(id ?? "");
+  const { data: config } = useAppConfig();
+  const { data: activeSessions } = useExamSessions("active");
+  const { data: wallet } = useWalletBalance();
   const startMutation = useStartExamSession();
+  const abandonMutation = useAbandonExamSession();
 
   const [selectedSkills, setSelectedSkills] = useState<Set<SkillKey>>(new Set(SKILL_ORDER));
   const [expanded, setExpanded] = useState<Set<SkillKey>>(new Set());
@@ -52,7 +58,15 @@ export default function ExamDetailScreen() {
   }
 
   const { exam } = detail;
+  const activeSameExam = (activeSessions ?? []).find(
+    (session) => session.examId === exam.id && new Date(session.serverDeadlineAt).getTime() > Date.now(),
+  );
   const isFull = selectedSkills.size === 0 || selectedSkills.size === availableSkills.length;
+  const fullCost = config?.pricing.exam.fullTestCostCoins ?? 25;
+  const perSkillCost = config?.pricing.exam.customPerSkillCoins ?? 8;
+  const coinCost = isFull ? fullCost : Math.min(fullCost, perSkillCost * selectedSkills.size);
+  const balance = wallet?.balance ?? null;
+  const insufficient = balance != null && balance < coinCost;
 
   const totalMcq =
     version.listeningSections.reduce((sum, sec) => sum + sec.items.length, 0) +
@@ -83,11 +97,44 @@ export default function ExamDetailScreen() {
   }
 
   function handleStart() {
+    if (insufficient) {
+      Alert.alert(
+        "Không đủ xu",
+        `Bạn cần ${formatNumber(coinCost)} xu để mở lượt thi này. Số dư hiện tại: ${formatNumber(balance ?? 0)} xu.`,
+        [
+          { text: "Quay lại", style: "cancel" },
+          { text: "Nạp xu", onPress: () => router.push("/(app)/topup" as never) },
+        ],
+      );
+      return;
+    }
+    if (activeSameExam) {
+      Alert.alert(
+        "Làm mới phiên thi?",
+        "Bạn đang có một phiên đang làm của đề này. Làm mới sẽ hủy phiên cũ và tạo phiên mới.",
+        [
+          { text: "Ở lại", style: "cancel" },
+          { text: "Làm mới", style: "destructive", onPress: startFreshSession },
+        ],
+      );
+      return;
+    }
+    startFreshSession();
+  }
+
+  function startFreshSession() {
     const finalSkills = isFull ? availableSkills : Array.from(selectedSkills).sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b));
-    startMutation.mutate(
-      { examId: id ?? "", mode: isFull ? "full" : "custom", selectedSkills: finalSkills },
-      { onSuccess: (res) => router.push(`/(app)/session/${res.sessionId}?examId=${id}` as any) },
-    );
+    const start = () => startMutation.mutate(
+        { examId: id ?? "", mode: isFull ? "full" : "custom", selectedSkills: finalSkills },
+        { onSuccess: (res) => router.push(`/(app)/session/${res.sessionId}?examId=${id}` as never) },
+      );
+    if (activeSameExam) abandonMutation.mutate(activeSameExam.id, { onSuccess: start });
+    else start();
+  }
+
+  function handleContinue() {
+    if (!activeSameExam) return;
+    router.push(`/(app)/session/${activeSameExam.id}?examId=${exam.id}&resume=1` as never);
   }
 
   return (
@@ -119,8 +166,24 @@ export default function ExamDetailScreen() {
           <MetaPill icon="layers-outline" label="4" unit="kỹ năng" c={c} />
           <MetaPill icon="clipboard-outline" label={`${totalMcq}`} unit="câu TN" c={c} />
           <MetaPill icon="create-outline" label={`${totalFreeResponse}`} unit="tự luận" c={c} />
+          <MetaPill icon="wallet-outline" label={`${coinCost}`} unit="xu" c={c} />
         </View>
       </DepthCard>
+
+      {activeSameExam ? (
+        <DepthCard style={s.activeCard}>
+          <View style={s.activeRow}>
+            <View style={[s.activeIcon, { backgroundColor: c.warningTint }]}> 
+              <Ionicons name="time-outline" size={18} color={c.warning} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.activeTitle, { color: c.foreground }]}>Bạn đang làm dở đề này</Text>
+              <Text style={[s.activeSub, { color: c.mutedForeground }]}>Có thể tiếp tục phiên thi hiện tại hoặc làm mới từ đầu.</Text>
+            </View>
+          </View>
+          <DepthButton fullWidth onPress={handleContinue}>Tiếp tục làm bài</DepthButton>
+        </DepthCard>
+      ) : null}
 
       {/* Skill selector rows — FE v3 SectionSelector pattern */}
       <DepthCard style={s.sectionCard}>
@@ -214,8 +277,9 @@ export default function ExamDetailScreen() {
         <Text style={[s.sectionLabel, { color: c.subtle }]}>LƯU Ý</Text>
         {[
           "Sau khi chuyển phần, không thể quay lại phần trước.",
-          "Thoát khỏi phòng thi sẽ tự động nộp bài.",
-          "Nghe/Đọc chấm ngay. Viết/Nói AI chấm sau.",
+          "Câu trả lời được tự động lưu trong quá trình làm bài.",
+          'Bấm "Phần tiếp" để sang kỹ năng kế tiếp.',
+          'Bấm "Nộp bài" khi đã hoàn thành tất cả phần.',
         ].map((note) => (
           <View key={note} style={s.noteRow}>
             <Text style={{ color: c.primary }}>·</Text>
@@ -228,9 +292,9 @@ export default function ExamDetailScreen() {
         fullWidth
         size="lg"
         onPress={handleStart}
-        disabled={startMutation.isPending}
+        disabled={startMutation.isPending || abandonMutation.isPending}
       >
-        {startMutation.isPending ? "Đang tạo phiên thi..." : isFull ? "Nhận đề & bắt đầu" : "Bắt đầu làm bài"}
+        {startMutation.isPending || abandonMutation.isPending ? "Đang tạo phiên thi..." : getStartLabel(insufficient, activeSameExam != null, isFull)}
       </DepthButton>
 
       {startMutation.isError && (
@@ -247,6 +311,12 @@ export default function ExamDetailScreen() {
 function getSpeakingTypeLabel(type: string): string {
   const map: Record<string, string> = { social: "Giao tiếp xã hội", solution: "Đề xuất giải pháp", topic: "Thảo luận chủ đề" };
   return map[type] ?? type;
+}
+
+function getStartLabel(insufficient: boolean, hasActiveSession: boolean, isFull: boolean): string {
+  if (insufficient) return "Nạp xu";
+  if (hasActiveSession) return "Làm mới";
+  return isFull ? "Nhận đề & bắt đầu" : "Bắt đầu làm bài";
 }
 
 function MetaPill({ icon, label, unit, c }: { icon: string; label: string; unit: string; c: ReturnType<typeof useThemeColors> }) {
@@ -266,6 +336,11 @@ const s = StyleSheet.create({
   backRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   backText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   headerCard: { gap: spacing.sm },
+  activeCard: { gap: spacing.md },
+  activeRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  activeIcon: { width: 40, height: 40, borderRadius: radius.full, alignItems: "center", justifyContent: "center" },
+  activeTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.extraBold },
+  activeSub: { fontSize: fontSize.xs, lineHeight: 18, marginTop: 2 },
   tagRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
   tag: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   tagText: { fontSize: 10, fontFamily: fontFamily.medium },

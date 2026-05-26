@@ -9,6 +9,7 @@ use App\Models\CoinTransaction;
 use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ProfileCrudTest extends TestCase
@@ -127,5 +128,50 @@ class ProfileCrudTest extends TestCase
             'profile_id' => $profile->id,
             'reason' => 'Đổi mục tiêu',
         ]);
+    }
+
+    public function test_avatar_update_only_changes_active_profile(): void
+    {
+        $user = User::factory()->create();
+        $firstProfile = Profile::factory()->initial()->forAccount($user)->create(['avatar_key' => 'Alex']);
+        $secondProfile = Profile::factory()->forAccount($user)->create(['avatar_key' => 'Jordan']);
+
+        $login = $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+        $token = $login->json('data.access_token');
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->patchJson('/api/v1/me/avatar', ['avatar_key' => 'Taylor']);
+
+        $response->assertOk();
+        $response->assertJsonPath('data.avatar_key', 'Taylor');
+        $this->assertSame('Taylor', $firstProfile->refresh()->avatar_key);
+        $this->assertSame('Jordan', $secondProfile->refresh()->avatar_key);
+    }
+
+    public function test_avatar_update_keeps_uploaded_file_used_by_sibling_profile(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('avatars/shared.png', 'image');
+        $sharedUrl = Storage::disk('public')->url('avatars/shared.png');
+
+        $user = User::factory()->create();
+        Profile::factory()->initial()->forAccount($user)->create(['avatar_url' => $sharedUrl]);
+        $secondProfile = Profile::factory()->forAccount($user)->create(['avatar_url' => $sharedUrl]);
+
+        $login = $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+        $token = $login->json('data.access_token');
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->patchJson('/api/v1/me/avatar', ['avatar_key' => 'Taylor'])
+            ->assertOk();
+
+        Storage::disk('public')->assertExists('avatars/shared.png');
+        $this->assertSame($sharedUrl, $secondProfile->refresh()->avatar_url);
     }
 }

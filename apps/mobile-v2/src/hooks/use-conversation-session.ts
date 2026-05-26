@@ -50,6 +50,7 @@ interface UseConversationSessionReturn {
   setInput: (text: string) => void;
   speakTurn: (turn: SpeakingConversationTurn) => void;
   sendText: () => void;
+  submitVoice: (text: string) => void;
   endSession: () => void;
   appendWord: (word: string) => void;
   retryStart: () => void;
@@ -145,6 +146,17 @@ export function useConversationSession(scenarioId: string): UseConversationSessi
     setInput((prev) => (prev.trim() ? `${prev.trim()} ${word}` : word));
   }, []);
 
+  // submitVoice: directly submit transcript from STT (mirror FE v3 doSubmit).
+  // Bypasses input state so onResult can fire immediately without render timing issues.
+  const submitVoice = useCallback(
+    (text: string) => {
+      const t = text.trim();
+      if (!t || turnMutation.isPending || summary) return;
+      turnMutation.mutate(t);
+    },
+    [turnMutation, summary],
+  );
+
   const retryStart = useCallback(() => {
     startedRef.current = false;
     setErrorText(null);
@@ -180,6 +192,7 @@ export function useConversationSession(scenarioId: string): UseConversationSessi
     setInput,
     speakTurn,
     sendText,
+    submitVoice,
     endSession: () => endMutation.mutate(),
     appendWord,
     retryStart,

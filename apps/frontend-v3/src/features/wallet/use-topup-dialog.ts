@@ -5,7 +5,6 @@ import type { TopupPackage } from "#/features/wallet/types"
 export interface EnrichedPackage extends TopupPackage {
 	pricePerCoin: number
 	savingsPct: number
-	isBestValue: boolean
 }
 
 interface UseTopupDialogResult {
@@ -35,16 +34,8 @@ export function useTopupDialog(): UseTopupDialogResult {
 			p.bonus_coins > 0
 				? Math.max(0, Math.round(((basePricePerCoin - pricePerCoin) / basePricePerCoin) * 100))
 				: 0
-		return { ...p, pricePerCoin, savingsPct, isBestValue: false }
+		return { ...p, pricePerCoin, savingsPct }
 	})
-
-	// Mark best value = highest savings among packages with bonus.
-	const best = enriched.filter((p) => p.bonus_coins > 0).sort((a, b) => b.savingsPct - a.savingsPct)[0]
-
-	if (best) {
-		const idx = enriched.findIndex((p) => p.id === best.id)
-		if (idx !== -1) enriched[idx] = { ...enriched[idx], isBestValue: true }
-	}
 
 	return { packages: enriched, balance, isLoading }
 }

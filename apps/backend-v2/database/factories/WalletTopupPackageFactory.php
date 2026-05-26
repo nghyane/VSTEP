@@ -23,6 +23,7 @@ class WalletTopupPackageFactory extends Factory
             'bonus_coins' => 0,
             'display_order' => 0,
             'is_active' => true,
+            'is_best_value' => false,
         ];
     }
 }

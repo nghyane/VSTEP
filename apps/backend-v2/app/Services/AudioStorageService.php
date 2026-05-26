@@ -65,6 +65,40 @@ final class AudioStorageService
     }
 
     /**
+     * Generate presigned PUT URL for an arbitrary R2 key with explicit content type.
+     *
+     * Used by admin tooling that needs to upload exam-content audio (listening
+     * sections, etc.) where the namespace is not user-scoped and the file
+     * format is admin-supplied (mp3, m4a, ...).
+     *
+     * @return array{upload_url: string, audio_key: string}
+     */
+    public function presignUploadForKey(string $audioKey, string $contentType): array
+    {
+        $disk = Storage::disk('s3');
+
+        /** @var S3Client $client */
+        $client = $disk->getClient();
+        $bucket = config('filesystems.disks.s3.bucket');
+
+        $cmd = $client->getCommand('PutObject', [
+            'Bucket' => $bucket,
+            'Key' => $audioKey,
+            'ContentType' => $contentType,
+        ]);
+
+        $presigned = $client->createPresignedRequest(
+            $cmd,
+            sprintf('+%d minutes', self::UPLOAD_TTL_MINUTES),
+        );
+
+        return [
+            'upload_url' => (string) $presigned->getUri(),
+            'audio_key' => $audioKey,
+        ];
+    }
+
+    /**
      * Generate presigned GET URL for audio playback.
      */
     public function presignDownload(string $audioKey): string

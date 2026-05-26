@@ -8,8 +8,7 @@ import { EditProfileForm } from "#/features/profile/components/EditProfileForm"
 import { useAvatarPicker } from "#/features/profile/use-avatar-picker"
 import { useProfilePage } from "#/features/profile/use-profile-page"
 import { PromoRedeemCard } from "#/features/wallet/PromoRedeemCard"
-import { useSession } from "#/lib/auth"
-import { AVATAR_PRESETS, getAvatarUrl, getUserAvatarSrc } from "#/lib/avatar"
+import { AVATAR_PRESETS, getAvatarUrl, getProfileAvatarSrc } from "#/lib/avatar"
 import { cn } from "#/lib/utils"
 import type { Profile } from "#/types/auth"
 
@@ -149,7 +148,7 @@ function ProfilePage() {
 
 function AvatarPickerSection() {
 	const p = useAvatarPicker()
-	if (!p.user) return null
+	if (!p.user || !p.profile) return null
 
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0]
@@ -230,7 +229,7 @@ function AvatarPresetGrid({ picker }: { picker: ReturnType<typeof useAvatarPicke
 					{AVATAR_PRESETS.map((preset) => {
 						const isActive =
 							picker.pendingKey === preset.key ||
-							(picker.user?.avatar_key === preset.key && !picker.user?.avatar_url && !picker.pendingKey)
+							(picker.profile?.avatar_key === preset.key && !picker.profile?.avatar_url && !picker.pendingKey)
 						return (
 							<button
 								key={preset.key}
@@ -290,8 +289,7 @@ function ProfileAvatar({
 	onSwitch: () => void
 	onEdit: () => void
 }) {
-	const { user } = useSession()
-	const avatarSrc = getUserAvatarSrc(user)
+	const avatarSrc = getProfileAvatarSrc(profile)
 	const initial = profile.nickname.charAt(0).toUpperCase()
 	const level = profile.target_level
 	const days = daysUntil(profile.target_deadline)

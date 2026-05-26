@@ -14,9 +14,9 @@ const LABEL_OFFSET = 22;
 
 const SKILLS_META: { key: Skill; label: string }[] = [
   { key: "listening", label: "Nghe" },
-  { key: "reading",   label: "Doc" },
-  { key: "writing",   label: "Viet" },
-  { key: "speaking",  label: "Noi" },
+  { key: "reading",   label: "Đọc" },
+  { key: "writing",   label: "Viết" },
+  { key: "speaking",  label: "Nói" },
 ];
 
 const SKILL_COLORS: Record<Skill, string> = {

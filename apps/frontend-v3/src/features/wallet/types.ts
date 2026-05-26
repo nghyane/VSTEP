@@ -11,6 +11,7 @@ export interface TopupPackage {
 	bonus_coins: number
 	total_coins: number
 	display_order: number
+	is_best_value: boolean
 }
 
 export interface PromoRedeemResult {

@@ -1,0 +1,364 @@
+{
+  "meta": {
+    "name": "duolingo-style-audit-tokens",
+    "project": "VSTEP Frontend V3",
+    "theme": "light",
+    "purpose": "Agent-readable design token reference for auditing VSTEP UI against the Duolingo-inspired style direction.",
+    "runtimeSourceOfTruth": "src/styles.css @theme",
+    "humanReference": ".agents/wiki/duolingo-style-reference.md",
+    "updatedAt": "2026-05-25"
+  },
+  "agentUsage": {
+    "readOrder": [
+      "src/styles.css",
+      ".agents/wiki/duolingo-design-tokens.json",
+      ".agents/wiki/duolingo-style-reference.md"
+    ],
+    "rules": [
+      "Audit components against project semantic tokens first, not raw Duolingo token names.",
+      "Use the standard section as the Duolingo reference and the project section as the current VSTEP implementation.",
+      "Flag hardcoded colors in components when a project semantic token exists.",
+      "Button depth via solid bottom shadow is allowed; traditional elevation shadows on cards/panels should be flagged.",
+      "Known exception: font-display is used for avatar/profile initials; do not flag unless it is used for long body/UI text."
+    ],
+    "statusLegend": {
+      "match": "Project value matches or is the accepted equivalent of the standard.",
+      "near-match": "Project value is intentionally close but not exact.",
+      "project-variant": "Project intentionally differs from the Duolingo reference.",
+      "missing": "No project token currently exists.",
+      "tailwind-default": "Project relies on Tailwind default utility values rather than custom theme tokens.",
+      "project-extra": "Project-specific token outside the Duolingo reference."
+    }
+  },
+  "tokens": {
+    "color": {
+      "duo-green": {
+        "standard": {
+          "$value": "#58cc02",
+          "$type": "color",
+          "cssVariable": "--color-duo-green",
+          "role": "Primary CTAs, logos, headlines, interactive highlights."
+        },
+        "project": {
+          "cssVariable": "--color-primary",
+          "alsoUsedAs": ["--color-success"],
+          "tailwindExamples": ["bg-primary", "text-primary", "border-primary"],
+          "$value": "#58cc02"
+        },
+        "status": "match"
+      },
+      "sky-blue": {
+        "standard": {
+          "$value": "#1cb0f6",
+          "$type": "color",
+          "cssVariable": "--color-sky-blue",
+          "role": "Secondary outline buttons and inline text links."
+        },
+        "project": {
+          "cssVariable": "--color-info",
+          "alsoUsedAs": ["--color-skill-listening"],
+          "tailwindExamples": ["text-info", "bg-info", "border-info"],
+          "$value": "#1cb0f6"
+        },
+        "status": "match"
+      },
+      "duo-green-light": {
+        "standard": {
+          "$value": "#d7ffb8",
+          "$type": "color",
+          "cssVariable": "--color-duo-green-light",
+          "role": "Highlighted or active state backgrounds."
+        },
+        "project": {
+          "nearestCssVariables": {
+            "--color-primary-tint": "#e6f8d4",
+            "--color-primary-light": "#79d634"
+          },
+          "tailwindExamples": ["bg-primary-tint", "text-primary-light"]
+        },
+        "status": "near-match"
+      },
+      "sunshine-yellow": {
+        "standard": {
+          "$value": "#ffc700",
+          "$type": "color",
+          "cssVariable": "--color-sunshine-yellow",
+          "role": "Illustration warmth/accent."
+        },
+        "project": {
+          "nearestCssVariables": {
+            "--color-coin": "#ffc800",
+            "--color-skill-speaking": "#ffc800"
+          },
+          "tailwindExamples": ["bg-coin", "text-skill-speaking"]
+        },
+        "status": "near-match"
+      },
+      "grape-soda": {
+        "standard": {
+          "$value": "#a570ff",
+          "$type": "color",
+          "cssVariable": "--color-grape-soda",
+          "role": "Illustration cool/playful accent."
+        },
+        "project": {
+          "nearestCssVariables": {
+            "--color-skill-reading": "#7850c8",
+            "--color-more": "#CE82FF"
+          }
+        },
+        "status": "near-match"
+      },
+      "bubblegum-pink": {
+        "standard": {
+          "$value": "#cc348d",
+          "$type": "color",
+          "cssVariable": "--color-bubblegum-pink",
+          "role": "Illustration vibrant detail."
+        },
+        "project": {
+          "cssVariable": null,
+          "note": "No dedicated project token currently exists."
+        },
+        "status": "missing"
+      },
+      "snow-white": {
+        "standard": {
+          "$value": "#ffffff",
+          "$type": "color",
+          "cssVariable": "--color-snow-white",
+          "role": "Page backgrounds, button text, card surfaces."
+        },
+        "project": {
+          "cssVariables": ["--color-surface", "--color-card", "--color-primary-foreground"],
+          "$value": "#ffffff",
+          "tailwindExamples": ["bg-surface", "bg-card", "text-primary-foreground"]
+        },
+        "status": "match"
+      },
+      "cloud-gray": {
+        "standard": {
+          "$value": "#e5e5e5",
+          "$type": "color",
+          "cssVariable": "--color-cloud-gray",
+          "role": "Borders for secondary buttons and dividers."
+        },
+        "project": {
+          "cssVariable": "--color-border",
+          "$value": "#e5e5e5",
+          "tailwindExamples": ["border-border", "bg-border"]
+        },
+        "status": "match"
+      },
+      "silver": {
+        "standard": {
+          "$value": "#afafaf",
+          "$type": "color",
+          "cssVariable": "--color-silver",
+          "role": "Placeholder text, disabled states, secondary info text."
+        },
+        "project": {
+          "cssVariable": "--color-placeholder",
+          "$value": "#afafaf",
+          "tailwindExamples": ["text-placeholder"]
+        },
+        "status": "match"
+      },
+      "graphite": {
+        "standard": {
+          "$value": "#777777",
+          "$type": "color",
+          "cssVariable": "--color-graphite",
+          "role": "Body copy and descriptive text."
+        },
+        "project": {
+          "cssVariable": "--color-muted",
+          "$value": "#4b4b5a",
+          "tailwindExamples": ["text-muted"]
+        },
+        "status": "project-variant"
+      },
+      "charcoal": {
+        "standard": {
+          "$value": "#4b4b4b",
+          "$type": "color",
+          "cssVariable": "--color-charcoal",
+          "role": "Subheadings and secondary headlines."
+        },
+        "project": {
+          "nearestCssVariable": "--color-muted",
+          "$value": "#4b4b5a",
+          "tailwindExamples": ["text-muted"]
+        },
+        "status": "near-match"
+      },
+      "almost-black": {
+        "standard": {
+          "$value": "#3c3c3c",
+          "$type": "color",
+          "cssVariable": "--color-almost-black",
+          "role": "Primary body and UI text."
+        },
+        "project": {
+          "cssVariable": "--color-foreground",
+          "$value": "#1e1e28",
+          "tailwindExamples": ["text-foreground", "bg-foreground"]
+        },
+        "status": "project-variant"
+      }
+    },
+    "font": {
+      "feather": {
+        "standard": {
+          "$value": "feather",
+          "$type": "fontFamily",
+          "cssVariable": "--font-feather",
+          "role": "Large impactful H1/H2 headlines only."
+        },
+        "project": {
+          "fontFace": "Feather",
+          "file": "public/fonts/Feather-Bold.otf",
+          "cssVariable": "--font-display",
+          "tailwindClass": "font-display"
+        },
+        "status": "match"
+      },
+      "din-round": {
+        "standard": {
+          "$value": "din-round",
+          "$type": "fontFamily",
+          "cssVariable": "--font-din-round",
+          "role": "UI text, body copy, buttons."
+        },
+        "project": {
+          "fontFace": "Duolingo Sans",
+          "file": "public/fonts/DuolingoSans-VF.otf",
+          "cssVariable": "--font-sans",
+          "tailwindClass": "font-sans",
+          "note": "Accepted equivalent to din-round in this project."
+        },
+        "status": "match"
+      }
+    },
+    "typography": {
+      "standardScale": {
+        "caption": {
+          "$value": { "fontSize": "13px", "lineHeight": 1.4, "letterSpacing": "0.69px" },
+          "$type": "typography",
+          "projectStatus": "missing"
+        },
+        "body": {
+          "$value": { "fontSize": "15px", "lineHeight": 1.4, "letterSpacing": "0.8px" },
+          "$type": "typography",
+          "projectUsage": "Used as text-[15px] in conversation/subtitle components, not tokenized.",
+          "projectStatus": "near-match"
+        },
+        "heading-sm": {
+          "$value": { "fontSize": "19px", "lineHeight": 1.2, "letterSpacing": "1.01px" },
+          "$type": "typography",
+          "projectUsage": "Project commonly uses text-lg (18px) or text-xl (20px).",
+          "projectStatus": "near-match"
+        },
+        "heading": {
+          "$value": { "fontSize": "32px", "lineHeight": 1.2, "letterSpacing": "1.7px" },
+          "$type": "typography",
+          "projectUsage": "No dedicated 32px token; Tailwind text-3xl is 30px.",
+          "projectStatus": "near-match"
+        },
+        "heading-lg": {
+          "$value": { "fontSize": "48px", "lineHeight": 1.2, "letterSpacing": "-0.96px" },
+          "$type": "typography",
+          "projectStatus": "missing"
+        },
+        "display": {
+          "$value": { "fontSize": "64px", "lineHeight": 1.2, "letterSpacing": "-1.28px" },
+          "$type": "typography",
+          "projectStatus": "missing"
+        }
+      },
+      "observedProjectScale": {
+        "micro": { "class": "text-[10px]", "usage": "chips, badges, micro-labels", "status": "project-extra" },
+        "tiny": { "class": "text-[11px]", "usage": "eyebrows, helper text, secondary labels", "status": "project-extra" },
+        "xs": { "class": "text-xs", "value": "12px", "usage": "form labels and small text", "status": "tailwind-default" },
+        "sm": { "class": "text-sm", "value": "14px", "usage": "common body/UI text", "status": "tailwind-default" },
+        "body-15": { "class": "text-[15px]", "usage": "conversation and subtitle body text", "status": "near-match" },
+        "base": { "class": "text-base", "value": "16px", "usage": "primary button/forms", "status": "tailwind-default" },
+        "lg": { "class": "text-lg", "value": "18px", "usage": "small headings", "status": "tailwind-default" }
+      },
+      "observedTracking": {
+        "eyebrow": { "class": "tracking-[0.18em]", "usage": "uppercase eyebrow labels", "status": "project-extra" },
+        "wide": { "class": "tracking-wide", "value": "0.025em", "status": "tailwind-default" },
+        "wider": { "class": "tracking-wider", "value": "0.05em", "status": "tailwind-default" }
+      }
+    },
+    "spacing": {
+      "standard": {
+        "unit": { "$value": "4px", "$type": "dimension" },
+        "8": { "$value": "8px", "$type": "dimension" },
+        "12": { "$value": "12px", "$type": "dimension" },
+        "16": { "$value": "16px", "$type": "dimension" },
+        "24": { "$value": "24px", "$type": "dimension" },
+        "32": { "$value": "32px", "$type": "dimension" },
+        "40": { "$value": "40px", "$type": "dimension" },
+        "48": { "$value": "48px", "$type": "dimension" },
+        "64": { "$value": "64px", "$type": "dimension" },
+        "80": { "$value": "80px", "$type": "dimension" },
+        "96": { "$value": "96px", "$type": "dimension" }
+      },
+      "project": {
+        "status": "tailwind-default",
+        "note": "No custom spacing tokens are defined in src/styles.css @theme. Project uses Tailwind spacing utilities plus occasional arbitrary values."
+      }
+    },
+    "radius": {
+      "buttons": {
+        "standard": { "$value": "12px", "$type": "dimension", "cssVariable": "--radius-buttons" },
+        "project": { "$value": "13px", "cssVariable": "--radius-button", "tailwindExample": "rounded-(--radius-button)" },
+        "status": "project-variant"
+      },
+      "cards": {
+        "standard": { "$value": "12px", "$type": "dimension", "cssVariable": "--radius-cards" },
+        "project": { "$value": "16px", "cssVariable": "--radius-card", "tailwindExample": "rounded-(--radius-card)" },
+        "status": "project-variant"
+      },
+      "inputs": {
+        "standard": { "$value": "12px", "$type": "dimension", "cssVariable": "--radius-inputs" },
+        "project": { "nearestCssVariable": "--radius-button", "$value": "13px" },
+        "status": "project-variant"
+      },
+      "banners": {
+        "standard": null,
+        "project": { "$value": "24px", "cssVariable": "--radius-banner" },
+        "status": "project-extra"
+      }
+    }
+  },
+  "componentAudit": {
+    "primaryButton": {
+      "expected": "Duo Green background, white text, 3D bottom shadow, uppercase bold Duolingo Sans.",
+      "projectImplementation": ".btn + .btn-primary in src/styles.css",
+      "status": "match",
+      "notes": [
+        "Project uses --color-primary-dark #478700 for the pedestal instead of reference #3f8f01.",
+        "This is an accepted project variant unless the visual contrast is clearly wrong."
+      ]
+    },
+    "secondaryButton": {
+      "expected": "White/surface background, border, flat except Duolingo-style pressed border/shadow.",
+      "projectImplementation": ".btn-secondary in src/styles.css",
+      "status": "match"
+    },
+    "card": {
+      "expected": "Flat white surface with thick rounded border; no traditional elevation shadow.",
+      "projectImplementation": ".card and .card-interactive in src/styles.css",
+      "status": "match",
+      "auditFlags": ["shadow-lg", "shadow-xl", "drop-shadow", "hardcoded hex in component"]
+    },
+    "headline": {
+      "expected": "Large display headlines may use Feather; small UI/body text should use Duolingo Sans.",
+      "projectImplementation": "font-display class maps to Feather.",
+      "status": "near-match",
+      "knownException": "Avatar/profile initials use font-display at smaller sizes."
+    }
+  }
+}

@@ -1,7 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Voice, { type SpeechResultsEvent, type SpeechErrorEvent } from "@react-native-voice/voice";
+import { Platform } from "react-native";
 
-export type MicState = "idle" | "listening" | "stopped";
+export type MicState = "idle" | "listening" | "stopped" | "unavailable";
 
 interface UseSpeechToTextOptions {
   maxSeconds?: number;
@@ -17,10 +18,24 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
   const [transcript, setTranscript] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startMsRef = useRef<number | null>(null);
   const isListeningRef = useRef(false);
+
+  // Check Voice availability on mount (Android speech services may be missing).
+  useEffect(() => {
+    let cancelled = false;
+    Voice.isAvailable()
+      .then((available: 0 | 1) => {
+        if (!cancelled) setIsAvailable(available === 1);
+      })
+      .catch(() => {
+        if (!cancelled) setIsAvailable(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const cleanup = useCallback(() => {
     if (timerRef.current) {
@@ -36,6 +51,16 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
     setError(null);
     setTranscript("");
     setElapsed(0);
+
+    // Check availability before attempting to start.
+    if (isAvailable === false) {
+      const msg = Platform.OS === "android"
+        ? "Thiết bị không hỗ trợ nhận diện giọng nói. Cài Google app hoặc vào Cài đặt > Ngôn ngữ & nhập liệu > Nhập liệu giọng nói."
+        : "Thiết bị không hỗ trợ nhận diện giọng nói.";
+      setError(msg);
+      onError?.(msg);
+      return;
+    }
 
     try {
       isListeningRef.current = true;
@@ -86,7 +111,7 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
       isListeningRef.current = false;
       cleanup();
     }
-  }, [language, maxSeconds, onEnd, onError, cleanup]);
+  }, [language, maxSeconds, onEnd, onError, cleanup, isAvailable]);
 
   const stop = useCallback(() => {
     if (!isListeningRef.current) return;
@@ -123,14 +148,12 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
     };
   }, [cleanup]);
 
-  const isAvailable = true;
-
   return {
     state,
     transcript,
     elapsed,
     error,
-    isAvailable,
+    isAvailable: isAvailable !== false, // optimistically true while checking
     start,
     stop,
     reset,

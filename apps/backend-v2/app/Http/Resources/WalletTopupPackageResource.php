@@ -23,6 +23,7 @@ final class WalletTopupPackageResource extends JsonResource
             'bonus_coins' => $this->resource->bonus_coins,
             'total_coins' => $this->resource->totalCoins(),
             'display_order' => $this->resource->display_order,
+            'is_best_value' => (bool) $this->resource->is_best_value,
         ];
     }
 }

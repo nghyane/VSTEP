@@ -119,6 +119,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
         accentColor={COLOR}
         onClose={onBack}
         c={c}
+        topInset={insets.top}
       />
 
       {/* Passage toggle */}

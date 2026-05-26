@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
     'bonus_coins',
     'display_order',
     'is_active',
+    'is_best_value',
 ])]
 class WalletTopupPackage extends BaseModel
 {
@@ -20,6 +21,7 @@ class WalletTopupPackage extends BaseModel
     {
         return [
             'is_active' => 'boolean',
+            'is_best_value' => 'boolean',
         ];
     }
 

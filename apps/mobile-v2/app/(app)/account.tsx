@@ -41,40 +41,38 @@ export default function AccountScreen() {
 
       <View style={s.sectionGap}>
         <Text style={[s.sectionLabel, { color: c.subtle }]}>BẢO MẬT</Text>
-        <HapticTouchable
-          onPress={() => setShowChangePassword(true)}
-          style={[s.actionRow, { backgroundColor: c.card, borderColor: c.border }]}
-        >
-          <Ionicons name="lock-closed-outline" size={18} color={c.mutedForeground} />
-          <View style={{ flex: 1 }}>
-            <Text style={[s.infoLabel, { color: c.subtle }]}>Mật khẩu</Text>
-            <Text style={[s.infoValue, { color: c.foreground }]}>••••••••</Text>
+        {user?.hasPassword === false ? (
+          <View style={[s.actionRow, { backgroundColor: c.card, borderColor: c.border }]}>
+            <Ionicons name="lock-closed-outline" size={18} color={c.mutedForeground} />
+            <View style={{ flex: 1 }}>
+              <Text style={[s.infoLabel, { color: c.subtle }]}>Mật khẩu</Text>
+              <Text style={[s.infoValue, { color: c.mutedForeground }]}>Đăng nhập bằng Google — mật khẩu do Google quản lý.</Text>
+            </View>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={c.subtle} />
-        </HapticTouchable>
+        ) : (
+          <HapticTouchable
+            onPress={() => setShowChangePassword(true)}
+            style={[s.actionRow, { backgroundColor: c.card, borderColor: c.border }]}
+          >
+            <Ionicons name="lock-closed-outline" size={18} color={c.mutedForeground} />
+            <View style={{ flex: 1 }}>
+              <Text style={[s.infoLabel, { color: c.subtle }]}>Mật khẩu</Text>
+              <Text style={[s.infoValue, { color: c.foreground }]}>••••••••</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={c.subtle} />
+          </HapticTouchable>
+        )}
       </View>
 
       <DepthButton
         variant="secondary"
         fullWidth
-        onPress={() => router.push("/(app)/goal")}
-        style={{ marginTop: spacing.md }}
-      >
-        <Ionicons name="flag-outline" size={16} color={c.primary} />
-        <Text style={{ color: c.primary, marginLeft: spacing.xs, fontFamily: fontFamily.semiBold }}>
-          Đổi mục tiêu học tập
-        </Text>
-      </DepthButton>
-
-      <DepthButton
-        variant="secondary"
-        fullWidth
         onPress={() => router.push("/(app)/(tabs)/profile")}
-        style={{ marginTop: spacing.sm }}
+        style={{ marginTop: spacing.md }}
       >
         <Ionicons name="people-outline" size={16} color={c.info} />
         <Text style={{ color: c.info, marginLeft: spacing.xs, fontFamily: fontFamily.semiBold }}>
-          Quản lý hồ sơ
+          Quản lý hồ sơ & mục tiêu
         </Text>
       </DepthButton>
 

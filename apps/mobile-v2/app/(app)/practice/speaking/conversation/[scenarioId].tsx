@@ -8,7 +8,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -40,20 +39,36 @@ export default function SpeakingConversationScreen() {
   const [micState, setMicState] = useState<MicState>("idle");
   const [speakingTurnId, setSpeakingTurnId] = useState<string | null>(null);
 
+  // Auto-end active session when navigating away (mirror FE v3 confirmExit).
+  const cleanupRef = useRef(false);
+  useEffect(() => {
+    return () => {
+      if (!cleanupRef.current && conv.session && !conv.summary) {
+        cleanupRef.current = true;
+        conv.endSession();
+      }
+    };
+    // conv.session/summary/endSession are the stable values we need;
+    // adding `conv` itself would re-trigger cleanup on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conv.session, conv.summary, conv.endSession]);
+
   const speechToText = useSpeechToText({
     maxSeconds: MAX_RECORD_SECONDS,
     language: "en-US",
     onResult: (transcript) => {
-      conv.setInput(transcript);
       setMicState("idle");
+      // Auto-submit transcript directly (mirror FE v3 doSubmit).
+      conv.submitVoice(transcript);
     },
     onEnd: () => setMicState("idle"),
     onError: () => setMicState("idle"),
   });
 
-  // Mic pulse animation
+  // Mic pulse animation (listening + AI speaking states)
   useEffect(() => {
-    if (speechToText.state === "listening") {
+    const active = speechToText.state === "listening" || !!speakingTurnId;
+    if (active) {
       Animated.loop(
         Animated.sequence([
           Animated.timing(micPulseAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
@@ -61,9 +76,10 @@ export default function SpeakingConversationScreen() {
         ]),
       ).start();
     } else {
+      micPulseAnim.stopAnimation();
       micPulseAnim.setValue(0);
     }
-  }, [speechToText.state, micPulseAnim]);
+  }, [speechToText.state, speakingTurnId, micPulseAnim]);
 
   // Auto-scroll
   useEffect(() => {
@@ -79,12 +95,11 @@ export default function SpeakingConversationScreen() {
 
   const handleMicPress = () => {
     if (micState === "listening") {
+      // onResult/onEnd/onError callbacks will update micState
       speechToText.stop();
-      setMicState("stopped");
       return;
     }
     if (micState === "idle") {
-      conv.setInput("");
       speechToText.start();
       setMicState("listening");
     }
@@ -172,7 +187,7 @@ export default function SpeakingConversationScreen() {
       style={[s.root, { backgroundColor: c.background }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={[s.topBar, { borderBottomColor: c.borderLight }]}>
+      <View style={[s.topBar, { borderBottomColor: c.borderLight, paddingTop: insets.top + spacing.sm }]}>
         <HapticTouchable onPress={handleClose} style={s.iconButton}>
           <Ionicons name="close" size={22} color={c.foreground} />
         </HapticTouchable>
@@ -201,9 +216,9 @@ export default function SpeakingConversationScreen() {
           {session.scenario.targetVocab.length > 0 && (
             <View style={s.chipRow}>
               {session.scenario.targetVocab.slice(0, 6).map((word) => (
-                <HapticTouchable key={word} onPress={() => conv.appendWord(word)} style={[s.vocabChip, { backgroundColor: c.coinTint }]}>
+                <View key={word} style={[s.vocabChip, { backgroundColor: c.coinTint }]}>
                   <Text style={[s.vocabText, { color: c.coinDark }]}>{word}</Text>
-                </HapticTouchable>
+                </View>
               ))}
             </View>
           )}
@@ -224,7 +239,6 @@ export default function SpeakingConversationScreen() {
                 setSpeakingTurnId((current) => (current === turn.id ? null : current));
               }, ms);
             }}
-            onAppendWord={conv.appendWord}
           />
         ))}
 
@@ -246,6 +260,7 @@ export default function SpeakingConversationScreen() {
 
       {!conv.summary ? (
         <View style={[s.footer, { paddingBottom: insets.bottom + spacing.md, borderTopColor: c.borderLight, backgroundColor: c.surface }]}>
+          {/* Live transcript while listening (mirror FE v3 listening state) */}
           {speechToText.state === "listening" && (
             <View style={[s.sttBlock, { backgroundColor: c.card, borderColor: c.border }]}>
               <Text style={[s.sttLabel, { color: c.mutedForeground }]}>Đang nghe...</Text>
@@ -259,55 +274,76 @@ export default function SpeakingConversationScreen() {
             </View>
           )}
 
-          <View style={s.inputRow}>
-            <TextInput
-              value={conv.input}
-              onChangeText={conv.setInput}
-              placeholder={speechToText.isAvailable ? "Nhập hoặc dùng micro để nói..." : "Nhập câu trả lời..."}
-              placeholderTextColor={c.placeholder}
-              multiline
-              style={[s.input, { color: c.foreground, borderColor: c.border, backgroundColor: c.card }]}
-            />
-            <HapticTouchable
-              onPress={conv.sendText}
-              disabled={conv.input.trim().length === 0 || conv.isSubmitting}
-              style={[s.sendButton, { backgroundColor: c.skillSpeaking, opacity: conv.input.trim().length === 0 || conv.isSubmitting ? 0.45 : 1 }]}
-            >
-              {conv.isSubmitting ? <ActivityIndicator color={c.foreground} /> : <Ionicons name="send" size={20} color={c.foreground} />}
-            </HapticTouchable>
-          </View>
-
-          {speechToText.isAvailable && (
-            <View style={s.micRow}>
-              {speechToText.state === "listening" ? (
+          {/* Mic-only input — mirror FE v3 mic-centered footer */}
+          <View style={s.micCenter}>
+            {speakingTurnId ? (
+              /* AI đang phát — nhấn để bỏ qua (FE v3 "speaking" state) */
+              <View style={s.micLargeWrap}>
                 <Animated.View
                   style={[
-                    s.micPulse,
+                    s.micPulseLarge,
                     {
-                      opacity: micPulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.2, 0.6] }),
+                      backgroundColor: c.skillSpeaking + "20",
+                      opacity: micPulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.15, 0.4] }),
                       transform: [{ scale: micPulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.3] }) }],
                     },
                   ]}
                 />
-              ) : null}
-              <DepthButton
-                onPress={handleMicPress}
-                disabled={!speechToText.isAvailable || speechToText.state === "listening"}
-                variant={speechToText.state === "listening" ? "destructive" : "secondary"}
-                size="sm"
-                style={s.micButton}
-              >
-                <Ionicons
-                  name={speechToText.state === "listening" ? "stop" : "mic"}
-                  size={18}
-                  color={speechToText.state === "listening" ? "#fff" : c.skillSpeaking}
+                <HapticTouchable onPress={() => setSpeakingTurnId(null)} style={[s.micLargeBtn, { backgroundColor: c.skillSpeaking, borderBottomColor: c.coinDark }]}>
+                  <Ionicons name="volume-high" size={28} color={c.primaryForeground} />
+                </HapticTouchable>
+              </View>
+            ) : speechToText.state === "listening" ? (
+              <View style={s.micLargeWrap}>
+                <Animated.View
+                  style={[
+                    s.micPulseLarge,
+                    {
+                      backgroundColor: c.destructive + "40",
+                      opacity: micPulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.2, 0.6] }),
+                      transform: [{ scale: micPulseAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.4] }) }],
+                    },
+                  ]}
                 />
-                <Text style={[s.micButtonText, { color: speechToText.state === "listening" ? "#fff" : c.skillSpeaking }]}>
-                  {speechToText.state === "listening" ? "Dừng" : "Nói"}
-                </Text>
-              </DepthButton>
-            </View>
-          )}
+                <HapticTouchable onPress={handleMicPress} style={[s.micLargeBtn, { backgroundColor: c.destructive, borderBottomColor: "#B5322A" }]}>
+                  <View style={[s.micStopSquare, { backgroundColor: c.primaryForeground }]} />
+                </HapticTouchable>
+              </View>
+            ) : (
+              <HapticTouchable
+                onPress={handleMicPress}
+                disabled={
+                  conv.isSubmitting ||
+                  speechToText.isAvailable === false ||
+                  speechToText.isAvailable === null
+                }
+                style={[s.micLargeBtn, { backgroundColor: c.surface, borderColor: c.border, borderBottomColor: "#CACACA", opacity: conv.isSubmitting || speechToText.isAvailable === false ? 0.5 : 1 }]}
+              >
+                {speechToText.isAvailable === null ? (
+                  <ActivityIndicator size="small" color={c.skillSpeaking} />
+                ) : (
+                  <Ionicons name="mic" size={28} color={c.skillSpeaking} />
+                )}
+              </HapticTouchable>
+            )}
+            <Text style={[s.micHint, { color: c.mutedForeground }]}>
+              {speakingTurnId
+                ? "Đang phát · Nhấn để bỏ qua"
+                : speechToText.state === "listening"
+                  ? `${speechToText.elapsed}s / ${MAX_RECORD_SECONDS}s`
+                  : speechToText.isAvailable === false
+                    ? "Thiết bị không hỗ trợ"
+                    : speechToText.isAvailable === null
+                      ? "Đang kiểm tra..."
+                      : conv.isSubmitting
+                        ? "Đang xử lý..."
+                        : "Nhấn để nói"}
+            </Text>
+
+            {speechToText.error && (
+              <Text style={[s.sttError, { color: c.destructive }]}>{speechToText.error}</Text>
+            )}
+          </View>
         </View>
       ) : (
         <View style={[s.doneFooter, { paddingBottom: insets.bottom + spacing.md, backgroundColor: c.surface, borderTopColor: c.borderLight }]}>
@@ -337,7 +373,7 @@ function ReviewBlock({
       <View style={s.reviewStats}>
         <Stat label="Lượt" value={String(summary.userTurnCount)} c={c} />
         <Stat label="Từ vựng" value={`${summary.vocabUsedPct}%`} c={c} />
-        <Stat label="Grammar" value={`${summary.grammarOkPct}%`} c={c} />
+        <Stat label="Ngữ pháp" value={`${summary.grammarOkPct}%`} c={c} />
       </View>
       {loading ? <ActivityIndicator color={c.skillSpeaking} /> : null}
       {review?.strengths?.length ? <ReviewList title="Điểm tốt" items={review.strengths} c={c} /> : null}
@@ -404,20 +440,27 @@ const s = StyleSheet.create({
   pendingRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingVertical: spacing.sm },
   pendingDot: { width: 8, height: 8, borderRadius: 4 },
   pendingText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
-  footer: { gap: spacing.sm, paddingHorizontal: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1 },
+  footer: { gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1 },
   doneFooter: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1 },
-  inputRow: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm },
-  input: { flex: 1, maxHeight: 120, minHeight: 48, borderWidth: 2, borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, fontSize: fontSize.sm, textAlignVertical: "top" },
-  sendButton: { width: 48, height: 48, borderRadius: radius.full, alignItems: "center", justifyContent: "center" },
   sttBlock: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.md, gap: spacing.xs },
   sttLabel: { fontSize: 10, fontFamily: fontFamily.extraBold, letterSpacing: 1 },
   sttTranscript: { fontSize: fontSize.sm, lineHeight: 21, fontFamily: fontFamily.medium },
   sttTimerRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   sttTimer: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
-  micRow: { alignItems: "center", justifyContent: "center", paddingVertical: spacing.sm },
-  micPulse: { position: "absolute", width: 40, height: 40, borderRadius: 20 },
-  micButton: { width: 100 },
-  micButtonText: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
+  micCenter: { alignItems: "center", gap: spacing.xs },
+  micLargeWrap: { position: "relative", width: 72, height: 72, alignItems: "center", justifyContent: "center" },
+  micPulseLarge: { position: "absolute", width: 72, height: 72, borderRadius: 36, backgroundColor: "transparent" },
+  micLargeBtn: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderBottomWidth: 4,
+  },
+  micStopSquare: { width: 20, height: 20, borderRadius: 4 },
+  micHint: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   reviewCard: { gap: spacing.md, padding: spacing.lg },
   reviewTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
   reviewStats: { flexDirection: "row", gap: spacing.sm },
@@ -430,4 +473,5 @@ const s = StyleSheet.create({
   correction: { borderWidth: 1, borderRadius: radius.md, padding: spacing.sm, gap: 2 },
   correctionText: { fontSize: fontSize.xs, lineHeight: 18 },
   tip: { fontSize: fontSize.sm, fontFamily: fontFamily.bold, lineHeight: 20 },
+  sttError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, textAlign: "center", marginTop: spacing.xs },
 });

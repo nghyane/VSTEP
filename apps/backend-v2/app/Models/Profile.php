@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'target_deadline',
     'entry_level',
     'avatar_color',
+    'avatar_key',
+    'avatar_url',
     'is_initial_profile',
 ])]
 class Profile extends BaseModel

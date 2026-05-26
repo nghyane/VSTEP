@@ -82,6 +82,7 @@ function SessionView({ lesson, insets, c, onBack }: SessionViewProps) {
         accentColor={COLOR}
         onClose={onBack}
         c={c}
+        topInset={insets.top}
       />
 
       <View style={[s.lessonHeader, { borderBottomColor: c.borderLight }]}>

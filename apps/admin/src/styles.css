@@ -21,3 +21,14 @@ body {
 	border-radius: 0 !important;
 }
 
+/* Topup packages: highlight gói "Best value" để admin scan thấy ngay */
+.topup-row-best > td {
+	background: #fffbe6 !important;
+}
+.topup-row-best:hover > td {
+	background: #fff3bf !important;
+}
+.topup-row-best > td:first-child {
+	box-shadow: inset 4px 0 0 0 #faad14;
+}
+
