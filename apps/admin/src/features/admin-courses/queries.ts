@@ -77,6 +77,8 @@ export function useUpdateCourse(id: string) {
 		onSuccess: () => {
 			invalidateList(qc)
 			invalidateDetail(qc, id)
+			// Update end_date/start_date ảnh hưởng đến slots hiển thị → invalidate luôn.
+			invalidateSlots(qc, id)
 		},
 	})
 }
@@ -214,6 +216,9 @@ export const slotsQuery = (courseId: string) =>
 		queryKey: ["admin", "courses", "slots", courseId],
 		queryFn: () => api.get(`admin/courses/${courseId}/slots`).json<ApiResponse<AdminTeacherSlot[]>>(),
 		staleTime: 15_000,
+		// Tab "Lịch 1-1" mount/unmount khi chuyển tab — luôn refetch khi mount lại
+		// để đảm bảo data đồng bộ sau khi update course hoặc tạo slot từ tab khác.
+		refetchOnMount: "always",
 	})
 
 function invalidateSlots(qc: ReturnType<typeof useQueryClient>, courseId: string): void {

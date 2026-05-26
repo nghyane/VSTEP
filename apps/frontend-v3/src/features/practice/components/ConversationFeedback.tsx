@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Icon } from "#/components/Icon"
 import type { ConversationTurnFeedback } from "#/features/practice/types"
+import { useIpa } from "#/lib/phonemize"
 import { cn, speak } from "#/lib/utils"
 
 interface Props {
@@ -11,6 +12,7 @@ export function ConversationFeedback({ feedback }: Props) {
 	const [open, setOpen] = useState(false)
 	const grammarCount = feedback.grammar_corrections?.length ?? 0
 	const summary = `${feedback.word_count.used}/${feedback.word_count.target} từ${grammarCount > 0 ? ` · ${grammarCount} gợi ý ngữ pháp` : " · Ngữ pháp OK"}`
+	const betterIpa = useIpa(feedback.better ?? "", feedback.better_ipa)
 
 	return (
 		<div className="mt-2">
@@ -98,7 +100,7 @@ export function ConversationFeedback({ feedback }: Props) {
 								<Icon name="volume" size="xs" />
 							</button>
 						</div>
-						{feedback.better_ipa && <p className="text-xs text-muted italic mt-1">/{feedback.better_ipa}/</p>}
+						{betterIpa && <p className="text-xs text-muted italic mt-1">/{betterIpa}/</p>}
 					</div>
 				</div>
 			)}

@@ -34,36 +34,30 @@ function ConversationPage() {
 		const isHttp = err instanceof HTTPError
 		const status = isHttp ? err.response.status : 0
 
-		// 422: active session đã tồn tại — gợi ý FE tiếp tục session cũ hoặc end trước.
-		const isActiveConflict = status === 422
-		// 503: AI service down — retry button
+		// 503: AI service down
 		const isServiceDown = status === 503
 
-		const message = isActiveConflict
-			? "Bạn đang có 1 cuộc hội thoại đang diễn ra với scenario này. Hãy kết thúc trước khi bắt đầu mới."
-			: isServiceDown
-				? "AI tạm thời không phản hồi. Vui lòng thử lại sau."
-				: "Không thể bắt đầu cuộc hội thoại. Vui lòng thử lại."
+		const message = isServiceDown
+			? "AI tạm thời không phản hồi. Vui lòng thử lại sau."
+			: "Không thể bắt đầu cuộc hội thoại. Vui lòng thử lại."
 
 		return (
 			<div className="min-h-screen bg-background flex items-center justify-center px-6">
 				<div className="card max-w-md w-full p-6 text-center space-y-4">
 					<p className="text-sm font-bold text-destructive">{message}</p>
 					<div className="flex gap-2 justify-center">
-						{!isActiveConflict && (
-							<button
-								type="button"
-								onClick={() => {
-									started.current = false
-									startMutation.reset()
-									started.current = true
-									startMutation.mutate()
-								}}
-								className="btn btn-primary px-6"
-							>
-								Thử lại
-							</button>
-						)}
+						<button
+							type="button"
+							onClick={() => {
+								started.current = false
+								startMutation.reset()
+								started.current = true
+								startMutation.mutate()
+							}}
+							className="btn btn-primary px-6"
+						>
+							Thử lại
+						</button>
 						<button
 							type="button"
 							onClick={() => navigate({ to: "/luyen-tap/noi" })}

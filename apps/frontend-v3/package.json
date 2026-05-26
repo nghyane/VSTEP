@@ -16,6 +16,7 @@
 		"@tanstack/react-router": "1.168.23",
 		"clsx": "^2.1.1",
 		"ky": "2.0.1",
+		"phonemize": "^1.2.0",
 		"react": "19.2.5",
 		"react-dom": "19.2.5",
 		"recharts": "3.8.1",

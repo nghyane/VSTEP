@@ -5,6 +5,7 @@ import { Icon } from "#/components/Icon"
 import { getPronunciationReview, type PronunciationReview } from "#/features/practice/actions"
 import { ShadowingWordChips } from "#/features/practice/components/ShadowingWordChips"
 import type { ShadowingSegment } from "#/features/practice/types"
+import { useIpa } from "#/lib/phonemize"
 import { cn, translateText, type WordCompareResult } from "#/lib/utils"
 
 export interface ShadowingAttemptResult {
@@ -155,6 +156,7 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 	const [showIpa, setShowIpa] = useState(false)
 	const [showReview, setShowReview] = useState(false)
 	const accuracyPercent = attempt?.accuracyPercent ?? null
+	const segmentIpa = useIpa(segment.text, segment.ipa)
 
 	const reviewMutation = useMutation({
 		mutationFn: () => getPronunciationReview(segment.text, attempt?.transcript ?? ""),
@@ -205,7 +207,9 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 					<p className="text-lg font-bold text-foreground leading-relaxed">{segment.text}</p>
 				)}
 
-				{showIpa && <p className="mt-3 text-sm text-subtle font-mono leading-relaxed">{segment.ipa}</p>}
+				{showIpa && segmentIpa && (
+					<p className="mt-3 text-sm text-subtle font-mono leading-relaxed">/{segmentIpa}/</p>
+				)}
 
 				<TranslateButton text={segment.text} />
 			</div>
@@ -223,10 +227,10 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 								accuracyPercent === null
 									? "bg-border/30 text-muted"
 									: accuracyPercent >= 70
-									? "bg-success/15 text-success"
-									: accuracyPercent >= 40
-										? "bg-warning/15 text-warning"
-										: "bg-destructive/15 text-destructive",
+										? "bg-success/15 text-success"
+										: accuracyPercent >= 40
+											? "bg-warning/15 text-warning"
+											: "bg-destructive/15 text-destructive",
 							)}
 						>
 							{accuracyPercent !== null ? `${accuracyPercent}%` : "--"}

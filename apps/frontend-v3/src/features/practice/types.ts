@@ -203,6 +203,7 @@ export interface ConversationTurnFeedback {
 	vocab_check: ConversationVocabCheck[]
 	better: string | null
 	better_ipa: string | null
+	user_ipa: string | null
 }
 
 export type ConversationTurnRole = "ai" | "user"

@@ -73,11 +73,17 @@ export function ConversationReviewPopup({ sessionId, turnCount, onClose }: Props
 		queryFn: () => getConversationReview(sessionId),
 	})
 
-	const isServiceDown = error instanceof HTTPError && error.response.status === 503
+	let errorMsg = "Không thể tải đánh giá."
+	if (error instanceof HTTPError) {
+		const status = error.response.status
+		if (status === 503) errorMsg = "AI tạm thời không phản hồi. Vui lòng thử lại sau."
+		else if (status === 403) errorMsg = "Bạn không có quyền xem đánh giá này."
+		else errorMsg = `Lỗi server (${status}). Vui lòng thử lại.`
+	}
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-			<div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-6 shadow-xl mx-4 animate-[popIn_0.25s_ease-out]">
+			<div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-6 shadow-xl mx-4 animate-[popIn_0.25s_ease-out] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 				<div className="flex items-center justify-between mb-2">
 					<h2 className="font-extrabold text-lg text-foreground">Đánh giá của AI</h2>
 					<button type="button" onClick={onClose} className="p-1 text-muted hover:text-foreground transition">
@@ -105,11 +111,7 @@ export function ConversationReviewPopup({ sessionId, turnCount, onClose }: Props
 
 				{isError && (
 					<div className="text-center py-6">
-						<p className="text-sm text-destructive mb-3">
-							{isServiceDown
-								? "AI tạm thời không phản hồi. Vui lòng thử lại sau."
-								: "Không thể tải đánh giá."}
-						</p>
+						<p className="text-sm text-destructive mb-3">{errorMsg}</p>
 						<button type="button" onClick={() => refetch()} className="btn btn-secondary px-6">
 							Thử lại
 						</button>

@@ -6,6 +6,7 @@ namespace App\Http\Requests\Admin\Course;
 
 use App\Enums\Role;
 use App\Enums\VstepLevel;
+use App\Models\Course;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -39,8 +40,35 @@ final class UpdateCourseRequest extends FormRequest
             'max_slots_per_student' => ['sometimes', 'integer', 'min:1'],
             'booking_coin_cost' => ['sometimes', 'integer', 'min:0', 'max:10000'],
             // Update: không enforce after_or_equal:today vì course cũ có thể đã bắt đầu.
-            'start_date' => ['sometimes', 'date'],
-            'end_date' => ['sometimes', 'date', 'after:start_date'],
+            // Lock start_date nếu còn <= 10 ngày trước khóa bắt đầu (tránh ảnh hưởng booking).
+            'start_date' => [
+                'sometimes', 'date',
+                function (string $attr, mixed $value, \Closure $fail) {
+                    $course = Course::find($this->route('id'));
+                    if (! $course) {
+                        return;
+                    }
+                    $currentStart = $course->start_date;
+                    $daysUntilStart = (int) now()->startOfDay()->diffInDays($currentStart, false);
+                    if ($daysUntilStart <= Course::START_DATE_LOCK_DAYS && (string) $value !== $currentStart->toDateString()) {
+                        $fail('Không thể đổi ngày bắt đầu khi còn '.Course::START_DATE_LOCK_DAYS.' ngày hoặc ít hơn trước khi khóa học bắt đầu.');
+                    }
+                },
+            ],
+            'end_date' => [
+                'sometimes', 'date', 'after:start_date',
+                function (string $attr, mixed $value, \Closure $fail) {
+                    $start = $this->input('start_date')
+                        ?? Course::where('id', $this->route('id'))->value('start_date');
+                    if (! $start || ! strtotime((string) $start) || ! strtotime((string) $value)) {
+                        return;
+                    }
+                    $maxEnd = date('Y-m-d', strtotime('+'.Course::MAX_DURATION_DAYS.' days', strtotime((string) $start)));
+                    if ($value > $maxEnd) {
+                        $fail('Khóa học không được kéo dài quá '.Course::MAX_DURATION_DAYS.' ngày.');
+                    }
+                },
+            ],
             'required_full_tests' => ['sometimes', 'integer', 'min:0'],
             'commitment_window_days' => ['sometimes', 'integer', 'min:0'],
             'livestream_url' => ['sometimes', 'nullable', 'string', 'max:500'],

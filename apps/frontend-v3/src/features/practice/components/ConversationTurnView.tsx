@@ -4,6 +4,7 @@ import { ConversationFeedback } from "#/features/practice/components/Conversatio
 import type { ConversationTurn } from "#/features/practice/types"
 import { useAuth } from "#/lib/auth"
 import { getAvatarUrl, getProfileAvatarSrc } from "#/lib/avatar"
+import { useIpa } from "#/lib/phonemize"
 import { cn, translateText } from "#/lib/utils"
 
 interface Props {
@@ -25,6 +26,7 @@ function TurnActions({
 	const [showIpa, setShowIpa] = useState(false)
 	const [translation, setTranslation] = useState<string | null>(null)
 	const [loading, setLoading] = useState(false)
+	const displayIpa = useIpa(text, ipa)
 
 	const toggleTranslate = async () => {
 		if (translation) {
@@ -40,7 +42,7 @@ function TurnActions({
 	return (
 		<div className="mt-2 space-y-1.5">
 			<div className={cn("flex items-center gap-1.5 flex-wrap", align === "right" && "justify-end")}>
-				{ipa && (
+				{displayIpa && (
 					<button
 						type="button"
 						onClick={() => setShowIpa((v) => !v)}
@@ -73,8 +75,10 @@ function TurnActions({
 				</button>
 			</div>
 
-			{showIpa && ipa && (
-				<p className={cn("text-sm text-muted italic px-1", align === "right" && "text-right")}>/{ipa}/</p>
+			{showIpa && displayIpa && (
+				<p className={cn("text-sm text-muted italic px-1", align === "right" && "text-right")}>
+					/{displayIpa}/
+				</p>
 			)}
 
 			{translation && (

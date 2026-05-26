@@ -27,17 +27,14 @@ export const api = ky.create({
 		// này extractError luôn đọc được payload BE (message + errors) thay vì
 		// rơi xuống fallback generic theo HTTP status.
 		beforeError: [
-			async (state) => {
-				const httpErr = state.error as Error & { response?: Response }
-				if (httpErr.response) {
-					try {
-						const body = (await httpErr.response.clone().json()) as Partial<ApiError>
-						;(httpErr as { _parsedBody?: Partial<ApiError> })._parsedBody = body
-					} catch {
-						// non-JSON body (vd HTML 500 page) — extractError sẽ fallback
-					}
+			({ error }) => {
+				// Ky v2 auto-parse JSON response vào error.data cho HTTPError.
+				// Gán vào _parsedBody để extractError đọc nhất quán.
+				const data = (error as { data?: unknown }).data as Partial<ApiError> | undefined
+				if (data && (data.message || data.errors)) {
+					;(error as { _parsedBody?: Partial<ApiError> })._parsedBody = data
 				}
-				return httpErr
+				return error
 			},
 		],
 	},

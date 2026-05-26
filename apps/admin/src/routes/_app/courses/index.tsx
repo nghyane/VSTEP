@@ -144,7 +144,10 @@ function CoursesListPage() {
 			showSuccess("Đã xoá khóa học.")
 			setDeleting(null)
 		} catch (err) {
-			showError((await extractError(err)).message)
+			const x = await extractError(err)
+			const detail = x.errors ? Object.values(x.errors).flat().join(" ") : x.message
+			showError(detail || x.message)
+			setDeleting(null)
 		}
 	}
 
