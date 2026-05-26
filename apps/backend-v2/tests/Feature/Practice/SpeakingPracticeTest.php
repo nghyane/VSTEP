@@ -57,6 +57,24 @@ class SpeakingPracticeTest extends TestCase
         $attempt->assertJsonPath('data.accuracy_percent', 95);
     }
 
+    public function test_drill_detail_computes_word_count_for_legacy_sentence(): void
+    {
+        $drill = PracticeSpeakingDrill::factory()->create(['is_published' => true]);
+        PracticeSpeakingDrillSentence::create([
+            'drill_id' => $drill->id,
+            'display_order' => 0,
+            'text' => 'I usually wake up at seven.',
+            'translation' => 'Tôi thường dậy lúc 7h.',
+            'word_count' => 0,
+        ]);
+
+        $token = $this->loginLearner();
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/practice/speaking/drills/{$drill->id}")
+            ->assertOk()
+            ->assertJsonPath('data.segments.0.word_count', 6);
+    }
+
     public function test_vstep_practice_submit(): void
     {
         $user = User::factory()->create();

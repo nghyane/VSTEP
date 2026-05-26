@@ -21,7 +21,7 @@ final class ExamImportService
      *
      * Validates structure before inserting. All inserts are atomic.
      *
-     * @param  array<string, mixed>  $examData  slug, title, source_school, tags, total_duration_minutes, is_published
+     * @param  array<string, mixed>  $examData  slug, title, source_school, tags, is_published
      * @param  array<string, mixed>  $versionData  version_number, published_at, + all content arrays
      *
      * @throws ValidationException If VSTEP structure rules are violated

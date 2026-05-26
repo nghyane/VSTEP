@@ -61,7 +61,7 @@ function BookingPage() {
 	return (
 		<>
 			<Header title="Đặt lịch 1-1" backTo={`/khoa-hoc/${courseId}`} />
-			<div className="px-10 pb-12 max-w-5xl mx-auto w-full space-y-6">
+			<div className="px-10 pb-12 space-y-6">
 				<p className="text-base text-muted max-w-2xl leading-relaxed">
 					{courseTitle && <span className="font-extrabold text-foreground">{courseTitle} · </span>}
 					Chọn 1 khung giờ trống để đặt buổi học 30 phút với giảng viên. Link Google Meet sẽ được gửi tới bạn
@@ -139,9 +139,12 @@ function BookingBody({
 			})
 			queryClient.invalidateQueries({ queryKey: ["wallet"] })
 			useToast.getState().add(`Đã trừ ${res.coins_charged} xu cho buổi học 1-1`, "success")
-			// Note: res.coins_charged đã là cost thực tế trả về từ BE, không phải hard-code.
 			setPending(null)
 			setSuccess(res.slot)
+		},
+		onError: () => {
+			useToast.getState().add("Không thể đặt buổi học. Vui lòng thử lại.", "error")
+			setPending(null)
 		},
 	})
 
@@ -155,7 +158,7 @@ function BookingBody({
 			<CommitmentGate commitment={data.commitment} />
 
 			{!locked && reachedLimit && (
-				<div className="card p-4 border-2 border-b-4 border-primary/30 bg-primary-tint/40 rounded-(--radius-card) text-sm font-extrabold text-primary-dark">
+				<div className="card p-4 rounded-(--radius-card) text-sm font-extrabold text-primary-dark bg-primary-tint">
 					Bạn đã dùng hết {data.max_bookings_per_student} buổi học 1-1 cho khóa này. Không thể đặt thêm.
 				</div>
 			)}
@@ -179,17 +182,18 @@ function BookingBody({
 						onClick={() => setWeekOffset(0)}
 						disabled={weekOffset === 0}
 						className={cn(
-							"min-w-[96px] px-4 h-9 rounded-full text-xs font-extrabold uppercase tracking-wider transition-colors",
+							"min-w-[96px] px-4 h-9 rounded-full text-xs font-extrabold uppercase tracking-wider transition-colors border-2",
 							weekOffset === 0
-								? "bg-primary-tint text-primary-dark cursor-default"
-								: "bg-surface text-muted hover:text-foreground hover:bg-background border-2 border-border",
+								? "border-primary/40 bg-primary-tint text-primary-dark cursor-default"
+								: "border-border bg-surface text-muted hover:text-foreground hover:bg-background",
 						)}
 					>
 						{weekOffset === 0 ? "Tuần này" : "Về tuần này"}
 					</button>
 					<WeekButton
 						label="Tuần sau"
-						icon="play"
+						icon="back"
+						className="scale-x-[-1]"
 						onClick={() => setWeekOffset(weekOffset + 1)}
 						disabled={weekOffset >= 4}
 					/>
@@ -230,11 +234,13 @@ function BookingBody({
 function WeekButton({
 	label,
 	icon,
+	className,
 	onClick,
 	disabled,
 }: {
 	label: string
-	icon: "back" | "play"
+	icon: "back"
+	className?: string
 	onClick: () => void
 	disabled: boolean
 }) {
@@ -248,7 +254,7 @@ function WeekButton({
 				"inline-flex size-9 items-center justify-center rounded-full bg-surface border-2 border-border text-muted transition-colors hover:text-foreground hover:bg-background disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-surface",
 			)}
 		>
-			<Icon name={icon} size="xs" className="h-3.5 w-auto" />
+			<Icon name={icon} size="xs" className={cn("h-3.5 w-auto", className)} />
 		</button>
 	)
 }
@@ -262,7 +268,7 @@ function TeacherCard({ teacher, myBookingsCount }: { teacher: BookingTeacher; my
 		.toUpperCase()
 	return (
 		<div className="card p-5 flex items-center gap-4">
-			<div className="size-14 shrink-0 rounded-2xl border-2 border-b-4 border-primary/30 bg-primary-tint flex items-center justify-center text-primary font-extrabold text-lg">
+			<div className="size-14 shrink-0 rounded-xl bg-primary-tint flex items-center justify-center text-primary font-extrabold text-lg">
 				{initials}
 			</div>
 			<div className="flex-1 min-w-0 space-y-1">
@@ -277,13 +283,13 @@ function TeacherCard({ teacher, myBookingsCount }: { teacher: BookingTeacher; my
 			</div>
 			<span
 				className={cn(
-					"inline-flex items-center gap-1.5 rounded-full border-2 border-b-4 px-3 py-1 text-xs font-extrabold shrink-0",
+					"inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-extrabold shrink-0",
 					myBookingsCount > 0
-						? "border-success/40 bg-success/10 text-success"
+						? "border-primary/40 bg-primary-tint text-primary-dark"
 						: "border-border bg-surface text-muted",
 				)}
 			>
-				<Icon name="check" size="xs" className="h-3 w-auto" />
+				{myBookingsCount > 0 && <Icon name="check" size="xs" className="h-3 w-auto" />}
 				{myBookingsCount > 0 ? `Đã đặt ${myBookingsCount} buổi` : "Chưa có buổi nào"}
 			</span>
 		</div>
@@ -292,9 +298,9 @@ function TeacherCard({ teacher, myBookingsCount }: { teacher: BookingTeacher; my
 
 function Legend() {
 	const items = [
-		{ key: "available", label: "Trống", className: "bg-primary-tint/80 border-primary/30" },
+		{ key: "available", label: "Trống", className: "bg-primary-tint border-primary/30" },
 		{ key: "booked_me", label: "Lịch của bạn", className: "bg-success/15 border-success/40" },
-		{ key: "booked_other", label: "Đã có người đặt", className: "bg-border/60 border-border" },
+		{ key: "booked_other", label: "Đã có người đặt", className: "bg-border-light border-border" },
 		{ key: "past", label: "Đã qua", className: "bg-surface border-border opacity-60" },
 	]
 	return (
@@ -362,8 +368,8 @@ function ConfirmBookingDialog({
 				onClick={onCancel}
 				className="absolute inset-0 bg-foreground/45 backdrop-blur-sm"
 			/>
-			<div className="relative w-full max-w-md rounded-(--radius-card) border-2 border-b-4 border-border bg-card overflow-hidden animate-[popIn_400ms_cubic-bezier(0.34,1.56,0.64,1)]">
-				<div className="bg-gradient-to-b from-primary-tint/70 to-transparent px-7 pt-6 pb-5">
+			<div className="relative w-full max-w-md rounded-(--radius-card) border border-border bg-card overflow-hidden animate-[popIn_400ms_cubic-bezier(0.34,1.56,0.64,1)]">
+				<div className="bg-gradient-to-b from-primary-tint to-transparent px-7 pt-6 pb-5">
 					<p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary-dark">
 						Xác nhận đặt lịch
 					</p>
@@ -376,10 +382,10 @@ function ConfirmBookingDialog({
 						<InfoTile label="Ngày" value={formatVnDate(slot.starts_at)} />
 						<InfoTile label="Thời gian" value={`${fmtClock(start)}–${fmtClock(end)}`} />
 					</div>
-					{/* Coin chip — gamification pattern: bg-coin-tint + border-coin/40 border-b-4 */}
-					<div className="rounded-(--radius-card) border-2 border-b-4 border-coin/40 bg-coin-tint px-4 py-3.5 flex items-center justify-between gap-4">
+					{/* Coin cost summary */}
+					<div className="rounded-(--radius-card) bg-coin-tint px-4 py-3.5 flex items-center justify-between gap-4">
 						<div className="flex items-center gap-3 min-w-0">
-							<span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-background border-2 border-coin/50">
+							<span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-coin/10">
 								<StaticIcon name="coin-md" size="md" className="h-6 w-auto" />
 							</span>
 							<div className="leading-tight min-w-0">
@@ -417,7 +423,7 @@ function ConfirmBookingDialog({
 							type="button"
 							onClick={onCancel}
 							disabled={isLoading}
-							className="flex-1 rounded-(--radius-button) border-2 border-border bg-surface px-5 py-2.5 text-sm font-extrabold uppercase tracking-tight text-foreground transition-all shadow-[0_4px_0_var(--color-border)] hover:border-primary/40 active:translate-y-[2px] active:shadow-[0_2px_0_var(--color-border)] disabled:opacity-60"
+							className="flex-1 btn btn-secondary text-sm disabled:opacity-60"
 						>
 							Huỷ
 						</button>
@@ -455,7 +461,7 @@ function ConfirmBookingDialog({
 
 function InfoTile({ label, value }: { label: string; value: string }) {
 	return (
-		<div className="space-y-1 rounded-(--radius-card) border-2 border-dashed border-border bg-background px-3.5 py-3">
+		<div className="space-y-1 rounded-(--radius-card) bg-border-light px-3.5 py-3">
 			<p className="text-[10px] font-extrabold uppercase tracking-wider text-muted">{label}</p>
 			<p className="text-sm font-extrabold tabular-nums text-foreground">{value}</p>
 		</div>
@@ -482,9 +488,9 @@ function SuccessPopup({
 				onClick={onClose}
 				className="absolute inset-0 bg-foreground/45 backdrop-blur-sm"
 			/>
-			<div className="relative w-full max-w-md rounded-(--radius-card) border-2 border-b-4 border-border bg-card overflow-hidden animate-[popIn_400ms_cubic-bezier(0.34,1.56,0.64,1)]">
-				<div className="bg-gradient-to-b from-success/15 to-transparent px-7 pt-7 pb-5 text-center">
-					<p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-success">
+			<div className="relative w-full max-w-md rounded-(--radius-card) border border-border bg-card overflow-hidden animate-[popIn_400ms_cubic-bezier(0.34,1.56,0.64,1)]">
+				<div className="bg-gradient-to-b from-primary-tint to-transparent px-7 pt-7 pb-5 text-center">
+					<p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary-dark">
 						Đặt lịch thành công
 					</p>
 					<h2 className="mt-2 text-xl font-extrabold text-foreground leading-snug">
@@ -530,9 +536,9 @@ function SuccessPopup({
 							</span>
 						))}
 						{/* Avatar core */}
-						<div className="relative size-24 rounded-full bg-success/15 border-2 border-b-4 border-success/40 flex items-center justify-center animate-[popIn_500ms_cubic-bezier(0.34,1.56,0.64,1)]">
+						<div className="relative size-24 rounded-full bg-primary-tint flex items-center justify-center animate-[popIn_500ms_cubic-bezier(0.34,1.56,0.64,1)]">
 							<StaticIcon name="avatar-nodding" size="xl" className="h-16 w-auto" />
-							<span className="absolute -top-2 -right-2 inline-flex items-center justify-center size-9 rounded-full bg-success border-2 border-b-4 border-primary-dark text-white animate-[popIn_500ms_cubic-bezier(0.34,1.56,0.64,1)_220ms_both]">
+							<span className="absolute -top-2 -right-2 inline-flex items-center justify-center size-9 rounded-full bg-primary text-white animate-[popIn_500ms_cubic-bezier(0.34,1.56,0.64,1)_220ms_both]">
 								<Icon name="check" size="sm" className="text-white" />
 							</span>
 						</div>
@@ -557,11 +563,7 @@ function SuccessPopup({
 							Mở Google Meet
 						</a>
 					)}
-					<button
-						type="button"
-						onClick={onClose}
-						className="w-full rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2.5 text-sm font-extrabold text-foreground transition-all hover:border-primary/40 active:translate-y-[2px] active:border-b-2"
-					>
+					<button type="button" onClick={onClose} className="btn btn-secondary w-full text-sm">
 						Đóng
 					</button>
 				</div>
@@ -610,9 +612,9 @@ function BookedDetailDialog({
 				onClick={onClose}
 				className="absolute inset-0 bg-foreground/45 backdrop-blur-sm"
 			/>
-			<div className="relative w-full max-w-md rounded-(--radius-card) border-2 border-b-4 border-border bg-card overflow-hidden animate-[popIn_400ms_cubic-bezier(0.34,1.56,0.64,1)]">
-				<div className="bg-gradient-to-b from-success/15 to-transparent px-7 pt-6 pb-5">
-					<p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-success">
+			<div className="relative w-full max-w-md rounded-(--radius-card) border border-border bg-card overflow-hidden animate-[popIn_400ms_cubic-bezier(0.34,1.56,0.64,1)]">
+				<div className="bg-gradient-to-b from-primary-tint to-transparent px-7 pt-6 pb-5">
+					<p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary-dark">
 						Buổi học đã đặt
 					</p>
 					<h2 className="mt-2 text-lg font-extrabold text-foreground leading-snug">
@@ -636,15 +638,11 @@ function BookedDetailDialog({
 							Mở Google Meet
 						</a>
 					) : (
-						<div className="rounded-(--radius-button) border-2 border-dashed border-border bg-surface px-3 py-2.5 text-xs font-bold text-muted text-center">
+						<div className="rounded-(--radius-button) bg-border-light px-3 py-2.5 text-xs font-bold text-muted text-center">
 							Link Google Meet sẽ hiện ở đây trước giờ học.
 						</div>
 					)}
-					<button
-						type="button"
-						onClick={onClose}
-						className="w-full rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2.5 text-sm font-extrabold text-foreground transition-all hover:border-primary/40 active:translate-y-[2px] active:border-b-2"
-					>
+					<button type="button" onClick={onClose} className="btn btn-secondary w-full text-sm">
 						Đóng
 					</button>
 				</div>

@@ -14,6 +14,7 @@ use App\Models\SpeakingGradingResult;
 use App\Models\User;
 use App\Models\WritingGradingResult;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -262,7 +263,7 @@ class DashboardDemoSeeder extends Seeder
         string $sessionId,
         string $itemType,
         Collection $itemIds,
-        Carbon $answeredAt,
+        CarbonInterface $answeredAt,
         float $correctProbability,
     ): void {
         foreach ($itemIds as $itemId) {
@@ -277,7 +278,7 @@ class DashboardDemoSeeder extends Seeder
         }
     }
 
-    private function seedWritingResult(string $sessionId, string $profileId, string $taskId, Carbon $submittedAt): void
+    private function seedWritingResult(string $sessionId, string $profileId, string $taskId, CarbonInterface $submittedAt): void
     {
         $subId = Str::uuid7();
         DB::table('exam_writing_submissions')->insert([
@@ -319,7 +320,7 @@ class DashboardDemoSeeder extends Seeder
         ]);
     }
 
-    private function seedSpeakingResult(string $sessionId, string $profileId, string $partId, Carbon $submittedAt): void
+    private function seedSpeakingResult(string $sessionId, string $profileId, string $partId, CarbonInterface $submittedAt): void
     {
         $subId = Str::uuid7();
         DB::table('exam_speaking_submissions')->insert([

@@ -409,7 +409,6 @@ function CommitmentCard({ commitment, courseId }: { commitment: CommitmentStatus
 
 	if (met && dismissed) return null
 
-	const remaining = Math.max(0, commitment.required - commitment.completed)
 	const pct =
 		commitment.required > 0
 			? Math.min(100, Math.round((commitment.completed / commitment.required) * 100))
@@ -419,25 +418,10 @@ function CommitmentCard({ commitment, courseId }: { commitment: CommitmentStatus
 	const daysLeft = deadlineMs !== null ? Math.ceil((deadlineMs - Date.now()) / (1000 * 60 * 60 * 24)) : null
 	const urgent = !met && !violated && daysLeft !== null && daysLeft <= 3
 
-	const borderClass = met ? "border-success" : violated ? "border-destructive" : "border-warning"
-	const accentText = met ? "text-success" : violated ? "text-destructive" : "text-warning"
-	const iconBlockClass = met
-		? "bg-success border-primary-dark"
-		: violated
-			? "bg-destructive border-destructive"
-			: "bg-warning border-[color:var(--color-warning-light)]"
-	const iconName: IconName = met ? "check" : violated ? "close" : "lightning"
-	const chipClass = met
-		? "bg-primary-tint border-success/40 text-success"
-		: violated
-			? "bg-destructive-tint border-destructive/40 text-destructive"
-			: "bg-warning-tint border-warning/40 text-warning"
-	const progressTone: "primary" | "warning" = met ? "primary" : "warning"
+	// Card border: "card" class đã có border-2 border-b-4 — không thêm border class riêng.
+	const progressTone: "primary" | "warning" | "muted" = met ? "primary" : violated ? "muted" : "warning"
 
 	return (
-		// 2 lớp: outer wrapper dùng grid-template-rows để xẹp chiều cao mượt (1fr→0fr),
-		// inner Link chỉ animate scale + opacity + translate. Tách ra để content không
-		// bị bóp/clip lúc đang scale như cách max-height cũ.
 		<div
 			style={{
 				display: "grid",
@@ -446,11 +430,8 @@ function CommitmentCard({ commitment, courseId }: { commitment: CommitmentStatus
 			}}
 		>
 			<div style={{ overflow: "hidden", minHeight: 0 }}>
-				<Link
-					to="/thi-thu"
-					// Không dùng `card-interactive` để bỏ hover lift — user chỉ muốn animation
-					// dismiss lúc click khi met, không cần feedback rê chuột ở bất kỳ state nào.
-					className={cn("group card block p-6 relative overflow-hidden cursor-pointer", borderClass)}
+				<div
+					className="card block p-6"
 					style={
 						dismissing
 							? {
@@ -460,117 +441,94 @@ function CommitmentCard({ commitment, courseId }: { commitment: CommitmentStatus
 							: undefined
 					}
 				>
-					<div className="relative flex items-start gap-4">
-						<div
-							className={cn(
-								"size-14 shrink-0 rounded-2xl border-2 flex items-center justify-center text-white",
-								iconBlockClass,
-							)}
-							style={{ boxShadow: "0 4px 0 rgb(0 0 0 / 0.08)" }}
-						>
-							<Icon name={iconName} size="md" className="text-white" />
-						</div>
-
-						<div className="flex-1 min-w-0 space-y-3">
-							<div className="flex items-start justify-between gap-3 flex-wrap">
-								<div className="min-w-0">
-									<p className={cn("text-xs font-bold uppercase tracking-wider", accentText)}>
-										Cam kết kỷ luật
-									</p>
-									<p className="font-extrabold text-foreground text-2xl leading-none mt-1.5">
-										<span className="tabular-nums">{commitment.completed}</span>
-										<span className="text-muted">/</span>
-										<span className="tabular-nums">{commitment.required}</span>
-										<span className="text-muted text-sm font-bold ml-1.5">bài thi full-test</span>
-									</p>
-								</div>
-
-								{met ? (
-									<button
-										type="button"
-										onClick={handleDismiss}
-										title="Bấm để ẩn cam kết đã hoàn thành"
-										className={cn(
-											"shrink-0 inline-flex items-center gap-1.5 rounded-(--radius-button) border-2 border-b-4 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider cursor-pointer",
-											chipClass,
-										)}
-									>
-										<Icon name="check" size="xs" className="h-3 w-auto" />
-										Hoàn thành
-									</button>
-								) : (
-									<span
-										className={cn(
-											// Giữ press feedback (active translate + border collapse) cho cảm giác
-											// nhấn nút Duo; chỉ bỏ hover lift theo yêu cầu của user.
-											"shrink-0 inline-flex items-center gap-1.5 rounded-(--radius-button) border-2 border-b-4 px-3 py-1.5 text-xs font-extrabold uppercase tracking-wider transition-all group-active:translate-y-[2px] group-active:border-b-2",
-											chipClass,
-										)}
-									>
-										{violated ? (
-											<>
-												<Icon name="close" size="xs" className="h-3 w-auto" />
-												Đã quá hạn
-											</>
-										) : (
-											<>
-												<Icon name="play" size="xs" className="h-3 w-auto" />
-												Vào phòng thi
-											</>
-										)}
-									</span>
-								)}
+					<div className="space-y-3">
+						<div className="flex items-start justify-between gap-3 flex-wrap">
+							<div className="min-w-0">
+								<p className="text-xs font-bold uppercase tracking-wider text-muted">Cam kết kỷ luật</p>
+								<p className="font-extrabold text-foreground text-2xl leading-none mt-1.5">
+									<span className="tabular-nums">{commitment.completed}</span>
+									<span className="text-muted">/</span>
+									<span className="tabular-nums">{commitment.required}</span>
+									<span className="text-muted text-sm font-bold ml-1.5">bài thi full-test</span>
+								</p>
 							</div>
 
-							<DuoProgressBar value={pct} tone={progressTone} heightPx={12} label="Tiến độ cam kết kỷ luật" />
-
-							{commitment.deadline_at && (
-								<p
-									className={cn(
-										"text-xs font-bold inline-flex items-center gap-1.5",
-										violated ? "text-destructive" : urgent ? "text-warning" : "text-muted",
-									)}
+							{met ? (
+								<button
+									type="button"
+									onClick={handleDismiss}
+									title="Bấm để ẩn cam kết đã hoàn thành"
+									className="shrink-0 btn btn-secondary text-xs py-1.5 px-3 uppercase tracking-wider"
 								>
-									<Icon name="timer" size="xs" />
-									<span>
-										Hạn chót: <span className="tabular-nums">{formatDate(commitment.deadline_at)}</span>
-										{!met && !violated && daysLeft !== null && (
-											<span className="ml-1">
-												(còn <span className="tabular-nums">{Math.max(0, daysLeft)}</span> ngày)
-											</span>
-										)}
-									</span>
-								</p>
+									<Icon name="check" size="xs" className="h-3 w-auto" />
+									Hoàn thành
+								</button>
+							) : violated ? (
+								<span className="shrink-0 inline-flex items-center rounded-(--radius-button) border border-destructive/20 bg-destructive/10 px-3 py-1.5 text-xs font-bold text-destructive/70">
+									Đã quá hạn
+								</span>
+							) : (
+								<Link
+									to="/thi-thu"
+									className="shrink-0 btn btn-primary text-xs py-1.5 px-3 uppercase tracking-wider"
+								>
+									<Icon name="play" size="xs" className="text-white h-3 w-auto" />
+									Vào phòng thi
+								</Link>
 							)}
+						</div>
 
-							<p className="text-sm text-foreground leading-relaxed">
-								{met ? (
-									<span className="font-bold text-success">
-										Bạn đã hoàn thành cam kết — tiếp tục luyện đề để giữ phong độ.
-									</span>
-								) : violated ? (
-									<span>
-										Cam kết đã <span className="font-bold text-destructive">vi phạm</span> — bạn chưa hoàn
-										thành đủ {commitment.required} bài full-test trong hạn. Liên hệ giáo viên để được hỗ trợ.
-									</span>
-								) : (
+						<DuoProgressBar value={pct} tone={progressTone} heightPx={12} label="Tiến độ cam kết kỷ luật" />
+
+						{commitment.deadline_at && (
+							<p
+								className={cn(
+									"text-xs font-bold inline-flex items-center gap-1.5",
+									violated ? "text-destructive/70" : urgent ? "text-warning" : "text-muted",
+								)}
+							>
+								<Icon name="timer" size="xs" />
+								<span>
+									Hạn chót: <span className="tabular-nums">{formatDate(commitment.deadline_at)}</span>
+									{!met && !violated && daysLeft !== null && (
+										<span className="ml-1">
+											(còn <span className="tabular-nums">{Math.max(0, daysLeft)}</span> ngày)
+										</span>
+									)}
+								</span>
+							</p>
+						)}
+					</div>
+
+					<p className="text-sm text-foreground leading-relaxed mt-4">
+						{met ? (
+							<span className="font-bold text-primary-dark">
+								Bạn đã hoàn thành cam kết — tiếp tục luyện đề để giữ phong độ.
+							</span>
+						) : violated ? (
+							<span>
+								Cam kết đã <span className="font-bold text-destructive/80">vi phạm</span> — bạn chưa hoàn
+								thành đủ {commitment.required} bài full-test trong hạn. Liên hệ giáo viên để được hỗ trợ.
+							</span>
+						) : (
+							<>
+								Bạn cần hoàn thành{" "}
+								<span className="font-extrabold tabular-nums">
+									{Math.max(1, commitment.required - commitment.completed)}
+								</span>{" "}
+								bài full-test còn lại
+								{daysLeft !== null && daysLeft >= 0 && (
 									<>
-										Còn <span className="font-extrabold tabular-nums text-warning">{remaining}</span> bài
-										full-test nữa để hoàn thành cam kết
-										{daysLeft !== null && daysLeft >= 0 && (
-											<>
-												{" "}
-												trong <span className="font-extrabold tabular-nums text-warning">{daysLeft}</span>{" "}
-												ngày tới
-											</>
-										)}
-										. Bấm vào ô này để <span className="font-bold text-foreground">vào phòng thi ngay.</span>
+										{" "}
+										trong <span className="font-extrabold tabular-nums text-warning">{daysLeft}</span> ngày
+										tới
 									</>
 								)}
-							</p>
-						</div>
-					</div>
-				</Link>
+								. Bấm vào nút <span className="font-bold text-primary-dark">Vào phòng thi</span> để bắt đầu.
+							</>
+						)}
+					</p>
+				</div>
 			</div>
 		</div>
 	)

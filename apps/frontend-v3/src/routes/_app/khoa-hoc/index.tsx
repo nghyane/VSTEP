@@ -125,7 +125,7 @@ function CoursesPage() {
 		<>
 			<Header title="Khóa học" />
 			{hotPair && <HotCoursesDialog open={hotOpen} onClose={dismissHot} courses={hotPair} />}
-			<div className="px-10 pb-12 space-y-6 max-w-5xl mx-auto w-full">
+			<div className="px-10 pb-12 space-y-6">
 				<div className="flex flex-wrap items-center gap-2">
 					<SegmentedTabs items={tabItems} value={tab} onChange={changeTab} />
 					<BookOneOnOneCta enrolledCourses={mineList} onLockedClick={triggerHintPulse} />
@@ -140,7 +140,7 @@ function CoursesPage() {
 							hintPulseKey > 0 && "animate-[warningBlink_1100ms_ease-in-out_2]",
 						)}
 					>
-						<span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full border-2 border-b-4 border-warning/40 bg-warning/15 text-warning">
+						<span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-warning/15 text-warning">
 							<svg
 								viewBox="0 0 24 24"
 								className="size-4"
@@ -214,7 +214,7 @@ function CoursesPage() {
 					{isLoading ? (
 						<div className="grid gap-4 sm:grid-cols-2 items-stretch">
 							{Array.from({ length: 4 }, (_, i) => (
-								<div key={i} className="card h-64 animate-pulse bg-surface" />
+								<div key={i} className="card h-72 animate-pulse bg-surface" />
 							))}
 						</div>
 					) : list.length === 0 ? (
@@ -270,7 +270,7 @@ function BookOneOnOneCta({
 					setShakeKey((k) => k + 1)
 					onLockedClick()
 				}}
-				className="inline-flex min-h-11 items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2 text-sm font-extrabold text-muted transition-all hover:bg-background hover:text-foreground active:translate-y-[2px] active:border-b-2"
+				className="btn btn-secondary text-muted hover:text-foreground"
 			>
 				<svg
 					key={shakeKey}
@@ -299,7 +299,7 @@ function BookOneOnOneCta({
 			<Link
 				to="/khoa-hoc/$courseId/dat-lich-1-1"
 				params={{ courseId: enrolledCourses[0].id }}
-				className="inline-flex min-h-11 items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2 text-sm font-extrabold text-foreground transition-all hover:bg-background active:translate-y-[2px] active:border-b-2"
+				className="btn btn-secondary"
 			>
 				<Icon name="graduation" size="xs" className="h-4 w-auto shrink-0 text-muted" />
 				Đặt lịch 1-1
@@ -309,11 +309,7 @@ function BookOneOnOneCta({
 
 	return (
 		<>
-			<button
-				type="button"
-				onClick={() => setPickerOpen(true)}
-				className="inline-flex min-h-11 items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-4 py-2 text-sm font-extrabold text-foreground transition-all hover:bg-background active:translate-y-[2px] active:border-b-2"
-			>
+			<button type="button" onClick={() => setPickerOpen(true)} className="btn btn-secondary">
 				<Icon name="graduation" size="xs" className="h-4 w-auto shrink-0 text-muted" />
 				Đặt lịch 1-1
 			</button>
@@ -350,8 +346,8 @@ function BookCoursePicker({
 				onClick={onClose}
 				className="absolute inset-0 bg-foreground/45 backdrop-blur-sm"
 			/>
-			<div className="relative w-full max-w-md rounded-(--radius-card) border-2 border-b-4 border-border bg-card overflow-hidden animate-[popIn_400ms_cubic-bezier(0.34,1.56,0.64,1)]">
-				<div className="bg-gradient-to-b from-primary-tint/70 to-transparent px-7 pt-6 pb-4">
+			<div className="relative w-full max-w-md rounded-(--radius-card) border-2 border-border bg-card overflow-hidden animate-[popIn_400ms_cubic-bezier(0.34,1.56,0.64,1)]">
+				<div className="px-7 pt-6 pb-4">
 					<p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary-dark">
 						Đặt lịch 1-1
 					</p>
@@ -362,16 +358,16 @@ function BookCoursePicker({
 						Mỗi khóa do 1 giảng viên phụ trách. Chọn khóa bạn muốn đặt buổi 1-1.
 					</p>
 				</div>
-				<div className="px-4 pb-5 pt-3 space-y-2">
+				<div className="px-4 pb-5 pt-1 space-y-2">
 					{courses.map((c) => (
 						<Link
 							key={c.id}
 							to="/khoa-hoc/$courseId/dat-lich-1-1"
 							params={{ courseId: c.id }}
 							onClick={onClose}
-							className="group flex items-center gap-3 rounded-(--radius-card) border-2 border-b-4 border-border bg-background px-3.5 py-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 active:translate-y-0 active:border-b-2"
+							className="group flex items-center gap-3 rounded-(--radius-card) px-3.5 py-3 transition-all hover:bg-background active:translate-y-0"
 						>
-							<div className="size-10 shrink-0 rounded-xl border-2 border-b-4 border-primary/30 bg-primary-tint flex items-center justify-center text-primary">
+							<div className="size-10 shrink-0 rounded-xl bg-primary-tint flex items-center justify-center text-primary">
 								<Icon name="graduation" size="sm" className="h-5 w-auto" />
 							</div>
 							<div className="flex-1 min-w-0">

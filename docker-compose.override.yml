@@ -5,6 +5,14 @@
 # loaded via `env_file` declared in the base compose file.
 
 services:
+  frontend:
+    image: vstep-frontend:local
+    pull_policy: never
+    build:
+      context: ./apps/frontend-v3
+      args:
+        VITE_API_URL: http://localhost:8000
+
   backend:
     ports:
       - "8000:8000"

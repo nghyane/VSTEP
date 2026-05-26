@@ -23,7 +23,6 @@ final class ImportExamRequest extends FormRequest
             'exam.source_school' => ['nullable', 'string', 'max:100'],
             'exam.tags' => ['nullable', 'array'],
             'exam.tags.*' => ['string'],
-            'exam.total_duration_minutes' => ['required', 'integer', 'min:1'],
             'exam.is_published' => ['nullable', 'boolean'],
 
             'version.version_number' => ['required', 'integer', 'min:1'],

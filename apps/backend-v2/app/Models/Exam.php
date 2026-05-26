@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
@@ -35,5 +36,27 @@ class Exam extends BaseModel
     public function activeVersion(): ?ExamVersion
     {
         return $this->versions()->where('is_active', true)->first();
+    }
+
+    /**
+     * Single source of truth: sum duration_minutes from the active version's sections.
+     * Overrides the DB column — no more admin-manual entry mismatch.
+     */
+    protected function totalDurationMinutes(): Attribute
+    {
+        return Attribute::get(function () {
+            $versionId = $this->versions()
+                ->where('is_active', true)
+                ->value('id');
+
+            if (! $versionId) {
+                return $this->attributes['total_duration_minutes'] ?? 0;
+            }
+
+            return (int) ExamVersionListeningSection::where('exam_version_id', $versionId)->sum('duration_minutes')
+                + (int) ExamVersionReadingPassage::where('exam_version_id', $versionId)->sum('duration_minutes')
+                + (int) ExamVersionWritingTask::where('exam_version_id', $versionId)->sum('duration_minutes')
+                + (int) ExamVersionSpeakingPart::where('exam_version_id', $versionId)->sum('duration_minutes');
+        });
     }
 }

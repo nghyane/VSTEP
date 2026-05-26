@@ -23,7 +23,7 @@ final class DrillDetailResource extends JsonResource
                 'text' => $s->text,
                 'ipa' => $s->ipa ?? '',
                 'translation' => $s->translation ?? '',
-                'word_count' => $s->word_count ?? str_word_count($s->text),
+                'word_count' => $s->word_count > 0 ? (int) $s->word_count : str_word_count($s->text),
                 'audio_start' => $s->audio_start !== null ? (float) $s->audio_start : 0.0,
                 'audio_end' => $s->audio_end !== null ? (float) $s->audio_end : 0.0,
             ]),

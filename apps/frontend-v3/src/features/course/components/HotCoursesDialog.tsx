@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { createPortal } from "react-dom"
-import { StaticIcon } from "#/components/Icon"
+import { Icon, StaticIcon } from "#/components/Icon"
 import { COURSE_LEVEL_LABELS, type Course } from "#/features/course/types"
 import { cn, formatNumber, formatVnd } from "#/lib/utils"
 
@@ -41,17 +41,7 @@ export function HotCoursesDialog({ open, onClose, courses }: Props) {
 					aria-label="Đóng"
 					className="absolute right-4 top-4 z-10 flex size-9 items-center justify-center rounded-full bg-surface/80 text-muted backdrop-blur transition-colors hover:bg-surface hover:text-foreground"
 				>
-					<svg
-						viewBox="0 0 16 16"
-						className="size-4"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2.2"
-						strokeLinecap="round"
-						aria-hidden="true"
-					>
-						<path d="M3 3l10 10M13 3L3 13" />
-					</svg>
+					<Icon name="close" size="xs" />
 				</button>
 
 				<div className="bg-gradient-to-b from-coin-tint/50 to-transparent px-6 pb-6 pt-8 text-center">
@@ -96,7 +86,7 @@ function HotCourseBanner({ course, rank, onClick }: { course: Course; rank: numb
 			params={{ courseId: course.id }}
 			onClick={onClick}
 			className={cn(
-				"relative block overflow-hidden rounded-(--radius-card) border-2 border-b-4 transition-transform hover:-translate-y-0.5",
+				"relative block overflow-hidden rounded-(--radius-card) border transition-transform hover:-translate-y-0.5",
 				tone === "streak" ? "border-streak/40" : "border-coin/40",
 			)}
 		>
@@ -120,7 +110,7 @@ function HotCourseBanner({ course, rank, onClick }: { course: Course; rank: numb
 					)}
 				</div>
 
-				<span className="inline-flex w-fit items-center rounded-full border-2 border-border bg-surface px-2.5 py-0.5 text-xs font-bold text-foreground">
+				<span className="inline-flex w-fit items-center rounded-full bg-surface px-2.5 py-0.5 text-xs font-bold text-foreground">
 					{COURSE_LEVEL_LABELS[course.target_level] ?? course.target_level}
 				</span>
 
@@ -141,9 +131,7 @@ function HotCourseBanner({ course, rank, onClick }: { course: Course; rank: numb
 					</span>
 				</div>
 
-				<span className="block w-full rounded-(--radius-button) bg-primary py-2.5 text-center text-sm font-extrabold uppercase tracking-wider text-white shadow-[0_3px_0_var(--color-primary-dark)] transition-all">
-					Xem ngay →
-				</span>
+				<span className="btn btn-primary w-full text-sm">Xem ngay →</span>
 			</div>
 		</Link>
 	)

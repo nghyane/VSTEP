@@ -147,13 +147,23 @@ export function ShadowingInProgress({ lesson }: Props) {
 			if (text) {
 				setEmptyWarning(false)
 				const { results, correct } = compareWords(segment.text, text)
+				const accuracyPercent =
+					segment.word_count > 0 ? Math.min(100, Math.round((correct / segment.word_count) * 100)) : null
 				setAttempts((prev) =>
-					new Map(prev).set(current, { transcript: text, wordResults: results, correctCount: correct }),
+					new Map(prev).set(current, {
+						transcript: text,
+						wordResults: results,
+						correctCount: correct,
+						accuracyPercent,
+					}),
 				)
-				if (correct / segment.word_count >= 0.5) {
+				if (accuracyPercent !== null && accuracyPercent >= 50) {
 					setDone((prev) => new Set(prev).add(current))
-					const pct = Math.round((correct / segment.word_count) * 100)
-					markDoneMut.mutate({ lesson_id: lesson.id, segment_index: current, accuracy_percent: pct })
+					markDoneMut.mutate({
+						lesson_id: lesson.id,
+						segment_index: current,
+						accuracy_percent: accuracyPercent,
+					})
 				}
 			} else {
 				setEmptyWarning(true)

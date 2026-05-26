@@ -1,17 +1,31 @@
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute } from "@tanstack/react-router"
-import { Suspense, useMemo, useState } from "react"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Header } from "#/components/Header"
 import { Icon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
 import { SegmentedTabs } from "#/components/SegmentedTabs"
-import { type ActiveSummary, ExamCard, type ExamStatus } from "#/features/exam/components/ExamCard"
+import { ExamCard, type ExamCardState } from "#/features/exam/components/ExamCard"
 import { appConfigQuery, examsQuery, mySessionsQuery } from "#/features/exam/queries"
 import type { SkillKey } from "#/features/exam/types"
-import { cn } from "#/lib/utils"
+import { avgSkillScores, normalizeVi } from "#/lib/utils"
+
+type StatusFilter = "all" | "not-started" | "in-progress" | "submitted"
 
 export const Route = createFileRoute("/_app/thi-thu/")({
-	loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(examsQuery),
+	validateSearch: (s: Record<string, unknown>): { q?: string; status?: StatusFilter } => {
+		const out: { q?: string; status?: StatusFilter } = {}
+		if (typeof s.q === "string" && s.q.length > 0) out.q = s.q
+		if (s.status === "not-started" || s.status === "in-progress" || s.status === "submitted")
+			out.status = s.status
+		return out
+	},
+	loader: ({ context: { queryClient } }) =>
+		Promise.all([
+			queryClient.ensureQueryData(examsQuery),
+			queryClient.ensureQueryData(appConfigQuery),
+			queryClient.ensureQueryData(mySessionsQuery),
+		]),
 	component: ThiThuPage,
 })
 
@@ -28,48 +42,52 @@ function ThiThuPage() {
 	)
 }
 
-type StatusFilter = "Tất cả" | "Chưa làm" | "Đang làm dở" | "Đã nộp"
-
-const STATUS_FILTER_ITEMS: { value: StatusFilter; label: string }[] = [
-	{ value: "Tất cả", label: "Tất cả" },
-	{ value: "Chưa làm", label: "Chưa làm" },
-	{ value: "Đang làm dở", label: "Đang làm dở" },
-	{ value: "Đã nộp", label: "Đã nộp" },
+const STATUS_TABS: { value: StatusFilter; label: string }[] = [
+	{ value: "all", label: "Tất cả" },
+	{ value: "not-started", label: "Chưa làm" },
+	{ value: "in-progress", label: "Đang làm dở" },
+	{ value: "submitted", label: "Đã nộp" },
 ]
 
-const SKILL_FILTERS: { key: SkillKey; label: string; color: string }[] = [
-	{ key: "listening", label: "Listening", color: "text-skill-listening" },
-	{ key: "reading", label: "Reading", color: "text-skill-reading" },
-	{ key: "writing", label: "Writing", color: "text-skill-writing" },
-	{ key: "speaking", label: "Speaking", color: "text-skill-speaking" },
-]
+function EmptyExams({
+	variant,
+	onReset,
+}: {
+	variant: "no-data" | "no-match" | "no-submitted"
+	onReset?: () => void
+}) {
+	const v = useMemo(() => {
+		switch (variant) {
+			case "no-data":
+				return {
+					mascot: "/mascot/lac-sad.png",
+					alt: "Lạc buồn vì chưa có đề thi",
+					title: "Chưa có đề thi nào",
+					message: "Đề thi sẽ xuất hiện tại đây ngay khi sẵn sàng. Quay lại sau nha!",
+				}
+			case "no-match":
+				return {
+					mascot: "/mascot/lac-think.png",
+					alt: "Lạc đang tìm đề thi",
+					title: "Không tìm thấy đề thi phù hợp",
+					message: "Thử bỏ bớt bộ lọc hoặc tìm với từ khóa khác nhé!",
+				}
+			case "no-submitted":
+				return {
+					mascot: "/mascot/lac-think.png",
+					alt: "Lạc khích lệ thi đề đầu tiên",
+					title: "Bạn chưa nộp đề nào",
+					message: "Hãy bắt đầu lượt thi đầu tiên để theo dõi tiến độ.",
+				}
+		}
+	}, [variant])
 
-const SKILL_ACTIVE_BG: Record<SkillKey, string> = {
-	listening: "bg-info-tint border-info",
-	reading: "bg-skill-reading/15 border-skill-reading/40",
-	writing: "bg-primary-tint border-primary",
-	speaking: "bg-warning-tint border-warning",
-}
-
-const STATUS_BY_LABEL: Record<StatusFilter, ExamStatus | "all"> = {
-	"Tất cả": "all",
-	"Chưa làm": "not-started",
-	"Đang làm dở": "in-progress",
-	"Đã nộp": "submitted",
-}
-
-function EmptyExams({ hasFilter, onReset }: { hasFilter: boolean; onReset: () => void }) {
-	const mascot = hasFilter ? "/mascot/lac-think.png" : "/mascot/lac-sad.png"
-	const title = hasFilter ? "Không tìm thấy đề thi phù hợp" : "Chưa có đề thi nào"
-	const message = hasFilter
-		? "Thử bỏ bớt bộ lọc hoặc tìm với từ khóa khác nhé!"
-		: "Đề thi sẽ xuất hiện tại đây ngay khi sẵn sàng. Quay lại sau nha!"
 	return (
 		<div className="flex flex-col items-center justify-center py-16 text-center">
-			<img src={mascot} alt="" className="w-36 h-36 object-contain mb-1" />
-			<h3 className="font-extrabold text-xl text-foreground mb-2">{title}</h3>
-			<p className="text-sm text-muted max-w-sm mb-6">{message}</p>
-			{hasFilter && (
+			<img src={v.mascot} alt={v.alt} width={144} height={144} className="object-contain mb-1" />
+			<h3 className="font-extrabold text-xl text-foreground mb-2">{v.title}</h3>
+			<p className="text-sm text-muted max-w-sm mb-6">{v.message}</p>
+			{variant === "no-match" && onReset && (
 				<button type="button" onClick={onReset} className="btn btn-primary px-6 py-2.5 text-sm">
 					Xóa bộ lọc
 				</button>
@@ -79,123 +97,189 @@ function EmptyExams({ hasFilter, onReset }: { hasFilter: boolean; onReset: () =>
 }
 
 function ExamListContent() {
+	const { q, status } = Route.useSearch()
+	const navigate = useNavigate({ from: "/thi-thu" })
+
 	const { data: examsData } = useSuspenseQuery(examsQuery)
-	const { data: configData } = useQuery(appConfigQuery)
-	const { data: mySessionsData } = useQuery(mySessionsQuery)
+	const { data: configData } = useSuspenseQuery(appConfigQuery)
+	const { data: mySessionsData } = useSuspenseQuery(mySessionsQuery)
 
 	const exams = examsData.data
-	const fullTestCoinCost = configData?.data.pricing.exam.full_test_cost_coins ?? null
+	const fullTestCoinCost = configData.data.pricing.exam.full_test_cost_coins
 
-	const [search, setSearch] = useState("")
-	const [status, setStatus] = useState<StatusFilter>("Tất cả")
-	const [skills, setSkills] = useState<Set<SkillKey>>(new Set())
+	// Local input value (type mượt), debounced commit to URL
+	const [localQ, setLocalQ] = useState(q ?? "")
+	const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+	const commitQ = useCallback(
+		(next: string) => {
+			setLocalQ(next)
+			clearTimeout(debounceRef.current)
+			debounceRef.current = setTimeout(() => {
+				navigate({
+					search: () => {
+						const nextQ = next.length > 0 ? next : undefined
+						const s: { q?: string; status?: StatusFilter } = {}
+						if (nextQ) s.q = nextQ
+						if (status) s.status = status
+						return s as never
+					},
+					replace: true,
+				})
+			}, 250)
+		},
+		[navigate, status],
+	)
+	// Sync URL → local when external change (e.g. reset)
+	useEffect(() => {
+		if (q !== undefined && q !== localQ) setLocalQ(q)
+	}, [q, localQ])
 
-	function toggleSkill(skill: SkillKey) {
-		setSkills((prev) => {
-			const next = new Set(prev)
-			if (next.has(skill)) next.delete(skill)
-			else next.add(skill)
-			return next
+	function clearQ() {
+		commitQ("")
+	}
+
+	const currentStatus = status ?? "all"
+	const setStatus = (next: StatusFilter) => {
+		navigate({
+			search: () => {
+				const s: { q?: string; status?: StatusFilter } = {}
+				if (q) s.q = q
+				if (next !== "all") s.status = next
+				return s as never
+			},
+			replace: true,
 		})
 	}
 
-	// Per-exam: active session (status=active && deadline > now) wins → "in-progress" + sessionId.
-	// Else "submitted" nếu từng nộp/grading/graded. Else "not-started".
-	// BE cho phép nhiều session active đồng thời → giữ MỌI active per exam (không singleton).
-	const { statusByExamId, activeByExamId } = useMemo(() => {
-		const statusMap = new Map<string, ExamStatus>()
-		const activeMap = new Map<string, ActiveSummary>()
-		const sessions = mySessionsData?.data ?? []
+	const cardStateByExamId = useMemo(() => {
+		const map = new Map<string, ExamCardState>()
+		const sessions = mySessionsData.data
 		const now = Date.now()
+		const terminal = sessions.filter(
+			(s) =>
+				s.exam_id && (s.status === "submitted" || s.status === "graded" || s.status === "auto_submitted"),
+		)
+
+		// Group terminal sessions by exam_id, sorted newest first
+		const terminalByExam = new Map<
+			string,
+			Array<{ id: string; submittedAt: string | null; scores: Record<SkillKey, number | null> | null }>
+		>()
+		for (const s of terminal) {
+			if (!s.exam_id) continue
+			const eid = s.exam_id
+			const group = terminalByExam.get(eid) ?? []
+			group.push({ id: s.id, submittedAt: s.submitted_at, scores: s.scores })
+			terminalByExam.set(eid, group)
+		}
+
 		for (const s of sessions) {
 			if (!s.exam_id) continue
+
+			// Active session (not expired) — highest priority
 			if (s.status === "active" && new Date(s.server_deadline_at).getTime() > now) {
-				if (!activeMap.has(s.exam_id)) {
-					activeMap.set(s.exam_id, {
+				if (!map.has(s.exam_id)) {
+					map.set(s.exam_id, {
+						status: "in-progress",
 						sessionId: s.id,
-						deadlineAt: s.server_deadline_at,
-						isFullTest: s.is_full_test,
 						selectedSkills: s.selected_skills,
 					})
-					statusMap.set(s.exam_id, "in-progress")
 				}
 				continue
 			}
-			if (
-				!statusMap.has(s.exam_id) &&
-				(s.status === "submitted" || s.status === "graded" || s.status === "auto_submitted")
-			) {
-				statusMap.set(s.exam_id, "submitted")
+
+			// Terminal — only set if no active
+			if (!map.has(s.exam_id) && terminalByExam.has(s.exam_id)) {
+				const group = terminalByExam.get(s.exam_id)
+				if (!group) continue
+				group.sort((a, b) => new Date(b.submittedAt ?? 0).getTime() - new Date(a.submittedAt ?? 0).getTime())
+				map.set(s.exam_id, {
+					status: "submitted",
+					latestScore: avgSkillScores(group[0].scores),
+					sessionCount: group.length,
+				})
 			}
 		}
-		return { statusByExamId: statusMap, activeByExamId: activeMap }
+		return map
 	}, [mySessionsData])
 
-	const wantedStatus = STATUS_BY_LABEL[status]
+	const filtered = useMemo(
+		() =>
+			exams.filter((e) => {
+				if (q) {
+					const needle = normalizeVi(q)
+					if (!normalizeVi(e.title).includes(needle)) return false
+				}
+				if (currentStatus !== "all") {
+					const s = cardStateByExamId.get(e.id)?.status ?? "not-started"
+					if (s !== currentStatus) return false
+				}
+				return true
+			}),
+		[exams, q, currentStatus, cardStateByExamId],
+	)
 
-	const filtered = exams.filter((e) => {
-		if (search && !e.title.toLowerCase().includes(search.toLowerCase())) return false
-		if (wantedStatus !== "all") {
-			const s = statusByExamId.get(e.id) ?? "not-started"
-			if (s !== wantedStatus) return false
+	function pickEmptyVariant(): "no-data" | "no-match" | "no-submitted" {
+		if (exams.length === 0) return "no-data"
+		if (currentStatus === "submitted" && !(q !== undefined && q.length > 0)) return "no-submitted"
+		return "no-match"
+	}
+
+	function resetFilters() {
+		setLocalQ("")
+		navigate({ search: () => ({}) as never, replace: true })
+	}
+
+	// Count per tab
+	const tabCounts = useMemo(() => {
+		const c: Record<StatusFilter, number> = {
+			all: exams.length,
+			"not-started": 0,
+			"in-progress": 0,
+			submitted: 0,
 		}
-		// Skill filter: VSTEP full-test exams bao trọn 4 kỹ năng nên mọi skill đều match.
-		// Giữ UI hoạt động; khi sau này có đề đơn kỹ năng, check exam.tags hoặc mở rộng API.
-		if (skills.size > 0) {
-			// no-op với dataset hiện tại
+		for (const e of exams) {
+			const kind = cardStateByExamId.get(e.id)?.status ?? "not-started"
+			c[kind]++
 		}
-		return true
-	})
+		return c
+	}, [exams, cardStateByExamId])
+	const tabItems = STATUS_TABS.map((t) => ({ ...t, count: tabCounts[t.value] }))
 
 	return (
-		<div className="space-y-5">
+		<div className="space-y-8">
 			{/* Toolbar */}
 			<div className="flex flex-wrap items-center gap-3">
 				{/* Search */}
-				<div className="relative">
+				<div className="relative w-full sm:w-56">
 					<Icon
 						name="search"
 						size="xs"
-						className="absolute left-3 top-1/2 -translate-y-1/2 text-placeholder"
+						className="absolute left-3 top-1/2 -translate-y-1/2 text-placeholder pointer-events-none"
 					/>
 					<input
-						type="text"
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
+						type="search"
+						value={localQ}
+						onChange={(e) => commitQ(e.target.value)}
 						placeholder="Tìm tên đề thi..."
-						className="w-56 rounded-(--radius-button) border-2 border-border bg-surface py-2 pl-9 pr-3 text-sm outline-none focus:border-border-focus transition-colors"
+						className="w-full rounded-(--radius-button) border-2 border-border bg-surface py-2 pl-9 pr-9 text-sm outline-none focus:border-border-focus transition-colors"
 					/>
+					{localQ && (
+						<button
+							type="button"
+							onClick={clearQ}
+							aria-label="Xóa tìm kiếm"
+							className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex size-6 items-center justify-center rounded-full text-muted hover:bg-background hover:text-foreground transition-colors"
+						>
+							<Icon name="close" size="xs" />
+						</button>
+					)}
 				</div>
 
 				{/* Divider */}
-				<div className="w-px h-6 bg-border" />
+				<div className="w-px h-6 bg-border hidden sm:block" />
 
-				<SegmentedTabs items={STATUS_FILTER_ITEMS} value={status} onChange={setStatus} />
-
-				{/* Divider */}
-				<div className="w-px h-6 bg-border" />
-
-				{/* Skill pills */}
-				<div className="flex items-center gap-1.5">
-					{SKILL_FILTERS.map(({ key, label, color }) => {
-						const active = skills.has(key)
-						return (
-							<button
-								key={key}
-								type="button"
-								onClick={() => toggleSkill(key)}
-								className={cn(
-									"px-3 py-1.5 rounded-(--radius-button) text-xs font-bold border-2 transition-colors cursor-pointer",
-									active
-										? cn(SKILL_ACTIVE_BG[key], color)
-										: "bg-surface text-muted border-border hover:border-border-focus",
-								)}
-							>
-								{label}
-							</button>
-						)
-					})}
-				</div>
+				<SegmentedTabs items={tabItems} value={currentStatus} onChange={setStatus} />
 			</div>
 
 			{/* Count */}
@@ -203,23 +287,15 @@ function ExamListContent() {
 
 			{/* Grid */}
 			{filtered.length === 0 ? (
-				<EmptyExams
-					hasFilter={search.length > 0 || status !== "Tất cả" || skills.size > 0}
-					onReset={() => {
-						setSearch("")
-						setStatus("Tất cả")
-						setSkills(new Set())
-					}}
-				/>
+				<EmptyExams variant={pickEmptyVariant()} onReset={resetFilters} />
 			) : (
 				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
 					{filtered.map((exam) => (
 						<ExamCard
 							key={exam.id}
 							exam={exam}
-							fullTestCoinCost={fullTestCoinCost}
-							status={statusByExamId.get(exam.id) ?? "not-started"}
-							active={activeByExamId.get(exam.id)}
+							coinCost={fullTestCoinCost}
+							state={cardStateByExamId.get(exam.id) ?? { status: "not-started" }}
 						/>
 					))}
 				</div>

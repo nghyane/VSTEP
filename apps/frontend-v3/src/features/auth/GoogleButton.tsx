@@ -30,6 +30,8 @@ export function GoogleButton({ onToken, text = "continue_with", disabled }: Prop
 					},
 					auto_select: false,
 					cancel_on_tap_outside: true,
+					use_fedcm_for_prompt: true,
+					use_fedcm_for_button: true,
 				})
 				parent.innerHTML = ""
 				google.renderButton(parent, {

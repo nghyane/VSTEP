@@ -21,7 +21,6 @@ export function ExamForm({ initial, onSubmit, onCancel, submitting }: Props) {
 		title: initial?.title ?? "",
 		source_school: initial?.source_school ?? "",
 		tags: initial?.tags ?? [],
-		total_duration_minutes: initial?.total_duration_minutes ?? 120,
 		is_published: initial?.is_published ?? false,
 	})
 	const [errors, setErrors] = useState<Record<string, string[]>>({})
@@ -90,21 +89,6 @@ export function ExamForm({ initial, onSubmit, onCancel, submitting }: Props) {
 								value={state.source_school}
 								onChange={(e) => set("source_school", e.target.value)}
 								placeholder="vd: ĐHQG Hà Nội"
-							/>
-						</FormField>
-					</div>
-					<div style={{ flex: 1 }}>
-						<FormField
-							label="Thời lượng (phút)"
-							htmlFor="total_duration_minutes"
-							required
-							error={errors.total_duration_minutes}
-						>
-							<Input
-								id="total_duration_minutes"
-								type="number"
-								value={state.total_duration_minutes}
-								onChange={(e) => set("total_duration_minutes", Number(e.target.value))}
 							/>
 						</FormField>
 					</div>
