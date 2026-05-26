@@ -21,7 +21,6 @@ final class StoreExamRequest extends FormRequest
             'source_school' => ['nullable', 'string', 'max:100'],
             'tags' => ['nullable', 'array'],
             'tags.*' => ['string', 'max:50'],
-            'total_duration_minutes' => ['required', 'integer', 'min:1'],
             'is_published' => ['nullable', 'boolean'],
         ];
     }
