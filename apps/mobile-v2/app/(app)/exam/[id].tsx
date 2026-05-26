@@ -10,6 +10,7 @@ import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { MascotEmpty } from "@/components/MascotStates";
+import { CoinButton } from "@/features/coin/CoinButton";
 import { useWalletBalance } from "@/features/wallet/queries";
 import { useThemeColors, colors as themeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { formatNumber } from "@/lib/utils";
@@ -128,31 +129,35 @@ export default function ExamDetailScreen() {
         contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.lg }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Back */}
-        <HapticTouchable onPress={() => router.back()} style={s.backRow}>
-          <Ionicons name="arrow-back" size={20} color={c.foreground} />
-          <Text style={[s.backText, { color: c.foreground }]}>Thi thử</Text>
-        </HapticTouchable>
+        {/* Top bar */}
+        <View style={s.topBar}>
+          <HapticTouchable onPress={() => router.back()} style={s.backRow}>
+            <Ionicons name="arrow-back" size={20} color={c.foreground} />
+            <Text style={[s.backText, { color: c.foreground }]}>Chi tiết đề thi</Text>
+          </HapticTouchable>
+          <CoinButton />
+        </View>
 
         {/* Header */}
-        <DepthCard style={s.headerCard}>
+        <View style={s.headerCard}>
           {exam.tags.length > 0 && (
             <View style={s.tagRow}>
               {exam.tags.map((tag) => (
                 <View key={tag} style={[s.tag, { backgroundColor: c.background, borderColor: c.border }]}>
-                  <Text style={[s.tagText, { color: c.subtle }]}>{tag}</Text>
+                  <Text style={[s.tagText, { color: c.subtle }]}>#{tag}</Text>
                 </View>
               ))}
             </View>
           )}
           <Text style={[s.examTitle, { color: c.foreground }]}>{exam.title}</Text>
-          <View style={s.metaRow}>
-            <MetaPill icon="time-outline" label={`${totalMinutes}`} unit="phút" c={c} />
-            <MetaPill icon="clipboard-outline" label={`${totalMcq}`} unit="câu TN" c={c} />
-            <MetaPill icon="create-outline" label={`${totalFreeResponse}`} unit="tự luận" c={c} />
-            <MetaPill icon="wallet-outline" label={`${coinCost}`} unit="xu" c={c} />
+
+          {/* 3 stat cards */}
+          <View style={s.statRow}>
+            <StatCard icon="time-outline" value={`${totalMinutes}`} label="phút" color={c.info} c={c} />
+            <StatCard icon="clipboard-outline" value={`${totalMcq}`} label="câu trắc nghiệm" color={c.primary} c={c} />
+            <StatCard icon="create-outline" value={`${totalFreeResponse}`} label="phần tự luận" color={c.warning} c={c} />
           </View>
-        </DepthCard>
+        </View>
 
         {/* Active session banner */}
         {activeSameExam && (
@@ -302,12 +307,14 @@ function getStartLabel(insufficient: boolean, hasActive: boolean, isFull: boolea
   return isFull ? `Nhận đề · ${cost} xu` : `Bắt đầu · ${cost} xu`;
 }
 
-function MetaPill({ icon, label, unit, c }: { icon: string; label: string; unit: string; c: ReturnType<typeof useThemeColors> }) {
+function StatCard({ icon, value, label, color, c }: { icon: string; value: string; label: string; color: string; c: ReturnType<typeof useThemeColors> }) {
   return (
-    <View style={[s.metaPill, { backgroundColor: c.background, borderColor: c.borderLight }]}>
-      <Ionicons name={icon as any} size={13} color={c.subtle} />
-      <Text style={[s.metaPillLabel, { color: c.foreground }]}>{label}</Text>
-      <Text style={[s.metaPillUnit, { color: c.subtle }]}>{unit}</Text>
+    <View style={[s.statCard, { backgroundColor: c.surface, borderColor: c.borderLight }]}>
+      <View style={[s.statIcon, { backgroundColor: `${color}15` }]}>
+        <Ionicons name={icon as any} size={18} color={color} />
+      </View>
+      <Text style={[s.statValue, { color: c.foreground }]}>{value}</Text>
+      <Text style={[s.statLabel, { color: c.mutedForeground }]}>{label}</Text>
     </View>
   );
 }
@@ -316,17 +323,19 @@ const s = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: spacing.lg, gap: spacing.md, paddingBottom: spacing["3xl"] },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  backRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: spacing.sm },
+  topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.sm },
+  backRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   backText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  headerCard: { gap: spacing.sm },
+  headerCard: { gap: spacing.md, marginBottom: spacing.xs },
   tagRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
   tag: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full, borderWidth: 1 },
   tagText: { fontSize: 10, fontFamily: fontFamily.medium },
-  examTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold, lineHeight: 28 },
-  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
-  metaPill: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radius.full, borderWidth: 1 },
-  metaPillLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
-  metaPillUnit: { fontSize: fontSize.xs },
+  examTitle: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold, lineHeight: 32 },
+  statRow: { flexDirection: "row", gap: spacing.sm },
+  statCard: { flex: 1, alignItems: "center", gap: spacing.xs, paddingVertical: spacing.md, borderRadius: radius.lg, borderWidth: 1 },
+  statIcon: { width: 36, height: 36, borderRadius: radius.full, alignItems: "center", justifyContent: "center" },
+  statValue: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
+  statLabel: { fontSize: 10, fontFamily: fontFamily.medium, textAlign: "center" },
   activeCard: { gap: spacing.md },
   activeRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   activeIcon: { width: 36, height: 36, borderRadius: radius.full, alignItems: "center", justifyContent: "center" },
