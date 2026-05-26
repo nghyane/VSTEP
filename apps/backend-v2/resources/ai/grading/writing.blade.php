@@ -15,6 +15,19 @@
 - Errors per sentence: {{ $metrics['errors_per_sentence'] }}
 - Linking word count: {{ $metrics['linking_word_count'] }}
 
+@if(isset($syntax) && $syntax['count'] > 0)
+== SYNTAX ANALYSIS (structure types detected) ==
+- Total structure types found: {{ $syntax['count'] }}
+- Types: {{ implode(', ', $syntax['types']) }}
+- Details:
+@foreach($syntax['details'] as $type => $count)
+  - {{ $type }}: {{ $count }}
+@endforeach
+@else
+== SYNTAX ANALYSIS ==
+- No complex structures detected (simple sentences only).
+@endif
+
 @if(count($grammarErrors) > 0)
 == DETECTED GRAMMAR ISSUES (first 10) ==
 @foreach($grammarErrors as $e)
@@ -23,18 +36,6 @@
   Suggested: {{ implode(', ', array_slice($e['replacements'], 0, 3)) }}
 @endif
 @endforeach
-@endif
-
-@php
-$activeCaps = array_filter($caps, fn($v) => $v !== null);
-@endphp
-@if(!empty($activeCaps))
-== SCORING CAPS APPLIED ==
-The following maximum scores will be enforced after LLM scoring:
-@foreach($activeCaps as $criterion => $max)
-- {{ $criterion }}: max {{ $max }}
-@endforeach
-Score accordingly; the system will reconcile any excess.
 @endif
 
 == TASK ==

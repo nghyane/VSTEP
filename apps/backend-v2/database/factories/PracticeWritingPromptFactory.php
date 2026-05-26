@@ -23,7 +23,7 @@ class PracticeWritingPromptFactory extends Factory
             'prompt' => fake()->paragraph(),
             'min_words' => 100,
             'max_words' => 250,
-            'required_points' => [],
+            'required_points' => ['State your opinion', 'Give at least two reasons', 'Provide a conclusion'],
             'keywords' => [],
             'sentence_starters' => [],
             'estimated_minutes' => 20,

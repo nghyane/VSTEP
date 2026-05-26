@@ -14,6 +14,7 @@ use App\Services\Admin\Course\AdminCourseScheduleService;
 use App\Services\Admin\Course\Contracts\AdminCourseBookingInterface;
 use App\Services\Admin\Course\Contracts\AdminCourseEnrollmentInterface;
 use App\Services\Admin\Course\Contracts\AdminCourseScheduleInterface;
+use App\Services\Contracts\LearningPathInterface;
 use App\Services\ConversationServiceInterface;
 use App\Services\Grading\GradingStrategyResolver;
 use App\Services\Grading\LlmGrader;
@@ -21,6 +22,8 @@ use App\Services\Grading\LlmGradingService;
 use App\Services\Grading\RubricResolver;
 use App\Services\Grading\SpeakingGradingStrategy;
 use App\Services\Grading\WritingGradingStrategy;
+use App\Services\Grading\WritingScoringFormula;
+use App\Services\LearningPathService;
 use App\Services\Payment\PaymentGatewayRegistry;
 use App\Services\Payment\PayOsGateway;
 use App\Services\Payment\VnPayGateway;
@@ -66,6 +69,11 @@ class AppServiceProvider extends ServiceProvider
         // Rubric resolver — scoped so cache resets per request (Octane-safe).
         $this->app->scoped(RubricResolver::class);
 
+        // Writing scoring formula — reads params from active rubric.
+        $this->app->scoped(WritingScoringFormula::class, fn ($app) => new WritingScoringFormula(
+            $app->make(RubricResolver::class)->active('writing'),
+        ));
+
         // Grading strategy registry — explicit list, ordered.
         $this->app->singleton(GradingStrategyResolver::class, fn ($app) => new GradingStrategyResolver([
             $app->make(WritingGradingStrategy::class),
@@ -74,6 +82,9 @@ class AppServiceProvider extends ServiceProvider
 
         // Conversation service — interface binding for testability.
         $this->app->bind(ConversationServiceInterface::class, SpeakingConversationService::class);
+
+        // Learning path — read-only aggregate of progress data.
+        $this->app->bind(LearningPathInterface::class, LearningPathService::class);
 
         // Admin course sub-services for decomposition.
         $this->app->bind(AdminCourseBookingInterface::class, AdminCourseBookingService::class);

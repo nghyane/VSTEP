@@ -19,6 +19,10 @@ final class ExamSessionListResource extends JsonResource
 
     public function toArray(Request $request): array
     {
+        $scores = $this->status->isTerminal() && $this->scoringService !== null
+            ? $this->scoringService->getSessionScores($this->resource)
+            : null;
+
         return [
             'id' => $this->id,
             'exam_id' => $this->examVersion?->exam_id,
@@ -30,8 +34,9 @@ final class ExamSessionListResource extends JsonResource
             'started_at' => $this->started_at,
             'submitted_at' => $this->submitted_at,
             'server_deadline_at' => $this->server_deadline_at,
-            'scores' => $this->status->isTerminal() && $this->scoringService !== null
-                ? $this->scoringService->getSessionScores($this->resource)
+            'scores' => $scores,
+            'overall_band' => $scores !== null && $this->scoringService !== null
+                ? $this->scoringService->getOverallBand($scores)
                 : null,
         ];
     }

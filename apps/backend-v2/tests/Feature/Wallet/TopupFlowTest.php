@@ -8,6 +8,7 @@ use App\Models\Profile;
 use App\Models\User;
 use App\Models\WalletTopupOrder;
 use App\Models\WalletTopupPackage;
+use App\Services\TopupService;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -40,7 +41,10 @@ class TopupFlowTest extends TestCase
         $token = $this->loginLearner();
 
         $response = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson('/api/v1/wallet/topup', ['package_id' => $package->id]);
+            ->postJson('/api/v1/wallet/topup', [
+                'package_id' => $package->id,
+                'payment_provider' => 'payos',
+            ]);
 
         $response->assertCreated();
         $response->assertJsonPath('data.status', 'pending');
@@ -60,14 +64,16 @@ class TopupFlowTest extends TestCase
         $token = $this->tokenFor($user);
 
         $create = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson('/api/v1/wallet/topup', ['package_id' => $package->id]);
-        $orderId = $create->json('data.id');
+            ->postJson('/api/v1/wallet/topup', [
+                'package_id' => $package->id,
+                'payment_provider' => 'payos',
+            ]);
+        $orderCode = $create->json('data.order_code');
+        $this->assertNotNull($orderCode);
 
-        $confirm = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/wallet/topup/{$orderId}/confirm");
-
-        $confirm->assertOk();
-        $confirm->assertJsonPath('data.status', 'paid');
+        // Simulate webhook callback: confirm via TopupService directly.
+        $topup = $this->app->make(TopupService::class);
+        $topup->confirmByOrderCode($orderCode, 'test_txn_id', null);
 
         $balance = $this->app->make(WalletService::class)->getBalance($profile);
         // 100 onboarding + 500 topup = 600
@@ -81,14 +87,18 @@ class TopupFlowTest extends TestCase
         $package = WalletTopupPackage::factory()->create(['coins_base' => 500]);
 
         $token = $this->tokenFor($user);
-        $orderId = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson('/api/v1/wallet/topup', ['package_id' => $package->id])
-            ->json('data.id');
+        $orderCode = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/wallet/topup', [
+                'package_id' => $package->id,
+                'payment_provider' => 'payos',
+            ])
+            ->json('data.order_code');
 
-        $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/wallet/topup/{$orderId}/confirm")->assertOk();
-        $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/wallet/topup/{$orderId}/confirm")->assertOk();
+        $topup = $this->app->make(TopupService::class);
+
+        // Confirm twice — second should be idempotent.
+        $topup->confirmByOrderCode($orderCode, 'test_txn_1', null);
+        $topup->confirmByOrderCode($orderCode, 'test_txn_1', null);
 
         // Only 1 topup transaction created.
         $this->assertSame(
@@ -105,18 +115,21 @@ class TopupFlowTest extends TestCase
         $package = WalletTopupPackage::factory()->create();
 
         $tokenA = $this->tokenFor($userA);
-        $orderId = $this->withHeader('Authorization', "Bearer {$tokenA}")
-            ->postJson('/api/v1/wallet/topup', ['package_id' => $package->id])
-            ->json('data.id');
+        $orderCode = $this->withHeader('Authorization', "Bearer {$tokenA}")
+            ->postJson('/api/v1/wallet/topup', [
+                'package_id' => $package->id,
+                'payment_provider' => 'payos',
+            ])
+            ->json('data.order_code');
 
-        $userB = User::factory()->create();
-        Profile::factory()->initial()->forAccount($userB)->create();
-        $tokenB = $this->tokenFor($userB);
+        $this->assertNotNull($orderCode);
 
-        $response = $this->withHeader('Authorization', "Bearer {$tokenB}")
-            ->postJson("/api/v1/wallet/topup/{$orderId}/confirm");
-
-        $response->assertStatus(403);
+        // Verify order is only confirmable by the correct profile — but confirmByOrderCode
+        // isn't profile-gated (gateway callbacks are server-to-server).
+        // The profile ownership is enforced at order creation, not confirmation.
+        $order = WalletTopupOrder::query()->where('order_code', $orderCode)->first();
+        $this->assertNotNull($order);
+        $this->assertSame($profileA->id, $order->profile_id);
     }
 
     private function loginLearner(): string

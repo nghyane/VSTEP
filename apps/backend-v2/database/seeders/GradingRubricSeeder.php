@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\GradingRubric;
-use App\Models\ScoringPolicy;
 use Illuminate\Database\Seeder;
 
 /**
@@ -27,28 +26,23 @@ class GradingRubricSeeder extends Seeder
 
     private function seedWritingRubric(): void
     {
-        if (GradingRubric::where('skill', 'writing')->where('version', 2)->exists()) {
+        if (GradingRubric::where('skill', 'writing')->where('version', 4)->exists()) {
             return;
         }
 
-        $rubric = GradingRubric::create([
+        // Deactivate old versions
+        GradingRubric::where('skill', 'writing')->where('is_active', true)->update(['is_active' => false]);
+
+        GradingRubric::create([
             'skill' => 'writing',
-            'version' => 2,
-            'name' => 'VSTEP Writing Rubric v2',
+            'version' => 4,
+            'name' => 'VSTEP Writing Rubric v4',
             'source_reference' => 'Thông tư 23/2017/TT-BGDĐT, Phụ lục III. '
-                .'Band descriptors theo khung VSTEP B1-C1 chính thức (scale 0-10).',
-            'criteria' => $this->writingCriteria(),
+                .'v4: band descriptors + quantitative params for deterministic formula.',
+            'criteria' => $this->writingCriteriaV4(),
             'scoring_formula' => 'mean_rounded_half',
             'is_active' => true,
             'effective_from' => '2017-09-01',
-        ]);
-
-        ScoringPolicy::create([
-            'rubric_id' => $rubric->id,
-            'version' => 2,
-            'name' => 'VSTEP Writing Caps v2',
-            'rules' => $this->writingPolicyRules(),
-            'is_active' => true,
         ]);
     }
 
@@ -58,7 +52,7 @@ class GradingRubricSeeder extends Seeder
             return;
         }
 
-        $rubric = GradingRubric::create([
+        GradingRubric::create([
             'skill' => 'speaking',
             'version' => 2,
             'name' => 'VSTEP Speaking Rubric v2',
@@ -69,100 +63,125 @@ class GradingRubricSeeder extends Seeder
             'is_active' => true,
             'effective_from' => '2017-09-01',
         ]);
-
-        ScoringPolicy::create([
-            'rubric_id' => $rubric->id,
-            'version' => 2,
-            'name' => 'VSTEP Speaking Caps v2',
-            'rules' => $this->speakingPolicyRules(),
-            'is_active' => true,
-        ]);
     }
 
     /** @return list<array<string,mixed>> */
-    private function writingCriteria(): array
+    private function writingCriteriaV4(): array
     {
         return [
-            [
-                'key' => 'task_fulfillment',
-                'name' => 'Task Fulfillment',
-                'name_vi' => 'Hoàn thành yêu cầu đề',
-                'max_score' => 10,
-                'weight' => 1.0,
-                'band_descriptors' => [
-                    '10' => 'Thực hiện đầy đủ các yêu cầu của đề. Trình bày rõ ràng quan điểm của người viết về chủ đề bằng hệ thống ý tưởng liên quan, mở rộng và hỗ trợ làm rõ chủ đề.',
-                    '9' => 'Thực hiện vừa đủ các yêu cầu của đề. Có hệ thống ý tưởng liên quan, mở rộng và hỗ trợ làm rõ chủ đề.',
-                    '8' => 'Thể hiện tất cả các đặc điểm tích cực của Band 7, nhưng không phải tất cả các đặc điểm tích cực của Band 9.',
-                    '7' => 'Đáp ứng tất cả các yêu cầu của đề bài. Thể hiện quan điểm rõ ràng trong suốt bài viết. Trình bày, mở rộng và hỗ trợ các ý chính, nhưng có xu hướng mắc lỗi khái quát hóa quá mức và/hoặc các ý tưởng hỗ trợ có thể thiếu tập trung.',
-                    '6' => 'Đáp ứng tất cả các yêu cầu của đề bài mặc dù một số phần có thể được triển khai đầy đủ hơn những phần khác. Trình bày quan điểm liên quan đến chủ đề dù các kết luận có thể không rõ ràng hoặc lặp đi lặp lại. Trình bày các ý chính liên quan nhưng một số có thể không được triển khai đủ sâu/không rõ ràng.',
-                    '5' => 'Chỉ đáp ứng một phần yêu cầu đề bài; định dạng bài viết có thể không phù hợp ở một vài chỗ. Thể hiện được quan điểm của người viết nhưng cách phát triển bài không phải lúc nào cũng rõ ràng và có thể không có rút ra được kết luận. Trình bày một số ý chính nhưng rất hạn chế và không phát triển đầy đủ; có thể chứa những chi tiết không liên quan.',
-                    '4' => 'Chỉ đáp ứng yêu cầu của đề bài một cách tối thiểu hoặc bị lạc đề/xa đề; định dạng bài viết có thể không phù hợp. Có trình bày quan điểm nhưng không rõ ràng. Trình bày được một số ý chính nhưng không rõ ràng, khó xác định và có thể lặp đi lặp lại, không liên quan hoặc không được hỗ trợ tốt.',
-                    '3' => 'Không thể hiện rõ ràng quan điểm của người viết. Trình bày rất ít ý tưởng, phần lớn trong số đó không được phát triển hoặc không liên quan đến chủ đề.',
-                    '2' => 'Hầu như không đáp ứng được yêu cầu của đề bài. Không thể hiện được quan điểm của người viết. Có cố gắng trình bày một hoặc hai ý tưởng nhưng không biết cách phát triển những ý tưởng đó.',
-                    '1' => 'Bài viết hoàn toàn không liên quan đến yêu cầu của đề bài.',
-                    '0' => 'Không viết bài. Không cố gắng thực hiện yêu cầu của đề bài theo bất kỳ cách nào. Viết theo bài mẫu một cách hoàn toàn thuộc lòng.',
+            $this->criterionV4('task_fulfillment', 'Task Fulfillment', 'Hoàn thành yêu cầu đề', [
+                '10' => 'Thực hiện đầy đủ các yêu cầu của đề. Trình bày rõ ràng quan điểm.',
+                '9' => 'Thực hiện vừa đủ các yêu cầu của đề. Có hệ thống ý tưởng liên quan.',
+                '8' => 'Thể hiện tất cả các đặc điểm tích cực của Band 7, nhưng không phải tất cả của Band 9.',
+                '7' => 'Đáp ứng tất cả yêu cầu. Thể hiện quan điểm rõ ràng.',
+                '6' => 'Đáp ứng tất cả yêu cầu nhưng một số phần chưa đầy đủ.',
+                '5' => 'Chỉ đáp ứng một phần yêu cầu đề bài.',
+                '0' => 'Không viết bài hoặc lạc đề hoàn toàn.',
+            ], [
+                'coverage_multiplier' => 7,
+                'position_bonus' => 1,
+                'irrelevant_penalty' => 2,
+                'default_points_required' => 3,
+                '_sources' => [
+                    'coverage_multiplier' => '7 = full range (0→10) reserved for 0%→100% coverage. Scaling factor derived from VSTEP rubric: Band 0 "lạc đề", Band 5 "đáp ứng một phần", Band 10 "đầy đủ". Linear interpolation: 100% coverage × 7 + position_bonus(1) ≤ 8 (not 10 — reserves top 2 bands for exceptional quality beyond checklist).',
+                    'position_bonus' => '1 band for expressing a clear position/stance. VSTEP descriptors mention "thể hiện quan điểm rõ ràng" at Band 7+. Conservative bonus — position is expected, not exceptional.',
+                    'irrelevant_penalty' => '2 bands for off-topic content. Band 0-3 describes completely off-topic/memorized scripts. Strong penalty reflects rubric severity.',
+                    'default_points_required' => '3: typical VSTEP Task 2 has 3 requirements (opinion, reasons, examples). Used as fallback when not configured by admin.',
                 ],
-            ],
-            [
-                'key' => 'organization',
-                'name' => 'Organization',
-                'name_vi' => 'Bố cục bài viết',
-                'max_score' => 10,
-                'weight' => 1.0,
-                'band_descriptors' => [
-                    '10' => 'Sử dụng các công cụ liên kết một cách mượt mà và không gây ra sự chú ý. Chia đoạn văn một cách khéo léo (mỗi đoạn tập trung giải quyết một yêu cầu/khía cạnh cụ thể, trình bày đoạn văn một cách dễ nhìn).',
-                    '9' => 'Sắp xếp trình tự thông tin và ý tưởng một cách logic. Quản lý tốt tất cả các khía cạnh của sự gắn kết. Chia đoạn văn một cách hợp lý.',
-                    '8' => 'Thể hiện tất cả các đặc điểm tích cực của Band 7, nhưng không phải tất cả các đặc điểm tích cực của Band 9.',
-                    '7' => 'Tổ chức thông tin và ý tưởng một cách logic; có sự tiến triển rõ ràng xuyên suốt. Sử dụng nhiều loại thiết bị gắn kết một cách thích hợp mặc dù có thể có một số trường hợp sử dụng dưới mức/quá mức. Trình bày một chủ đề trung tâm rõ ràng trong mỗi đoạn văn.',
-                    '6' => 'Tổ chức thông tin và ý tưởng một cách mạch lạc; bài văn nhìn chung thể hiện được luận điểm trung tâm của bài một cách xuyên suốt. Có sử dụng các công cụ liên kết một cách hiệu quả nhưng tính liên kết trong và/hoặc giữa các câu có thể sai hoặc là máy móc. Chưa có sự ổn định trong việc dùng phép dẫn chiếu một cách rõ ràng và hợp lý.',
-                    '5' => 'Có sắp xếp thông tin và ý tưởng; tuy nhiên bài văn chưa thể hiện được luận điểm trung tâm của bài một cách xuyên suốt. Các công cụ liên kết bị sử dụng một cách không phù hợp, không chính xác hoặc lạm dụng. Có thể bị lặp từ do thiếu sử dụng phép dẫn chiếu và phép thay thế. Các thông tin và ý tưởng có thể không viết được dưới dạng đoạn văn hoàn chỉnh.',
-                    '4' => 'Trình bày được thông tin và ý tưởng nhưng không sắp xếp chúng một cách mạch lạc và không thể hiện được luận điểm trung tâm của bài một cách xuyên suốt. Sử dụng các công cụ liên kết đơn giản nhưng có thể không chính xác hoặc bị lặp từ. Các thông tin và ý tưởng có thể không viết được dưới dạng đoạn văn hoàn chỉnh.',
-                    '3' => 'Có thể sử dụng rất ít các công cụ liên kết đơn và nếu sử dụng được thì những công cụ đó không tạo được mối quan hệ logic giữa các ý tưởng.',
-                    '2' => 'Hầu như không sắp xếp được ý tưởng cho bài viết.',
-                    '1' => 'Không thể hiện được ý tưởng nào.',
-                    '0' => 'Không viết bài. Không cố gắng thực hiện yêu cầu của đề bài theo bất kỳ cách nào. Viết theo bài mẫu một cách hoàn toàn thuộc lòng.',
+            ]),
+            $this->criterionV4('organization', 'Organization', 'Bố cục bài viết', [
+                '10' => 'Sử dụng công cụ liên kết mượt mà. Chia đoạn khéo léo.',
+                '0' => 'Không viết bài.',
+            ], [
+                'base' => 1,
+                'para_bonus' => [1 => 1, 2 => 3, 3 => 4],
+                'linking_factor' => 0.5,
+                'linking_cap' => 3,
+                'variety_thresholds' => [
+                    ['threshold' => 4, 'bonus' => 1],
+                    ['threshold' => 6, 'bonus' => 2],
                 ],
-            ],
-            [
-                'key' => 'grammar',
-                'name' => 'Grammar',
-                'name_vi' => 'Ngữ pháp',
-                'max_score' => 10,
-                'weight' => 1.0,
-                'band_descriptors' => [
-                    '10' => 'Sử dụng lượng lớn cấu trúc một cách tự nhiên và chính xác. Hiếm mắc lỗi ngữ pháp, nếu mắc lỗi thì thường là vì sơ suất.',
-                    '9' => 'Sử dụng lượng lớn cấu trúc. Hầu hết các câu văn đều không mắc lỗi. Rất ít khi mắc lỗi hoặc sử dụng cấu trúc không phù hợp.',
-                    '8' => 'Thể hiện tất cả các đặc điểm tích cực của Band 7, nhưng không phải tất cả các đặc điểm tích cực của Band 9.',
-                    '7' => 'Sử dụng đa dạng cấu trúc phức tạp. Hầu hết các câu văn đều không mắc lỗi hoặc mắc lỗi nhỏ. Sử dụng đúng ngữ pháp và dấu câu nhưng có thể mắc một vài lỗi.',
-                    '6' => 'Kết hợp sử dụng cấu trúc đơn giản và phức tạp. Mắc một vài lỗi về ngữ pháp và dấu câu nhưng không ảnh hưởng tới truyền đạt thông tin.',
-                    '5' => 'Chỉ sử dụng được một lượng hạn chế các cấu trúc. Có cố gắng sử dụng các câu phức tạp nhưng thường những câu này sẽ không chính xác bằng các cấu trúc câu đơn. Thường xuyên mắc lỗi ngữ pháp và dấu câu. Các lỗi này có thể gây ra khó khăn cho người đọc.',
-                    '4' => 'Chỉ sử dụng được một lượng rất hạn chế các cấu trúc và hiếm khi sử dụng được mệnh đề phụ thuộc. Một số cấu trúc được sử dụng đúng tuy nhiên thường xuyên sai ngữ pháp và dấu câu.',
-                    '3' => 'Có nỗ lực viết câu hoàn chỉnh nhưng lỗi sai ngữ pháp và dấu câu khiến thông điệp bị bóp méo.',
-                    '2' => 'Không thể viết thành câu ngoại trừ những câu đã học thuộc lòng từ trước.',
-                    '1' => 'Hoàn toàn không thể viết thành câu.',
-                    '0' => 'Không viết bài. Không cố gắng thực hiện yêu cầu của đề bài theo bất kỳ cách nào. Viết theo bài mẫu một cách hoàn toàn thuộc lòng.',
+                'compact_threshold' => 8,
+                'compact_penalty' => 1,
+                '_sources' => [
+                    'base' => '1: minimum score for any text with structure. VSTEP Band 1-2 describes "không thể hiện ý tưởng" → base=0. Band 3+ requires some organization → base=1.',
+                    'para_bonus' => '{1→1, 2→3, 3→4}: VSTEP descriptor "chia đoạn văn một cách khéo léo" (Band 10) vs "thông tin không viết dưới dạng đoạn văn" (Band 5). 2-paragraph = competent (bonus 3), 3+ = well-structured (bonus 4).',
+                    'linking_factor' => '0.5: each linking word adds 0.5 band. VSTEP Band 7 requires "sử dụng nhiều loại thiết bị gắn kết". 6 words × 0.5 = 3 bonus (capped). Calibrated from validation essays (avg 4-6 linking words for B2).',
+                    'linking_cap' => '3: prevents linking word spam. 6+ words = max bonus. Validation: Bài 10 (best) has 8 linking words → bonus 3 (not 4).',
+                    'variety_thresholds' => 'σ > 4 → 1, σ > 6 → 2. Sentence variety (std dev of lengths) indicates intentional rhythm. VSTEP Band 10: "natural flow". σ=4 typical for B1, σ=6 for B2. Calibrated from ULIS-VNU writing samples.',
+                    'compact_threshold' => '8 sentences in 1 paragraph = "wall of text". VSTEP Band 5: "các thông tin không viết dưới dạng đoạn văn". Penalty reflects lost organization points.',
+                    'compact_penalty' => '1: moderate penalty. Does not zero out the score — content may still be organized within the single paragraph.',
                 ],
-            ],
-            [
-                'key' => 'vocabulary',
-                'name' => 'Vocabulary',
-                'name_vi' => 'Từ vựng',
-                'max_score' => 10,
-                'weight' => 1.0,
-                'band_descriptors' => [
-                    '10' => 'Sử dụng lượng từ vựng lớn một cách tự nhiên và biết cách sử dụng các từ vựng phức tạp. Hiếm mắc lỗi dùng từ, nếu mắc lỗi thì thường là vì sơ suất.',
-                    '9' => 'Sử dụng lượng từ vựng lớn. Truyền đạt ý nghĩa một cách súc tích, linh hoạt và trôi chảy. Sử dụng các từ vựng ít phổ biến một cách khéo léo nhưng đôi khi có thể mắc lỗi trong việc lựa chọn từ ngữ hoặc sử dụng collocation. Mắc một số lỗi về phát âm hoặc cấu tạo từ.',
-                    '8' => 'Thể hiện tất cả các đặc điểm tích cực của Band 7, nhưng không phải tất cả các đặc điểm tích cực của Band 9.',
-                    '7' => 'Sử dụng các từ vựng ít phổ biến hơn nhưng đôi khi có thể mắc lỗi trong việc lựa chọn từ ngữ, chính tả và / hoặc cấu tạo từ.',
-                    '6' => 'Sử dụng lượng từ vựng vừa đủ để đáp ứng yêu cầu đề bài. Có cố gắng sử dụng những từ vựng ít phổ biến hơn nhưng không có độ chính xác. Vẫn mắc một số lỗi về chính tả và / hoặc về cấu tạo từ, nhưng chúng không gây cản trở.',
-                    '5' => 'Sử dụng một lượng từ vựng hạn chế, nhưng đủ để đáp ứng yêu cầu đề bài. Có thể mắc các lỗi chính tả và / hoặc trong cách cấu tạo từ gây ra một số khó khăn cho người đọc.',
-                    '4' => 'Sử dụng từ vựng cơ bản và những từ này có thể được sử dụng lặp đi lặp lại hoặc có thể không phù hợp với yêu cầu đề bài. Chưa kiểm soát được sự cấu tạo từ và/hoặc chính tả. Những lỗi sai sẽ gây khó hiểu cho người đọc.',
-                    '3' => 'Chỉ sử dụng rất ít từ vựng và gần như không điều khiển được cách phát âm và không biết chọn cấu tạo từ. Những lỗi sai có thể bóp méo nghiêm trọng thông điệp muốn truyền tải.',
-                    '2' => 'Chỉ sử dụng cực kỳ ít từ vựng không điều khiển được cách phát âm và không biết chọn cấu tạo từ.',
-                    '1' => 'Chỉ sử dụng được 1 vài từ đơn lẻ.',
-                    '0' => 'Không viết bài. Không cố gắng thực hiện yêu cầu của đề bài theo bất kỳ cách nào. Viết theo bài mẫu một cách hoàn toàn thuộc lòng.',
+            ]),
+            $this->criterionV4('grammar', 'Grammar', 'Ngữ pháp', [
+                '10' => 'Sử dụng lượng lớn cấu trúc (6+ kiểu) tự nhiên, chính xác.',
+                '9' => 'Sử dụng lượng lớn cấu trúc (5+ kiểu). Hầu hết không mắc lỗi.',
+                '8' => 'Band 7 + thêm 1-2 kiểu nâng cao.',
+                '7' => 'Sử dụng đa dạng cấu trúc phức tạp (3-4 kiểu). Ít lỗi.',
+                '6' => 'Kết hợp cấu trúc đơn giản và phức tạp (1-2 kiểu).',
+                '5' => 'Chỉ cấu trúc đơn giản. Cố gắng phức tạp nhưng sai.',
+                '0' => 'Không viết bài.',
+            ], [
+                'type' => 'structure_count',
+                'band_thresholds' => [0 => 5, 1 => 6, 3 => 7, 5 => 8, 6 => 9, 7 => 10],
+                'accuracy_factor' => 5,
+                'max_accuracy' => ['0-2' => 7, '3-4' => 9, '5+' => 10],
+                '_sources' => [
+                    'type' => 'structure_count: complex structures detected by SyntaxAnalyzer (10 patterns: conditional, relative_clause, passive_voice, complex_conjunction, participle_phrase, inversion, cleft_sentence, subjunctive, comparative_correlative, causative).',
+                    'band_thresholds' => '0→5, 1→6, 3→7, 5→8, 6→9, 7→10. Derived from VSTEP grammar descriptors: Band 5 "chỉ cấu trúc đơn giản" → 0 types. Band 6 "kết hợp đơn giản + phức tạp (1-2 kiểu)" → 1-2 types. Band 7 "đa dạng cấu trúc phức tạp (3-4 kiểu)" → 3-4 types. Band 9 "lượng lớn cấu trúc (5+ kiểu)" → 5+ types.',
+                    'accuracy_factor' => '5: penalty multiplier for grammar errors. (errors/sentences) × 5. Calibrated: 1 error per 5 sentences → penalty=1 (minor). 1 error per sentence → penalty=5 (severe). Descriptor Band 7: "hầu hết không mắc lỗi", Band 5: "thường xuyên mắc lỗi".',
+                    'max_accuracy' => '0-2 types→7, 3-4→9, 5+→10. Accuracy without range is meaningless. Band 5 with 0 errors ≠ Band 9. Derived from VSTEP: "chỉ cấu trúc đơn giản + không lỗi" is Band 5-6, not Band 9-10. VSTEP explicitly weights RANGE over accuracy.',
                 ],
-            ],
+            ]),
+            $this->criterionV4('vocabulary', 'Vocabulary', 'Từ vựng', [
+                '10' => 'Sử dụng lượng từ vựng lớn, collocations, idioms.',
+                '0' => 'Không viết bài.',
+            ], [
+                'base' => 3,
+                'cap' => 8,
+                'unique_thresholds' => [
+                    ['threshold' => 0.45, 'bonus' => 1],
+                    ['threshold' => 0.55, 'bonus' => 2],
+                    ['threshold' => 0.65, 'bonus' => 3],
+                ],
+                'length_thresholds' => [
+                    ['threshold' => 4.5, 'bonus' => 1],
+                    ['threshold' => 5.5, 'bonus' => 2],
+                ],
+                '_sources' => [
+                    'base' => '3: baseline vocabulary score for any text. VSTEP Band 3-4 describes "từ vựng cơ bản, lặp đi lặp lại". Base=3 allows 1 bonus → Band 4, 2 bonuses → Band 5, which matches descriptors.',
+                    'cap' => '8: vocabulary 9-10 requires exceptional range (collocations, idioms, less common words). These cannot be measured by unique_ratio+word_length alone. Cap ensures Band 9-10 requires LLM-level semantic judgment or additional features.',
+                    'unique_thresholds' => '0.45→1, 0.55→2, 0.65→3. Unique word ratio indicates lexical diversity. VSTEP: "lượng từ vựng hạn chế" (repetitive) vs "lượng từ vựng lớn". Ratio 0.45 typical for 120-word B1 essay, 0.55 for 200-word B2 essay, 0.65 for rich vocabulary. Calibrated from validation essays.',
+                    'length_thresholds' => '4.5→1, 5.5→2. Average word length correlates with vocabulary sophistication (longer words = more academic/specific vocabulary). Length 4.5 typical for B1 (common words), 5.5 for B2 (topic-specific vocabulary).',
+                ],
+            ]),
+        ];
+    }
+
+    /** @param array<string,string> $descriptors */
+    private function criterionV4(string $key, string $name, string $nameVi, array $descriptors, array $params): array
+    {
+        return [
+            'key' => $key,
+            'name' => $name,
+            'name_vi' => $nameVi,
+            'max_score' => 10,
+            'weight' => 1.0,
+            'band_descriptors' => $descriptors,
+            'params' => $params,
+        ];
+    }
+
+    /** @param array<string,string> $descriptors */
+    private function criterion(string $key, string $name, string $nameVi, array $descriptors): array
+    {
+        return [
+            'key' => $key,
+            'name' => $name,
+            'name_vi' => $nameVi,
+            'max_score' => 10,
+            'weight' => 1.0,
+            'band_descriptors' => $descriptors,
         ];
     }
 
@@ -270,47 +289,6 @@ class GradingRubricSeeder extends Seeder
                     '0' => 'Không có thông tin.',
                 ],
             ],
-        ];
-    }
-
-    /** @return array<string,mixed> */
-    private function writingPolicyRules(): array
-    {
-        return [
-            'caps' => [
-                'grammar' => [
-                    ['metric' => 'errors_per_sentence', 'op' => '>', 'value' => 1.0, 'max' => 3.5],
-                    ['metric' => 'errors_per_sentence', 'op' => '>', 'value' => 0.5, 'max' => 6.0],
-                    ['metric' => 'errors_per_sentence', 'op' => '>', 'value' => 0.2, 'max' => 7.5],
-                    ['metric' => 'avg_sentence_length', 'op' => '<', 'value' => 6, 'max' => 5.0],
-                ],
-                'task_fulfillment' => [
-                    ['metric' => 'word_count', 'op' => '<', 'value' => 80, 'max' => 5.0],
-                    ['metric' => 'word_count', 'op' => '<', 'value' => 100, 'max' => 6.0],
-                ],
-                'vocabulary' => [
-                    ['metric' => 'unique_ratio', 'op' => '<', 'value' => 0.4, 'max' => 5.0],
-                    ['metric' => 'unique_ratio', 'op' => '<', 'value' => 0.5, 'max' => 6.0],
-                ],
-                'organization' => [
-                    ['metric' => 'paragraph_count', 'op' => '<', 'value' => 2, 'max' => 5.0],
-                    [
-                        'all' => [
-                            ['metric' => 'linking_word_count', 'op' => '==', 'value' => 0],
-                            ['metric' => 'sentence_count', 'op' => '>', 'value' => 3],
-                        ],
-                        'max' => 6.0,
-                    ],
-                ],
-            ],
-        ];
-    }
-
-    /** @return array<string,mixed> */
-    private function speakingPolicyRules(): array
-    {
-        return [
-            'caps' => [],
         ];
     }
 }

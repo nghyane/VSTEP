@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\ScoringPolicy;
 use Illuminate\Support\Str;
 
 /**
- * Rule-based scoring — deterministic caps + penalties.
+ * Rule-based scoring — deterministic metrics for LLM context.
  *
- * Evaluates structured cap rules from ScoringPolicy entity.
- * LLM scores are capped by these rules to prevent inflation.
+ * Computes word count, sentence count, error rate, linking word count, etc.
+ * No caps applied. LLM evaluates independently against VSTEP rubric descriptors.
  */
 final class RuleBasedScoringService
 {
@@ -24,95 +23,14 @@ final class RuleBasedScoringService
 
     /**
      * @param  array<int,array<string,mixed>>  $languageToolErrors
-     * @return array{caps: array<string,float|null>, metrics: array<string,mixed>, flags: string[]}
+     * @return array{metrics: array<string,mixed>, flags: string[]}
      */
-    public function analyze(string $text, array $languageToolErrors, ScoringPolicy $policy): array
+    public function analyze(string $text, array $languageToolErrors): array
     {
         $metrics = $this->computeMetrics($text, $languageToolErrors);
-        $caps = $this->computeCaps($metrics, $policy);
         $flags = $this->computeFlags($metrics);
 
-        return ['caps' => $caps, 'metrics' => $metrics, 'flags' => $flags];
-    }
-
-    /**
-     * Reconcile LLM scores with rule-based caps.
-     *
-     * @param  array<string,float>  $llmScores
-     * @param  array<string,float|null>  $caps  null = no cap
-     * @return array<string,float>
-     */
-    public function reconcile(array $llmScores, array $caps): array
-    {
-        $final = [];
-        foreach ($llmScores as $criterion => $score) {
-            $cap = $caps[$criterion] ?? null;
-            $final[$criterion] = $cap !== null ? min($score, $cap) : $score;
-        }
-
-        return $final;
-    }
-
-    /**
-     * Evaluate caps from ScoringPolicy structured rules.
-     *
-     * @return array<string,float|null>
-     */
-    private function computeCaps(array $metrics, ScoringPolicy $policy): array
-    {
-        $caps = [];
-        $rules = $policy->rules['caps'] ?? [];
-
-        foreach ($rules as $criterion => $criterionRules) {
-            $cap = null;
-            foreach ($criterionRules as $rule) {
-                if ($this->evaluateRule($rule, $metrics)) {
-                    $ruleMax = (float) $rule['max'];
-                    $cap = $cap !== null ? min($cap, $ruleMax) : $ruleMax;
-                }
-            }
-            $caps[$criterion] = $cap;
-        }
-
-        return $caps;
-    }
-
-    /**
-     * Evaluate a single structured rule against metrics.
-     *
-     * Rule format (single): ['metric' => 'x', 'op' => '>', 'value' => 1.0, 'max' => 2.5]
-     * Rule format (compound): ['all' => [...conditions], 'max' => 2.5]
-     */
-    private function evaluateRule(array $rule, array $metrics): bool
-    {
-        if (isset($rule['all'])) {
-            foreach ($rule['all'] as $sub) {
-                if (! $this->evaluateComparison($sub, $metrics)) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        return $this->evaluateComparison($rule, $metrics);
-    }
-
-    private function evaluateComparison(array $rule, array $metrics): bool
-    {
-        $metricValue = $metrics[$rule['metric']] ?? 0;
-        $op = $rule['op'];
-        $threshold = (float) $rule['value'];
-
-        return match ($op) {
-            '>' => $metricValue > $threshold,
-            '<' => $metricValue < $threshold,
-            '>=' => $metricValue >= $threshold,
-            '<=' => $metricValue <= $threshold,
-            '==' => $metricValue == $threshold,
-            '!=' => $metricValue != $threshold,
-            default => false,
-        };
+        return ['metrics' => $metrics, 'flags' => $flags];
     }
 
     /** @return array<string,mixed> */
@@ -141,12 +59,21 @@ final class RuleBasedScoringService
             $linkingCount += substr_count($textLower, $lw);
         }
 
+        $totalChars = $words->map(fn (string $w): int => mb_strlen($w))->sum();
+        $avgWordLength = $wordCount > 0 ? round($totalChars / $wordCount, 1) : 0;
+
+        // Sentence length variety: std dev / mean (coefficient of variation)
+        $sentenceLengths = $sentences->map(fn (string $s): int => str_word_count(trim($s)));
+        $sentenceVariety = $this->stdDev($sentenceLengths, $avgSentenceLength);
+
         return [
             'word_count' => $wordCount,
             'sentence_count' => $sentenceCount,
             'paragraph_count' => $paragraphCount,
             'unique_ratio' => round($uniqueRatio, 3),
             'avg_sentence_length' => round($avgSentenceLength, 1),
+            'sentence_variety' => round($sentenceVariety, 2),
+            'avg_word_length' => $avgWordLength,
             'grammar_error_count' => $grammarErrorCount,
             'total_error_count' => $totalErrorCount,
             'errors_per_sentence' => round($errorsPerSentence, 2),
@@ -170,5 +97,22 @@ final class RuleBasedScoringService
         }
 
         return $flags;
+    }
+
+    /**
+     * Population standard deviation.
+     *
+     * @param  \Illuminate\Support\Collection<int, int|float>  $values
+     */
+    private function stdDev($values, float $mean): float
+    {
+        $count = $values->count();
+        if ($count <= 1) {
+            return 0.0;
+        }
+
+        $sumSquaredDiff = $values->reduce(fn (float $carry, $v) => $carry + (($v - $mean) ** 2), 0.0);
+
+        return sqrt($sumSquaredDiff / $count);
     }
 }

@@ -20,6 +20,12 @@ use Illuminate\Support\Str;
 
 final class SpeakingConversationService implements ConversationServiceInterface
 {
+    /**
+     * Sessions idle longer than this are considered stale — auto-ended
+     * instead of resumed. Shorter sessions are resumed in-place.
+     */
+    private const STALE_SESSION_MINUTES = 30;
+
     public function __construct(
         private readonly AiClient $ai,
         private readonly ConversationTurnNormalizer $normalizer,
@@ -126,13 +132,33 @@ final class SpeakingConversationService implements ConversationServiceInterface
         $openingIpa = $scenario->opening_line_ipa ?: $this->generateIpa($scenario->opening_line);
 
         return DB::transaction(function () use ($profile, $scenario, $openingIpa) {
-            // Auto-end any existing active session for this user+scenario.
-            // Set ended_at = null to mark as abandoned (not user-ended).
-            PracticeSpeakingConversationSession::query()
+            $active = PracticeSpeakingConversationSession::query()
                 ->where('profile_id', $profile->id)
                 ->where('scenario_id', $scenario->id)
                 ->where('status', ConversationStatus::Active)
-                ->update(['status' => ConversationStatus::Ended]);
+                ->first();
+
+            // Resume existing session if it was started recently (< 30 min).
+            if ($active !== null) {
+                $ageMinutes = (int) $active->started_at->diffInMinutes(now());
+
+                if ($ageMinutes < self::STALE_SESSION_MINUTES) {
+                    return [
+                        'session' => $active,
+                        'turns' => $active->turns()->get()->all(),
+                        'resumed' => true,
+                    ];
+                }
+
+                // Stale — auto-end with complete data before creating new.
+                $active->update([
+                    'status' => ConversationStatus::Ended,
+                    'ended_at' => now(),
+                    'duration_seconds' => DB::raw(
+                        'EXTRACT(EPOCH FROM (NOW() - started_at))::int',
+                    ),
+                ]);
+            }
 
             $session = PracticeSpeakingConversationSession::create([
                 'profile_id' => $profile->id,
@@ -146,11 +172,11 @@ final class SpeakingConversationService implements ConversationServiceInterface
                 'turn_index' => 0,
                 'role' => 'ai',
                 'text' => $scenario->opening_line,
+                'ipa' => $openingIpa,
                 'suggested_words' => $scenario->target_vocab ?? [],
             ]);
-            $turn->setAttribute('ipa', $openingIpa);
 
-            return ['session' => $session, 'turns' => [$turn]];
+            return ['session' => $session, 'turns' => [$turn], 'resumed' => false];
         });
     }
 
@@ -205,9 +231,9 @@ final class SpeakingConversationService implements ConversationServiceInterface
                 'turn_index' => $nextIndex + 1,
                 'role' => 'ai',
                 'text' => $llmResult['reply'],
+                'ipa' => $llmResult['reply_ipa'],
                 'suggested_words' => $llmResult['suggested_words'],
             ]);
-            $aiTurn->setAttribute('ipa', $llmResult['reply_ipa']);
 
             // Batch update — single UPDATE thay vì 4 increments.
             $vocabUsed = collect($gradingResult['vocab_check'] ?? [])->filter(fn ($v) => $v['used'])->count();

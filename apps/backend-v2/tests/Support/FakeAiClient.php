@@ -14,6 +14,10 @@ final class FakeAiClient implements AiClient
 {
     public function toolCall(string $service, string $prompt, string $toolName, string $toolDescription, array $parametersSchema, ?string $instructions = null): array
     {
+        if (str_starts_with($toolName, 'extract')) {
+            return $this->fakeEvidenceResponse();
+        }
+
         return match ($service) {
             'grading' => $this->fakeGradingResponse(),
             'conversation' => $this->fakeConversationResponse($prompt),
@@ -45,6 +49,19 @@ final class FakeAiClient implements AiClient
             'improvements' => [['message' => 'Sử dụng thêm từ nối', 'explanation' => 'Dùng however, moreover để liên kết ý']],
             'rewrites' => [],
             'annotations' => [],
+        ];
+    }
+
+    private function fakeEvidenceResponse(): array
+    {
+        return [
+            'requirements_met' => 3,
+            'requirements_total' => 3,
+            'has_clear_position' => true,
+            'has_irrelevant_content' => false,
+            'strengths' => ['Bố cục rõ ràng'],
+            'improvements' => ['Dùng thêm từ nối'],
+            'rewrites' => [],
         ];
     }
 

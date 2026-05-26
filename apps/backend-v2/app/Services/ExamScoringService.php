@@ -40,11 +40,9 @@ final class ExamScoringService
     /**
      * Compute per-skill band scores for a graded exam session.
      *
-     * Listening/Reading: MCQ correct ratio → band 0-10 (phase 1: linear).
-     * Writing/Speaking: avg overall_band from active grading results.
-     *
-     * Uses eager-loaded relations when available (mcqAnswers, writingSubmissions,
-     * speakingSubmissions) to avoid N+1 queries in list endpoints.
+     * Listening/Reading: MCQ correct ratio → band 0-10.
+     * Writing: (Task1 + 2×Task2)/3 weighted composite (VNU Journal of Foreign Studies, 2018).
+     * Speaking: avg overall_band from active grading results.
      *
      * @return array{listening: ?float, reading: ?float, writing: ?float, speaking: ?float}
      */
@@ -57,7 +55,7 @@ final class ExamScoringService
         return [
             'listening' => $this->mcqBandFromCollection($mcqAnswers, 'exam_listening_item'),
             'reading' => $this->mcqBandFromCollection($mcqAnswers, 'exam_reading_item'),
-            'writing' => $this->gradingBand('exam_writing', 'exam_writing_submissions', $session),
+            'writing' => $this->writingComposite($session),
             'speaking' => $this->gradingBand('exam_speaking', 'exam_speaking_submissions', $session),
         ];
     }
@@ -76,6 +74,92 @@ final class ExamScoringService
         $correct = $filtered->where('is_correct', true)->count();
 
         return round($correct / $filtered->count() * 10, 1);
+    }
+
+    /**
+     * Compute VSTEP overall band from 4 skill scores.
+     *
+     * Formula: round((listening + reading + writing + speaking) / 4, 0.5)
+     * per Thông tư 23/2017/TT-BGDĐT.
+     *
+     * Returns null if any skill score is null (not yet graded).
+     *
+     * @param  array{listening: ?float, reading: ?float, writing: ?float, speaking: ?float}  $scores
+     */
+    public function getOverallBand(array $scores): ?float
+    {
+        $values = array_filter(
+            [$scores['listening'] ?? null, $scores['reading'] ?? null, $scores['writing'] ?? null, $scores['speaking'] ?? null],
+            fn ($v) => $v !== null,
+        );
+
+        if (count($values) < 4) {
+            return null;
+        }
+
+        $mean = array_sum($values) / 4;
+
+        return round($mean * 2) / 2;
+    }
+
+    /**
+     * Map VSTEP band to CEFR level.
+     *
+     * @return string 'C1' | 'B2' | 'B1' | 'Không đạt'
+     */
+    public function bandToLevel(?float $band): string
+    {
+        if ($band === null) {
+            return 'Chưa có điểm';
+        }
+
+        if ($band >= 8.5) {
+            return 'C1';
+        }
+        if ($band >= 6.0) {
+            return 'B2';
+        }
+        if ($band >= 4.0) {
+            return 'B1';
+        }
+
+        return 'Không đạt';
+    }
+
+    /**
+     * VSTEP Writing composite: (Task1 + 2×Task2)/3, rounded to 0.5.
+     *
+     * Source: VNU Journal of Foreign Studies, Vol.34, No.4 (2018) —
+     * ULIS-VNU scoring validity study.
+     *
+     * Returns null if either task is ungraded.
+     */
+    private function writingComposite(ExamSession $session): ?float
+    {
+        $rows = \DB::table('exam_writing_submissions')
+            ->join('exam_version_writing_tasks', 'exam_writing_submissions.task_id', '=', 'exam_version_writing_tasks.id')
+            ->join('writing_grading_results', function ($join) {
+                $join->on('exam_writing_submissions.id', '=', 'writing_grading_results.submission_id')
+                    ->where('writing_grading_results.submission_type', '=', 'exam_writing')
+                    ->where('writing_grading_results.is_active', '=', true);
+            })
+            ->where('exam_writing_submissions.session_id', $session->id)
+            ->select([
+                'exam_version_writing_tasks.part',
+                'writing_grading_results.overall_band',
+            ])
+            ->get();
+
+        $task1 = $rows->where('part', 1)->first();
+        $task2 = $rows->where('part', 2)->first();
+
+        if ($task1 === null || $task2 === null) {
+            return null;
+        }
+
+        $composite = ((float) $task1->overall_band + 2 * (float) $task2->overall_band) / 3;
+
+        return round($composite * 2) / 2;
     }
 
     private function gradingBand(string $submissionType, string $submissionTable, ExamSession $session): ?float

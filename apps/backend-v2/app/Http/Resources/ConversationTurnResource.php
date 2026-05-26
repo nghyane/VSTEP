@@ -11,7 +11,7 @@ final class ConversationTurnResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $ipa = $this->getAttribute('ipa');
+        $ipa = $this->ipa;
         if (! $ipa && $this->role === 'user' && is_array($this->feedback)) {
             $ipa = $this->feedback['user_ipa'] ?? null;
         }

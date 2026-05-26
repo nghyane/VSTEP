@@ -22,7 +22,6 @@ final class LlmGradingService implements LlmGrader
 
     public function gradeWriting(string $text, string $promptText, array $grammarErrors, array $ruleAnalysis, GradingRubric $rubric): array
     {
-        $caps = array_filter($ruleAnalysis['caps'], fn ($v) => $v !== null);
         $grammarErrors = array_slice($grammarErrors, 0, 10);
 
         $prompt = view('ai.grading.writing', [
@@ -30,8 +29,8 @@ final class LlmGradingService implements LlmGrader
             'text' => $text,
             'wordCount' => str_word_count($text),
             'grammarErrors' => $grammarErrors,
-            'metrics' => $ruleAnalysis['metrics'],
-            'caps' => $caps,
+            'metrics' => $ruleAnalysis['metrics'] ?? [],
+            'syntax' => $ruleAnalysis['syntax'] ?? null,
         ])->render();
 
         return $this->callStructured($prompt, $rubric);
@@ -45,6 +44,116 @@ final class LlmGradingService implements LlmGrader
         ])->render();
 
         return $this->callStructured($prompt, $rubric);
+    }
+
+    /**
+     * Extract structured evidence from writing (not scores).
+     *
+     * LLM observes text and returns countable facts, not subjective scores.
+     * Formula computes scores deterministically from evidence.
+     *
+     * @param  array{metrics: array<string,mixed>, syntax: array, flags: list<string>}  $ruleAnalysis
+     * @return array{evidence: array, strengths: list<string>, improvements: list<array>, rewrites: list<array>}
+     */
+    public function extractEvidence(string $text, string $promptText, array $requirements, array $grammarErrors, array $ruleAnalysis): array
+    {
+        $grammarErrors = array_slice($grammarErrors, 0, 10);
+
+        $linkingWords = $this->detectedLinkingWords($text);
+
+        $prompt = view('ai.grading.writing-evidence', [
+            'promptText' => $promptText,
+            'text' => $text,
+            'wordCount' => str_word_count($text),
+            'grammarErrors' => $grammarErrors,
+            'metrics' => $ruleAnalysis['metrics'] ?? [],
+            'syntax' => $ruleAnalysis['syntax'] ?? null,
+            'linkingWords' => $linkingWords,
+            'requirements' => $requirements,
+        ])->render();
+
+        // The ONLY LLM input: did the student answer the task correctly?
+        // Everything else is deterministic (syntax counter, metrics, LanguageTool).
+        return $this->callEvidence($prompt);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function detectedLinkingWords(string $text): array
+    {
+        $linkingWords = [
+            'however', 'moreover', 'furthermore', 'therefore', 'consequently',
+            'nevertheless', 'although', 'despite', 'in addition', 'on the other hand',
+            'firstly', 'secondly', 'finally', 'in conclusion', 'for example',
+            'as a result', 'in contrast', 'meanwhile', 'similarly',
+        ];
+        $found = [];
+        $textLower = strtolower($text);
+        foreach ($linkingWords as $lw) {
+            if (str_contains($textLower, $lw)) {
+                $found[] = $lw;
+            }
+        }
+
+        return $found;
+    }
+
+    /**
+     * Call LLM for evidence extraction (structured output, not scores).
+     *
+     * @return array{evidence: array, strengths: list<string>, improvements: list<array>, rewrites: list<array>}
+     */
+    private function callEvidence(string $prompt): array
+    {
+        $schema = $this->evidenceSchema();
+        $instructions = "You are a VSTEP writing evidence collector. Extract OBSERVABLE facts from the text. "
+            ."DO NOT assign scores. Count what is present. Be objective.\n\n"
+            ."Output language: Vietnamese for strengths/improvements/rewrites.";
+
+        $structured = $this->ai->toolCall(
+            service: 'grading',
+            prompt: $prompt,
+            toolName: 'extract_writing_evidence',
+            toolDescription: 'Submit observable facts from the student writing. Count what is actually present in the text. Do not score.',
+            parametersSchema: $schema,
+            instructions: $instructions,
+        );
+
+        // Map flat fields to nested evidence structure
+        return [
+            'evidence' => [
+                'task_fulfillment' => [
+                    'points_covered' => (int) ($structured['requirements_met'] ?? 0),
+                    'points_required' => (int) ($structured['requirements_total'] ?? 1),
+                    'has_clear_position' => (bool) ($structured['has_clear_position'] ?? false),
+                    'has_irrelevant_content' => (bool) ($structured['has_irrelevant_content'] ?? false),
+                ],
+            ],
+            'strengths' => array_values(array_filter(
+                (array) ($structured['strengths'] ?? []),
+                fn ($item) => is_string($item) && $item !== '',
+            )),
+            'improvements' => $this->normalizeImprovements($structured['improvements'] ?? []),
+            'rewrites' => array_values(array_filter(
+                (array) ($structured['rewrites'] ?? []),
+                fn ($item) => is_string($item) && $item !== '',
+            )),
+        ];
+    }
+
+    /** @return array<string,mixed> */
+    private function evidenceSchema(): array
+    {
+        return [
+            'requirements_met' => ['type' => 'integer'],
+            'requirements_total' => ['type' => 'integer'],
+            'has_clear_position' => ['type' => 'boolean'],
+            'has_irrelevant_content' => ['type' => 'boolean'],
+            'strengths' => ['type' => 'array', 'items' => ['type' => 'string']],
+            'improvements' => ['type' => 'array', 'items' => ['type' => 'string']],
+            'rewrites' => ['type' => 'array', 'items' => ['type' => 'string']],
+        ];
     }
 
     private function callStructured(string $prompt, GradingRubric $rubric): array

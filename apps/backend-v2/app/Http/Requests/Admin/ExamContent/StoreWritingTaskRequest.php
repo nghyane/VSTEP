@@ -18,6 +18,8 @@ final class StoreWritingTaskRequest extends FormRequest
             'min_words' => ['required', 'integer', 'min:1'],
             'instructions' => ['nullable', 'array'],
             'instructions.*' => ['string'],
+            'requirements' => ['required', 'array', 'min:1'],
+            'requirements.*' => ['string', 'min:1'],
             'display_order' => ['nullable', 'integer', 'min:0'],
         ];
     }

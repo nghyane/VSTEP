@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Grading;
 
+use App\Ai\AiClient;
 use App\Models\GradingRubric;
 use App\Services\Grading\LlmGradingService;
 use Tests\Support\FakeAiClient;
@@ -16,6 +17,7 @@ use Tests\TestCase;
 final class LlmGradingServiceTest extends TestCase
 {
     private LlmGradingService $grader;
+
     private GradingRubric $rubric;
 
     protected function setUp(): void
@@ -31,7 +33,7 @@ final class LlmGradingServiceTest extends TestCase
             text: 'I like reading books.',
             promptText: 'Write about reading.',
             grammarErrors: [],
-            ruleAnalysis: ['caps' => ['grammar' => null, 'task_fulfillment' => null, 'vocabulary' => null, 'organization' => null], 'metrics' => $this->fakeMetrics(), 'flags' => []],
+            ruleAnalysis: ['metrics' => $this->fakeMetrics(), 'flags' => []],
             rubric: $this->rubric,
         );
 
@@ -47,12 +49,11 @@ final class LlmGradingServiceTest extends TestCase
 
     public function test_grade_writing_clamps_to_max_score(): void
     {
-        // FakeAiClient returns scores with task_fulfillment=7.5, max_score=10
         $result = $this->grader->gradeWriting(
             text: 'I like reading books.',
             promptText: 'Write.',
             grammarErrors: [],
-            ruleAnalysis: ['caps' => ['grammar' => null, 'task_fulfillment' => null, 'vocabulary' => null, 'organization' => null], 'metrics' => $this->fakeMetrics(), 'flags' => []],
+            ruleAnalysis: ['metrics' => $this->fakeMetrics(), 'flags' => []],
             rubric: $this->rubric,
         );
 
@@ -91,7 +92,8 @@ final class LlmGradingServiceTest extends TestCase
     public function test_throws_on_invalid_ai_response(): void
     {
         // LLM returns empty → missing rubric_scores → throws
-        $fakeAi = new class implements \App\Ai\AiClient {
+        $fakeAi = new class implements AiClient
+        {
             public function toolCall(string $service, string $prompt, string $toolName, string $toolDescription, array $parametersSchema, ?string $instructions = null): array
             {
                 return [];

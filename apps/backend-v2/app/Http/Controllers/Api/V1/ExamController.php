@@ -291,9 +291,14 @@ final class ExamController extends Controller
             ];
         });
 
+        $overallBand = $this->scoringService->getOverallBand($mcqBand);
+        $level = $this->scoringService->bandToLevel($overallBand);
+
         return response()->json(['data' => [
             'session' => $this->formatSessionSummary($examSession),
             'scores' => $mcqBand,
+            'overall_band' => $overallBand,
+            'level' => $level,
             'mcq' => $mcqSummary,
             'mcq_detail' => $mcqDetail,
             'writing_feedback' => $writingFeedback,

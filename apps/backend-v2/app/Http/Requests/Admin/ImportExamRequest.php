@@ -66,6 +66,8 @@ final class ImportExamRequest extends FormRequest
             'version.writing_tasks.*.prompt' => ['required', 'string', 'min:1'],
             'version.writing_tasks.*.min_words' => ['required', 'integer', 'min:1'],
             'version.writing_tasks.*.instructions' => ['nullable', 'array'],
+            'version.writing_tasks.*.requirements' => ['required', 'array', 'min:1'],
+            'version.writing_tasks.*.requirements.*' => ['string', 'min:1'],
             'version.writing_tasks.*.display_order' => ['nullable', 'integer'],
 
             'version.speaking_parts' => ['required', 'array'],

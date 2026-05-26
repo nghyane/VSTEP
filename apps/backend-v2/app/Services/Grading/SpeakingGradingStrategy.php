@@ -61,25 +61,29 @@ final class SpeakingGradingStrategy implements GradingStrategy
         }
 
         $transcript = (string) $sttResult['text'];
-        $pronunciationScore = (int) ($sttResult['confidence'] * 100);
+        $sttConfidence = (float) $sttResult['confidence'];
 
         // Side effect: persist transcript on submission for reuse.
         $submission->update(['transcript' => $transcript]);
 
-        // Step 2: LLM grading with rubric context.
+        // Step 2: LLM grading with rubric context + STT confidence as feature.
+        // LLM evaluates pronunciation based on transcript quality and STT signal,
+        // constrained by VSTEP band descriptors (Thông tư 23/2017/TT-BGDĐT).
         $llmResult = $this->llm->gradeSpeaking(
             $transcript,
             $rubric,
-            ['accuracy_score' => $pronunciationScore],
+            ['accuracy_score' => (int) round($sttConfidence * 100)],
         );
 
+        $rubricScores = $llmResult['rubric_scores'];
+
         return new SpeakingGradingData(
-            rubricScores: $llmResult['rubric_scores'],
-            overallBand: $rubric->computeOverallBand($llmResult['rubric_scores']),
+            rubricScores: $rubricScores,
+            overallBand: $rubric->computeOverallBand($rubricScores),
             strengths: $llmResult['strengths'],
             improvements: $llmResult['improvements'],
             transcript: $transcript,
-            pronunciationReport: ['accuracy_score' => $pronunciationScore],
+            pronunciationReport: ['accuracy_score' => round($sttConfidence * 10, 1)],
             rubricId: $rubric->id,
         );
     }

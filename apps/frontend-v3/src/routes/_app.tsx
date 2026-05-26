@@ -1,17 +1,13 @@
-import { createFileRoute, Outlet, redirect, useNavigate, useRouter } from "@tanstack/react-router"
+import { createFileRoute, Outlet, useNavigate, useRouter } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { ErrorBoundary } from "#/components/ErrorBoundary"
 import { Sidebar } from "#/components/Sidebar"
 import { WelcomeGiftModal } from "#/features/onboarding/WelcomeGiftModal"
 import { useAuth } from "#/lib/auth"
+import { requireAuth } from "#/lib/auth-guard"
 
 export const Route = createFileRoute("/_app")({
-	beforeLoad: ({ location }) => {
-		const { status } = useAuth.getState()
-		if (status !== "authenticated") {
-			throw redirect({ to: "/", search: { auth: "login", redirect: location.pathname } })
-		}
-	},
+	beforeLoad: requireAuth,
 	component: AppLayout,
 })
 

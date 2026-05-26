@@ -18,6 +18,8 @@ final class UpdateWritingTaskRequest extends FormRequest
             'min_words' => ['sometimes', 'integer', 'min:1'],
             'instructions' => ['nullable', 'array'],
             'instructions.*' => ['string'],
+            'requirements' => ['sometimes', 'array', 'min:1'],
+            'requirements.*' => ['string', 'min:1'],
             'display_order' => ['nullable', 'integer', 'min:0'],
         ];
     }

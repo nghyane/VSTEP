@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\DB;
  * Heatmap = số exam session (full + custom) hoàn thành mỗi ngày.
  * Chart = derive from exam_sessions (custom+full) with grading results.
  */
-final class ProgressService
+class ProgressService
 {
     public function __construct(
         private readonly StreakMilestoneService $streakMilestoneService,
@@ -108,6 +108,17 @@ final class ProgressService
         $last = $state->last_active_date_local?->toDateString();
 
         return ($last === $today || $last === $yesterday) ? (int) $state->current_streak : 0;
+    }
+
+    /**
+     * Raw chart data for a profile, no minimum-test gate.
+     * Returns null if no exam sessions with grading exist.
+     *
+     * @return array<string,float|int|null>|null
+     */
+    public function chart(Profile $profile): ?array
+    {
+        return $this->computeChart($profile, 10);
     }
 
     public function getOverview(Profile $profile): array
@@ -327,7 +338,7 @@ final class ProgressService
      *
      * @param  array<string, float|int|null>|null  $chart
      */
-    private function predictLevel(?array $chart, ?string $entryLevel): ?string
+    public function predictLevel(?array $chart, ?string $entryLevel): ?string
     {
         if ($chart === null) {
             return $entryLevel;

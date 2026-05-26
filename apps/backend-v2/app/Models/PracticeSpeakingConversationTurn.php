@@ -17,6 +17,7 @@ class PracticeSpeakingConversationTurn extends BaseModel
         'text',
         'feedback',
         'suggested_words',
+        'ipa',
     ];
 
     protected function casts(): array

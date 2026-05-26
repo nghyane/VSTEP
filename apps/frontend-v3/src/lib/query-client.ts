@@ -9,4 +9,3 @@ export const queryClient = new QueryClient({
 })
 
 queryClient.getQueryCache().config.onError = onError
-queryClient.getMutationCache().config.onError = onError

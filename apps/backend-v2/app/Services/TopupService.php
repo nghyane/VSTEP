@@ -114,7 +114,7 @@ final class TopupService
      * Confirm payment: credit coins atomically.
      * Idempotent: nếu đã paid → return order không tạo duplicate.
      */
-    private function confirmByOrderCode(
+    public function confirmByOrderCode(
         int $orderCode,
         string $gatewayTransactionId,
         ?array $rawData,

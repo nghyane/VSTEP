@@ -1,13 +1,64 @@
 import ky from "ky"
+import { useAuth } from "#/lib/auth"
 import { tokens } from "#/lib/tokens"
 
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1"
+
+function clearAuthAndRedirect() {
+	tokens.clear()
+	useAuth.getState()._setUnauthenticated()
+	window.location.href = "/?auth=login"
+}
+
 export const api = ky.create({
-	prefix: import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1",
+	prefix: API_URL,
 	hooks: {
 		beforeRequest: [
 			({ request }) => {
 				const token = tokens.getAccess()
 				if (token) request.headers.set("Authorization", `Bearer ${token}`)
+			},
+		],
+		afterResponse: [
+			async (request, _options, response) => {
+				if (response.status !== 401) return response
+
+				const retryFlag = request.headers.get("X-Retry")
+				if (retryFlag) {
+					// Second 401 — refresh also failed, give up.
+					clearAuthAndRedirect()
+					return response
+				}
+
+				const refreshToken = tokens.getRefresh()
+				if (!refreshToken) {
+					clearAuthAndRedirect()
+					return response
+				}
+
+				try {
+					// Raw fetch bypasses ky hooks — avoids infinite retry loop.
+					const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({ refresh_token: refreshToken }),
+					})
+
+					if (!refreshResponse.ok) throw new Error("refresh failed")
+
+					const { data } = await refreshResponse.json()
+					tokens.setAccess(data.access_token)
+					tokens.setRefresh(data.refresh_token)
+					tokens.setUser(data.user)
+
+					// Retry original request with fresh token.
+					request.headers.set("Authorization", `Bearer ${data.access_token}`)
+					request.headers.set("X-Retry", "1")
+					return ky(request)
+				} catch {
+					clearAuthAndRedirect()
+					return response
+				}
 			},
 		],
 	},

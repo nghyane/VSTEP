@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Practice;
 
+use App\Models\PracticeSpeakingConversationSession;
 use App\Models\PracticeSpeakingScenario;
 use App\Models\Profile;
 use App\Models\User;
@@ -99,20 +100,63 @@ class ConversationPracticeTest extends TestCase
             ->assertStatus(409);
     }
 
-    public function test_cannot_start_duplicate_active_session(): void
+    public function test_start_session_resumes_recent_active_session(): void
     {
         ['token' => $token] = $this->actingAsLearner();
         $scenario = $this->createScenario();
 
         // First session
-        $this->withHeader('Authorization', "Bearer {$token}")
+        $first = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/speaking/conversations', ['scenario_id' => $scenario->id])
+            ->assertStatus(201);
+        $firstSessionId = $first->json('data.session_id');
+
+        // Second call within < 30 min → resumes same session.
+        $second = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson('/api/v1/practice/speaking/conversations', ['scenario_id' => $scenario->id])
             ->assertStatus(201);
 
-        // Second session — should fail
-        $this->withHeader('Authorization', "Bearer {$token}")
+        // Same session returned — not a new one.
+        $this->assertSame($firstSessionId, $second->json('data.session_id'));
+        $this->assertTrue($second->json('data.resumed'), 'Should flag resumed=true');
+
+        // Old session is still active (not ended).
+        $session = PracticeSpeakingConversationSession::find($firstSessionId);
+        $this->assertSame('active', $session->status->value);
+    }
+
+    public function test_stale_session_auto_ends_and_creates_new(): void
+    {
+        ['token' => $token] = $this->actingAsLearner();
+        $scenario = $this->createScenario();
+
+        // First session
+        $first = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson('/api/v1/practice/speaking/conversations', ['scenario_id' => $scenario->id])
-            ->assertUnprocessable();
+            ->assertStatus(201);
+        $firstSessionId = $first->json('data.session_id');
+
+        // Simulate stale session by setting started_at to 31 min ago.
+        PracticeSpeakingConversationSession::query()
+            ->whereKey($firstSessionId)
+            ->update(['started_at' => now()->subMinutes(31)]);
+
+        // Second call on stale session → auto-ends old, creates new.
+        $second = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/speaking/conversations', ['scenario_id' => $scenario->id])
+            ->assertStatus(201);
+        $secondSessionId = $second->json('data.session_id');
+
+        // New session created.
+        $this->assertNotEquals($firstSessionId, $secondSessionId);
+        $this->assertFalse($second->json('data.resumed'));
+
+        // Old session ended with complete data.
+        $oldSession = PracticeSpeakingConversationSession::find($firstSessionId);
+        $this->assertSame('ended', $oldSession->status->value);
+        $this->assertNotNull($oldSession->ended_at);
+        $this->assertNotNull($oldSession->duration_seconds);
+        $this->assertGreaterThan(0, $oldSession->duration_seconds);
     }
 
     public function test_conversation_history(): void

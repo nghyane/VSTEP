@@ -53,6 +53,7 @@ final class SpeakingConversationController extends Controller
             'session_id' => $session->id,
             'scenario' => ScenarioDetailResource::make($scenario),
             'turns' => ConversationTurnResource::collection(collect($result['turns'])),
+            'resumed' => $result['resumed'] ?? false,
         ]], 201);
     }
 

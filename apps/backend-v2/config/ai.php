@@ -62,7 +62,13 @@ return [
             'connection' => 'packy',
             'wire' => 'messages',
             'id' => 'deepseek-v4-pro',
-            'thinking' => 'low',
+            'thinking' => 'none',
+        ],
+        'deepseek-v4-flash' => [
+            'connection' => 'packy',
+            'wire' => 'messages',
+            'id' => 'deepseek-v4-flash',
+            'thinking' => 'none',
         ],
         'claude-sonnet' => [
             'connection' => 'packy',
@@ -84,8 +90,9 @@ return [
 
     'services' => [
         'grading' => [
-            'model' => env('AI_GRADING_MODEL', 'gpt-5-4'),
+            'model' => env('AI_GRADING_MODEL', 'deepseek-v4-flash'),
             'timeout' => 60,
+            'temperature' => 0.0,
         ],
         'conversation' => [
             'model' => env('AI_CONVERSATION_MODEL', 'gpt-5-4-mini'),

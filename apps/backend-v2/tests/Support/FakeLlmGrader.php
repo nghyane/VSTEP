@@ -34,4 +34,21 @@ final class FakeLlmGrader implements LlmGrader
             'improvements' => [['message' => 'Mở rộng từ vựng', 'explanation' => 'Sử dụng từ đồng nghĩa.']],
         ];
     }
+
+    public function extractEvidence(string $text, string $promptText, array $requirements, array $grammarErrors, array $ruleAnalysis): array
+    {
+        return [
+            'evidence' => [
+                'task_fulfillment' => [
+                    'points_covered' => 3,
+                    'points_required' => 3,
+                    'has_clear_position' => true,
+                    'has_irrelevant_content' => false,
+                ],
+            ],
+            'strengths' => ['Trả lời đúng yêu cầu đề bài'],
+            'improvements' => [['message' => 'Dùng thêm từ nối', 'explanation' => 'Sử dụng however, moreover.']],
+            'rewrites' => [],
+        ];
+    }
 }

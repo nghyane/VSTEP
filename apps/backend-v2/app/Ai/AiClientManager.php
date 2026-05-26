@@ -46,6 +46,7 @@ final class AiClientManager implements AiClient
             toolDescription: $toolDescription,
             timeout: $config['timeout'],
             thinking: $config['thinking'],
+            temperature: $config['temperature'],
         );
 
         $response = $this->send($service, $config, $request);
@@ -67,6 +68,7 @@ final class AiClientManager implements AiClient
             instructions: $instructions,
             timeout: $config['timeout'],
             thinking: $config['thinking'],
+            temperature: $config['temperature'],
         );
 
         return $this->send($service, $config, $request)->text;
@@ -121,7 +123,7 @@ final class AiClientManager implements AiClient
     /**
      * Resolve service name → merged config (connection + model).
      *
-     * @return array{model_id: string, wire: string, url: string, key: string, timeout: int, thinking: string}
+     * @return array{model_id: string, wire: string, url: string, key: string, timeout: int, thinking: string, temperature: ?float}
      */
     private function resolveService(string $service): array
     {
@@ -153,6 +155,7 @@ final class AiClientManager implements AiClient
             'key' => $connectionConfig['key'] ?? '',
             'timeout' => $serviceConfig['timeout'] ?? 60,
             'thinking' => $modelConfig['thinking'] ?? 'none',
+            'temperature' => $serviceConfig['temperature'] ?? null,
         ];
     }
 
