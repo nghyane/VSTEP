@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\PaymentProvider;
 use App\Http\Controllers\Controller;
+use App\Services\Payment\OrderNotFoundAfterValidation;
 use App\Services\TopupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,7 +33,7 @@ final class PaymentCallbackController extends Controller
             $topup->handleCallback($paymentProvider, $request->all());
 
             return response()->json(['success' => true]);
-        } catch (\App\Services\Payment\OrderNotFoundAfterValidation $e) {
+        } catch (OrderNotFoundAfterValidation $e) {
             // Signature valid but order not in DB yet (e.g. PayOS confirm-webhook test).
             // Return 200 so PayOS accepts the webhook URL.
             Log::info('Payment callback: valid signature, order not found', [
