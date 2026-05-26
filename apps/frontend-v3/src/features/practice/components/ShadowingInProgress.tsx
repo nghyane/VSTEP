@@ -9,6 +9,7 @@ import {
 import { ShadowingSidebar } from "#/features/practice/components/ShadowingSidebar"
 import { shadowingProgressQuery, useMarkShadowingDone } from "#/features/practice/shadowing-progress"
 import type { ShadowingLessonDetail } from "#/features/practice/types"
+import { useToast } from "#/lib/toast"
 import { cn, compareWords, pickEnglishVoice, speak, stopSpeaking, warmupTTS } from "#/lib/utils"
 
 interface Props {
@@ -134,19 +135,31 @@ export function ShadowingInProgress({ lesson }: Props) {
 		}
 		recognition.onerror = (e: Event) => {
 			const err = e as unknown as { error: string; message?: string }
-			console.warn("[SpeechRecognition] error:", err.error, err.message ?? "")
-			if (err.error === "not-allowed" || err.error === "service-not-allowed" || err.error === "audio-capture") {
-				stoppedRef.current = true
+			if (
+				err.error === "not-allowed" ||
+				err.error === "service-not-allowed" ||
+				err.error === "audio-capture"
+			) {
+				recognition.abort()
 				setMic("idle")
 				if (timerRef.current) clearInterval(timerRef.current)
 				timerRef.current = null
+				useToast.getState().add("Không thể truy cập microphone. Kiểm tra cài đặt trình duyệt.")
 				return
 			}
 			if (err.error === "network") {
-				stoppedRef.current = true
+				recognition.abort()
 				setMic("idle")
 				if (timerRef.current) clearInterval(timerRef.current)
 				timerRef.current = null
+				const isEdge = /Edg\//.test(navigator.userAgent)
+				useToast
+					.getState()
+					.add(
+						isEdge
+							? "Edge trên Mac không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome."
+							: "Không kết nối được dịch vụ nhận dạng giọng nói. Kiểm tra mạng và thử lại.",
+					)
 				return
 			}
 		}
