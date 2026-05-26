@@ -48,8 +48,9 @@ final class ResponsesWireTest extends TestCase
         Http::fake([
             '*/v1/responses' => Http::response([
                 'output' => [[
-                    'type' => 'message',
-                    'content' => [['type' => 'output_text', 'text' => '{"score":3}']],
+                    'type' => 'function_call',
+                    'name' => 'grade',
+                    'arguments' => '{"score":3}',
                 ]],
                 'usage' => ['input_tokens' => 15, 'output_tokens' => 8],
                 'model' => 'gpt-5.4',
@@ -61,6 +62,8 @@ final class ResponsesWireTest extends TestCase
             model: 'gpt-5.4',
             prompt: 'Grade this',
             schema: ['score' => ['type' => 'number']],
+            toolName: 'grade',
+            toolDescription: 'Submit score',
             instructions: 'You are a grader.',
         );
         $response = $wire->send(Http::baseUrl('https://example.com'), $request);
@@ -70,8 +73,9 @@ final class ResponsesWireTest extends TestCase
         Http::assertSent(function (Request $r) {
             $body = $r->data();
 
-            return isset($body['text']['format'])
-                && $body['text']['format']['type'] === 'json_schema'
+            return isset($body['tools'])
+                && $body['tools'][0]['name'] === 'grade'
+                && $body['tool_choice'] === 'required'
                 && $body['input'][0]['role'] === 'developer';
         });
     }

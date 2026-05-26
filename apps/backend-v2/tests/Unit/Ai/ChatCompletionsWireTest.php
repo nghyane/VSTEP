@@ -35,22 +35,34 @@ final class ChatCompletionsWireTest extends TestCase
     {
         Http::fake([
             '*/v1/chat/completions' => Http::response([
-                'choices' => [['message' => ['content' => '{"grade":2.5}']]],
+                'choices' => [[
+                    'message' => [
+                        'content' => '',
+                        'tool_calls' => [[
+                            'function' => [
+                                'name' => 'grade_writing',
+                                'arguments' => '{"grade":2.5}',
+                            ],
+                        ]],
+                    ],
+                ]],
                 'usage' => ['prompt_tokens' => 12, 'completion_tokens' => 6],
             ]),
         ]);
 
         $wire = new ChatCompletionsWire;
         $request = new WireRequest(
-            model: 'gpt-5.4',
+            model: 'gpt-5-4',
             prompt: 'Grade',
             schema: ['grade' => ['type' => 'number']],
+            toolName: 'grade_writing',
+            toolDescription: 'Submit grading result',
         );
         $response = $wire->send(Http::baseUrl('https://x.com'), $request);
 
         $this->assertSame(['grade' => 2.5], $response->structured);
 
-        Http::assertSent(fn (Request $r) => isset($r->data()['response_format']['json_schema']));
+        Http::assertSent(fn (Request $r) => ! isset($r->data()['response_format']) && isset($r->data()['tools']));
     }
 
     public function test_includes_reasoning_effort(): void

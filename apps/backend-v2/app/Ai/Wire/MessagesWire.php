@@ -43,9 +43,10 @@ final class MessagesWire implements WireFormat
         // thinking enabled → 'any' (force tool but not by name)
         // thinking disabled → 'tool' (force specific tool)
         if ($request->schema !== null) {
+            $toolName = $request->toolName ?? 'structured_output';
             $body['tools'] = [[
-                'name' => 'structured_output',
-                'description' => 'Return structured data',
+                'name' => $toolName,
+                'description' => $request->toolDescription ?? 'Return structured data',
                 'input_schema' => [
                     'type' => 'object',
                     'properties' => $request->schema,
@@ -54,7 +55,7 @@ final class MessagesWire implements WireFormat
             ]];
             $body['tool_choice'] = $request->thinking !== 'none'
                 ? ['type' => 'any']
-                : ['type' => 'tool', 'name' => 'structured_output'];
+                : ['type' => 'tool', 'name' => $toolName];
         }
 
         $response = $http->timeout($request->timeout)->post('v1/messages', $body);
