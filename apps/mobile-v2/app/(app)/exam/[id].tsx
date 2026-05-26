@@ -118,8 +118,9 @@ export default function ExamDetailScreen() {
 
   function startFreshSession() {
     const finalSkills = isFull ? availableSkills : Array.from(selectedSkills).sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b));
+    const factor = totalMinutes > 0 ? displayMinutes / totalMinutes : 1.0;
     const start = () => startMutation.mutate(
-      { examId: id ?? "", mode: isFull ? "full" : "custom", selectedSkills: finalSkills },
+      { examId: id ?? "", mode: isFull ? "full" : "custom", selectedSkills: finalSkills, timeExtensionFactor: factor },
       { onSuccess: (res) => router.push(`/(app)/session/${res.sessionId}?examId=${id}` as never) },
     );
     if (activeSameExam) abandonMutation.mutate(activeSameExam.id, { onSuccess: start });

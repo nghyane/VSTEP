@@ -16,6 +16,14 @@ const PARTS = [
 
 const SKILL_COLOR = "#1CB0F6";
 
+function chunkPairs<T>(arr: T[]): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < arr.length; i += 2) {
+    result.push(arr.slice(i, i + 2));
+  }
+  return result;
+}
+
 export default function ListeningListScreen() {
   const c = useThemeColors();
   const router = useRouter();
@@ -70,41 +78,47 @@ export default function ListeningListScreen() {
               </View>
             ) : (
               <View style={s.cardGrid}>
-                {list.map((ex) => {
-                  const p = progress?.[ex.id];
-                  const pct = p && p.total > 0 ? Math.round((p.score / p.total) * 100) : null;
-                  return (
-                    <View key={ex.id} style={s.cardWrapper}>
-                      <HapticTouchable
-                        scalePress
-                        onPress={() => router.push(`/(app)/practice/listening/${ex.id}` as any)}
-                      >
-                      <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-                        <View style={s.cardTop}>
-                          <View style={[s.partBadge, { backgroundColor: SKILL_COLOR + "18" }]}>
-                            <Text style={[s.partBadgeText, { color: SKILL_COLOR }]}>P{ex.part}</Text>
-                          </View>
-                          {pct !== null && (
-                            <View style={[s.scoreBadge, { backgroundColor: pct >= 80 ? "#E6F8D4" : c.muted }]}>
-                              <Text style={[s.scoreText, { color: pct >= 80 ? "#478700" : c.mutedForeground }]}>{pct}%</Text>
+                {chunkPairs(list).map((pair, rowIdx) => (
+                  <View key={rowIdx} style={s.cardRow}>
+                    {pair.map((ex) => {
+                      const p = progress?.[ex.id];
+                      const pct = p && p.total > 0 ? Math.round((p.score / p.total) * 100) : null;
+                      return (
+                        <View key={ex.id} style={s.cardWrapper}>
+                          <HapticTouchable
+                            scalePress
+                            onPress={() => router.push(`/(app)/practice/listening/${ex.id}` as any)}
+                            style={s.cardTouchable}
+                          >
+                            <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
+                              <View style={s.cardTop}>
+                                <View style={[s.partBadge, { backgroundColor: SKILL_COLOR + "18" }]}>
+                                  <Text style={[s.partBadgeText, { color: SKILL_COLOR }]}>P{ex.part}</Text>
+                                </View>
+                                {pct !== null && (
+                                  <View style={[s.scoreBadge, { backgroundColor: pct >= 80 ? "#E6F8D4" : c.muted }]}>
+                                    <Text style={[s.scoreText, { color: pct >= 80 ? "#478700" : c.mutedForeground }]}>{pct}%</Text>
+                                  </View>
+                                )}
+                              </View>
+                              <Text style={[s.cardTitle, { color: c.foreground }]} numberOfLines={2}>{ex.title}</Text>
+                              {ex.description && (
+                                <Text style={[s.cardDesc, { color: c.subtle }]} numberOfLines={2}>{ex.description}</Text>
+                              )}
+                              <View style={s.cardMeta}>
+                                <Ionicons name="headset-outline" size={12} color={SKILL_COLOR} />
+                                <Text style={[s.cardMetaText, { color: c.mutedForeground }]}>
+                                  {ex.estimatedMinutes ? `${ex.estimatedMinutes} phút` : "MCQ"}
+                                </Text>
+                              </View>
                             </View>
-                          )}
+                          </HapticTouchable>
                         </View>
-                        <Text style={[s.cardTitle, { color: c.foreground }]} numberOfLines={2}>{ex.title}</Text>
-                        {ex.description && (
-                          <Text style={[s.cardDesc, { color: c.subtle }]} numberOfLines={2}>{ex.description}</Text>
-                        )}
-                        <View style={s.cardMeta}>
-                          <Ionicons name="headset-outline" size={12} color={SKILL_COLOR} />
-                          <Text style={[s.cardMetaText, { color: c.mutedForeground }]}>
-                            {ex.estimatedMinutes ? `${ex.estimatedMinutes} phút` : "MCQ"}
-                          </Text>
-                        </View>
-                      </View>
-                    </HapticTouchable>
+                      );
+                    })}
+                    {pair.length === 1 && <View style={s.cardWrapper} />}
                   </View>
-                  );
-                })}
+                ))}
               </View>
             )}
           </View>
@@ -132,9 +146,12 @@ const s = StyleSheet.create({
   partDesc: { fontSize: fontSize.xs, marginBottom: spacing.md },
   emptyCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.xl, alignItems: "center" },
   emptyText: { fontSize: fontSize.sm },
-  cardGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
-  cardWrapper: { width: "47%" },
+  cardGrid: { gap: spacing.md },
+  cardRow: { flexDirection: "row", gap: spacing.md },
+  cardWrapper: { flex: 1 },
+  cardTouchable: { flex: 1 },
   card: {
+    flex: 1,
     borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg,
     padding: spacing.base, gap: spacing.xs,
     shadowColor: "#000", shadowOffset: { width: 0, height: 2 },

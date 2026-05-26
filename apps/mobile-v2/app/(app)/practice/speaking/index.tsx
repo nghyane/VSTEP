@@ -15,6 +15,14 @@ import {
 } from "@/hooks/use-practice";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
+function chunkPairs<T>(arr: T[]): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < arr.length; i += 2) {
+    result.push(arr.slice(i, i + 2));
+  }
+  return result;
+}
+
 export default function SpeakingListScreen() {
   const c = useThemeColors();
   const router = useRouter();
@@ -174,26 +182,32 @@ export default function SpeakingListScreen() {
         <View>
           <Text style={[s.sectionLabel, { color: c.subtle }]}>VSTEP SPEAKING</Text>
           <View style={s.cardGrid}>
-            {tasks.map((task) => (
-              <View key={task.id} style={s.cardWrapper}>
-                <HapticTouchable
-                  scalePress
-                  onPress={() => router.push(`/(app)/practice/speaking/${task.id}` as never)}
-                >
-                <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.border }]}>
-                  <View style={[s.partBadge, { backgroundColor: c.coinTint }]}>
-                    <Text style={[s.partBadgeText, { color: speakingText }]}>Part {task.part}</Text>
+            {chunkPairs(tasks).map((pair, rowIdx) => (
+              <View key={rowIdx} style={s.cardRow}>
+                {pair.map((task) => (
+                  <View key={task.id} style={s.cardWrapper}>
+                    <HapticTouchable
+                      scalePress
+                      onPress={() => router.push(`/(app)/practice/speaking/${task.id}` as never)}
+                      style={s.cardTouchable}
+                    >
+                      <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.border }]}>
+                        <View style={[s.partBadge, { backgroundColor: c.coinTint }]}>
+                          <Text style={[s.partBadgeText, { color: speakingText }]}>Part {task.part}</Text>
+                        </View>
+                        <Text style={[s.cardTitle, { color: c.foreground }]} numberOfLines={3}>{task.title}</Text>
+                        <View style={s.cardMeta}>
+                          <Ionicons name="mic-outline" size={12} color={speakingColor} />
+                          <Text style={[s.cardMetaText, { color: c.mutedForeground }]}>
+                            {task.speakingSeconds}s · {task.taskType}
+                          </Text>
+                        </View>
+                      </View>
+                    </HapticTouchable>
                   </View>
-                  <Text style={[s.cardTitle, { color: c.foreground }]} numberOfLines={3}>{task.title}</Text>
-                  <View style={s.cardMeta}>
-                    <Ionicons name="mic-outline" size={12} color={speakingColor} />
-                    <Text style={[s.cardMetaText, { color: c.mutedForeground }]}>
-                      {task.speakingSeconds}s · {task.taskType}
-                    </Text>
-                  </View>
-                </View>
-              </HapticTouchable>
-            </View>
+                ))}
+                {pair.length === 1 && <View style={s.cardWrapper} />}
+              </View>
             ))}
           </View>
         </View>
@@ -246,9 +260,12 @@ const s = StyleSheet.create({
   doneBadgeText: { fontSize: 10, fontFamily: fontFamily.bold },
   actionIcon: { width: 44, height: 44, borderRadius: radius.full, alignItems: "center", justifyContent: "center" },
   errorText: { fontSize: 14, textAlign: "center" },
-  cardGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
-  cardWrapper: { width: "47%" },
+  cardGrid: { gap: spacing.md },
+  cardRow: { flexDirection: "row", gap: spacing.md },
+  cardWrapper: { flex: 1 },
+  cardTouchable: { flex: 1 },
   card: {
+    flex: 1,
     borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg,
     padding: spacing.base, gap: spacing.sm,
     shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
