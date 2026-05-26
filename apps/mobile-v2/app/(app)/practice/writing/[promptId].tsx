@@ -21,7 +21,7 @@ import * as Haptics from "expo-haptics";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
-import { SupportPanel } from "@/components/SupportPanel";
+import { PassageWordView } from "@/components/PassageWordView";
 import { WritingReviewSheet } from "@/components/WritingReviewSheet";
 import { WritingWordProgress } from "@/components/WritingWordProgress";
 import {
@@ -30,6 +30,7 @@ import {
   submitWritingSession,
   type WritingPromptDetail,
 } from "@/hooks/use-practice";
+import { translateText } from "@/lib/translate";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 const COLOR = "#58CC02";
@@ -117,12 +118,16 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
   const [selection, setSelection] = useState({ start: 0, end: 0 });
   const [submitted, setSubmitted] = useState<{ submissionId: string; wordCount: number } | null>(null);
   const [showReview, setShowReview] = useState(false);
-  const [unlockedSupport, setUnlockedSupport] = useState<number[]>([]);
+  const [translateMode, setTranslateMode] = useState(false);
+  const [showSample, setShowSample] = useState(false);
+  const [sampleTr, setSampleTr] = useState<string | null>(null);
+  const [sampleTrLoading, setSampleTrLoading] = useState(false);
+  const [sampleTrError, setSampleTrError] = useState(false);
   const inputRef = useRef<TextInput>(null);
   const wc = countWords(text);
   const inRange = wc >= detail.minWords && wc <= detail.maxWords;
-  const showKeywords = unlockedSupport.includes(1);
-  const showSampleAnswer = unlockedSupport.includes(2);
+  const hasKeywords = !!(detail.keywords && detail.keywords.length > 0);
+  const hasSample = !!detail.sampleAnswer;
 
   const submitMutation = useMutation({
     mutationFn: () => submitWritingSession(sessionId, text),
@@ -150,6 +155,27 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
     const pos = start + spaceBefore.length + insert.length + spaceAfter.length;
     setSelection({ start: pos, end: pos });
     requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
+  // Toggle sample answer translation — fetch on first open, cache result.
+  // If translateText returns original (API fail / same lang), still show it so user isn't left wondering.
+  function toggleSampleTr() {
+    if (sampleTr) {
+      setSampleTr(null);
+      setSampleTrError(false);
+      return;
+    }
+    if (sampleTrLoading) return;
+    setSampleTrLoading(true);
+    setSampleTrError(false);
+    translateText(detail.sampleAnswer!, "en", "vi")
+      .then((res) => {
+        setSampleTr(res ?? "");
+      })
+      .catch(() => {
+        setSampleTrError(true);
+      })
+      .finally(() => setSampleTrLoading(false));
   }
 
   return (
@@ -196,12 +222,33 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
           </View>
         ) : (
           <>
-            {/* Prompt card */}
+            {/* Prompt card — with inline translation toggle */}
             <DepthCard style={s.promptCard}>
-              <Text style={[s.promptLabel, { color: COLOR }]}>Đề bài — Task {detail.part}</Text>
-              <Text style={[s.promptText, { color: c.foreground }]}>{detail.prompt}</Text>
+              <View style={s.promptHeader}>
+                <Text style={[s.promptLabel, { color: COLOR }]}>Đề bài — Task {detail.part}</Text>
+                <HapticTouchable onPress={() => setTranslateMode(!translateMode)} style={s.dictToggle}>
+                  <Text
+                    style={[
+                      s.dictBtn,
+                      {
+                        color: translateMode ? "#FFF" : c.subtle,
+                        backgroundColor: translateMode ? COLOR : "transparent",
+                        borderColor: translateMode ? COLOR : c.muted,
+                      },
+                    ]}
+                  >
+                    Từ điển
+                  </Text>
+                </HapticTouchable>
+              </View>
+              <PassageWordView
+                passage={detail.prompt}
+                wordTapMode={translateMode}
+                accentColor={COLOR}
+                c={c}
+              />
 
-              {showKeywords && detail.keywords && detail.keywords.length > 0 && (
+              {hasKeywords && (
                 <View style={s.keywordsSection}>
                   <Text style={[s.reqLabel, { color: c.mutedForeground }]}>Từ khóa gợi ý</Text>
                   <View style={s.startersRow}>
@@ -254,17 +301,6 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
               )}
             </DepthCard>
 
-            {/* Support panel */}
-            <SupportPanel
-              skill="writing"
-              sessionId={sessionId}
-              hasTranscript={!!detail.sampleAnswer}
-              hasKeywords={!!(detail.keywords && detail.keywords.length > 0)}
-              accentColor={COLOR}
-              unlockedLevels={unlockedSupport}
-              onUnlock={(level) => setUnlockedSupport((prev) => (prev.includes(level) ? prev : [...prev, level]))}
-            />
-
             {/* Editor — scrollable */}
             <DepthCard
               style={{
@@ -289,16 +325,57 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
               />
             </DepthCard>
 
-            {/* Sample answer (if available) */}
-            {showSampleAnswer && detail.sampleAnswer && (
-              <DepthCard
-                style={{
-                  ...s.sampleCard,
-                  backgroundColor: c.muted,
-                }}
-              >
-                <Text style={[s.sampleLabel, { color: c.mutedForeground }]}>Bài mẫu tham khảo</Text>
-                <Text style={[s.sampleText, { color: c.foreground }]}>{detail.sampleAnswer}</Text>
+            {/* Sample answer — collapsed by default, expandable with translation toggle */}
+            {hasSample && detail.sampleAnswer && (
+              <DepthCard style={[s.sampleCard, { backgroundColor: c.muted }]}>
+                <View style={s.promptHeader}>
+                  <Text style={[s.sampleLabel, { color: c.mutedForeground }]}>Bài mẫu tham khảo</Text>
+                  <View style={s.sampleActions}>
+                    <HapticTouchable onPress={() => setShowSample(!showSample)} style={s.dictToggle}>
+                      <Text
+                        style={[
+                          s.dictBtn,
+                          {
+                            color: showSample ? "#FFF" : c.subtle,
+                            backgroundColor: showSample ? COLOR : "transparent",
+                            borderColor: showSample ? COLOR : c.muted,
+                          },
+                        ]}
+                      >
+                        {showSample ? "Ẩn" : "Xem"}
+                      </Text>
+                    </HapticTouchable>
+                  </View>
+                </View>
+                {showSample && (
+                  <>
+                    <Text style={[s.sampleText, { color: c.foreground }]}>{detail.sampleAnswer}</Text>
+                    <View style={s.sampleActions}>
+                      <HapticTouchable onPress={toggleSampleTr} style={s.dictToggle}>
+                        <Text
+                          style={[
+                            s.dictBtn,
+                            {
+                              color: sampleTr || sampleTrError ? "#FFF" : c.subtle,
+                              backgroundColor: sampleTr || sampleTrError ? COLOR : "transparent",
+                              borderColor: sampleTr || sampleTrError ? COLOR : c.muted,
+                            },
+                          ]}
+                        >
+                          {sampleTrLoading ? "..." : sampleTr ? "Ẩn dịch" : "Dịch"}
+                        </Text>
+                      </HapticTouchable>
+                    </View>
+                    {sampleTr ? (
+                      <View style={[s.transBlock, { borderLeftColor: COLOR + "60" }]}>
+                        <Text style={[s.transLabel, { color: COLOR }]}>Dịch</Text>
+                        <Text style={[s.transText, { color: c.mutedForeground }]}>{sampleTr}</Text>
+                      </View>
+                    ) : sampleTrError ? (
+                      <Text style={[s.transText, { color: c.destructive }]}>Không thể dịch. Thử lại sau.</Text>
+                    ) : null}
+                  </>
+                )}
               </DepthCard>
             )}
           </>
@@ -362,8 +439,18 @@ const s = StyleSheet.create({
   resultTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
   resultSub: { fontSize: fontSize.sm },
   promptCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
+  promptHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   promptLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
-  promptText: { fontSize: fontSize.sm, lineHeight: 22 },
+  dictToggle: { padding: spacing.xs },
+  dictBtn: {
+    fontSize: 10,
+    fontFamily: fontFamily.extraBold,
+    borderWidth: 2,
+    borderRadius: radius.full,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    overflow: "hidden",
+  },
   keywordsSection: { gap: spacing.xs },
   reqSection: { gap: spacing.xs },
   reqLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
@@ -378,5 +465,24 @@ const s = StyleSheet.create({
   sampleCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
   sampleLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   sampleText: { fontSize: fontSize.sm, lineHeight: 22 },
+  sampleActions: { flexDirection: "row", gap: spacing.xs },
+  transBlock: {
+    marginTop: spacing.sm,
+    paddingLeft: spacing.md,
+    borderLeftWidth: 2,
+    gap: 2,
+  },
+  transLabel: {
+    fontSize: 10,
+    fontFamily: fontFamily.extraBold,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  transText: {
+    fontSize: fontSize.xs,
+    fontFamily: fontFamily.medium,
+    fontStyle: "italic",
+    lineHeight: 20,
+  },
   footer: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, borderTopWidth: 1 },
 });
