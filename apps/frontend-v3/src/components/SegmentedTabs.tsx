@@ -12,9 +12,13 @@ interface Props<T extends string> {
 	onChange: (value: T) => void
 }
 
+/**
+ * Pill-style tab row — Duolingo pattern: không container wrapper,
+ * mỗi tab là pill border-2, active dùng màu, inactive subtle.
+ */
 export function SegmentedTabs<T extends string>({ items, value, onChange }: Props<T>) {
 	return (
-		<div className="inline-flex items-center gap-1 rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-1">
+		<div className="flex items-center gap-1.5">
 			{items.map((item) => {
 				const active = item.value === value
 				return (
@@ -24,14 +28,14 @@ export function SegmentedTabs<T extends string>({ items, value, onChange }: Prop
 						aria-pressed={active}
 						onClick={() => onChange(item.value)}
 						className={cn(
-							"inline-flex min-h-10 items-center gap-2 rounded-(--radius-button) border-2 border-b-4 px-4 py-1.5 text-sm font-extrabold transition-all active:translate-y-[1px]",
+							"inline-flex min-h-10 items-center gap-2 rounded-(--radius-button) border-2 px-4 py-1.5 text-sm font-extrabold transition-colors cursor-pointer",
 							active
-								? "border-primary/35 bg-background text-primary-dark shadow-sm"
-								: "border-transparent bg-transparent text-muted hover:bg-background/70 hover:text-foreground",
+								? "border-primary/35 bg-primary-tint text-primary-dark"
+								: "border-border bg-surface text-muted hover:border-border-focus hover:text-foreground",
 						)}
 					>
 						{item.label}
-						{item.count !== undefined && <SegmentedTabCount active={active} count={item.count} />}
+						{item.count !== undefined && <TabCount count={item.count} />}
 					</button>
 				)
 			})}
@@ -39,16 +43,9 @@ export function SegmentedTabs<T extends string>({ items, value, onChange }: Prop
 	)
 }
 
-function SegmentedTabCount({ active, count }: { active: boolean; count: number }) {
+function TabCount({ count }: { count: number }) {
 	return (
-		<span
-			className={cn(
-				"inline-flex h-5 min-w-5 items-center justify-center rounded-full border-2 px-1.5 text-xs leading-none tabular-nums",
-				active
-					? "border-primary/20 bg-primary-tint text-primary-dark"
-					: "border-border bg-background text-muted",
-			)}
-		>
+		<span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-background px-1.5 text-xs leading-none tabular-nums text-muted">
 			{count}
 		</span>
 	)

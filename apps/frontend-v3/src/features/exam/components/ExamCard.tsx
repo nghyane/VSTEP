@@ -1,148 +1,143 @@
 import { Link } from "@tanstack/react-router"
-import { Icon, StaticIcon } from "#/components/Icon"
-import { SkillChip } from "#/components/SkillChip"
+import { StaticIcon } from "#/components/Icon"
 import type { Exam, SkillKey } from "#/features/exam/types"
-import { useExamTimer } from "#/features/exam/use-exam-session"
-import { formatCompact } from "#/lib/utils"
+import { round } from "#/lib/utils"
 
 export type ExamStatus = "not-started" | "in-progress" | "submitted"
 
-export interface ActiveSummary {
-	sessionId: string
-	deadlineAt: string
-	isFullTest: boolean
-	selectedSkills: SkillKey[]
-}
+export type ExamCardState =
+	| { status: "not-started" }
+	| { status: "in-progress"; sessionId: string; selectedSkills: SkillKey[] }
+	| {
+			status: "submitted"
+			latestScore: number | null
+			sessionCount: number
+	  }
 
 interface Props {
 	exam: Exam
-	fullTestCoinCost: number | null
-	status?: ExamStatus
-	active?: ActiveSummary
+	coinCost: number | null
+	state: ExamCardState
 }
 
-function formatRemaining(seconds: number): string {
-	const h = Math.floor(seconds / 3600)
-	const m = Math.floor((seconds % 3600) / 60)
-	const s = seconds % 60
-	if (h > 0) return `${h}h ${m.toString().padStart(2, "0")}p`
-	return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`
+const MIN_ATTEMPTS_POPULAR = 50
+
+function vstepLevel(band: number): string {
+	if (band >= 8.5) return "C1"
+	if (band >= 6.0) return "B2"
+	if (band >= 4.0) return "B1"
+	if (band >= 3.5) return "A2"
+	return "A1"
 }
 
-function ResumeCountdown({ deadlineAt }: { deadlineAt: string }) {
-	const remaining = useExamTimer(deadlineAt)
-	if (remaining <= 0) return null
+function ScoreBadge({ score }: { score: number }) {
 	return (
-		<span className="inline-flex items-center gap-1 text-xs text-warning font-bold tabular-nums">
-			<Icon name="timer" size="xs" />
-			{formatRemaining(remaining)}
+		<span className="inline-flex items-center gap-1.5 text-sm shrink-0">
+			<span className="inline-block size-2 rounded-full bg-primary" />
+			<span className="font-extrabold text-primary tabular-nums">{round(score)}</span>
+			<span className="font-bold text-primary/60 text-xs">{vstepLevel(score)}</span>
 		</span>
 	)
 }
 
-const SKILL_ORDER: SkillKey[] = ["listening", "reading", "writing", "speaking"]
+export function ExamCard({ exam, coinCost, state }: Props) {
+	const hasActive = state.status === "in-progress"
+	const hasSubmitted = state.status === "submitted"
+	const isPopular = exam.attempts_count !== undefined && exam.attempts_count >= MIN_ATTEMPTS_POPULAR
+	const popularCount = exam.attempts_count ?? 0
 
-function StatusBadge({ status }: { status: ExamStatus }) {
-	if (status === "in-progress") {
-		return (
-			<span className="inline-flex items-center gap-1.5 rounded-full border-2 border-b-4 border-warning/40 bg-warning-tint px-2.5 py-0.5 text-xs font-extrabold text-warning">
-				<span className="relative flex size-2">
-					<span className="absolute inline-flex size-full animate-ping rounded-full bg-warning opacity-60" />
-					<span className="relative inline-flex size-2 rounded-full bg-warning" />
-				</span>
-				Đang làm dở
-			</span>
-		)
-	}
-	if (status === "submitted") {
-		return (
-			<span className="inline-flex items-center gap-1.5 rounded-full border-2 border-b-4 border-primary/40 bg-primary-tint px-2.5 py-0.5 text-xs font-extrabold text-primary">
-				<Icon name="check" size="xs" className="text-primary" />
-				Đã nộp
-			</span>
-		)
-	}
 	return (
-		<span className="inline-flex items-center gap-1.5 rounded-full bg-background border-2 border-border px-2.5 py-0.5 text-xs font-bold text-subtle">
-			Chưa làm
-		</span>
-	)
-}
-
-export function ExamCard({ exam, fullTestCoinCost, status = "not-started", active }: Props) {
-	return (
-		<div className="card-interactive p-5 flex flex-col gap-4 cursor-default">
-			{/* Title + meta */}
-			<div className="space-y-1.5">
-				<p className="font-bold text-base leading-tight text-foreground">{exam.title}</p>
-
-				<div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
-					<span className="flex items-center gap-1.5">
-						<StaticIcon name="timer-md" size="xs" />
-						{exam.total_duration_minutes} phút
-					</span>
-					{exam.source_school && (
-						<span className="flex items-center gap-1.5">
-							<Icon name="graduation" size="xs" className="text-subtle" />
-							{exam.source_school}
+		<div className="card p-5 flex flex-col gap-3">
+			{/* Row 1: title + top-right info */}
+			<div className="flex items-start justify-between gap-3">
+				<h3 className="font-extrabold text-base leading-tight line-clamp-2 text-foreground flex-1 min-w-0">
+					{exam.title}
+				</h3>
+				<div className="shrink-0">
+					{hasSubmitted && state.latestScore !== null ? (
+						<ScoreBadge score={state.latestScore} />
+					) : hasActive ? (
+						<span className="inline-flex items-center gap-1 text-xs">
+							<span className="inline-block size-1.5 rounded-full bg-warning" />
+							<span className="font-bold text-warning tabular-nums">{state.selectedSkills.length}/4</span>
+							<span className="text-subtle">kỹ năng</span>
 						</span>
-					)}
-					{exam.attempts_count !== undefined && (
-						<span
-							className="flex items-center gap-1.5"
-							title={`${exam.attempts_count.toLocaleString("vi-VN")} lượt thi`}
-						>
-							<StaticIcon name="avatar-nodding" size="sm" className="h-5 w-auto" />
-							<span className="font-bold tabular-nums">{formatCompact(exam.attempts_count)}</span> lượt thi
-						</span>
-					)}
+					) : null}
 				</div>
 			</div>
 
-			{/* Skills */}
-			<div className="flex flex-wrap gap-1.5">
-				{SKILL_ORDER.map((skill) => (
-					<SkillChip key={skill} skill={skill} size="sm" />
-				))}
+			{/* Row 2: duration · source */}
+			<div className="flex items-center gap-1.5 text-sm text-muted">
+				<StaticIcon name="timer-md" size="xs" />
+				{exam.total_duration_minutes} phút
+				{exam.source_school && (
+					<>
+						<span className="text-subtle">·</span>
+						<span>{exam.source_school}</span>
+					</>
+				)}
 			</div>
 
-			{/* Tags */}
+			{/* Row 3: popular badge */}
+			{isPopular && (
+				<div className="flex items-center gap-1.5 text-xs text-muted">
+					<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" className="shrink-0">
+						<path
+							d="M7 1C5.5 3.5 2 4.5 2 7.5C2 10.5 4.5 13 7 13C9.5 13 12 10.5 12 7.5C12 4.5 8.5 3.5 7 1Z"
+							fill="currentColor"
+							className="text-warning"
+						/>
+					</svg>
+					<span className="font-bold tabular-nums">{popularCount.toLocaleString("vi-VN")}</span> người đã làm
+				</div>
+			)}
+
+			{/* Row 4: tags */}
 			{exam.tags.length > 0 && (
-				<div className="flex flex-wrap gap-1.5">
-					{exam.tags.map((tag) => (
-						<span
-							key={tag}
-							className="inline-flex items-center rounded-full bg-background border-2 border-border px-2.5 py-0.5 text-xs font-medium text-subtle"
-						>
+				<div className="flex items-center gap-1.5 text-xs text-muted">
+					{exam.tags.map((tag, i) => (
+						<span key={tag}>
 							{tag}
+							{i < exam.tags.length - 1 && <span className="text-subtle"> · </span>}
 						</span>
 					))}
 				</div>
 			)}
 
-			{/* Footer: status + coin + CTA */}
-			<div className="flex items-center justify-between pt-3 border-t border-border-light mt-auto">
-				<div className="flex items-center gap-2">
-					<StatusBadge status={status} />
-					{active && <ResumeCountdown deadlineAt={active.deadlineAt} />}
-				</div>
+			{/* Row 5: status + CTA */}
+			<div className="flex items-center justify-between">
+				{hasActive ? (
+					<div className="flex items-center gap-2 text-sm">
+						<span className="inline-block size-2 rounded-full bg-warning" />
+						<span className="font-bold text-warning">Đang làm</span>
+					</div>
+				) : hasSubmitted ? (
+					<div className="flex items-center gap-2 text-sm">
+						<span className="inline-block size-2 rounded-full bg-primary" />
+						<span className="text-muted">Đã làm {state.sessionCount} lần</span>
+					</div>
+				) : (
+					<div className="flex items-center gap-2 text-sm">
+						<span className="inline-block size-2 rounded-full bg-success" />
+						<span className="text-muted">Chưa bắt đầu</span>
+					</div>
+				)}
 
-				<div className="flex items-center gap-2">
-					{fullTestCoinCost !== null && !active && (
-						<span className="inline-flex items-center gap-1.5 px-1" title="Giá một lượt làm">
+				<div className="flex items-center gap-3 ml-auto">
+					{coinCost !== null && !hasActive && (
+						<span className="inline-flex items-center gap-1" title="Giá một lượt làm">
 							<StaticIcon name="coin" size="sm" />
-							<span className="text-sm font-extrabold text-coin-dark tabular-nums">{fullTestCoinCost}</span>
+							<span className="text-sm font-extrabold text-coin-dark tabular-nums">{coinCost}</span>
 						</span>
 					)}
-					{active ? (
+					{hasActive ? (
 						<Link
 							to="/phong-thi/$sessionId"
-							params={{ sessionId: active.sessionId }}
+							params={{ sessionId: state.sessionId }}
 							search={{ examId: exam.id }}
 							className="btn btn-primary text-sm py-2 px-4"
 						>
-							Làm tiếp
-							<Icon name="lightning" size="xs" className="text-white" />
+							Tiếp tục
 						</Link>
 					) : (
 						<Link
@@ -150,7 +145,7 @@ export function ExamCard({ exam, fullTestCoinCost, status = "not-started", activ
 							params={{ examId: exam.id }}
 							className="btn btn-primary text-sm py-2 px-4"
 						>
-							Xem đề
+							{hasSubmitted ? "Làm lại" : "Bắt đầu"}
 						</Link>
 					)}
 				</div>

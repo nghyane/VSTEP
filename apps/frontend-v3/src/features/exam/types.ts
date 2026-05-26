@@ -119,7 +119,8 @@ export interface ExamSessionSummary {
 	started_at: string
 	submitted_at: string | null
 	server_deadline_at: string
-	scores: unknown
+	/** Per-skill scores (0–10). null khi session chưa terminal hoặc skill chưa graded. */
+	scores: Record<SkillKey, number | null> | null
 }
 
 export interface ExamSessionData {
