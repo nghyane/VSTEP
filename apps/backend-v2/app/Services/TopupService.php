@@ -69,8 +69,8 @@ final class TopupService
                 'expires_at' => now()->addMinutes($expiryMinutes),
             ]);
 
-            $returnUrl = $returnUrl ?? config('app.url')."/wallet/return?order={$order->id}";
-            $cancelUrl = config('app.url').'/wallet';
+            $returnUrl = $returnUrl ?? config('app.frontend_url')."/wallet/return?order={$order->id}";
+            $cancelUrl = config('app.frontend_url').'/wallet';
 
             $response = $gateway->createPayment($order, $returnUrl, $cancelUrl);
 
@@ -188,11 +188,9 @@ final class TopupService
         }
     }
 
-    /** Generate next order_code from DB sequence. */
+    /** Generate unique order_code — time-based to avoid PayOS collision after rollback. */
     private function nextOrderCode(): int
     {
-        $max = (int) WalletTopupOrder::query()->max('order_code');
-
-        return $max > 0 ? $max + 1 : 1000;
+        return (int) (now()->getPreciseTimestamp(3));
     }
 }

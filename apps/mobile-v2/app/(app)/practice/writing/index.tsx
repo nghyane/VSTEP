@@ -15,6 +15,14 @@ const PARTS = [
 
 const COLOR = "#58CC02";
 
+function chunkPairs<T>(arr: T[]): T[][] {
+  const result: T[][] = [];
+  for (let i = 0; i < arr.length; i += 2) {
+    result.push(arr.slice(i, i + 2));
+  }
+  return result;
+}
+
 export default function WritingListScreen() {
   const c = useThemeColors();
   const router = useRouter();
@@ -78,26 +86,32 @@ export default function WritingListScreen() {
               </View>
             ) : (
               <View style={s.cardGrid}>
-                {list.map((p) => (
-                  <View key={p.id} style={s.cardWrapper}>
-                    <HapticTouchable
-                      scalePress
-                      onPress={() => router.push(`/(app)/practice/writing/${p.id}` as any)}
-                    >
-                    <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
-                      <View style={[s.taskBadge, { backgroundColor: COLOR + "18" }]}>
-                        <Text style={[s.taskBadgeText, { color: COLOR }]}>Task {p.part}</Text>
+                {chunkPairs(list).map((pair, rowIdx) => (
+                  <View key={rowIdx} style={s.cardRow}>
+                    {pair.map((p) => (
+                      <View key={p.id} style={s.cardWrapper}>
+                        <HapticTouchable
+                          scalePress
+                          onPress={() => router.push(`/(app)/practice/writing/${p.id}` as any)}
+                          style={s.cardTouchable}
+                        >
+                          <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
+                            <View style={[s.taskBadge, { backgroundColor: COLOR + "18" }]}>
+                              <Text style={[s.taskBadgeText, { color: COLOR }]}>Task {p.part}</Text>
+                            </View>
+                            <Text style={[s.cardTitle, { color: c.foreground }]} numberOfLines={3}>{p.title}</Text>
+                            <View style={s.cardMeta}>
+                              <Ionicons name="create-outline" size={12} color={COLOR} />
+                              <Text style={[s.cardMetaText, { color: c.mutedForeground }]}>
+                                {p.minWords}–{p.maxWords} từ{p.estimatedMinutes ? ` · ${p.estimatedMinutes} phút` : ""}
+                              </Text>
+                            </View>
+                          </View>
+                        </HapticTouchable>
                       </View>
-                      <Text style={[s.cardTitle, { color: c.foreground }]} numberOfLines={3}>{p.title}</Text>
-                      <View style={s.cardMeta}>
-                        <Ionicons name="create-outline" size={12} color={COLOR} />
-                        <Text style={[s.cardMetaText, { color: c.mutedForeground }]}>
-                          {p.minWords}–{p.maxWords} từ{p.estimatedMinutes ? ` · ${p.estimatedMinutes} phút` : ""}
-                        </Text>
-                      </View>
-                    </View>
-                  </HapticTouchable>
-                </View>
+                    ))}
+                    {pair.length === 1 && <View style={s.cardWrapper} />}
+                  </View>
                 ))}
               </View>
             )}
@@ -128,9 +142,12 @@ const s = StyleSheet.create({
   partDesc: { fontSize: fontSize.xs, marginBottom: spacing.md },
   emptyCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.xl, alignItems: "center" },
   emptyText: { fontSize: fontSize.sm },
-  cardGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md },
-  cardWrapper: { width: "47%" },
+  cardGrid: { gap: spacing.md },
+  cardRow: { flexDirection: "row", gap: spacing.md },
+  cardWrapper: { flex: 1 },
+  cardTouchable: { flex: 1 },
   card: {
+    flex: 1,
     borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg,
     padding: spacing.base, gap: spacing.sm,
     shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
