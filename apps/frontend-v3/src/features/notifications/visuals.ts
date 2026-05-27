@@ -68,6 +68,13 @@ const VISUALS: Record<NotificationType, NotifVisual> = {
 		tone: "destructive",
 		navigateTo: "/khoa-hoc",
 	},
+	booking_meet_url_updated: {
+		iconKind: "regular",
+		iconName: "timer",
+		tintClass: "bg-primary-tint",
+		tone: "primary",
+		navigateTo: "/khoa-hoc",
+	},
 }
 
 const FALLBACK: NotifVisual = {
@@ -79,5 +86,6 @@ const FALLBACK: NotifVisual = {
 
 export function visualForType(type: string | null | undefined): NotifVisual {
 	if (!type) return FALLBACK
-	return VISUALS[type as NotificationType] ?? FALLBACK
+	if (type in VISUALS) return VISUALS[type as keyof typeof VISUALS]
+	return FALLBACK
 }
