@@ -62,6 +62,18 @@ return [
             'id' => 'claude-haiku-4-5-20251001',
             'thinking' => 'none',
         ],
+        'qwen3-vl-flash' => [
+            'connection' => 'packy',
+            'wire' => 'messages',
+            'id' => 'qwen3-vl-flash',
+            'thinking' => 'none',
+        ],
+        'qwen3-5-flash' => [
+            'connection' => 'packy',
+            'wire' => 'messages',
+            'id' => 'qwen3.5-flash',
+            'thinking' => 'none',
+        ],
         'qwen3-32b' => [
             'connection' => 'groq',
             'wire' => 'chat',

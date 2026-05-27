@@ -29,18 +29,22 @@ final class LlmGradingService implements LlmGrader
      * @param  array{metrics: array<string,mixed>, syntax: array, flags: list<string>}  $ruleAnalysis
      * @return array{evidence: array}
      */
-    public function extractEvidence(string $text, string $promptText, array $requirements, array $grammarErrors, array $ruleAnalysis): array
+    public function extractEvidence(string $text, string $promptText, array $requirements, array $grammarErrors, array $ruleAnalysis, int $part = 2): array
     {
+        $grammarErrors = array_slice($grammarErrors, 0, 10);
+
+        $linkingWords = $this->detectedLinkingWords($text);
+
         $prompt = view('ai.grading.writing-evidence', [
             'promptText' => $promptText,
             'text' => $text,
             'wordCount' => str_word_count($text),
-            'grammarErrors' => array_slice($grammarErrors, 0, 10),
+            'grammarErrors' => $grammarErrors,
             'metrics' => $ruleAnalysis['metrics'] ?? [],
             'syntax' => $ruleAnalysis['syntax'] ?? null,
-            'linkingWords' => $this->detectedLinkingWords($text),
+            'linkingWords' => $linkingWords,
             'requirements' => $requirements,
-            'bandContext' => null,
+            'part' => $part,
         ])->render();
 
         $schema = [

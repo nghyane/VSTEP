@@ -56,7 +56,12 @@ requirements_met = your summed score (decimal allowed)
 @endif
 
 Also determine:
-- has_clear_position: TRUE only if the student clearly states an opinion/stance AND supports it.
+- has_clear_position:
+@if($part === 1)
+  TRUE if the letter clearly expresses its core purpose (apology, complaint, invitation, request, etc.) and supports it with details. Mere mention without detail is FALSE.
+@else
+  TRUE only if the student clearly states an opinion/stance AND supports it with reasoning or evidence. Mere mention without support is FALSE.
+@endif
 - has_irrelevant_content: TRUE only if there is genuinely off-topic or unrelated content.
 
 Be precise. Do NOT inflate scores. A partially addressed requirement is 0.5, not 1.0.

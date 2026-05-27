@@ -11,7 +11,7 @@ use App\Services\Grading\LlmGrader;
  */
 final class FakeLlmGrader implements LlmGrader
 {
-    public function extractEvidence(string $text, string $promptText, array $requirements, array $grammarErrors, array $ruleAnalysis): array
+    public function extractEvidence(string $text, string $promptText, array $requirements, array $grammarErrors, array $ruleAnalysis, int $part = 2): array
     {
         return [
             'evidence' => [

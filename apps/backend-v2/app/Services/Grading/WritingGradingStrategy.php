@@ -75,10 +75,11 @@ final class WritingGradingStrategy implements GradingStrategy
         // Phase 3: LLM evidence extraction (fast — simple fields)
         $t = microtime(true);
         $requirements = $this->extractRequirements($submission);
+        $part = $this->extractPart($submission);
         $bandContext = $submission instanceof PracticeWritingSubmission
             ? $this->resolveBandContext($submission)
             : null;
-        $result = $this->llm->extractEvidence($text, $promptText, $requirements, $ltMatches, $ruleAnalysis);
+        $result = $this->llm->extractEvidence($text, $promptText, $requirements, $ltMatches, $ruleAnalysis, $part);
         $evidence = $result['evidence'];
         $job->addProgress('llm_evidence', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
 
@@ -145,14 +146,12 @@ final class WritingGradingStrategy implements GradingStrategy
      */
     private function extractRequirements(Model $submission): array
     {
-        // Exam tasks: `requirements` array configured by admin
         if ($submission instanceof ExamWritingSubmission) {
             $reqs = $submission->task?->requirements;
 
             return is_array($reqs) ? array_values(array_filter($reqs, fn ($v) => is_string($v) && $v !== '')) : [];
         }
 
-        // Practice tasks: `required_points` array configured by admin
         if ($submission instanceof PracticeWritingSubmission) {
             $reqs = $submission->prompt?->required_points;
 
@@ -160,6 +159,22 @@ final class WritingGradingStrategy implements GradingStrategy
         }
 
         return [];
+    }
+
+    /**
+     * Get task part: 1=letter, 2=essay. Used to adapt evidence evaluation criteria.
+     */
+    private function extractPart(Model $submission): int
+    {
+        if ($submission instanceof ExamWritingSubmission) {
+            return (int) ($submission->task?->part ?? 2);
+        }
+
+        if ($submission instanceof PracticeWritingSubmission) {
+            return (int) ($submission->prompt?->part ?? 2);
+        }
+
+        return 2;
     }
 
     /**
