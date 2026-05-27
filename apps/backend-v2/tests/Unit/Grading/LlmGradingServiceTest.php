@@ -65,10 +65,6 @@ final class LlmGradingServiceTest extends TestCase
                 return [];
             }
 
-            public function text(string $service, string $prompt, ?string $instructions = null): string
-            {
-                return '';
-            }
         };
 
         $grader = new LlmGradingService($fakeAi);
@@ -110,10 +106,6 @@ final class LlmGradingServiceTest extends TestCase
                 return [];
             }
 
-            public function text(string $service, string $prompt, ?string $instructions = null): string
-            {
-                return '';
-            }
         };
 
         $grader = new LlmGradingService($fakeAi);
@@ -162,10 +154,6 @@ final class LlmGradingServiceTest extends TestCase
                 ];
             }
 
-            public function text(string $service, string $prompt, ?string $instructions = null): string
-            {
-                return '';
-            }
         };
     }
 

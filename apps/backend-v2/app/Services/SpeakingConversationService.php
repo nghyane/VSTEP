@@ -376,13 +376,16 @@ final class SpeakingConversationService implements ConversationServiceInterface
     public function generateIpa(string $text): ?string
     {
         try {
-            $content = $this->ai->text(
+            $result = $this->ai->toolCall(
                 service: 'pronunciation',
-                prompt: "Convert this English text to IPA phonetic transcription. Respond with ONLY the IPA string, nothing else.\n\nText: \"{$text}\"",
+                prompt: "Convert this English text to IPA phonetic transcription.\n\nText: \"{$text}\"",
+                toolName: 'generate_ipa',
+                toolDescription: 'Generate IPA transcription for English text',
+                parametersSchema: ['ipa' => ['type' => 'string']],
             );
-            $content = trim($content, " \t\n\r\0\x0B/");
-            if (! empty($content) && mb_strlen($content) > 2) {
-                return $content;
+            $ipa = trim((string) ($result['ipa'] ?? ''), " \t\n\r\0\x0B/");
+            if ($ipa !== '' && mb_strlen($ipa) > 2) {
+                return $ipa;
             }
         } catch (\Throwable $e) {
             Log::warning('IPA generation failed', ['error' => $e->getMessage()]);

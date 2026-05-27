@@ -64,12 +64,11 @@ final class SpeakingConversationServiceTest extends TestCase
                     ];
                 }
 
-                return [];
-            }
+                if ($toolName === 'generate_ipa') {
+                    return ['ipa' => 'aɪ piː eɪ'];
+                }
 
-            public function text(string $service, string $prompt, ?string $instructions = null): string
-            {
-                return 'aɪ piː eɪ';
+                return [];
             }
         };
 
@@ -101,11 +100,6 @@ final class SpeakingConversationServiceTest extends TestCase
             {
                 return []; // Empty → missing 'pronunciation' key
             }
-
-            public function text(string $service, string $prompt, ?string $instructions = null): string
-            {
-                return '';
-            }
         };
 
         $service = new SpeakingConversationService($fakeAi, new ConversationTurnNormalizer);
@@ -125,11 +119,6 @@ final class SpeakingConversationServiceTest extends TestCase
             {
                 // Return to caller
                 return [];
-            }
-
-            public function text(string $service, string $prompt, ?string $instructions = null): string
-            {
-                return '';
             }
         };
 
