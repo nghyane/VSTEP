@@ -77,14 +77,19 @@ final class SpeakingScoringFormula
         return $this->clampRound((int) $p['base'] + $rateBonus - $pausePenalty);
     }
 
-    /** Discourse: linking words + sentence variety — similar to writing organization. */
-    public function discourse(int $linkingWordCount, float $sentenceVariety): float
+    /** Discourse: linking words + sentence variety × content relevance. */
+    public function discourse(int $linkingWordCount, float $sentenceVariety, float $contentFactor = 1.0): float
     {
         $p = $this->params['discourse_management'];
         $linkingBonus = min((float) $p['linking_cap'], $linkingWordCount * (float) $p['linking_factor']);
         $varietyBonus = $this->resolveThreshold($sentenceVariety, $p['variety_thresholds']);
 
-        return $this->clampRound((int) $p['base'] + $linkingBonus + $varietyBonus);
+        $structuralScore = $this->clampRound((int) $p['base'] + $linkingBonus + $varietyBonus);
+
+        // Content factor modulates structural score by 0.5-1.0
+        $factor = max(0.5, min(1.0, $contentFactor));
+
+        return $this->clampRound($structuralScore * $factor);
     }
 
     /** Task Fulfillment: LLM evidence (same formula as writing). */

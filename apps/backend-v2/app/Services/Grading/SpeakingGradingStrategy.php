@@ -40,7 +40,7 @@ final class SpeakingGradingStrategy implements GradingStrategy
     {
         return match ($job->submission_type) {
             'practice_speaking' => PracticeSpeakingSubmission::query()->find($job->submission_id),
-            'exam_speaking' => ExamSpeakingSubmission::query()->find($job->submission_id),
+            'exam_speaking' => ExamSpeakingSubmission::query()->with('part')->find($job->submission_id),
             default => null,
         };
     }
@@ -70,6 +70,9 @@ final class SpeakingGradingStrategy implements GradingStrategy
 
         $azurePron = $sttResult['pronunciation'] ?? null;
 
+        // Content relevance: LLM checks transcript against task prompt + requirements
+        $contentFactor = $this->checkContentRelevance($transcript, $submission);
+
         $scores = [
             'grammar' => $this->formula->grammar($syntaxAnalysis, 0, $metrics['sentence_count']),
             'vocabulary' => $this->formula->vocabulary($metrics),
@@ -77,6 +80,7 @@ final class SpeakingGradingStrategy implements GradingStrategy
             'discourse_management' => $this->formula->discourse(
                 $metrics['linking_word_count'],
                 (float) ($metrics['sentence_variety'] ?? 0),
+                $contentFactor,
             ),
             'pronunciation' => $this->formula->pronunciation(
                 $azurePron['overall'] ?? ($sttConfidence * 10),
@@ -136,6 +140,66 @@ final class SpeakingGradingStrategy implements GradingStrategy
             'message' => 'Chất lượng thu âm thấp (độ tin cậy: '.round($confidence * 100).'%). Điểm có thể bị ảnh hưởng bởi lỗi nhận dạng.',
             'explanation' => 'STT confidence below 0.7. Scores computed from transcript may include recognition errors.',
         ]];
+    }
+
+    /** Check content relevance: LLM verifies transcript addresses the task. */
+    private function checkContentRelevance(string $transcript, Model $submission): float
+    {
+        if (! $submission instanceof ExamSpeakingSubmission) {
+            return 1.0;
+        }
+
+        $part = $submission->part;
+        $requirements = $part?->requirements;
+        $prompt = $this->buildPromptFromPart($part);
+
+        if (empty($requirements) && empty($prompt)) {
+            return 1.0;
+        }
+
+        $reqs = is_array($requirements) ? array_values(array_filter($requirements, fn ($v) => is_string($v) && $v !== '')) : [];
+
+        try {
+            $evidence = $this->llm->extractEvidence(
+                $transcript,
+                $prompt,
+                $reqs,
+                [],
+                ['metrics' => ['word_count' => str_word_count($transcript)], 'flags' => []],
+            );
+
+            $task = $evidence['evidence']['task_fulfillment'] ?? [];
+            $met = max(0, (int) ($task['points_covered'] ?? 0));
+            $total = max(1, (int) ($task['points_required'] ?? count($reqs)));
+
+            return 0.5 + ($met / $total) * 0.5;
+        } catch (\Throwable) {
+            return 1.0;
+        }
+    }
+
+    /** Build a prompt string from the speaking part's content data. */
+    private function buildPromptFromPart($part): string
+    {
+        if ($part === null) {
+            return '';
+        }
+
+        $content = $part->content;
+        if (! is_array($content)) {
+            return '';
+        }
+
+        $parts = [];
+        foreach ($content as $key => $value) {
+            if (is_string($value) && $value !== '') {
+                $parts[] = is_string($key) ? "$key: $value" : $value;
+            } elseif (is_array($value)) {
+                $parts[] = implode(' ', array_filter($value, fn ($v) => is_string($v) && $v !== ''));
+            }
+        }
+
+        return implode('. ', $parts);
     }
 
     /** @return array{text: string, confidence: float, speaking_rate: float, pause_count: int, word_count: int, pronunciation: ?array} */

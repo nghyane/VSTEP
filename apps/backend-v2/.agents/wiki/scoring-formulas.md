@@ -1,7 +1,21 @@
 # VSTEP Scoring System
 
 > Last updated: 2026-05-27
-> Sources: Thông tư 23/2017/TT-BGDĐT, vstep.ftu.edu.vn, VNU Journal of Foreign Studies Vol.34 No.4 (2018)
+
+## Source attribution
+
+| Component | Source | Type |
+|-----------|--------|------|
+| MCQ formula `C/total × 10` | Thông tư 23/2017, vstep.ftu.edu.vn | **Official** |
+| Level mapping B1/B2/C1 | Thông tư 23/2017 | **Official** |
+| Overall rounding to 0.5 | vstep.ftu.edu.vn | **Official** |
+| Writing composite (W₁+2W₂)/3 | ULIS-VNU (VNU J. Foreign Studies, 2018) | **Research paper** |
+| Band descriptors (text) | Thông tư 23/2017, Phụ lục III | **Official** |
+| Rubric params (thresholds, bonuses, penalties) | Operationalization — design decision | **Our design** |
+| Formula logic (structureBand, accuracy_factor, contentFactor) | Operationalization — design decision | **Our design** |
+| SyntaxAnalyzer structure types | Heuristic — regex patterns | **Our design** |
+
+**Disclaimer**: Tất cả rubric params, thresholds, và bonus/penalty values là thiết kế của hệ thống, không trích từ nghiên cứu học thuật. Chúng được dẫn xuất từ VSTEP band descriptors và calibrate qua validation dataset (10 essays). Đổi rubric params → đổi behavior — không cần code.
 
 ---
 
