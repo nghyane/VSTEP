@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { type ApiResponse, api } from "#/lib/api"
 import type {
 	ActionItem,
 	ActivityItem,
+	AdminNotificationItem,
 	AlertItem,
 	ContentStatusItem,
 	GradingThroughputRow,
@@ -142,3 +143,31 @@ export const useTopContent = () =>
 		select: (r) => r.data,
 		staleTime: STALE_5M,
 	})
+
+export const useAdminNotifications = () =>
+	useQuery({
+		queryKey: ["admin", "notifications"],
+		queryFn: () => get<AdminNotificationItem[]>("admin/notifications"),
+		select: (r) => r.data,
+		staleTime: 30_000,
+		refetchInterval: 60_000,
+	})
+
+export const useUnreadCount = () =>
+	useQuery({
+		queryKey: ["admin", "notifications", "unread-count"],
+		queryFn: () => get<{ count: number }>("admin/notifications/unread-count"),
+		select: (r) => r.data.count,
+		staleTime: 30_000,
+		refetchInterval: 60_000,
+	})
+
+export const useMarkAllRead = () => {
+	const qc = useQueryClient()
+	return useMutation({
+		mutationFn: () => api.post("admin/notifications/mark-all-read").json(),
+		onSuccess: () => {
+			qc.invalidateQueries({ queryKey: ["admin", "notifications"] })
+		},
+	})
+}
