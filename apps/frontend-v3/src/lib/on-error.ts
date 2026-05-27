@@ -2,7 +2,8 @@ import { HTTPError } from "ky"
 import { useToast } from "#/lib/toast"
 
 /**
- * Global error handler for TanStack Query mutations and queries.
+ * Global error handler for TanStack Query mutations.
+ * Queries handle errors locally in components (error states, fallbacks).
  * 401 is handled transparently by the ky afterResponse interceptor
  * (token refresh + retry) — it never reaches this handler.
  */

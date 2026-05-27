@@ -7,5 +7,3 @@ export const queryClient = new QueryClient({
 		mutations: { onError },
 	},
 })
-
-queryClient.getQueryCache().config.onError = onError
