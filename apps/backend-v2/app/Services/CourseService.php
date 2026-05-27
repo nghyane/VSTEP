@@ -10,6 +10,7 @@ use App\Enums\CoinTransactionType;
 use App\Enums\ExamSessionStatus;
 use App\Enums\IconKey;
 use App\Enums\NotificationType;
+use App\Enums\Role;
 use App\Enums\SlotStatus;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
@@ -17,6 +18,7 @@ use App\Models\ExamSession;
 use App\Models\Profile;
 use App\Models\TeacherBooking;
 use App\Models\TeacherSlot;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -375,14 +377,14 @@ final class CourseService
 
                 $teacher = $course?->teacher;
                 if ($teacher === null) {
-                    $teacher = \App\Models\User::find($slot->teacher_id);
+                    $teacher = User::find($slot->teacher_id);
                 }
                 if ($teacher !== null) {
                     $this->adminNotificationService->push(
                         user: $teacher,
                         type: AdminNotificationType::BookingCreated,
                         title: 'Có học viên đặt lịch 1-1',
-                        body: "{$learnerName} đã đặt slot {$slot->starts_at->format('H:i d/m/Y')} — {$courseName}. Vui lòng thêm link Google Meet.",
+                        body: "{$learnerName} đã đặt slot {$slot->starts_at->setTimezone('Asia/Ho_Chi_Minh')->format('H:i d/m/Y')} — {$courseName}. Vui lòng thêm link Google Meet.",
                         iconKey: IconKey::Calendar,
                         payload: ['booking_id' => $booking->id, 'course_id' => $slot->course_id],
                         dedupKey: "teacher_booking:{$booking->id}",
@@ -390,14 +392,14 @@ final class CourseService
                 }
 
                 // Notify all admins about new booking.
-                $admins = \App\Models\User::where('role', \App\Enums\Role::Admin)->get();
+                $admins = User::where('role', Role::Admin)->get();
                 $teacherName = $teacher?->full_name ?? 'giáo viên';
                 foreach ($admins as $admin) {
                     $this->adminNotificationService->push(
                         user: $admin,
                         type: AdminNotificationType::BookingCreated,
                         title: 'Booking 1-1 mới',
-                        body: "{$learnerName} đặt slot {$slot->starts_at->format('H:i d/m/Y')} với {$teacherName} — {$courseName}.",
+                        body: "{$learnerName} đặt slot {$slot->starts_at->setTimezone('Asia/Ho_Chi_Minh')->format('H:i d/m/Y')} với {$teacherName} — {$courseName}.",
                         iconKey: IconKey::Calendar,
                         payload: ['booking_id' => $booking->id, 'course_id' => $slot->course_id],
                         dedupKey: "admin_booking:{$booking->id}:{$admin->id}",
