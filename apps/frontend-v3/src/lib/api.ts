@@ -20,12 +20,11 @@ export const api = ky.create({
 			},
 		],
 		afterResponse: [
-			async (request, _options, response) => {
+			async ({ request, response }) => {
 				if (response.status !== 401) return response
 
 				const retryFlag = request.headers.get("X-Retry")
 				if (retryFlag) {
-					// Second 401 — refresh also failed, give up.
 					clearAuthAndRedirect()
 					return response
 				}
@@ -37,7 +36,6 @@ export const api = ky.create({
 				}
 
 				try {
-					// Raw fetch bypasses ky hooks — avoids infinite retry loop.
 					const refreshResponse = await fetch(`${API_URL}/auth/refresh`, {
 						method: "POST",
 						headers: { "Content-Type": "application/json" },
@@ -51,7 +49,6 @@ export const api = ky.create({
 					tokens.setRefresh(data.refresh_token)
 					tokens.setUser(data.user)
 
-					// Retry original request with fresh token.
 					request.headers.set("Authorization", `Bearer ${data.access_token}`)
 					request.headers.set("X-Retry", "1")
 					return ky(request)
