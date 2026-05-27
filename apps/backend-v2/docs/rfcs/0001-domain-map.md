@@ -52,7 +52,7 @@ Sau đó RFC 0002 mới xuống schema, RFC 0003 xuống API.
 10. Top-up theo gói cố định (admin config).
 11. Xu khởi điểm 100 tặng khi tạo profile ĐẦU TIÊN của account. Profile thứ 2+ không được tặng.
 12. Promo code redemption track account-level (chống farm), xu cộng vào profile active.
-13. Không có refund policy phase 1.
+13. Booking 1-1 bị hủy được refund đúng số xu đã trừ cho `teacher_booking`; refund ghi ledger `coin_transactions.type = refund` và phải idempotent theo booking.
 14. Crowdsource đề thi: admin grant xu tay qua `coin_transactions.type = admin_grant` hoặc cấp promo_code.
 
 ### Learning tiers
@@ -445,7 +445,7 @@ Bán khóa học bằng xu. Quản lý enrollment, commitment. Teacher slot 1-1 
 | `course_enrollments` | profile_id + course_id + enrolled_at + bonus_coins_received + acknowledged_commitment. |
 | `course_commitment_status` | Derive snapshot (hoặc query live): phase (pending/met), completed_count, deadline_at. |
 | `teacher_slots` | 30-phút slots mở per course: teacher_id, course_id, starts_at, duration_minutes, status (open/booked/completed/cancelled). |
-| `teacher_bookings` | slot_id + profile_id + submission_ref (nullable) + meet_url (admin paste) + booked_at + status. |
+| `teacher_bookings` | slot_id + profile_id + submission_ref (nullable) + meet_url (admin paste) + booked_at + cancelled_at + status. |
 
 ### Ownership rules
 
@@ -456,6 +456,7 @@ Bán khóa học bằng xu. Quản lý enrollment, commitment. Teacher slot 1-1 
   - chưa đạt `max_slots_per_student` trong course đó.
 - Slot status machine: `open` → `booked` → `completed` (hoặc `cancelled`).
 - Meet URL do admin/teacher paste sau khi booking confirm. Student thấy 15 phút trước giờ.
+- Hủy booking active: set booking `cancelled`, set `cancelled_at`, reopen slot nếu slot còn `booked`, refund đúng coin transaction gốc một lần.
 - Booking có thể gắn submission hoặc không (optional). Gắn submission → teacher review attach vào đó.
 - Commitment KHÔNG phải penalty. Không đủ = không unlock booking, tài khoản vẫn hoạt động bình thường.
 
