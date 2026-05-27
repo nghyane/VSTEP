@@ -16,7 +16,7 @@ export interface TeacherSlotItem {
 	bookings: Array<{
 		id: string
 		status: string
-		profile: { id: string; user: { id: string; full_name: string } | null } | null
+		profile: { id: string; account: { id: string; full_name: string } | null } | null
 	}>
 }
 
@@ -32,7 +32,7 @@ export interface TeacherBookingItem {
 		duration_minutes: number
 		course: { id: string; title: string } | null
 	} | null
-	profile: { id: string; user: { id: string; full_name: string } | null } | null
+	profile: { id: string; account: { id: string; full_name: string } | null } | null
 }
 
 export interface TeacherLeaveRequestItem {

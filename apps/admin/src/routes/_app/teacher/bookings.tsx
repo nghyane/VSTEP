@@ -22,7 +22,7 @@ const STATUS_MAP: Record<string, { color: string; label: string }> = {
 const columns: ColumnsType<TeacherBookingItem> = [
 	{
 		title: "Học viên",
-		dataIndex: ["profile", "user", "full_name"],
+		dataIndex: ["profile", "account", "full_name"],
 		render: (v) => v ?? "—",
 	},
 	{

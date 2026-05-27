@@ -40,7 +40,7 @@ final class TeacherDashboardService
     {
         $query = TeacherSlot::query()
             ->where('teacher_id', $teacher->id)
-            ->with('course:id,title', 'bookings.profile.user:id,full_name')
+            ->with('course:id,title', 'bookings.profile.account:id,full_name')
             ->orderBy('starts_at');
 
         if ($from) {
@@ -57,7 +57,7 @@ final class TeacherDashboardService
     {
         $query = TeacherBooking::query()
             ->whereHas('slot', fn ($q) => $q->where('teacher_id', $teacher->id))
-            ->with('slot:id,starts_at,duration_minutes,course_id', 'slot.course:id,title', 'profile.user:id,full_name')
+            ->with('slot:id,starts_at,duration_minutes,course_id', 'slot.course:id,title', 'profile.account:id,full_name')
             ->orderByDesc('booked_at');
 
         if ($status) {
