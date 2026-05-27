@@ -524,5 +524,13 @@ Route::prefix('v1')->group(function () {
             Route::get('/unread-count', [Admin\AdminNotificationController::class, 'unreadCount']);
             Route::post('/mark-all-read', [Admin\AdminNotificationController::class, 'markAllRead']);
         });
+
+        Route::prefix('teacher')->group(function () {
+            Route::get('/dashboard', [Admin\TeacherController::class, 'dashboard']);
+            Route::get('/slots', [Admin\TeacherController::class, 'slots']);
+            Route::get('/bookings', [Admin\TeacherController::class, 'bookings']);
+            Route::get('/leave-requests', [Admin\TeacherController::class, 'leaveRequests']);
+            Route::post('/leave-requests', [Admin\TeacherController::class, 'storeLeaveRequest']);
+        });
     });
 });

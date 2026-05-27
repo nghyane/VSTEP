@@ -9,12 +9,17 @@ import {
 	UserOutlined,
 	WarningOutlined,
 } from "@ant-design/icons"
+import { useNavigate } from "@tanstack/react-router"
 import { Avatar, Badge, Button, Dropdown, Empty, Input, Space, Spin, Tabs, Tag, Typography } from "antd"
 import { useState } from "react"
-import { useNavigate } from "@tanstack/react-router"
 import { ChangeMyPasswordModal } from "#/features/admin-users/ChangeMyPasswordModal"
 import { useAuth } from "#/lib/auth"
-import { useAdminNotifications, useAlerts, useMarkAllRead, useUnreadCount } from "#/routes/_app/-dashboard/queries"
+import {
+	useAdminNotifications,
+	useAlerts,
+	useMarkAllRead,
+	useUnreadCount,
+} from "#/routes/_app/-dashboard/queries"
 import type { AdminNotificationItem, AlertItem } from "#/routes/_app/-dashboard/types"
 
 export function Topbar() {
@@ -201,16 +206,18 @@ function NotificationsTab({
 								</div>
 							</div>
 						</div>
-						<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
-							<span style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>
-								{formatTimeAgo(n.created_at)}
-							</span>
+						<div
+							style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}
+						>
+							<span style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>{formatTimeAgo(n.created_at)}</span>
 							{n.payload?.course_id && (
 								<Button
 									type="primary"
 									size="small"
 									icon={<LinkOutlined />}
-									onClick={() => navigate({ to: "/courses/$courseId", params: { courseId: n.payload!.course_id } })}
+									onClick={() =>
+										navigate({ to: "/courses/$courseId", params: { courseId: n.payload!.course_id } })
+									}
 									style={{ fontSize: 11 }}
 								>
 									Xem khóa học
@@ -224,13 +231,7 @@ function NotificationsTab({
 	)
 }
 
-function AlertsTab({
-	alerts,
-	isLoading,
-}: {
-	alerts: AlertItem[] | undefined
-	isLoading: boolean
-}) {
+function AlertsTab({ alerts, isLoading }: { alerts: AlertItem[] | undefined; isLoading: boolean }) {
 	if (isLoading) {
 		return (
 			<div style={{ display: "flex", justifyContent: "center", padding: 16 }}>
@@ -256,9 +257,7 @@ function AlertsTab({
 						borderRadius: 6,
 					}}
 				>
-					<WarningOutlined
-						style={{ color: a.type === "error" ? "#cf1322" : "#d48806", marginTop: 2 }}
-					/>
+					<WarningOutlined style={{ color: a.type === "error" ? "#cf1322" : "#d48806", marginTop: 2 }} />
 					<div style={{ flex: 1, minWidth: 0 }}>
 						<Typography.Text style={{ fontSize: 13 }}>{a.message}</Typography.Text>
 						<div style={{ marginTop: 4 }}>

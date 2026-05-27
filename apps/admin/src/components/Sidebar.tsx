@@ -27,21 +27,35 @@ function buildTeacherItems(): ItemType[] {
 		{
 			type: "group",
 			label: "Tổng quan",
-			children: [{ key: "/teacher", icon: <HomeOutlined />, label: <Link to={t("/teacher")}>Dashboard</Link> }],
+			children: [
+				{ key: "/teacher", icon: <HomeOutlined />, label: <Link to={t("/teacher")}>Dashboard</Link> },
+			],
 		},
 		{
 			type: "group",
 			label: "Giảng dạy",
 			children: [
-				{ key: "/teacher/schedule", icon: <CalendarOutlined />, label: <Link to={t("/teacher/schedule")}>Lịch dạy</Link> },
-				{ key: "/teacher/bookings", icon: <ScheduleOutlined />, label: <Link to={t("/teacher/bookings")}>Buổi học</Link> },
+				{
+					key: "/teacher/schedule",
+					icon: <CalendarOutlined />,
+					label: <Link to={t("/teacher/schedule")}>Lịch dạy</Link>,
+				},
+				{
+					key: "/teacher/bookings",
+					icon: <ScheduleOutlined />,
+					label: <Link to={t("/teacher/bookings")}>Buổi học</Link>,
+				},
 			],
 		},
 		{
 			type: "group",
 			label: "Cá nhân",
 			children: [
-				{ key: "/teacher/leave-requests", icon: <EditOutlined />, label: <Link to={t("/teacher/leave-requests")}>Xin nghỉ</Link> },
+				{
+					key: "/teacher/leave-requests",
+					icon: <EditOutlined />,
+					label: <Link to={t("/teacher/leave-requests")}>Xin nghỉ</Link>,
+				},
 			],
 		},
 	]
@@ -67,7 +81,11 @@ function buildStaffItems(isAdmin: boolean): ItemType[] {
 			label: "Đề thi",
 			children: [
 				{ key: "/exams", icon: <ProfileOutlined />, label: <Link to={t("/exams")}>Danh sách đề</Link> },
-				{ key: "/grading", icon: <CheckSquareOutlined />, label: <Link to={t("/grading")}>Tiêu chí chấm điểm</Link> },
+				{
+					key: "/grading",
+					icon: <CheckSquareOutlined />,
+					label: <Link to={t("/grading")}>Tiêu chí chấm điểm</Link>,
+				},
 			],
 		},
 		{
@@ -82,8 +100,14 @@ function buildStaffItems(isAdmin: boolean): ItemType[] {
 						{ key: "/practice/listening", label: <Link to={t("/practice/listening")}>Nghe</Link> },
 						{ key: "/practice/reading", label: <Link to={t("/practice/reading")}>Đọc</Link> },
 						{ key: "/practice/writing", label: <Link to={t("/practice/writing")}>Viết</Link> },
-						{ key: "/practice/speaking-drills", label: <Link to={t("/practice/speaking-drills")}>Phát âm</Link> },
-						{ key: "/practice/speaking-scenarios", label: <Link to={t("/practice/speaking-scenarios")}>Hội thoại AI</Link> },
+						{
+							key: "/practice/speaking-drills",
+							label: <Link to={t("/practice/speaking-drills")}>Phát âm</Link>,
+						},
+						{
+							key: "/practice/speaking-scenarios",
+							label: <Link to={t("/practice/speaking-scenarios")}>Hội thoại AI</Link>,
+						},
 					],
 				},
 			],
@@ -95,7 +119,11 @@ function buildStaffItems(isAdmin: boolean): ItemType[] {
 				{ key: "/users", icon: <TeamOutlined />, label: <Link to={t("/users")}>Người dùng</Link> },
 				{ key: "/courses", icon: <DatabaseOutlined />, label: <Link to={t("/courses")}>Khóa học</Link> },
 				{ key: "/promo", icon: <GiftOutlined />, label: <Link to={t("/promo")}>Khuyến mãi</Link> },
-				{ key: "/topup-packages", icon: <DollarOutlined />, label: <Link to={t("/topup-packages")}>Gói nạp</Link> },
+				{
+					key: "/topup-packages",
+					icon: <DollarOutlined />,
+					label: <Link to={t("/topup-packages")}>Gói nạp</Link>,
+				},
 			],
 		},
 	]
@@ -136,12 +164,7 @@ const STAFF_KEYS = [
 	"/settings",
 ]
 
-const TEACHER_KEYS = [
-	"/teacher",
-	"/teacher/schedule",
-	"/teacher/bookings",
-	"/teacher/leave-requests",
-]
+const TEACHER_KEYS = ["/teacher", "/teacher/schedule", "/teacher/bookings", "/teacher/leave-requests"]
 
 export function Sidebar() {
 	const { pathname } = useLocation()
@@ -152,9 +175,9 @@ export function Sidebar() {
 	const fallbackKey = role === "teacher" ? "/teacher" : "/"
 
 	const selected =
-		flatKeys.filter((k) => (k === "/" ? pathname === "/" : pathname.startsWith(k))).sort(
-			(a, b) => b.length - a.length,
-		)[0] ?? fallbackKey
+		flatKeys
+			.filter((k) => (k === "/" ? pathname === "/" : pathname.startsWith(k)))
+			.sort((a, b) => b.length - a.length)[0] ?? fallbackKey
 
 	const openKeys = pathname.startsWith("/practice") ? ["practice"] : []
 
