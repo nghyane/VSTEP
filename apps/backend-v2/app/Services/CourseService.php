@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\AdminNotificationType;
 use App\Enums\BookingStatus;
 use App\Enums\CoinTransactionType;
 use App\Enums\ExamSessionStatus;
@@ -25,6 +26,9 @@ final class CourseService
     /** Fallback xu/booking khi course chưa set (chỉ áp khi DB column null, mặc định DB = 50). */
     public const BOOKING_COIN_COST_FALLBACK = 50;
 
+    /** Phải đặt lịch trước ít nhất N giờ so với giờ bắt đầu slot. */
+    public const BOOKING_LEAD_TIME_HOURS = 24;
+
     /** Booking page slot grid: 1 tuần đã qua + 4 tuần tới. */
     private const BOOKING_GRID_PAST_DAYS = 7;
 
@@ -33,6 +37,7 @@ final class CourseService
     public function __construct(
         private readonly WalletService $walletService,
         private readonly NotificationService $notificationService,
+        private readonly AdminNotificationService $adminNotificationService,
     ) {}
 
     /** @return Collection<int,Course> */
@@ -301,6 +306,10 @@ final class CourseService
         if ($slot->starts_at->isPast()) {
             throw ValidationException::withMessages(['slot' => ['Slot đã qua.']]);
         }
+        if ($slot->starts_at->lt(now()->addHours(self::BOOKING_LEAD_TIME_HOURS))) {
+            $hours = self::BOOKING_LEAD_TIME_HOURS;
+            throw ValidationException::withMessages(['slot' => ["Cần đặt lịch trước ít nhất {$hours} giờ so với giờ bắt đầu slot."]]);
+        }
         if ($slot->starts_at->lt($course->start_date->startOfDay())) {
             throw ValidationException::withMessages(['slot' => ['Slot nằm trước ngày bắt đầu khóa học.']]);
         }
@@ -335,7 +344,7 @@ final class CourseService
                 'profile_id' => $profile->id,
                 'submission_type' => $submissionType,
                 'submission_id' => $submissionId,
-                'meet_url' => $this->generateMeetUrl(),
+                'meet_url' => null,
                 'status' => BookingStatus::Booked,
                 'booked_at' => now(),
             ]);
@@ -353,10 +362,48 @@ final class CourseService
                 profile: $profile,
                 type: NotificationType::BookingCreated,
                 title: 'Đặt lịch thành công',
-                body: 'Lịch hẹn đã được xác nhận. Link meeting đã sẵn sàng trong chi tiết booking.',
+                body: 'Lịch hẹn đã được xác nhận. Link phòng học sẽ được giảng viên cập nhật trước buổi học.',
                 iconKey: IconKey::Calendar,
                 dedupKey: "booking:{$booking->id}",
             ));
+
+            // Notify teacher to add meet link.
+            DB::afterCommit(function () use ($slot, $profile, $booking) {
+                $learnerName = $profile->nickname ?? $profile->account?->full_name ?? 'Học viên';
+                $course = $slot->course;
+                $courseName = $course?->title ?? 'Khóa học';
+
+                $teacher = $course?->teacher;
+                if ($teacher === null) {
+                    $teacher = \App\Models\User::find($slot->teacher_id);
+                }
+                if ($teacher !== null) {
+                    $this->adminNotificationService->push(
+                        user: $teacher,
+                        type: AdminNotificationType::BookingCreated,
+                        title: 'Có học viên đặt lịch 1-1',
+                        body: "{$learnerName} đã đặt slot {$slot->starts_at->format('H:i d/m/Y')} — {$courseName}. Vui lòng thêm link Google Meet.",
+                        iconKey: IconKey::Calendar,
+                        payload: ['booking_id' => $booking->id, 'course_id' => $slot->course_id],
+                        dedupKey: "teacher_booking:{$booking->id}",
+                    );
+                }
+
+                // Notify all admins about new booking.
+                $admins = \App\Models\User::where('role', \App\Enums\Role::Admin)->get();
+                $teacherName = $teacher?->full_name ?? 'giáo viên';
+                foreach ($admins as $admin) {
+                    $this->adminNotificationService->push(
+                        user: $admin,
+                        type: AdminNotificationType::BookingCreated,
+                        title: 'Booking 1-1 mới',
+                        body: "{$learnerName} đặt slot {$slot->starts_at->format('H:i d/m/Y')} với {$teacherName} — {$courseName}.",
+                        iconKey: IconKey::Calendar,
+                        payload: ['booking_id' => $booking->id, 'course_id' => $slot->course_id],
+                        dedupKey: "admin_booking:{$booking->id}:{$admin->id}",
+                    );
+                }
+            });
 
             return $booking;
         });
@@ -413,10 +460,12 @@ final class CourseService
 
         $items = $slots->map(function (TeacherSlot $slot) use ($myBookings, $now) {
             $mine = $myBookings->get($slot->id);
+            $leadTimeCutoff = $now->copy()->addHours(self::BOOKING_LEAD_TIME_HOURS);
             $status = match (true) {
                 $slot->starts_at->lt($now) => 'past',
                 $mine !== null => 'booked_me',
                 $slot->status === SlotStatus::Booked => 'booked_other',
+                $slot->starts_at->lt($leadTimeCutoff) => 'past',
                 default => 'available',
             };
 
@@ -442,27 +491,8 @@ final class CourseService
             'my_bookings_count' => $myBookings->count(),
             'max_bookings_per_student' => (int) $course->max_slots_per_student,
             'booking_coin_cost' => (int) ($course->booking_coin_cost ?? self::BOOKING_COIN_COST_FALLBACK),
+            'booking_lead_time_hours' => self::BOOKING_LEAD_TIME_HOURS,
             'commitment' => $this->commitmentStatus($profile, $course),
         ];
-    }
-
-    /**
-     * Mock Google Meet URL. Production: teacher tự cập nhật qua PATCH /teacher/bookings/{id}.
-     * Định dạng `aaa-bbbb-ccc` (lowercase a-z) khớp với Meet thật để FE render link nhất quán.
-     */
-    private function generateMeetUrl(): string
-    {
-        $alphabet = 'abcdefghijklmnopqrstuvwxyz';
-        $pick = function (int $len) use ($alphabet): string {
-            $out = '';
-            $max = strlen($alphabet) - 1;
-            for ($i = 0; $i < $len; $i++) {
-                $out .= $alphabet[random_int(0, $max)];
-            }
-
-            return $out;
-        };
-
-        return 'https://meet.google.com/'.$pick(3).'-'.$pick(4).'-'.$pick(3);
     }
 }
