@@ -30,6 +30,7 @@ services:
         php artisan db:seed --force --no-interaction --class=SystemConfigSeeder &&
         php artisan db:seed --force --no-interaction --class=WalletSeeder &&
         php artisan db:seed --force --no-interaction --class=ContentSeeder &&
+        php artisan db:seed --force --no-interaction --class=CurriculumBootstrapSeeder &&
         php artisan db:seed --force --no-interaction --class=UserSeeder &&
         php artisan db:seed --force --no-interaction --class=CourseSeeder &&
         php artisan db:seed --force --no-interaction --class=DashboardDemoSeeder &&

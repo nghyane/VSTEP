@@ -6,13 +6,20 @@ namespace App\Services;
 
 use App\Enums\ExamSessionStatus;
 use App\Models\ExamSession;
+use App\Models\GrammarPoint;
+use App\Models\PracticeListeningExercise;
+use App\Models\PracticeReadingExercise;
 use App\Models\PracticeSession;
+use App\Models\PracticeWritingPrompt;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
+use App\Models\ProfileGrammarMastery;
 use App\Models\ProfileStreakLog;
 use App\Models\ProfileStreakState;
+use App\Models\ProfileVocabSrsState;
 use App\Models\SpeakingGradingResult;
 use App\Models\SystemConfig;
+use App\Models\VocabWord;
 use App\Models\WritingGradingResult;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -163,6 +170,70 @@ class ProgressService
                 'longest_streak' => $streak?->longest_streak ?? 0,
             ],
             'chart' => $chartData,
+        ];
+    }
+
+    /**
+     * Compact progress summary for the practice hub page.
+     * Returns practiced/total counts per section.
+     */
+    public function getPracticeSummary(Profile $profile): array
+    {
+        $grammarPracticed = ProfileGrammarMastery::query()
+            ->where('profile_id', $profile->id)
+            ->count();
+        $grammarTotal = GrammarPoint::query()
+            ->where('is_published', true)
+            ->where('is_checkpoint', false)
+            ->count();
+
+        $vocabLearned = ProfileVocabSrsState::query()
+            ->where('profile_id', $profile->id)
+            ->where('state_kind', '!=', 'new')
+            ->count();
+        $vocabTotal = VocabWord::query()
+            ->whereHas('topic', fn ($q) => $q->where('is_published', true))
+            ->count();
+
+        $listeningPracticed = PracticeSession::query()
+            ->where('profile_id', $profile->id)
+            ->where('module', 'listening')
+            ->whereNotNull('ended_at')
+            ->distinct('content_ref_id')
+            ->count('content_ref_id');
+        $listeningTotal = PracticeListeningExercise::query()
+            ->where('is_published', true)->count();
+
+        $readingPracticed = PracticeSession::query()
+            ->where('profile_id', $profile->id)
+            ->where('module', 'reading')
+            ->whereNotNull('ended_at')
+            ->distinct('content_ref_id')
+            ->count('content_ref_id');
+        $readingTotal = PracticeReadingExercise::query()
+            ->where('is_published', true)->count();
+
+        $writingSubmitted = PracticeSession::query()
+            ->where('profile_id', $profile->id)
+            ->where('module', 'writing')
+            ->whereNotNull('ended_at')
+            ->count();
+        $writingTotal = PracticeWritingPrompt::query()
+            ->where('is_published', true)->count();
+
+        $speakingDone = PracticeSession::query()
+            ->where('profile_id', $profile->id)
+            ->whereIn('module', ['speaking', 'speaking_conversation'])
+            ->whereNotNull('ended_at')
+            ->count();
+
+        return [
+            'grammar' => ['practiced' => $grammarPracticed, 'total' => $grammarTotal],
+            'vocabulary' => ['practiced' => $vocabLearned, 'total' => $vocabTotal],
+            'listening' => ['practiced' => $listeningPracticed, 'total' => $listeningTotal],
+            'reading' => ['practiced' => $readingPracticed, 'total' => $readingTotal],
+            'writing' => ['practiced' => $writingSubmitted, 'total' => $writingTotal],
+            'speaking' => ['practiced' => $speakingDone],
         ];
     }
 

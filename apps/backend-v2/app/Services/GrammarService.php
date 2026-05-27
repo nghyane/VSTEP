@@ -29,10 +29,49 @@ final class GrammarService
     {
         return GrammarPoint::query()
             ->where('is_published', true)
-            ->orderBy('category')
             ->orderBy('display_order')
-            ->with(['levels', 'tasks', 'functions'])
+            ->with(['levels', 'functions'])
             ->get();
+    }
+
+    /**
+     * @return array<string, ProfileGrammarMastery>
+     */
+    public function getMasteryMap(Profile $profile): array
+    {
+        return ProfileGrammarMastery::query()
+            ->where('profile_id', $profile->id)
+            ->get()
+            ->keyBy('grammar_point_id')
+            ->all();
+    }
+
+    /**
+     * @return array<string, int> grammar_point_id => count of active MCQ exercises
+     */
+    public function getExerciseCounts(): array
+    {
+        return GrammarExercise::query()
+            ->where('is_active', true)
+            ->where('kind', 'mcq')
+            ->selectRaw('grammar_point_id, count(*) as cnt')
+            ->groupBy('grammar_point_id')
+            ->pluck('cnt', 'grammar_point_id')
+            ->all();
+    }
+
+    /**
+     * @return array<string, int> grammar_point_id => distinct exercises answered correctly
+     */
+    public function getDistinctCorrectMap(Profile $profile): array
+    {
+        return PracticeGrammarAttempt::query()
+            ->where('profile_id', $profile->id)
+            ->where('is_correct', true)
+            ->selectRaw('grammar_point_id, count(distinct exercise_id) as cnt')
+            ->groupBy('grammar_point_id')
+            ->pluck('cnt', 'grammar_point_id')
+            ->all();
     }
 
     /**
@@ -45,7 +84,8 @@ final class GrammarService
     {
         $point->load([
             'levels', 'tasks', 'functions',
-            'structures', 'examples', 'commonMistakes', 'vstepTips', 'exercises',
+            'structures', 'examples', 'commonMistakes', 'vstepTips',
+            'exercises' => fn ($query) => $query->where('is_active', true)->where('kind', 'mcq'),
         ]);
 
         $mastery = ProfileGrammarMastery::query()
@@ -105,7 +145,13 @@ final class GrammarService
 
         $attempts = ($row?->attempts ?? 0) + 1;
         $correct = ($row?->correct ?? 0) + ($isCorrect ? 1 : 0);
-        $level = MasteryLevel::compute($attempts, $correct);
+        $distinctCorrect = PracticeGrammarAttempt::query()
+            ->where('profile_id', $profile->id)
+            ->where('grammar_point_id', $grammarPointId)
+            ->where('is_correct', true)
+            ->distinct('exercise_id')
+            ->count('exercise_id');
+        $level = MasteryLevel::compute($attempts, $correct, $distinctCorrect);
 
         ProfileGrammarMastery::query()->updateOrInsert(
             [

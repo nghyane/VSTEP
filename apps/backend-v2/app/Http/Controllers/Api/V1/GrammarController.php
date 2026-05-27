@@ -15,7 +15,6 @@ use App\Models\PracticeSession;
 use App\Services\GrammarService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Gate;
 
 final class GrammarController extends Controller
@@ -24,9 +23,25 @@ final class GrammarController extends Controller
         private readonly GrammarService $grammarService,
     ) {}
 
-    public function points(Request $request): AnonymousResourceCollection
+    public function points(Request $request): JsonResponse
     {
-        return GrammarPointResource::collection($this->grammarService->listPublishedPoints());
+        $profile = $request->profile();
+        $points = $this->grammarService->listPublishedPoints();
+        $masteryMap = $this->grammarService->getMasteryMap($profile);
+        $exerciseCounts = $this->grammarService->getExerciseCounts();
+        $distinctCorrects = $this->grammarService->getDistinctCorrectMap($profile);
+
+        $data = $points->map(function (GrammarPoint $point) use ($request, $masteryMap, $exerciseCounts, $distinctCorrects) {
+            $resource = (new GrammarPointResource($point))->resolve($request);
+            $mastery = $masteryMap[$point->id] ?? null;
+            $resource['mastery'] = $mastery ? (new GrammarMasteryResource($mastery))->resolve($request) : null;
+            $resource['exercise_count'] = $exerciseCounts[$point->id] ?? 0;
+            $resource['distinct_correct'] = $distinctCorrects[$point->id] ?? 0;
+
+            return $resource;
+        });
+
+        return response()->json(['data' => $data]);
     }
 
     public function pointDetail(Request $request, string $id): JsonResponse
@@ -64,7 +79,10 @@ final class GrammarController extends Controller
     {
         $profile = $request->profile();
         /** @var GrammarExercise $exercise */
-        $exercise = GrammarExercise::query()->findOrFail($id);
+        $exercise = GrammarExercise::query()
+            ->where('is_active', true)
+            ->where('kind', 'mcq')
+            ->findOrFail($id);
 
         $sessionId = $request->validated('session_id');
         $session = null;

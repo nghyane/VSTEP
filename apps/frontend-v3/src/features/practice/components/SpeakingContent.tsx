@@ -99,7 +99,7 @@ function ShadowingSection({
 										? { status: pct >= 100 ? "completed" : "in_progress", score: doneCount, total }
 										: undefined
 								}
-								progressLabel="đoạn"
+
 								overlay={
 									<Link
 										to="/speaking/shadowing/$lessonId"

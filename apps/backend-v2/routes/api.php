@@ -172,6 +172,7 @@ Route::prefix('v1')->group(function () {
 
         // Overview & progress.
         Route::get('/overview', [OverviewController::class, 'overview']);
+        Route::get('/practice/summary', [OverviewController::class, 'practiceSummary']);
         Route::get('/streak', [OverviewController::class, 'streak']);
         Route::post('/streak/milestones/{days}/claim', [OverviewController::class, 'claimStreakMilestone'])
             ->whereNumber('days');

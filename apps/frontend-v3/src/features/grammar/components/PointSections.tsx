@@ -1,50 +1,73 @@
 import type { GrammarPointDetail } from "#/features/grammar/types"
-import { LEVEL_COLORS, type Level } from "#/features/practice/components/LevelFilters"
-import { cn } from "#/lib/utils"
 
-function LevelTag({ level, className }: { level: string; className?: string }) {
-	const colors = LEVEL_COLORS[level.toUpperCase() as Level]
+export function PointHeader({ detail }: { detail: GrammarPointDetail }) {
+	const { point } = detail
 	return (
-		<span
-			className={cn(
-				"text-xs font-bold px-2 py-0.5 rounded-full border",
-				colors ? cn(colors.active, colors.text) : "text-primary bg-primary-tint border-transparent",
-				className,
-			)}
-		>
-			{level}
-		</span>
+		<section className="card p-6">
+			<div className="flex items-center gap-2">
+				<h2 className="font-extrabold text-xl text-foreground">{point.name}</h2>
+				{point.is_checkpoint && (
+					<span className="text-xs font-bold px-2 py-0.5 rounded-full bg-warning-tint text-warning">
+						Checkpoint
+					</span>
+				)}
+			</div>
+			{point.vietnamese_name && <p className="text-sm text-muted mt-1">{point.vietnamese_name}</p>}
+			{point.summary && <p className="text-sm text-subtle mt-2">{point.summary}</p>}
+		</section>
 	)
 }
 
-export function PointHeader({ detail }: { detail: GrammarPointDetail }) {
-	const { point, mastery } = detail
+export function LearningDesign({ point }: { point: GrammarPointDetail["point"] }) {
+	if (
+		!point.learning_objective &&
+		!point.success_criteria &&
+		!point.cefr_descriptor &&
+		!point.vstep_use_case
+	) {
+		return null
+	}
+
 	return (
-		<section className="card p-6">
-			<div className="flex items-start justify-between">
+		<section className="card p-6 space-y-4">
+			<h3 className="font-bold text-lg text-foreground">Bạn sẽ học gì?</h3>
+			{point.learning_objective && (
 				<div>
-					<h2 className="font-extrabold text-xl text-foreground">{point.name}</h2>
-					{point.vietnamese_name && <p className="text-sm text-muted mt-1">{point.vietnamese_name}</p>}
-					{point.summary && <p className="text-sm text-subtle mt-2">{point.summary}</p>}
+					<p className="text-xs font-bold uppercase text-subtle">Mục tiêu</p>
+					<p className="text-sm text-foreground mt-1">{point.learning_objective}</p>
 				</div>
-				{mastery && (
-					<div className="text-right shrink-0 ml-4">
-						<LevelTag level={mastery.computed_level} className="px-2.5 py-1" />
-						<p className="text-xs text-subtle mt-2">
-							{mastery.accuracy_percent}% · {mastery.attempts} lần
-						</p>
+			)}
+			{point.success_criteria && (
+				<div>
+					<p className="text-xs font-bold uppercase text-subtle">Khi nào được xem là đạt?</p>
+					<p className="text-sm text-foreground mt-1">{point.success_criteria}</p>
+				</div>
+			)}
+			{point.prerequisite_slugs.length > 0 && (
+				<div>
+					<p className="text-xs font-bold uppercase text-subtle">Nên học trước</p>
+					<div className="flex flex-wrap gap-1.5 mt-2">
+						{point.prerequisite_slugs.map((slug) => (
+							<span key={slug} className="text-xs text-muted bg-background px-2 py-1 rounded-full">
+								{slug}
+							</span>
+						))}
+					</div>
+				</div>
+			)}
+			<div className="grid gap-3 md:grid-cols-2">
+				{point.cefr_descriptor && (
+					<div className="rounded-(--radius-card) bg-background p-3">
+						<p className="text-xs font-bold text-subtle">Liên hệ CEFR</p>
+						<p className="text-sm text-muted mt-1">{point.cefr_descriptor}</p>
 					</div>
 				)}
-			</div>
-			<div className="flex flex-wrap gap-1.5 mt-4">
-				{point.levels.map((lv) => (
-					<LevelTag key={lv} level={lv} />
-				))}
-				{point.functions.map((f) => (
-					<span key={f} className="text-xs text-muted bg-background px-2 py-0.5 rounded-full">
-						{f}
-					</span>
-				))}
+				{point.vstep_use_case && (
+					<div className="rounded-(--radius-card) bg-background p-3">
+						<p className="text-xs font-bold text-subtle">Ứng dụng VSTEP</p>
+						<p className="text-sm text-muted mt-1">{point.vstep_use_case}</p>
+					</div>
+				)}
 			</div>
 		</section>
 	)

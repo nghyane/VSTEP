@@ -4,11 +4,21 @@ export interface GrammarPoint {
 	name: string
 	vietnamese_name: string | null
 	summary: string | null
+	learning_objective: string | null
+	success_criteria: string | null
+	prerequisite_slugs: string[]
+	cefr_descriptor: string | null
+	vstep_use_case: string | null
+	assessed_by: string[]
+	is_checkpoint: boolean
 	category: string | null
 	display_order: number
 	levels: string[]
-	tasks: string[]
+	tasks?: string[]
 	functions: string[]
+	mastery: GrammarMastery | null
+	exercise_count: number
+	distinct_correct: number
 }
 
 export interface GrammarStructure {
@@ -38,18 +48,12 @@ export interface GrammarVstepTip {
 	example: string | null
 }
 
-export type GrammarExerciseKind = "mcq" | "error_correction" | "fill_blank" | "rewrite"
-
-export type GrammarExercise =
-	| { id: string; kind: "mcq"; payload: { prompt: string; options: string[] }; display_order: number }
-	| {
-			id: string
-			kind: "error_correction"
-			payload: { sentence: string; error_start: number; error_end: number }
-			display_order: number
-	  }
-	| { id: string; kind: "fill_blank"; payload: { template: string }; display_order: number }
-	| { id: string; kind: "rewrite"; payload: { instruction: string; original: string }; display_order: number }
+export interface GrammarExercise {
+	id: string
+	kind: "mcq"
+	payload: { prompt: string; options: string[] }
+	display_order: number
+}
 
 export interface GrammarMastery {
 	attempts: number

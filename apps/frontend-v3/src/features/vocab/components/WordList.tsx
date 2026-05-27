@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { Icon } from "#/components/Icon"
 import type { FsrsState, WordWithState } from "#/features/vocab/types"
+import { useIpa } from "#/lib/phonemize"
 import { cn, speak } from "#/lib/utils"
 
 type Bucket = "new" | "learning" | "known"
@@ -90,6 +91,7 @@ interface WordRowProps {
 
 function WordRow({ word, state }: WordRowProps) {
 	const b = badge(state)
+	const ipa = useIpa(word.word, word.phonetic)
 	return (
 		<li className="bg-surface px-5 py-3.5">
 			<div className="flex items-start justify-between gap-3">
@@ -109,7 +111,7 @@ function WordRow({ word, state }: WordRowProps) {
 							</span>
 						)}
 					</div>
-					{word.phonetic && <span className="text-xs text-subtle">{word.phonetic}</span>}
+					{ipa && <span className="text-xs text-subtle">/{ipa}/</span>}
 					<p className="text-sm text-muted mt-0.5 line-clamp-2">{word.definition}</p>
 				</div>
 				<span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0", b.color)}>

@@ -19,3 +19,12 @@
   - Added 10-essay validation (5 model + 5 student, 10/10 CEFR match)
   - 293 tests passing, 0 failures
   - Updated all wiki docs to reflect current architecture
+- 2026-05-27: Created `vocab-curriculum.md` — added an idempotent Vietnamese-labelled A1-C1 matrix (6 domains, 30 topic cards, 600 English entries with Vietnamese meanings, 20 items per card).
+- 2026-05-27: Created `grammar-curriculum-audit.md` — CEFR-based audit found no A1/A2 grammar content, only 2 C1 points, no function tags, and no productive grammar exercises; documented a 30-35 point expansion baseline.
+- 2026-05-27: Implemented `GrammarCurriculumSeeder` — 30 CEFR-aligned grammar points (6 per A1-C1 level), each with tagged learning purpose, bilingual content, common errors, VSTEP tip, and all 4 supported exercise types; enabled A1 in admin validation.
+- 2026-05-27: Corrected curriculum seeder ownership — explicit reseeds now preserve admin-created publish state and learner history, calculate targeted grammar correction spans, and no longer run from container startup.
+- 2026-05-27: Added safe curriculum bootstrap — container startup installs missing A1-C1 curriculum once, legacy fixture vocab/grammar slugs become draft, and subsequent restarts preserve admin edits.
+- 2026-05-27: Replaced generated grammar filler with authored enrichment fixture — each of 30 points now has distinct supplementary examples, a second misconception, and a targeted usage tip.
+- 2026-05-27: Expanded grammar learning design — points expose objectives, success criteria, prerequisites and CEFR/VSTEP evidence; added A1-C1 checkpoints, doubled lesson exercises, and require four distinct correct exercises for mastery.
+- 2026-05-27: Fixed grammar `fill_blank` authoring — all generated fill-in exercises now show an answerable cloze context, with full-sentence correction only when the target change is deletion-only.
+- 2026-05-27: Replaced grammar input exercises with MCQ-only practice — regular lessons expose two distinct authored questions, level checkpoints expose six mixed questions, legacy rows are retired through `is_active`, and learner/admin APIs reject new text-input grammar flows.

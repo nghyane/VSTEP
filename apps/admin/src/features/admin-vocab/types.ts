@@ -4,7 +4,7 @@ export type VocabTask = "WT1" | "WT2" | "SP1" | "SP2" | "SP3" | "READ"
 
 export const VOCAB_TASKS: VocabTask[] = ["WT1", "WT2", "SP1", "SP2", "SP3", "READ"]
 
-export const VOCAB_LEVELS = ["A2", "B1", "B2", "C1"] as const
+export const VOCAB_LEVELS = ["A1", "A2", "B1", "B2", "C1"] as const
 export type VocabLevel = (typeof VOCAB_LEVELS)[number]
 
 export interface AdminVocabTopic {

@@ -65,6 +65,13 @@ class AdminGrammarPointTest extends TestCase
                 'name' => 'Past simple',
                 'vietnamese_name' => 'Quá khứ đơn',
                 'summary' => 'Used for completed actions in the past.',
+                'learning_objective' => 'Use the past simple to narrate a completed action.',
+                'success_criteria' => 'Correct four varied past-simple sentences.',
+                'prerequisite_slugs' => ['present-simple'],
+                'cefr_descriptor' => 'Can describe a completed past event.',
+                'vstep_use_case' => 'Writing Task 1 narration.',
+                'assessed_by' => ['guided-practice', 'A2-checkpoint'],
+                'is_checkpoint' => false,
                 'category' => 'foundation',
                 'levels' => ['A2', 'B1'],
                 'tasks' => ['WT1', 'SP2'],
@@ -74,6 +81,8 @@ class AdminGrammarPointTest extends TestCase
         $res->assertCreated();
         $res->assertJsonPath('data.slug', 'past-simple');
         $res->assertJsonPath('data.is_published', false);
+        $res->assertJsonPath('data.learning_objective', 'Use the past simple to narrate a completed action.');
+        $res->assertJsonPath('data.prerequisite_slugs.0', 'present-simple');
         $this->assertEqualsCanonicalizing(['A2', 'B1'], $res->json('data.levels'));
         $this->assertEqualsCanonicalizing(['WT1', 'SP2'], $res->json('data.tasks'));
         $this->assertEqualsCanonicalizing(['expressing past', 'narration'], $res->json('data.functions'));
@@ -82,6 +91,42 @@ class AdminGrammarPointTest extends TestCase
         $this->assertDatabaseCount('grammar_point_levels', 2);
         $this->assertDatabaseCount('grammar_point_tasks', 2);
         $this->assertDatabaseCount('grammar_point_functions', 2);
+    }
+
+    public function test_create_allows_a1_level(): void
+    {
+        $staff = User::factory()->create(['role' => Role::Staff]);
+
+        $token = $this->tokenFor($staff);
+        $res = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/admin/grammar/points', [
+                'slug' => 'basic-be',
+                'name' => 'Basic be',
+                'summary' => 'Simple descriptions.',
+                'category' => 'foundation',
+                'levels' => ['A1'],
+            ]);
+
+        $res->assertCreated();
+        $this->assertEqualsCanonicalizing(['A1'], $res->json('data.levels'));
+    }
+
+    public function test_create_allows_writing_category(): void
+    {
+        $staff = User::factory()->create(['role' => Role::Staff]);
+
+        $token = $this->tokenFor($staff);
+        $res = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/admin/grammar/points', [
+                'slug' => 'formal-linking',
+                'name' => 'Formal Linking',
+                'summary' => 'Link ideas in formal writing.',
+                'category' => 'writing',
+                'levels' => ['C1'],
+            ]);
+
+        $res->assertCreated();
+        $res->assertJsonPath('data.category', 'writing');
     }
 
     public function test_duplicate_slug_rejected(): void

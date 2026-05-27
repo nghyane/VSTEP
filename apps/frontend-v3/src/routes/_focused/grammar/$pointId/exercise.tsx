@@ -46,14 +46,7 @@ function GrammarExercisePage() {
 					<div className="card p-6">
 						<GrammarQuestion exercise={s.current} />
 					</div>
-					<GrammarInput
-						exercise={s.current}
-						selected={s.selected}
-						textAnswer={s.textAnswer}
-						result={s.result}
-						onSelect={s.select}
-						onText={s.setTextAnswer}
-					/>
+					<GrammarInput exercise={s.current} selected={s.selected} result={s.result} onSelect={s.select} />
 					<GrammarFeedback result={s.result} />
 					{s.result ? (
 						<button type="button" onClick={s.next} className="btn btn-primary w-full py-3.5 text-base">
@@ -62,9 +55,7 @@ function GrammarExercisePage() {
 					) : (
 						<button
 							type="button"
-							disabled={
-								s.submitting || (s.current.kind === "mcq" ? s.selected === null : !s.textAnswer.trim())
-							}
+							disabled={s.submitting || s.selected === null}
 							onClick={s.submit}
 							className="btn btn-primary w-full py-3.5 text-base disabled:opacity-50"
 						>

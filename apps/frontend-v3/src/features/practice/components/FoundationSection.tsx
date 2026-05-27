@@ -11,9 +11,9 @@ export function FoundationSection() {
 				<Link to="/luyen-tap/tu-vung" className="card-interactive p-5">
 					<div className="flex items-start gap-4">
 						<SkillIcon name="vocabulary" size="md" className="shrink-0" />
-						<div>
+						<div className="flex-1 min-w-0">
 							<h4 className="font-bold text-lg text-foreground">Từ vựng</h4>
-							<p className="text-sm text-subtle mt-0.5">Flashcard SRS · 60+ chủ đề theo level</p>
+							<p className="text-sm text-subtle mt-0.5">Flashcard SRS · 30 chủ đề theo level</p>
 						</div>
 					</div>
 				</Link>
@@ -21,9 +21,9 @@ export function FoundationSection() {
 				<Link to="/luyen-tap/ngu-phap" className="card-interactive p-5">
 					<div className="flex items-start gap-4">
 						<SkillIcon name="grammar" size="md" className="shrink-0" />
-						<div>
+						<div className="flex-1 min-w-0">
 							<h4 className="font-bold text-lg text-foreground">Ngữ pháp</h4>
-							<p className="text-sm text-subtle mt-0.5">Cấu trúc câu gắn level A2–C1</p>
+							<p className="text-sm text-subtle mt-0.5">38 điểm ngữ pháp · 3 cấp độ</p>
 						</div>
 					</div>
 				</Link>

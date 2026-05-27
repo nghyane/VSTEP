@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
     'payload',
     'explanation',
     'display_order',
+    'is_active',
 ])]
 class GrammarExercise extends BaseModel
 {
@@ -25,6 +26,7 @@ class GrammarExercise extends BaseModel
     {
         return [
             'payload' => 'array',
+            'is_active' => 'boolean',
         ];
     }
 

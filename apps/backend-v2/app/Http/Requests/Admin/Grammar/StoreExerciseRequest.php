@@ -8,11 +8,8 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /**
- * Grammar exercise discriminated union theo `kind`:
- * - mcq               → payload { prompt, options[4], correct_index }
- * - error_correction  → payload { sentence, error_start, error_end, correction }
- * - fill_blank        → payload { template, accepted_answers[] }
- * - rewrite           → payload { instruction, original, accepted_answers[] }
+ * Grammar practice uses selected answers only:
+ * - mcq → payload { prompt, options[4], correct_index }
  */
 final class StoreExerciseRequest extends FormRequest
 {
@@ -24,9 +21,10 @@ final class StoreExerciseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'kind' => ['required', Rule::in(['mcq', 'error_correction', 'fill_blank', 'rewrite'])],
+            'kind' => ['required', Rule::in(['mcq'])],
             'explanation' => ['required', 'string'],
             'display_order' => ['nullable', 'integer'],
+            'is_active' => ['nullable', 'boolean'],
             'payload' => ['required', 'array'],
 
             // mcq
@@ -35,22 +33,6 @@ final class StoreExerciseRequest extends FormRequest
             'payload.options.*' => ['required_with:payload.options', 'string'],
             'payload.correct_index' => ['required_if:kind,mcq', 'integer', 'between:0,3'],
 
-            // error_correction
-            'payload.sentence' => ['required_if:kind,error_correction', 'string'],
-            'payload.error_start' => ['required_if:kind,error_correction', 'integer', 'min:0'],
-            'payload.error_end' => ['required_if:kind,error_correction', 'integer', 'min:0'],
-            'payload.correction' => ['required_if:kind,error_correction', 'string'],
-
-            // fill_blank
-            'payload.template' => ['required_if:kind,fill_blank', 'string'],
-
-            // rewrite
-            'payload.instruction' => ['required_if:kind,rewrite', 'string'],
-            'payload.original' => ['required_if:kind,rewrite', 'string'],
-
-            // fill_blank + rewrite
-            'payload.accepted_answers' => ['required_if:kind,fill_blank,rewrite', 'array', 'min:1'],
-            'payload.accepted_answers.*' => ['string'],
         ];
     }
 }

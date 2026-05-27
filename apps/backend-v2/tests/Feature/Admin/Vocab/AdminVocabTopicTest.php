@@ -96,6 +96,23 @@ class AdminVocabTopicTest extends TestCase
         $res->assertJsonValidationErrors(['slug']);
     }
 
+    public function test_staff_can_create_a1_topic(): void
+    {
+        $staff = User::factory()->create(['role' => Role::Staff]);
+
+        $token = $this->tokenFor($staff);
+        $res = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/admin/vocab/topics', [
+                'slug' => 'family-basics',
+                'name' => 'Family basics',
+                'level' => 'A1',
+                'icon_key' => 'family',
+            ]);
+
+        $res->assertCreated();
+        $res->assertJsonPath('data.level', 'A1');
+    }
+
     public function test_update_topic_syncs_tasks(): void
     {
         $staff = User::factory()->create(['role' => Role::Staff]);

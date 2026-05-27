@@ -1,15 +1,16 @@
-export type GrammarExerciseKind = "mcq" | "error_correction" | "fill_blank" | "rewrite"
+export type GrammarExerciseKind = "mcq"
 
 export type GrammarTask = "WT1" | "WT2" | "SP1" | "SP2" | "SP3" | "READ"
 export const GRAMMAR_TASKS: GrammarTask[] = ["WT1", "WT2", "SP1", "SP2", "SP3", "READ"]
 
-export const GRAMMAR_LEVELS = ["A2", "B1", "B2", "C1"] as const
+export const GRAMMAR_LEVELS = ["A1", "A2", "B1", "B2", "C1"] as const
 export type GrammarLevel = (typeof GRAMMAR_LEVELS)[number]
 
 export const GRAMMAR_CATEGORIES = [
 	{ value: "foundation", label: "Foundation" },
 	{ value: "sentence", label: "Sentence" },
 	{ value: "task", label: "Task" },
+	{ value: "writing", label: "Writing" },
 	{ value: "error-clinic", label: "Error clinic" },
 ] as const
 export type GrammarCategory = (typeof GRAMMAR_CATEGORIES)[number]["value"]
@@ -20,6 +21,13 @@ export interface AdminGrammarPoint {
 	name: string
 	vietnamese_name: string | null
 	summary: string
+	learning_objective: string | null
+	success_criteria: string | null
+	prerequisite_slugs: string[]
+	cefr_descriptor: string | null
+	vstep_use_case: string | null
+	assessed_by: string[]
+	is_checkpoint: boolean
 	category: GrammarCategory | string
 	display_order: number
 	is_published: boolean
@@ -74,57 +82,15 @@ export interface McqPayload {
 	correct_index: number
 }
 
-export interface ErrorCorrectionPayload {
-	sentence: string
-	error_start: number
-	error_end: number
-	correction: string
+export interface AdminGrammarExercise {
+	id: string
+	grammar_point_id: string
+	display_order: number
+	explanation: string
+	is_active: boolean
+	kind: "mcq"
+	payload: McqPayload
 }
-
-export interface FillBlankPayload {
-	template: string
-	accepted_answers: string[]
-}
-
-export interface RewritePayload {
-	instruction: string
-	original: string
-	accepted_answers: string[]
-}
-
-export type AdminGrammarExercise =
-	| {
-			id: string
-			grammar_point_id: string
-			display_order: number
-			explanation: string
-			kind: "mcq"
-			payload: McqPayload
-	  }
-	| {
-			id: string
-			grammar_point_id: string
-			display_order: number
-			explanation: string
-			kind: "error_correction"
-			payload: ErrorCorrectionPayload
-	  }
-	| {
-			id: string
-			grammar_point_id: string
-			display_order: number
-			explanation: string
-			kind: "fill_blank"
-			payload: FillBlankPayload
-	  }
-	| {
-			id: string
-			grammar_point_id: string
-			display_order: number
-			explanation: string
-			kind: "rewrite"
-			payload: RewritePayload
-	  }
 
 export interface AdminGrammarPointDetail {
 	point: AdminGrammarPoint
@@ -145,7 +111,20 @@ export interface ListPointsFilters {
 
 export type PointFormInput = Pick<
 	AdminGrammarPoint,
-	"slug" | "name" | "vietnamese_name" | "summary" | "category" | "display_order" | "is_published"
+	| "slug"
+	| "name"
+	| "vietnamese_name"
+	| "summary"
+	| "learning_objective"
+	| "success_criteria"
+	| "prerequisite_slugs"
+	| "cefr_descriptor"
+	| "vstep_use_case"
+	| "assessed_by"
+	| "is_checkpoint"
+	| "category"
+	| "display_order"
+	| "is_published"
 > & {
 	levels: GrammarLevel[]
 	tasks: GrammarTask[]
@@ -164,5 +143,5 @@ export interface ExerciseFormInput {
 	kind: GrammarExerciseKind
 	explanation: string
 	display_order?: number
-	payload: McqPayload | ErrorCorrectionPayload | FillBlankPayload | RewritePayload
+	payload: McqPayload
 }

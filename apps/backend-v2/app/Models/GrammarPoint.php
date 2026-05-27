@@ -12,6 +12,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'name',
     'vietnamese_name',
     'summary',
+    'learning_objective',
+    'success_criteria',
+    'prerequisite_slugs',
+    'cefr_descriptor',
+    'vstep_use_case',
+    'assessed_by',
+    'is_checkpoint',
     'category',
     'display_order',
     'is_published',
@@ -22,6 +29,9 @@ class GrammarPoint extends BaseModel
     {
         return [
             'is_published' => 'boolean',
+            'is_checkpoint' => 'boolean',
+            'prerequisite_slugs' => 'array',
+            'assessed_by' => 'array',
         ];
     }
 
