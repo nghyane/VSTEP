@@ -80,7 +80,7 @@ Feedback: strengths, improvements, rewrites (tiếng Việt).
 L = round(C_L/35 × 10, 1)          MCQ Listening
 R = round(C_R/40 × 10, 1)          MCQ Reading
 W = round((W₁ + 2W₂)/3, 0.5)      Writing composite (ULIS-VNU paper)
-S = round(mean(5 rubric), 0.5)     Speaking LLM scoring
+S = round(mean(5 criteria), 0.5)    Speaking formula (4/5 deterministic, 1/5 LLM factor)
 
 O = round((L + R + W + S) / 4, 0.5)
 Level = O ≥ 8.5 ? C1 : O ≥ 6.0 ? B2 : O ≥ 4.0 ? B1 : Không đạt

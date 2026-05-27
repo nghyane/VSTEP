@@ -5,93 +5,79 @@ declare(strict_types=1);
 namespace Tests\Unit\Grading;
 
 use App\Ai\AiClient;
-use App\Models\GradingRubric;
 use App\Services\Grading\LlmGradingService;
-use Tests\Support\FakeAiClient;
 use Tests\TestCase;
 
 /**
- * LlmGradingService unit tests — no database, uses FakeAiClient.
- * Tests the normalization, fallback, and grading logic.
+ * LlmGradingService unit tests — no database, uses inline FakeAiClient.
+ * Tests evidence extraction, normalization, and fallback.
  */
 final class LlmGradingServiceTest extends TestCase
 {
     private LlmGradingService $grader;
 
-    private GradingRubric $rubric;
-
     protected function setUp(): void
     {
         parent::setUp();
-        $this->grader = new LlmGradingService(new FakeAiClient);
-        $this->rubric = $this->makeWritingRubric();
+        $this->grader = new LlmGradingService($this->makeFakeAi());
     }
 
-    public function test_grade_writing_returns_normalized_scores(): void
+    /** extractEvidence tra ve evidence, strengths, improvements, rewrites. */
+    public function test_extract_evidence_returns_structured_output(): void
     {
-        $result = $this->grader->gradeWriting(
-            text: 'I like reading books.',
-            promptText: 'Write about reading.',
+        $result = $this->grader->extractEvidence(
+            text: 'I like reading books because it helps me relax.',
+            promptText: 'Write about your hobby.',
+            requirements: ['State your hobby', 'Give a reason'],
             grammarErrors: [],
-            ruleAnalysis: ['metrics' => $this->fakeMetrics(), 'flags' => []],
-            rubric: $this->rubric,
+            ruleAnalysis: $this->fakeRuleAnalysis(),
         );
 
-        $this->assertArrayHasKey('rubric_scores', $result);
-        $this->assertArrayHasKey('task_fulfillment', $result['rubric_scores']);
-        $this->assertArrayHasKey('organization', $result['rubric_scores']);
-        $this->assertArrayHasKey('grammar', $result['rubric_scores']);
-        $this->assertArrayHasKey('vocabulary', $result['rubric_scores']);
-        $this->assertArrayHasKey('overall_band', $result);
-        $this->assertArrayHasKey('strengths', $result);
-        $this->assertArrayHasKey('improvements', $result);
+        $this->assertArrayHasKey('evidence', $result);
+        $this->assertArrayHasKey('task_fulfillment', $result['evidence']);
+        $this->assertArrayHasKey('points_covered', $result['evidence']['task_fulfillment']);
+        $this->assertArrayHasKey('points_required', $result['evidence']['task_fulfillment']);
+        $this->assertArrayHasKey('has_clear_position', $result['evidence']['task_fulfillment']);
+        $this->assertArrayHasKey('has_irrelevant_content', $result['evidence']['task_fulfillment']);
+        $this->assertIsArray($result['strengths']);
+        $this->assertIsArray($result['improvements']);
+        $this->assertIsArray($result['rewrites']);
     }
 
-    public function test_grade_writing_clamps_to_max_score(): void
+    /** requirements_met <= requirements_total (LLM dem chinh xac). */
+    public function test_extract_evidence_met_not_exceed_total(): void
     {
-        $result = $this->grader->gradeWriting(
-            text: 'I like reading books.',
+        $result = $this->grader->extractEvidence(
+            text: 'I like books.',
             promptText: 'Write.',
+            requirements: ['Req 1', 'Req 2'],
             grammarErrors: [],
-            ruleAnalysis: ['metrics' => $this->fakeMetrics(), 'flags' => []],
-            rubric: $this->rubric,
+            ruleAnalysis: $this->fakeRuleAnalysis(),
         );
 
-        foreach ($result['rubric_scores'] as $score) {
-            $this->assertGreaterThanOrEqual(0.0, $score);
-            $this->assertLessThanOrEqual(10.0, $score);
-        }
+        $covered = $result['evidence']['task_fulfillment']['points_covered'];
+        $required = $result['evidence']['task_fulfillment']['points_required'];
+
+        $this->assertLessThanOrEqual($required, $covered);
     }
 
-    public function test_grade_speaking_returns_normalized_result(): void
+    /** requirements_total mac dinh = count($requirements) khi LLM tra ve. */
+    public function test_extract_evidence_uses_requirement_count(): void
     {
-        $speakingRubric = $this->makeSpeakingRubric();
-        $result = $this->grader->gradeSpeaking(
-            transcript: 'I went to school today.',
-            rubric: $speakingRubric,
+        $result = $this->grader->extractEvidence(
+            text: 'Test text.',
+            promptText: 'Test prompt.',
+            requirements: ['A', 'B', 'C'],
+            grammarErrors: [],
+            ruleAnalysis: $this->fakeRuleAnalysis(),
         );
 
-        $this->assertArrayHasKey('rubric_scores', $result);
-        $this->assertArrayHasKey('overall_band', $result);
-        $this->assertArrayHasKey('strengths', $result);
-        $this->assertArrayHasKey('improvements', $result);
+        $this->assertSame(3, $result['evidence']['task_fulfillment']['points_required']);
     }
 
-    public function test_grade_speaking_passes_pronunciation_data(): void
+    /** LLM returns empty -> values fallback to 0/1/false defaults. */
+    public function test_extract_evidence_fallback_on_empty_llm_output(): void
     {
-        $speakingRubric = $this->makeSpeakingRubric();
-        $result = $this->grader->gradeSpeaking(
-            transcript: 'Hello world.',
-            rubric: $speakingRubric,
-            pronunciationData: ['accuracy_score' => 85],
-        );
-
-        $this->assertIsArray($result['rubric_scores']);
-    }
-
-    public function test_throws_on_invalid_ai_response(): void
-    {
-        // LLM returns empty → missing rubric_scores → throws
         $fakeAi = new class implements AiClient
         {
             public function toolCall(string $service, string $prompt, string $toolName, string $toolDescription, array $parametersSchema, ?string $instructions = null): array
@@ -107,62 +93,60 @@ final class LlmGradingServiceTest extends TestCase
 
         $grader = new LlmGradingService($fakeAi);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('LLM returned invalid structured output');
-        $grader->gradeSpeaking(transcript: 'test.', rubric: $this->makeSpeakingRubric());
+        $result = $grader->extractEvidence(
+            text: 'Test.',
+            promptText: 'Test.',
+            requirements: ['X'],
+            grammarErrors: [],
+            ruleAnalysis: $this->fakeRuleAnalysis(),
+        );
+
+        $this->assertSame(0, $result['evidence']['task_fulfillment']['points_covered']);
+        $this->assertSame(1, $result['evidence']['task_fulfillment']['points_required']);
+        $this->assertFalse($result['evidence']['task_fulfillment']['has_clear_position']);
+        $this->assertFalse($result['evidence']['task_fulfillment']['has_irrelevant_content']);
+        $this->assertSame([], $result['strengths']);
+        $this->assertSame([], $result['improvements']);
     }
 
-    private function makeWritingRubric(): GradingRubric
+    /** @return AiClient */
+    private function makeFakeAi(): AiClient
     {
-        return new GradingRubric([
-            'skill' => 'writing',
-            'criteria' => [
-                ['key' => 'task_fulfillment', 'name' => 'Task Fulfillment', 'max_score' => 10, 'weight' => 1.0, 'band_descriptors' => $this->fakeDescriptors()],
-                ['key' => 'organization', 'name' => 'Organization', 'max_score' => 10, 'weight' => 1.0, 'band_descriptors' => $this->fakeDescriptors()],
-                ['key' => 'grammar', 'name' => 'Grammar', 'max_score' => 10, 'weight' => 1.0, 'band_descriptors' => $this->fakeDescriptors()],
-                ['key' => 'vocabulary', 'name' => 'Vocabulary', 'max_score' => 10, 'weight' => 1.0, 'band_descriptors' => $this->fakeDescriptors()],
-            ],
-        ]);
+        return new class implements AiClient
+        {
+            public function toolCall(string $service, string $prompt, string $toolName, string $toolDescription, array $parametersSchema, ?string $instructions = null): array
+            {
+                return [
+                    'requirements_met' => 2,
+                    'requirements_total' => 3,
+                    'has_clear_position' => true,
+                    'has_irrelevant_content' => false,
+                    'strengths' => ['Tot'],
+                    'improvements' => ['Can improve'],
+                    'rewrites' => [],
+                ];
+            }
+
+            public function text(string $service, string $prompt, ?string $instructions = null): string
+            {
+                return '';
+            }
+        };
     }
 
-    private function makeSpeakingRubric(): GradingRubric
-    {
-        return new GradingRubric([
-            'skill' => 'speaking',
-            'criteria' => [
-                ['key' => 'grammar', 'name' => 'Grammar', 'max_score' => 10, 'weight' => 1.0, 'band_descriptors' => $this->fakeDescriptors()],
-                ['key' => 'vocabulary', 'name' => 'Vocabulary', 'max_score' => 10, 'weight' => 1.0, 'band_descriptors' => $this->fakeDescriptors()],
-                ['key' => 'pronunciation', 'name' => 'Pronunciation', 'max_score' => 10, 'weight' => 1.0, 'band_descriptors' => $this->fakeDescriptors()],
-                ['key' => 'fluency', 'name' => 'Fluency', 'max_score' => 10, 'weight' => 1.0, 'band_descriptors' => $this->fakeDescriptors()],
-                ['key' => 'discourse_management', 'name' => 'Discourse Management', 'max_score' => 10, 'weight' => 1.0, 'band_descriptors' => $this->fakeDescriptors()],
-            ],
-        ]);
-    }
-
-    /** @return array<string,string> */
-    private function fakeDescriptors(): array
-    {
-        return [
-            '10' => 'Excellent.',
-            '7' => 'Good.',
-            '5' => 'Adequate.',
-            '0' => 'No attempt.',
-        ];
-    }
-
-    /** @return array<string,mixed> */
-    private function fakeMetrics(): array
+    /** @return array{metrics: array<string,mixed>, syntax: null, flags: list<string>} */
+    private function fakeRuleAnalysis(): array
     {
         return [
-            'word_count' => 50,
-            'sentence_count' => 5,
-            'paragraph_count' => 2,
-            'unique_ratio' => 0.6,
-            'avg_sentence_length' => 10.0,
-            'grammar_error_count' => 1,
-            'total_error_count' => 2,
-            'errors_per_sentence' => 0.4,
-            'linking_word_count' => 2,
+            'metrics' => [
+                'word_count' => 10,
+                'sentence_count' => 2,
+                'paragraph_count' => 1,
+                'linking_word_count' => 1,
+                'unique_ratio' => 0.5,
+            ],
+            'syntax' => null,
+            'flags' => [],
         ];
     }
 }

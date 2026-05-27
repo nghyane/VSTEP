@@ -32,6 +32,49 @@ LLM extracts: requirements_met(int), requirements_total(int),
 Formula computes all scores deterministically from evidence + objective features.
 ```
 
+### LLM — detail
+
+| Property | Value |
+|----------|-------|
+| Model | deepseek-v4-flash (messages wire) |
+| Temperature | 0 (deterministic, reproducible) |
+| Timeout | 60s |
+| Role | Extract observable facts. Never score. |
+| Output schema | `requirements_met`, `requirements_total`, `has_clear_position`, `has_irrelevant_content`, `strengths[]`, `improvements[]`, `rewrites[]` |
+| Prompt template | `resources/ai/grading/writing-evidence.blade.php` |
+| Service | `LlmGradingService::extractEvidence()` |
+| Interface | `LlmGrader` (contract, FakeLlmGrader for tests) |
+
+**Callers:**
+
+| Strategy | Calls LLM? | Purpose |
+|----------|:--:|---------|
+| `WritingGradingStrategy` | Yes | Check `requirements[]` per task → task fulfillment formula |
+| `SpeakingGradingStrategy` | Exam only | Check transcript vs task prompt → contentFactor for discourse |
+| `ValidateScoring` command | Yes | End-to-end validation with real LLM |
+
+**Flow:**
+
+```
+Text/Transcript → view('ai.grading.writing-evidence')
+  → Blade template renders: text + metrics + syntax + requirements[]
+  → LLM (deepseek-v4-flash, T=0) structured tool call
+  → evidenceSchema: 4 numbers + 3 text arrays
+  → Formula reads evidence, never raw LLM output
+```
+
+**Requirements source:**
+
+| Submission type | Requirements from |
+|----------------|-------------------|
+| `exam_writing` | `ExamVersionWritingTask.requirements` (jsonb, admin-configured) |
+| `practice_writing` | `PracticeWritingPrompt.required_points` |
+| `exam_speaking` | `ExamSpeakingPart.requirements` |
+
+**Defensive design:**
+- Writing LLM fail → retry 3x, then `GradingFailedException`
+- Speaking LLM fail → contentFactor = 1.0 (no penalty, does not fail grading)
+
 ### Scoring pipeline (5 layers)
 
 | Layer | Component | Deterministic |
@@ -248,7 +291,6 @@ Tested: 3/3 identical LLM runs with same input.
 | AI config | `config/ai.php` |
 | Service bindings | `app/Providers/AppServiceProvider.php` |
 | Evidence prompt | `resources/ai/grading/writing-evidence.blade.php` |
-| Speaking prompt | `resources/ai/grading/speaking.blade.php` |
 | Validation command | `app/Console/Commands/ValidateScoring.php` |
 | Writing validation test | `tests/Feature/Validation/VstepWritingValidationTest.php` |
 | Speaking validation test | `tests/Feature/Validation/VstepSpeakingValidationTest.php` |

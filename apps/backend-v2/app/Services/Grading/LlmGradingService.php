@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace App\Services\Grading;
 
 use App\Ai\AiClient;
-use App\Models\GradingRubric;
-use Illuminate\Support\Facades\Log;
 
 /**
- * Shared LLM grading client.
+ * Shared LLM evidence extraction client.
  *
- * Prompt + schema derived from GradingRubric entity.
- * Throws on hard failure so caller (strategy) can decide retry vs fallback.
+ * LLM observes text and returns countable facts — never scores.
+ * Formula computes scores deterministically from evidence.
  */
 final class LlmGradingService implements LlmGrader
 {
@@ -20,38 +18,14 @@ final class LlmGradingService implements LlmGrader
         private readonly AiClient $ai,
     ) {}
 
-    public function gradeWriting(string $text, string $promptText, array $grammarErrors, array $ruleAnalysis, GradingRubric $rubric): array
-    {
-        $grammarErrors = array_slice($grammarErrors, 0, 10);
-
-        $prompt = view('ai.grading.writing', [
-            'promptText' => $promptText,
-            'text' => $text,
-            'wordCount' => str_word_count($text),
-            'grammarErrors' => $grammarErrors,
-            'metrics' => $ruleAnalysis['metrics'] ?? [],
-            'syntax' => $ruleAnalysis['syntax'] ?? null,
-        ])->render();
-
-        return $this->callStructured($prompt, $rubric);
-    }
-
-    public function gradeSpeaking(string $transcript, GradingRubric $rubric, ?array $pronunciationData = null): array
-    {
-        $prompt = view('ai.grading.speaking', [
-            'transcript' => $transcript,
-            'pronunciationScore' => $pronunciationData['accuracy_score'] ?? null,
-        ])->render();
-
-        return $this->callStructured($prompt, $rubric);
-    }
-
     /**
-     * Extract structured evidence from writing (not scores).
+     * Extract structured evidence from text (not scores).
      *
-     * LLM observes text and returns countable facts, not subjective scores.
-     * Formula computes scores deterministically from evidence.
+     * Called by both WritingGradingStrategy (task fulfillment)
+     * and SpeakingGradingStrategy (content relevance for exam).
      *
+     * @param  list<string>                              $requirements   Task requirements to check
+     * @param  list<array<string,mixed>>                 $grammarErrors  LanguageTool matches
      * @param  array{metrics: array<string,mixed>, syntax: array, flags: list<string>}  $ruleAnalysis
      * @return array{evidence: array, strengths: list<string>, improvements: list<array>, rewrites: list<array>}
      */
@@ -72,8 +46,6 @@ final class LlmGradingService implements LlmGrader
             'requirements' => $requirements,
         ])->render();
 
-        // The ONLY LLM input: did the student answer the task correctly?
-        // Everything else is deterministic (syntax counter, metrics, LanguageTool).
         return $this->callEvidence($prompt);
     }
 
@@ -120,7 +92,6 @@ final class LlmGradingService implements LlmGrader
             instructions: $instructions,
         );
 
-        // Map flat fields to nested evidence structure
         return [
             'evidence' => [
                 'task_fulfillment' => [
@@ -156,68 +127,6 @@ final class LlmGradingService implements LlmGrader
         ];
     }
 
-    private function callStructured(string $prompt, GradingRubric $rubric): array
-    {
-        $schema = $this->schemaFromRubric($rubric);
-        $instructions = view('ai.grading.system-instruction', ['rubric' => $rubric])->render();
-        $fallback = $this->defaultFromRubric($rubric);
-
-        $structured = $this->ai->toolCall(
-            service: 'grading',
-            prompt: $prompt,
-            toolName: "grade_{$rubric->skill}_response",
-            toolDescription: "Submit the grading result for a VSTEP {$rubric->skill} assessment. Call this function once with the complete evaluation.",
-            parametersSchema: $schema,
-            instructions: $instructions,
-        );
-
-        if (! isset($structured['rubric_scores'])) {
-            Log::warning('LLM grading: invalid structured output', [
-                'response_keys' => array_keys($structured),
-            ]);
-
-            throw new \RuntimeException('LLM returned invalid structured output');
-        }
-
-        return $this->normalize(array_merge($fallback, $structured), $rubric);
-    }
-
-    /**
-     * @param  array<string,mixed>  $result
-     * @return array<string,mixed>
-     */
-    private function normalize(array $result, GradingRubric $rubric): array
-    {
-        $rubricScores = is_array($result['rubric_scores'] ?? null) ? $result['rubric_scores'] : [];
-        $maxScoreMap = [];
-        foreach ($rubric->criteria as $criterion) {
-            $maxScoreMap[$criterion['key']] = (float) $criterion['max_score'];
-        }
-
-        // Clamp each score to [0, max_score] for that criterion.
-        $clamped = [];
-        foreach ($maxScoreMap as $key => $max) {
-            $value = $rubricScores[$key] ?? ($max / 2);
-            $clamped[$key] = is_numeric($value)
-                ? max(0.0, min($max, (float) $value))
-                : $max / 2;
-        }
-
-        $result['rubric_scores'] = $clamped;
-        $result['overall_band'] = is_numeric($result['overall_band'] ?? null)
-            ? (float) $result['overall_band']
-            : 5.0;
-        $result['strengths'] = array_values(array_filter(
-            (array) ($result['strengths'] ?? []),
-            fn ($item) => is_string($item) && $item !== '',
-        ));
-        $result['rewrites'] = array_values(is_array($result['rewrites'] ?? null) ? $result['rewrites'] : []);
-        $result['annotations'] = array_values(is_array($result['annotations'] ?? null) ? $result['annotations'] : []);
-        $result['improvements'] = $this->normalizeImprovements($result['improvements'] ?? []);
-
-        return $result;
-    }
-
     /**
      * @return list<array{message:string,explanation:string}>
      */
@@ -232,66 +141,12 @@ final class LlmGradingService implements LlmGrader
 
             if (is_array($item)) {
                 return [
-                    'message' => (string) ($item['message'] ?? $item['explanation'] ?? 'Needs improvement'),
-                    'explanation' => (string) ($item['explanation'] ?? $item['message'] ?? 'Needs improvement'),
+                    'message' => (string) ($item['message'] ?? $item['explanation'] ?? ''),
+                    'explanation' => (string) ($item['explanation'] ?? $item['message'] ?? ''),
                 ];
             }
 
-            return ['message' => 'Needs improvement', 'explanation' => 'Needs improvement'];
+            return ['message' => '', 'explanation' => ''];
         }, $items));
-    }
-
-    /** @return array<string,mixed> */
-    private function schemaFromRubric(GradingRubric $rubric): array
-    {
-        return [
-            'rubric_scores' => $rubric->toRubricScoresSchema(),
-            'overall_band' => ['type' => 'number'],
-            'strengths' => ['type' => 'array', 'items' => ['type' => 'string']],
-            'improvements' => [
-                'type' => 'array',
-                'items' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'message' => ['type' => 'string'],
-                        'explanation' => ['type' => 'string'],
-                    ],
-                    'required' => ['message', 'explanation'],
-                    'additionalProperties' => false,
-                ],
-            ],
-            'rewrites' => [
-                'type' => 'array',
-                'items' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'original' => ['type' => 'string'],
-                        'improved' => ['type' => 'string'],
-                        'reason' => ['type' => 'string'],
-                    ],
-                    'required' => ['original', 'improved', 'reason'],
-                    'additionalProperties' => false,
-                ],
-            ],
-            'annotations' => ['type' => 'array', 'items' => ['type' => 'string']],
-        ];
-    }
-
-    /** @return array<string,mixed> */
-    private function defaultFromRubric(GradingRubric $rubric): array
-    {
-        $scores = [];
-        foreach ($rubric->criteria as $criterion) {
-            $scores[$criterion['key']] = (float) $criterion['max_score'] / 2;
-        }
-
-        return [
-            'rubric_scores' => $scores,
-            'overall_band' => 5.0,
-            'strengths' => [],
-            'improvements' => [],
-            'rewrites' => [],
-            'annotations' => [],
-        ];
     }
 }
