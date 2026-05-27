@@ -90,8 +90,7 @@ final class WritingPracticeService
 
             $this->sessionService->complete($locked);
 
-            // Enqueue inside transaction — GradingService defers dispatch
-            // to DB::afterCommit, ensuring submission row is visible to worker.
+            // Enqueue inside transaction — defer dispatch to DB::afterCommit
             $this->gradingService->enqueue('practice_writing', $submission->id);
 
             return $submission;
@@ -104,7 +103,7 @@ final class WritingPracticeService
     {
         return PracticeWritingSubmission::query()
             ->where('profile_id', $profile->id)
-            ->with(['prompt:id,slug,title,part'])
+            ->with(['prompt:id,slug,title,part', 'activeGradingResult'])
             ->when($part !== null, fn ($q) => $q->whereHas(
                 'prompt', fn ($q) => $q->where('part', $part),
             ))

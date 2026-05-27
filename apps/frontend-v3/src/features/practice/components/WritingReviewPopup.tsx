@@ -4,16 +4,10 @@ import { Icon } from "#/components/Icon"
 import { FeedbackSection, RewriteSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
 import { writingGradingQuery } from "#/features/grading/queries"
+import type { RubricCriteriaMeta } from "#/features/grading/types"
 import { round } from "#/lib/utils"
 
 const COLOR = "var(--color-skill-writing)"
-
-const RUBRIC_LABELS: Record<string, string> = {
-	task_achievement: "Task Achievement",
-	coherence: "Coherence & Cohesion",
-	lexical: "Lexical Resource",
-	grammar: "Grammar Range & Accuracy",
-}
 
 interface Props {
 	submissionId: string
@@ -26,6 +20,11 @@ export function WritingReviewPopup({ submissionId, onClose }: Props) {
 		refetchInterval: (query) => (query.state.data?.data ? false : 3000),
 	})
 	const result = data?.data
+	const criteria = (data?.rubric?.criteria ?? []) as RubricCriteriaMeta[]
+
+	function label(key: string): string {
+		return criteria.find((c) => c.key === key)?.label ?? key
+	}
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
@@ -75,7 +74,7 @@ export function WritingReviewPopup({ submissionId, onClose }: Props) {
 
 						<div className="space-y-2">
 							{Object.entries(result.rubric_scores).map(([key, score]) => (
-								<RubricBar key={key} label={RUBRIC_LABELS[key] ?? key} score={score} max={4} color={COLOR} />
+								<RubricBar key={key} label={label(key)} score={score} max={10} color={COLOR} />
 							))}
 						</div>
 

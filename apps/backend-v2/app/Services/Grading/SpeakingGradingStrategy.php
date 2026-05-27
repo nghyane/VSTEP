@@ -45,7 +45,7 @@ final class SpeakingGradingStrategy implements GradingStrategy
         };
     }
 
-    public function grade(Model $submission): GradingResultData
+    public function grade(Model $submission, GradingJob $job): GradingResultData
     {
         $audioUrl = (string) ($submission->audio_url ?? '');
         if ($audioUrl === '') {

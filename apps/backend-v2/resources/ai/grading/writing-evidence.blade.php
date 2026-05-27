@@ -32,17 +32,36 @@ Types found: {{ implode(', ', $syntax['types']) }} ({{ $syntax['count'] }} total
 == TASK REQUIREMENTS ==
 {{ $promptText }}
 
-== REQUIREMENTS TO CHECK ==
+@if(count($requirements) > 0)
+== SPECIFIC REQUIREMENTS TO CHECK ==
 @foreach($requirements as $i => $req)
 {{ $i + 1 }}. {{ $req }}
 @endforeach
 
-Count how many of the {{ count($requirements) }} requirements above the student ACTUALLY addressed.
-Set requirements_total = {{ count($requirements) }}
-Set requirements_met = number fulfilled.
+For EACH requirement above, assign a completion score:
+- 1.0 = FULLY addressed with explanation, examples, or details
+- 0.5 = PARTIALLY addressed (mentioned but not developed, or vague)
+- 0.0 = NOT addressed at all
+
+Sum the scores: requirements_met = total of all requirement scores (can be a decimal like 1.5, 2.0, 2.5, etc.)
+requirements_total = {{ count($requirements) }} (one point available per requirement)
+
+@else
+== REQUIREMENT ANALYSIS ==
+No specific requirements are listed. Infer 3-5 key expectations from the task description above.
+Score each the same way (1.0/0.5/0.0).
+requirements_total = number of key expectations you identified
+requirements_met = your summed score (decimal allowed)
+
+@endif
 
 Also determine:
-- has_clear_position: does the student have a clear stance/opinion?
-- has_irrelevant_content: is there off-topic content?
+- has_clear_position:
+@if($part === 1)
+  TRUE if the letter clearly expresses its core purpose (apology, complaint, invitation, request, etc.) and supports it with details. Mere mention without detail is FALSE.
+@else
+  TRUE only if the student clearly states an opinion/stance AND supports it with reasoning or evidence. Mere mention without support is FALSE.
+@endif
+- has_irrelevant_content: TRUE only if there is genuinely off-topic or unrelated content.
 
-Be precise. Only count what is actually present in the text.
+Be precise. Do NOT inflate scores. A partially addressed requirement is 0.5, not 1.0.

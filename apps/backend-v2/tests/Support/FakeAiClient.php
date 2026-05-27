@@ -17,21 +17,15 @@ final class FakeAiClient implements AiClient
         if (str_starts_with($toolName, 'extract')) {
             return $this->fakeEvidenceResponse();
         }
+        if ($toolName === 'generate_ipa') {
+            return ['ipa' => 'hɛˈloʊ wɜːrld'];
+        }
 
         return match ($service) {
             'grading' => $this->fakeGradingResponse(),
             'conversation' => $this->fakeConversationResponse($prompt),
             'pronunciation' => $this->fakePronunciationResponse(),
             default => [],
-        };
-    }
-
-    public function text(string $service, string $prompt, ?string $instructions = null): string
-    {
-        return match ($service) {
-            'conversation' => json_encode($this->fakeConversationResponse($prompt)),
-            'pronunciation' => $this->fakePronunciationText($prompt),
-            default => 'fake response',
         };
     }
 
@@ -100,14 +94,5 @@ final class FakeAiClient implements AiClient
             'intonation' => 'Ngữ điệu ổn',
             'tip' => 'Tiếp tục luyện tập',
         ];
-    }
-
-    private function fakePronunciationText(string $prompt): string
-    {
-        if (str_contains($prompt, 'IPA phonetic transcription')) {
-            return 'hɛˈloʊ wɜːrld';
-        }
-
-        return json_encode($this->fakePronunciationResponse());
     }
 }
