@@ -23,7 +23,7 @@ LLM extracts evidence — never scores. Formula reads rubric params from DB.
 | Strategy | `supports()` | Layers |
 |----------|-------------|--------|
 | `WritingGradingStrategy` | `practice_writing`, `exam_writing` | LanguageTool → Metrics+Syntax → LLM Evidence → Formula → Penalty |
-| `SpeakingGradingStrategy` | `practice_speaking`, `exam_speaking` | STT → Metrics+Syntax → Formula (5 criteria, all deterministic) |
+| `SpeakingGradingStrategy` | `practice_speaking`, `exam_speaking` | STT → Metrics+Syntax → [Exam: LLM Evidence] → Formula (5 criteria) |
 
 ## Writing Pipeline (5 layers)
 
@@ -58,17 +58,30 @@ LLM extracts evidence — never scores. Formula reads rubric params from DB.
 ## Speaking Pipeline
 
 ### Layer 1: STT
-- Interface: `SpeechToText` → `{text, confidence}`.
-- Pronunciation: LLM scores from transcript + STT confidence as context.
+- Interface: `SpeechToText` → `{text, confidence, speaking_rate, pause_count, pronunciation}`.
+- Azure Speech (primary): text + word timing + pauses + pronunciation assessment (mandatory).
+- No fallback — pronunciation assessment missing → `GradingFailedException`.
 - File: `app/Services/SpeechToText.php`
 
-### Layer 2: LLM Scoring
-- 5 criteria: grammar, vocabulary, pronunciation, fluency, discourse_management.
-- `computeOverallBand()` → `round(mean(5), 0.5)`.
-- File: `app/Services/Grading/LlmGradingService.php`
+### Layer 2: Metrics + Syntax
+- Same as writing: `SyntaxAnalyzer` (10 structure types) + `RuleBasedScoringService` (word/sentence counts, unique_ratio, linking words, sentence_variety).
+- Files: `app/Services/SyntaxAnalyzer.php`, `app/Services/RuleBasedScoringService.php`
 
-### Layer 3: Overall band
-- Formula from `GradingRubric::computeOverallBand()`.
+### Layer 3: LLM Evidence (Exam only)
+- **Exam submissions only**: LLM checks transcript against task prompt + `ExamSpeakingPart.requirements`.
+- Extracts: `points_covered`, `points_required` → contentFactor (0.5-1.0).
+- Practice submissions skip this layer (contentFactor = 1.0).
+- LLM failure falls back to 1.0 (defensive, does not fail grading).
+- Files: `app/Services/Grading/SpeakingGradingStrategy.php` (`checkContentRelevance`)
+
+### Layer 4: Formula
+- `SpeakingScoringFormula`: reads params from `GradingRubric.criteria[].params` (v4).
+- 5 formulas: grammar, vocabulary, fluency, discourse_management, pronunciation.
+- Discourse: structural score × contentFactor (from Layer 3 for exam).
+- File: `app/Services/Grading/SpeakingScoringFormula.php`
+
+### Layer 5: Overall band
+- `GradingRubric::computeOverallBand()` → `round(mean(5), 0.5)`.
 
 ## Rubric (v4)
 

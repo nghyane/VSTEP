@@ -176,12 +176,12 @@ final class ValidateScoring extends Command
         $this->info('  SPEAKING VALIDATION');
         $this->line(str_repeat('═', 100));
         $this->newLine();
-        $this->line('  Speaking grading: 5 criteria, all deterministic (no LLM).');
+        $this->line('  Speaking grading: 4/5 criteria fully deterministic.');
         $this->line('  Grammar: SyntaxAnalyzer on transcript.');
         $this->line('  Vocabulary: unique_ratio + word_length on transcript.');
         $this->line('  Fluency: Azure word timing (speaking rate + pause count).');
-        $this->line('  Discourse: linking words + sentence variety on transcript.');
-        $this->line('  Pronunciation: Azure Pronunciation Assessment or STT confidence fallback.');
+        $this->line('  Discourse: linking words + sentence variety × contentFactor (LLM for exam).');
+        $this->line('  Pronunciation: Azure Pronunciation Assessment (mandatory, no fallback).');
         $this->newLine();
         $this->line('  Tests: 303 passed (incl. 3 speaking pipeline + 7 formula unit tests).');
         $this->line('  Run: php artisan test --filter=Speaking');

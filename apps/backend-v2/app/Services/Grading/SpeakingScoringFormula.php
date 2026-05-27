@@ -9,8 +9,8 @@ use App\Models\GradingRubric;
 /**
  * Deterministic speaking scoring formulas driven by rubric params.
  *
- * 4/5 criteria are deterministic (grammar, vocabulary, fluency, discourse).
- * Pronunciation uses LLM scoring (the only subjective criterion).
+ * Grammar, vocabulary, fluency, pronunciation: fully deterministic.
+ * Discourse: structural score may be modulated by LLM content factor (exam only).
  * All thresholds from rubric params — configurable without code change.
  */
 final class SpeakingScoringFormula

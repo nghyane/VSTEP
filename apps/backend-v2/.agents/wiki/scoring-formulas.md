@@ -118,6 +118,7 @@ Source: ULIS-VNU (VNU J. Foreign Studies, 2018).
 ```
 Audio → Azure STT (text, confidence, word timing, pauses)
   → SyntaxAnalyzer + RuleBasedScoring
+  → [Exam only] LLM Evidence (content relevance check)
   → SpeakingScoringFormula (5 criteria)
 ```
 
@@ -128,20 +129,33 @@ Audio → Azure STT (text, confidence, word timing, pauses)
 | Grammar | ✅ | SyntaxAnalyzer on transcript |
 | Vocabulary | ✅ | unique_ratio + word_length + readability + complex_vocab |
 | Fluency | ✅ | Azure word timing (speaking_rate, pause_count) |
-| Discourse | ✅ | linking_words + sentence_variety |
-| Pronunciation | ✅ | Azure PA overall score or STT confidence × 10 |
+| Discourse | ⚠️ | linking_words + sentence_variety × contentFactor (LLM for exam) |
+| Pronunciation | ✅ | Azure Pronunciation Assessment overall score |
 
 ### STT
 
 | Provider | Interface | Features |
 |----------|-----------|----------|
-| Azure Speech (primary) | `SpeechToText` | text, confidence, word timing, pauses, pronunciation assessment |
-| Fallback | `SpeechToText` | STT confidence × 10 for pronunciation |
+| Azure Speech (primary) | `SpeechToText` | text, confidence, word timing, pauses, **pronunciation assessment (required)** |
 
-All 5 criteria deterministic. 0 LLM for speaking.
+Pronunciation assessment là mandatory — nếu Azure không trả về PA score → `GradingFailedException`.
+
+4/5 criteria fully deterministic. Discourse uses LLM content relevance check for exam submissions (practice defaults to 1.0).
+Grammar, vocabulary, fluency, pronunciation: no LLM.
 
 - Azure key not configured → `GradingFailedException("AZURE_SPEECH_KEY not configured")`
 - STT returns null → `GradingFailedException("Audio corrupted or Azure unavailable")`
+
+### Content Relevance (Exam only)
+
+For exam submissions, LLM checks transcript against task prompt + `part.requirements`.
+Returns `contentFactor = 0.5 + (points_covered / points_required) × 0.5`, range [0.5, 1.0].
+
+$$D = \text{clampRound}((\text{base} + B_l + B_v) \times \max(0.5, \text{contentFactor}))$$
+
+- Practice submissions: contentFactor = 1.0 (no LLM call)
+- Exam submissions with no task requirements: contentFactor = 1.0 (graceful skip)
+- LLM failure: falls back to 1.0 (defensive, does not fail grading)
 
 ---
 

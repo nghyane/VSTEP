@@ -70,8 +70,16 @@ final class SpeakingGradingStrategy implements GradingStrategy
 
         $azurePron = $sttResult['pronunciation'] ?? null;
 
+        if ($azurePron === null || ! isset($azurePron['overall'])) {
+            throw new GradingFailedException(
+                'Azure Pronunciation Assessment not available. Ensure AZURE_SPEECH_KEY has pronunciation assessment enabled.',
+            );
+        }
+
         // Content relevance: LLM checks transcript against task prompt + requirements
         $contentFactor = $this->checkContentRelevance($transcript, $submission);
+
+        $pronunciationScore = (float) $azurePron['overall'];
 
         $scores = [
             'grammar' => $this->formula->grammar($syntaxAnalysis, 0, $metrics['sentence_count']),
@@ -82,9 +90,7 @@ final class SpeakingGradingStrategy implements GradingStrategy
                 (float) ($metrics['sentence_variety'] ?? 0),
                 $contentFactor,
             ),
-            'pronunciation' => $this->formula->pronunciation(
-                $azurePron['overall'] ?? ($sttConfidence * 10),
-            ),
+            'pronunciation' => $this->formula->pronunciation($pronunciationScore),
         ];
 
         return new SpeakingGradingData(
@@ -93,7 +99,7 @@ final class SpeakingGradingStrategy implements GradingStrategy
             strengths: [],
             improvements: $this->sttQualityNote($sttConfidence),
             transcript: $transcript,
-            pronunciationReport: ['accuracy_score' => round($sttConfidence * 10, 1)],
+            pronunciationReport: ['accuracy_score' => round($pronunciationScore, 1)],
             rubricId: $rubric->id,
         );
     }
