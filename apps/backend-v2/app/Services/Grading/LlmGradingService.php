@@ -104,8 +104,8 @@ final class LlmGradingService implements LlmGrader
             toolName: 'generate_writing_feedback',
             toolDescription: 'Generate personalized feedback for the student writing.',
             parametersSchema: $schema,
-            instructions: "You are a VSTEP writing coach. Write feedback in Vietnamese. "
-                ."Strengths: what they did well. Improvements: what to fix (one per line). Rewrites: corrected versions of problem sentences.",
+            instructions: "You are a VSTEP writing coach. Strengths and improvements in Vietnamese. "
+                ."Rewrites: show improved English version (do NOT translate), format as 'Original: ... → Improved: ...'.",
         );
 
         return [

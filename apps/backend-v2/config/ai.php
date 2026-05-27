@@ -17,6 +17,10 @@ return [
             'url' => env('PACKY_URL', 'https://www.packyapi.com'),
             'key' => env('PACKY_API_KEY', ''),
         ],
+        'groq' => [
+            'url' => 'https://api.groq.com/openai',
+            'key' => env('GROQ_API_KEY', ''),
+        ],
         'openrouter' => [
             'url' => env('OPENROUTER_URL', 'https://openrouter.ai/api'),
             'key' => env('OPENROUTER_API_KEY', ''),
@@ -35,29 +39,11 @@ return [
     | Each model declares: connection + wire format + model ID.
     | Wire format is a property of the model, not the service.
     |
-    | Supported wires: responses, chat, messages
+    | Supported wires: messages (Anthropic Messages API)
     |
     */
 
     'models' => [
-        'gpt-5-4' => [
-            'connection' => 'packy',
-            'wire' => 'responses',
-            'id' => 'gpt-5.4',
-            'thinking' => 'none',
-        ],
-        'gpt-5-4-mini' => [
-            'connection' => 'packy',
-            'wire' => 'responses',
-            'id' => 'gpt-5.4-mini',
-            'thinking' => 'none',
-        ],
-        'gpt-4o' => [
-            'connection' => 'packy',
-            'wire' => 'responses',
-            'id' => 'gpt-4o',
-            'thinking' => 'none',
-        ],
         'deepseek-v4-pro' => [
             'connection' => 'packy',
             'wire' => 'messages',
@@ -70,10 +56,16 @@ return [
             'id' => 'deepseek-v4-flash',
             'thinking' => 'none',
         ],
-        'claude-sonnet' => [
+        'claude-haiku-4-5' => [
             'connection' => 'packy',
             'wire' => 'messages',
-            'id' => 'claude-sonnet-4-20250514',
+            'id' => 'claude-haiku-4-5-20251001',
+            'thinking' => 'none',
+        ],
+        'qwen3-32b' => [
+            'connection' => 'groq',
+            'wire' => 'chat',
+            'id' => 'qwen/qwen3-32b',
             'thinking' => 'none',
         ],
     ],
@@ -95,11 +87,11 @@ return [
             'temperature' => 0.0,
         ],
         'conversation' => [
-            'model' => env('AI_CONVERSATION_MODEL', 'gpt-5-4-mini'),
+            'model' => env('AI_CONVERSATION_MODEL', 'deepseek-v4-flash'),
             'timeout' => 30,
         ],
         'pronunciation' => [
-            'model' => env('AI_PRONUNCIATION_MODEL', 'gpt-5-4-mini'),
+            'model' => env('AI_PRONUNCIATION_MODEL', 'deepseek-v4-flash'),
             'timeout' => 30,
         ],
     ],

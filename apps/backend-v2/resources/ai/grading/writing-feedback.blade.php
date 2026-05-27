@@ -36,8 +36,11 @@ Focus on task completion, basic accuracy, simple but correct language.
 @endif
 
 == TASK ==
-Generate 3-5 strengths, 3-5 improvements, and 0-3 rewrites in VIETNAMESE.
-- Strengths: what the student did well (concrete, specific).
-- Improvements: what to fix or do better (actionable, specific).
-- Rewrites: corrected versions of problem sentences (original + improved).
-Keep each item concise (1-2 sentences max).
+Generate feedback in Vietnamese for strengths and improvements.
+For rewrites: show the improved English version of the student sentences. Keep the original English text intact — do NOT translate to Vietnamese.
+Format each rewrite as: "Original: [student text] → Improved: [corrected English]"
+
+- Strengths (3-5 items): what the student did well (Vietnamese)
+- Improvements (3-5 items): what to fix (Vietnamese)
+- Rewrites (0-3 items): corrected English versions of problem sentences
+Keep each item concise.
