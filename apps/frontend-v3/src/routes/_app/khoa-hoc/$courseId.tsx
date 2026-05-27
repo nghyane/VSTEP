@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
 import { Header } from "#/components/Header"
 import { Icon, type IconName, StaticIcon } from "#/components/Icon"
+import { SupportFab } from "#/components/SupportFab"
 import { EnrollDialog } from "#/features/course/components/EnrollDialog"
 import { courseDetailQuery } from "#/features/course/queries"
 import {
@@ -89,6 +90,7 @@ function CourseDetailPage() {
 
 				<CommitmentsCard />
 			</div>
+			<SupportFab />
 		</>
 	)
 }
