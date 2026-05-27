@@ -6,6 +6,7 @@ namespace App\Services\Admin;
 
 use App\Enums\LeaveRequestStatus;
 use App\Enums\SlotStatus;
+use App\Models\CourseScheduleItem;
 use App\Models\TeacherBooking;
 use App\Models\TeacherLeaveRequest;
 use App\Models\TeacherSlot;
@@ -51,6 +52,24 @@ final class TeacherDashboardService
         }
 
         return $query->paginate(50);
+    }
+
+    public function scheduleItems(User $teacher, ?string $from, ?string $to): LengthAwarePaginator
+    {
+        $query = CourseScheduleItem::query()
+            ->whereHas('course', fn ($q) => $q->where('teacher_id', $teacher->id))
+            ->with('course:id,title,livestream_url')
+            ->orderBy('date')
+            ->orderBy('start_time');
+
+        if ($from) {
+            $query->whereDate('date', '>=', Carbon::parse($from)->toDateString());
+        }
+        if ($to) {
+            $query->whereDate('date', '<=', Carbon::parse($to)->toDateString());
+        }
+
+        return $query->paginate(100);
     }
 
     public function bookings(User $teacher, ?string $status): LengthAwarePaginator

@@ -518,20 +518,22 @@ Route::prefix('v1')->group(function () {
 
     });
 
-    // Teacher+ routes (role >= teacher) — shared endpoints accessible by teacher, staff, admin
+    // Teacher+ notifications for the admin shell.
     Route::middleware(['auth:api', 'role:teacher'])->prefix('admin')->group(function () {
         Route::prefix('notifications')->group(function () {
             Route::get('/', [Admin\AdminNotificationController::class, 'index']);
             Route::get('/unread-count', [Admin\AdminNotificationController::class, 'unreadCount']);
             Route::post('/mark-all-read', [Admin\AdminNotificationController::class, 'markAllRead']);
         });
+    });
 
-        Route::prefix('teacher')->group(function () {
-            Route::get('/dashboard', [Admin\TeacherController::class, 'dashboard']);
-            Route::get('/slots', [Admin\TeacherController::class, 'slots']);
-            Route::get('/bookings', [Admin\TeacherController::class, 'bookings']);
-            Route::get('/leave-requests', [Admin\TeacherController::class, 'leaveRequests']);
-            Route::post('/leave-requests', [Admin\TeacherController::class, 'storeLeaveRequest']);
-        });
+    // Teacher role APIs.
+    Route::middleware(['auth:api', 'role:teacher'])->prefix('teacher')->group(function () {
+        Route::get('/dashboard', [Admin\TeacherController::class, 'dashboard']);
+        Route::get('/schedule-items', [Admin\TeacherController::class, 'scheduleItems']);
+        Route::get('/slots', [Admin\TeacherController::class, 'slots']);
+        Route::get('/bookings', [Admin\TeacherController::class, 'bookings']);
+        Route::get('/leave-requests', [Admin\TeacherController::class, 'leaveRequests']);
+        Route::post('/leave-requests', [Admin\TeacherController::class, 'storeLeaveRequest']);
     });
 });

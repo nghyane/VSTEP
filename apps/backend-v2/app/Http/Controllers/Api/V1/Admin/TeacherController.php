@@ -6,9 +6,11 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Teacher\StoreLeaveRequestRequest;
+use App\Http\Resources\Admin\TeacherScheduleItemResource;
 use App\Services\Admin\TeacherDashboardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 final class TeacherController extends Controller
 {
@@ -30,6 +32,17 @@ final class TeacherController extends Controller
         );
 
         return response()->json(['data' => $paginator]);
+    }
+
+    public function scheduleItems(Request $request): AnonymousResourceCollection
+    {
+        return TeacherScheduleItemResource::collection(
+            $this->service->scheduleItems(
+                $request->user(),
+                $request->input('from'),
+                $request->input('to'),
+            ),
+        );
     }
 
     public function bookings(Request $request): JsonResponse
