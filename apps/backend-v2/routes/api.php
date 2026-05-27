@@ -513,5 +513,12 @@ Route::prefix('v1')->group(function () {
             Route::post('/{id}/publish', [Admin\SpeakingScenarioController::class, 'publish'])->whereUuid('id');
             Route::post('/{id}/unpublish', [Admin\SpeakingScenarioController::class, 'unpublish'])->whereUuid('id');
         });
+
+        // Admin notifications — thông báo cho admin/teacher
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [Admin\AdminNotificationController::class, 'index']);
+            Route::get('/unread-count', [Admin\AdminNotificationController::class, 'unreadCount']);
+            Route::post('/mark-all-read', [Admin\AdminNotificationController::class, 'markAllRead']);
+        });
     });
 });
