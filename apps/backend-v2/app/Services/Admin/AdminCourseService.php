@@ -41,7 +41,7 @@ final class AdminCourseService
     {
         $query = Course::query()
             ->with('teacher:id,full_name,email')
-            ->withCount(['enrollments', 'scheduleItems']);
+            ->withCount(['enrollments', 'scheduleItems', 'enrollmentOrders']);
 
         if (! empty($filters['q'])) {
             $term = '%'.$filters['q'].'%';
@@ -110,8 +110,9 @@ final class AdminCourseService
             ]);
         }
         if (CourseEnrollmentOrder::query()->where('course_id', $course->id)->exists()) {
+            $orderCount = CourseEnrollmentOrder::query()->where('course_id', $course->id)->count();
             throw ValidationException::withMessages([
-                'course' => ['Không thể xóa khóa học còn đơn mua tồn tại.'],
+                'course' => ["Không thể xóa khóa học còn {$orderCount} đơn mua tồn tại."],
             ]);
         }
 
@@ -195,9 +196,14 @@ final class AdminCourseService
         $this->booking->deleteSlot($slot);
     }
 
-    public function listBookings(Course $course): Builder
-    {
-        return $this->booking->listBookings($course);
+    public function listBookings(
+        Course $course,
+        ?string $status = null,
+        ?string $search = null,
+        string $sort = 'booked_at',
+        string $direction = 'desc',
+    ): Builder {
+        return $this->booking->listBookings($course, $status, $search, $sort, $direction);
     }
 
     public function updateBookingMeetUrl(TeacherBooking $booking, ?string $meetUrl): TeacherBooking
