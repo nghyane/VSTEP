@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -17,7 +16,7 @@ use Illuminate\Support\Str;
  *
  * Env: LANGUAGETOOL_URL (default http://localhost:8081)
  */
-final class LanguageToolService
+class LanguageToolService
 {
     private function baseUrl(): string
     {
@@ -28,46 +27,43 @@ final class LanguageToolService
      * Check text for grammar/spelling/style errors.
      *
      * @return array<int, array{offset: int, length: int, message: string, category: string, rule_id: string, replacements: string[]}>
+     *
+     * @throws \RuntimeException if LanguageTool is unreachable
      */
     public function check(string $text, string $language = 'en-US'): array
     {
         $url = $this->baseUrl().'/v2/check';
 
-        try {
-            $response = Http::asForm()
-                ->timeout(10)
-                ->post($url, [
-                    'text' => $text,
-                    'language' => $language,
-                    'enabledOnly' => 'false',
-                ]);
+        $response = Http::asForm()
+            ->timeout(10)
+            ->connectTimeout(3)
+            ->post($url, [
+                'text' => $text,
+                'language' => $language,
+                'enabledOnly' => 'false',
+            ]);
 
-            if (! $response->successful()) {
-                Log::warning('LanguageTool check failed', ['status' => $response->status()]);
-
-                return [];
-            }
-
-            $data = $response->json();
-            $matches = $data['matches'] ?? [];
-
-            return array_map(fn (array $match) => [
-                'offset' => (int) $match['offset'],
-                'length' => (int) $match['length'],
-                'message' => $match['message'] ?? '',
-                'category' => $match['rule']['category']['name'] ?? 'Unknown',
-                'rule_id' => $match['rule']['id'] ?? '',
-                'replacements' => array_slice(
-                    array_map(fn ($r) => $r['value'], $match['replacements'] ?? []),
-                    0,
-                    3,
-                ),
-            ], $matches);
-        } catch (\Throwable $e) {
-            Log::warning('LanguageTool unavailable', ['error' => $e->getMessage()]);
-
-            return [];
+        if (! $response->successful()) {
+            throw new \RuntimeException(
+                "LanguageTool returned HTTP {$response->status()}",
+            );
         }
+
+        $data = $response->json();
+        $matches = $data['matches'] ?? [];
+
+        return array_map(fn (array $match) => [
+            'offset' => (int) $match['offset'],
+            'length' => (int) $match['length'],
+            'message' => $match['message'] ?? '',
+            'category' => $match['rule']['category']['name'] ?? 'Unknown',
+            'rule_id' => $match['rule']['id'] ?? '',
+            'replacements' => array_slice(
+                array_map(fn ($r) => $r['value'], $match['replacements'] ?? []),
+                0,
+                3,
+            ),
+        ], $matches);
     }
 
     /**
@@ -85,17 +81,6 @@ final class LanguageToolService
             'message' => $m['message'],
             'suggestion' => $m['replacements'][0] ?? null,
         ], $matches);
-    }
-
-    public function isAvailable(): bool
-    {
-        try {
-            $response = Http::timeout(2)->get($this->baseUrl().'/v2/languages');
-
-            return $response->successful();
-        } catch (\Throwable) {
-            return false;
-        }
     }
 
     private function mapSeverity(string $category): string

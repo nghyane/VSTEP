@@ -7,19 +7,20 @@ namespace App\Services\Grading;
 interface LlmGrader
 {
     /**
-     * Extract structured evidence from text — LLM observes, formula scores.
+     * Extract task fulfillment evidence ONLY (fast — requirements check).
      *
-     * LLM does NOT assign scores. It counts observable facts:
-     *   - requirements_met / requirements_total
-     *   - has_clear_position (boolean)
-     *   - has_irrelevant_content (boolean)
-     *
-     * Formula computes scores deterministically from evidence + objective metrics.
-     *
-     * @param  list<string>                              $requirements   Task requirements to check
-     * @param  list<array<string,mixed>>                 $grammarErrors  LanguageTool matches (empty for speaking)
+     * @param  list<string>                              $requirements
+     * @param  list<array<string,mixed>>                 $grammarErrors
      * @param  array{metrics: array<string,mixed>, syntax: array, flags: list<string>}  $ruleAnalysis
-     * @return array{evidence: array, strengths: list<string>, improvements: list<array>, rewrites: list<array>}
+     * @return array{evidence: array}
      */
     public function extractEvidence(string $text, string $promptText, array $requirements, array $grammarErrors, array $ruleAnalysis): array;
+
+    /**
+     * Generate feedback: strengths, improvements, rewrites (slower — requires Vietnamese output).
+     *
+     * @param  array{current: string, target: string}|null  $bandContext
+     * @return array{strengths: list<string>, improvements: list<string>, rewrites: list<string>}
+     */
+    public function generateFeedback(string $text, string $promptText, array $metrics, array $grammarErrors, ?array $bandContext = null): array;
 }

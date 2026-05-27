@@ -81,16 +81,25 @@ final class GradingService
         }
 
         // Mark processing — small transaction.
-        DB::transaction(fn () => $job->update([
-            'status' => GradingJobStatus::Processing,
-            'started_at' => now(),
-            'attempts' => $job->attempts + 1,
-        ]));
+        DB::transaction(function () use ($job) {
+            $job->update([
+                'status' => GradingJobStatus::Processing,
+                'started_at' => now(),
+                'attempts' => $job->attempts + 1,
+            ]);
+            $job->addProgress('processing');
+        });
 
-        // Heavy work — LLM, STT, etc. NO transaction (would hold connection 30s+).
-        $resultData = $strategy->grade($submission);
+        // Heavy work — LLM, STT, etc. NO transaction.
+        $job->addProgress('grading', ['status' => 'started']);
+        $resultData = $strategy->grade($submission, $job);
+        $job->addProgress('grading', ['status' => 'done']);
 
         // Persist result + mark ready — strategy controls transaction internally.
+        $start = microtime(true);
         $strategy->persistResult($job, $resultData);
+        $job->addProgress('persisted', [
+            'duration_ms' => (int) ((microtime(true) - $start) * 1000),
+        ]);
     }
 }
