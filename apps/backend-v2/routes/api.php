@@ -158,6 +158,7 @@ Route::prefix('v1')->group(function () {
         // Grading.
         Route::get('/grading/jobs/{grading_job}', [GradingController::class, 'showJob']);
         Route::get('/grading/jobs/{grading_job}/status', [GradingController::class, 'jobStatus']);
+        Route::get('/grading/jobs/{grading_job}/stream', [GradingController::class, 'stream']);
         Route::get('/grading/writing/{submissionType}/{submissionId}', [GradingController::class, 'writingResult'])
             ->whereIn('submissionType', ['practice_writing', 'exam_writing'])
             ->whereUuid('submissionId');
