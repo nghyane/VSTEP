@@ -1,5 +1,6 @@
 import {
 	BookOutlined,
+	CalendarOutlined,
 	CheckSquareOutlined,
 	DatabaseOutlined,
 	DollarOutlined,
@@ -8,19 +9,45 @@ import {
 	HomeOutlined,
 	ProfileOutlined,
 	ReadOutlined,
+	ScheduleOutlined,
 	SettingOutlined,
 	TeamOutlined,
 } from "@ant-design/icons"
 import { Link, useLocation } from "@tanstack/react-router"
 import { Layout, Menu, type MenuProps } from "antd"
 import { useMemo } from "react"
-import { useAuth } from "#/lib/auth"
+import { type AdminRole, useAuth } from "#/lib/auth"
 
 type ItemType = NonNullable<MenuProps["items"]>[number]
 type AnyTo = Parameters<typeof Link>[0]["to"]
 const t = (s: string) => s as unknown as AnyTo
 
-function buildItems(isAdmin: boolean): ItemType[] {
+function buildTeacherItems(): ItemType[] {
+	return [
+		{
+			type: "group",
+			label: "Tổng quan",
+			children: [{ key: "/teacher", icon: <HomeOutlined />, label: <Link to={t("/teacher")}>Dashboard</Link> }],
+		},
+		{
+			type: "group",
+			label: "Giảng dạy",
+			children: [
+				{ key: "/teacher/schedule", icon: <CalendarOutlined />, label: <Link to={t("/teacher/schedule")}>Lịch dạy</Link> },
+				{ key: "/teacher/bookings", icon: <ScheduleOutlined />, label: <Link to={t("/teacher/bookings")}>Buổi học</Link> },
+			],
+		},
+		{
+			type: "group",
+			label: "Cá nhân",
+			children: [
+				{ key: "/teacher/leave-requests", icon: <EditOutlined />, label: <Link to={t("/teacher/leave-requests")}>Xin nghỉ</Link> },
+			],
+		},
+	]
+}
+
+function buildStaffItems(isAdmin: boolean): ItemType[] {
 	const items: ItemType[] = [
 		{
 			type: "group",
@@ -55,14 +82,8 @@ function buildItems(isAdmin: boolean): ItemType[] {
 						{ key: "/practice/listening", label: <Link to={t("/practice/listening")}>Nghe</Link> },
 						{ key: "/practice/reading", label: <Link to={t("/practice/reading")}>Đọc</Link> },
 						{ key: "/practice/writing", label: <Link to={t("/practice/writing")}>Viết</Link> },
-						{
-							key: "/practice/speaking-drills",
-							label: <Link to={t("/practice/speaking-drills")}>Phát âm</Link>,
-						},
-						{
-							key: "/practice/speaking-scenarios",
-							label: <Link to={t("/practice/speaking-scenarios")}>Hội thoại AI</Link>,
-						},
+						{ key: "/practice/speaking-drills", label: <Link to={t("/practice/speaking-drills")}>Phát âm</Link> },
+						{ key: "/practice/speaking-scenarios", label: <Link to={t("/practice/speaking-scenarios")}>Hội thoại AI</Link> },
 					],
 				},
 			],
@@ -71,27 +92,14 @@ function buildItems(isAdmin: boolean): ItemType[] {
 			type: "group",
 			label: "Quản lý",
 			children: [
-				{
-					key: "/users",
-					icon: <TeamOutlined />,
-					label: <Link to={t("/users")}>Người dùng</Link>,
-				},
+				{ key: "/users", icon: <TeamOutlined />, label: <Link to={t("/users")}>Người dùng</Link> },
 				{ key: "/courses", icon: <DatabaseOutlined />, label: <Link to={t("/courses")}>Khóa học</Link> },
-				{
-					key: "/promo",
-					icon: <GiftOutlined />,
-					label: <Link to={t("/promo")}>Khuyến mãi</Link>,
-				},
-				{
-					key: "/topup-packages",
-					icon: <DollarOutlined />,
-					label: <Link to={t("/topup-packages")}>Gói nạp</Link>,
-				},
+				{ key: "/promo", icon: <GiftOutlined />, label: <Link to={t("/promo")}>Khuyến mãi</Link> },
+				{ key: "/topup-packages", icon: <DollarOutlined />, label: <Link to={t("/topup-packages")}>Gói nạp</Link> },
 			],
 		},
 	]
 
-	// Hệ thống — Cấu hình: ADMIN ONLY (staff/teacher không thấy menu)
 	if (isAdmin) {
 		items.push({
 			type: "group",
@@ -105,7 +113,12 @@ function buildItems(isAdmin: boolean): ItemType[] {
 	return items
 }
 
-const FLAT_KEYS = [
+function buildItems(role: AdminRole): ItemType[] {
+	if (role === "teacher") return buildTeacherItems()
+	return buildStaffItems(role === "admin")
+}
+
+const STAFF_KEYS = [
 	"/",
 	"/vocab",
 	"/grammar",
@@ -123,15 +136,25 @@ const FLAT_KEYS = [
 	"/settings",
 ]
 
+const TEACHER_KEYS = [
+	"/teacher",
+	"/teacher/schedule",
+	"/teacher/bookings",
+	"/teacher/leave-requests",
+]
+
 export function Sidebar() {
 	const { pathname } = useLocation()
 	const role = useAuth((s) => s.user?.role)
-	const items = useMemo(() => buildItems(role === "admin"), [role])
+	const items = useMemo(() => buildItems(role ?? "staff"), [role])
+
+	const flatKeys = role === "teacher" ? TEACHER_KEYS : STAFF_KEYS
+	const fallbackKey = role === "teacher" ? "/teacher" : "/"
 
 	const selected =
-		FLAT_KEYS.filter((k) => (k === "/" ? pathname === "/" : pathname.startsWith(k))).sort(
+		flatKeys.filter((k) => (k === "/" ? pathname === "/" : pathname.startsWith(k))).sort(
 			(a, b) => b.length - a.length,
-		)[0] ?? "/"
+		)[0] ?? fallbackKey
 
 	const openKeys = pathname.startsWith("/practice") ? ["practice"] : []
 

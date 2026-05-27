@@ -515,7 +515,10 @@ Route::prefix('v1')->group(function () {
             Route::post('/{id}/unpublish', [Admin\SpeakingScenarioController::class, 'unpublish'])->whereUuid('id');
         });
 
-        // Admin notifications — thông báo cho admin/teacher
+    });
+
+    // Teacher+ routes (role >= teacher) — shared endpoints accessible by teacher, staff, admin
+    Route::middleware(['auth:api', 'role:teacher'])->prefix('admin')->group(function () {
         Route::prefix('notifications')->group(function () {
             Route::get('/', [Admin\AdminNotificationController::class, 'index']);
             Route::get('/unread-count', [Admin\AdminNotificationController::class, 'unreadCount']);

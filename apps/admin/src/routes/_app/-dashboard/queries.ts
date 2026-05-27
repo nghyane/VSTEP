@@ -32,12 +32,13 @@ export const useStats = () =>
 		staleTime: STALE_1M,
 	})
 
-export const useAlerts = () =>
+export const useAlerts = (disabled = false) =>
 	useQuery({
 		queryKey: ["admin", "alerts"],
 		queryFn: () => get<AlertItem[]>("admin/alerts"),
 		select: (r) => r.data,
 		staleTime: STALE_1M,
+		enabled: !disabled,
 	})
 
 export const useActionItems = () =>
@@ -144,22 +145,24 @@ export const useTopContent = () =>
 		staleTime: STALE_5M,
 	})
 
-export const useAdminNotifications = () =>
+export const useAdminNotifications = (disabled = false) =>
 	useQuery({
 		queryKey: ["admin", "notifications"],
 		queryFn: () => get<AdminNotificationItem[]>("admin/notifications"),
 		select: (r) => r.data,
 		staleTime: 30_000,
 		refetchInterval: 60_000,
+		enabled: !disabled,
 	})
 
-export const useUnreadCount = () =>
+export const useUnreadCount = (disabled = false) =>
 	useQuery({
 		queryKey: ["admin", "notifications", "unread-count"],
 		queryFn: () => get<{ count: number }>("admin/notifications/unread-count"),
 		select: (r) => r.data.count,
 		staleTime: 30_000,
 		refetchInterval: 60_000,
+		enabled: !disabled,
 	})
 
 export const useMarkAllRead = () => {

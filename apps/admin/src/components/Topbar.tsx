@@ -20,13 +20,14 @@ import type { AdminNotificationItem, AlertItem } from "#/routes/_app/-dashboard/
 export function Topbar() {
 	const user = useAuth((s) => s.user)
 	const clear = useAuth((s) => s.clear)
-	const { data: alerts, isLoading: alertsLoading } = useAlerts()
+	const isTeacher = user?.role === "teacher"
+	const { data: alerts, isLoading: alertsLoading } = useAlerts(isTeacher)
 	const { data: notifications, isLoading: notifsLoading } = useAdminNotifications()
 	const { data: unreadCount } = useUnreadCount()
 	const markAllRead = useMarkAllRead()
 	const [changePwOpen, setChangePwOpen] = useState(false)
 
-	const badgeCount = (unreadCount ?? 0) + (alerts?.length ?? 0)
+	const badgeCount = (unreadCount ?? 0) + (isTeacher ? 0 : (alerts?.length ?? 0))
 
 	function logout() {
 		clear()
@@ -61,6 +62,7 @@ export function Topbar() {
 							notifications={notifications}
 							notifsLoading={notifsLoading}
 							onMarkAllRead={() => markAllRead.mutate()}
+							hideAlerts={isTeacher}
 						/>
 					)}
 				>
@@ -97,14 +99,38 @@ function NotificationPanel({
 	notifications,
 	notifsLoading,
 	onMarkAllRead,
+	hideAlerts,
 }: {
 	alerts: AlertItem[] | undefined
 	alertsLoading: boolean
 	notifications: AdminNotificationItem[] | undefined
 	notifsLoading: boolean
 	onMarkAllRead: () => void
+	hideAlerts?: boolean
 }) {
 	const unreadNotifs = notifications?.filter((n) => !n.read_at) ?? []
+
+	const tabs = [
+		{
+			key: "notifications",
+			label: `Thông báo${unreadNotifs.length > 0 ? ` (${unreadNotifs.length})` : ""}`,
+			children: (
+				<NotificationsTab
+					notifications={notifications}
+					isLoading={notifsLoading}
+					onMarkAllRead={onMarkAllRead}
+				/>
+			),
+		},
+	]
+
+	if (!hideAlerts) {
+		tabs.push({
+			key: "alerts",
+			label: `Cảnh báo${alerts?.length ? ` (${alerts.length})` : ""}`,
+			children: <AlertsTab alerts={alerts} isLoading={alertsLoading} />,
+		})
+	}
 
 	return (
 		<div
@@ -117,28 +143,7 @@ function NotificationPanel({
 				padding: "8px 12px 12px",
 			}}
 		>
-			<Tabs
-				size="small"
-				defaultActiveKey="notifications"
-				items={[
-					{
-						key: "notifications",
-						label: `Thông báo${unreadNotifs.length > 0 ? ` (${unreadNotifs.length})` : ""}`,
-						children: (
-							<NotificationsTab
-								notifications={notifications}
-								isLoading={notifsLoading}
-								onMarkAllRead={onMarkAllRead}
-							/>
-						),
-					},
-					{
-						key: "alerts",
-						label: `Cảnh báo${alerts?.length ? ` (${alerts.length})` : ""}`,
-						children: <AlertsTab alerts={alerts} isLoading={alertsLoading} />,
-					},
-				]}
-			/>
+			<Tabs size="small" defaultActiveKey="notifications" items={tabs} />
 		</div>
 	)
 }

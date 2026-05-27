@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, redirect } from "@tanstack/react-router"
+import { useAuth } from "#/lib/auth"
 import { Col, Flex, Row, Typography } from "antd"
 import { ActionList } from "./-dashboard/ActionList"
 import { ActivityTimeline } from "./-dashboard/ActivityTimeline"
@@ -34,6 +35,10 @@ import { UserGrowthChart } from "./-dashboard/UserGrowthChart"
 import { WalletEconomyCard } from "./-dashboard/WalletEconomyCard"
 
 export const Route = createFileRoute("/_app/")({
+	beforeLoad: () => {
+		const user = useAuth.getState().user
+		if (user?.role === "teacher") throw redirect({ to: "/teacher" })
+	},
 	component: DashboardPage,
 })
 

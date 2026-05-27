@@ -6,10 +6,14 @@ import { Topbar } from "#/components/Topbar"
 import { useAuth } from "#/lib/auth"
 
 export const Route = createFileRoute("/_app")({
-	beforeLoad: () => {
+	beforeLoad: ({ location }) => {
 		const { token, user } = useAuth.getState()
 		if (!token || !user) throw redirect({ to: "/login" })
 		if (!["admin", "staff", "teacher"].includes(user.role)) throw redirect({ to: "/login" })
+
+		if (user.role === "teacher" && !location.pathname.startsWith("/teacher")) {
+			throw redirect({ to: "/teacher" })
+		}
 	},
 	component: AppLayout,
 })
