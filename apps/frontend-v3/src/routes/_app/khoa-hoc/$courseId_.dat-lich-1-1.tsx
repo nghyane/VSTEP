@@ -157,6 +157,15 @@ function BookingBody({
 
 			<CommitmentGate commitment={data.commitment} />
 
+			{!locked && (
+				<div className="flex items-start gap-2.5 p-3 rounded-(--radius-card) bg-sky-50 border border-sky-200 text-sm text-sky-800">
+					<Icon name="timer" size="xs" className="mt-0.5 shrink-0 text-sky-600" />
+					<span>
+						Cần đặt lịch trước ít nhất <strong>{data.booking_lead_time_hours} giờ</strong> so với giờ bắt đầu buổi học để giảng viên có thời gian chuẩn bị.
+					</span>
+				</div>
+			)}
+
 			{!locked && reachedLimit && (
 				<div className="card p-4 rounded-(--radius-card) text-sm font-extrabold text-primary-dark bg-primary-tint">
 					Bạn đã dùng hết {data.max_bookings_per_student} buổi học 1-1 cho khóa này. Không thể đặt thêm.

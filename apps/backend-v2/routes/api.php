@@ -158,6 +158,7 @@ Route::prefix('v1')->group(function () {
         // Grading.
         Route::get('/grading/jobs/{grading_job}', [GradingController::class, 'showJob']);
         Route::get('/grading/jobs/{grading_job}/status', [GradingController::class, 'jobStatus']);
+        Route::get('/grading/jobs/{grading_job}/stream', [GradingController::class, 'stream']);
         Route::get('/grading/writing/{submissionType}/{submissionId}', [GradingController::class, 'writingResult'])
             ->whereIn('submissionType', ['practice_writing', 'exam_writing'])
             ->whereUuid('submissionId');
@@ -513,6 +514,13 @@ Route::prefix('v1')->group(function () {
             Route::delete('/{id}', [Admin\SpeakingScenarioController::class, 'destroy'])->whereUuid('id');
             Route::post('/{id}/publish', [Admin\SpeakingScenarioController::class, 'publish'])->whereUuid('id');
             Route::post('/{id}/unpublish', [Admin\SpeakingScenarioController::class, 'unpublish'])->whereUuid('id');
+        });
+
+        // Admin notifications — thông báo cho admin/teacher
+        Route::prefix('notifications')->group(function () {
+            Route::get('/', [Admin\AdminNotificationController::class, 'index']);
+            Route::get('/unread-count', [Admin\AdminNotificationController::class, 'unreadCount']);
+            Route::post('/mark-all-read', [Admin\AdminNotificationController::class, 'markAllRead']);
         });
     });
 });

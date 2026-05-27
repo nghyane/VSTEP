@@ -10,13 +10,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'slot_id', 'profile_id', 'submission_type', 'submission_id',
-    'meet_url', 'status', 'booked_at',
+    'meet_url', 'status', 'booked_at', 'cancelled_at',
 ])]
 class TeacherBooking extends BaseModel
 {
     protected function casts(): array
     {
-        return ['booked_at' => 'datetime', 'status' => BookingStatus::class];
+        return [
+            'booked_at' => 'datetime',
+            'cancelled_at' => 'datetime',
+            'status' => BookingStatus::class,
+        ];
     }
 
     public function slot(): BelongsTo

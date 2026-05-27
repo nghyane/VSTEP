@@ -7,12 +7,11 @@ namespace Tests\Support;
 use App\Services\Grading\LlmGrader;
 
 /**
- * Test fake — bypass real LLM endpoint. Returns deterministic evidence
- * so grading tests are reproducible without network or API quota.
+ * Test fake — bypass real LLM endpoint. Returns deterministic evidence + feedback.
  */
 final class FakeLlmGrader implements LlmGrader
 {
-    public function extractEvidence(string $text, string $promptText, array $requirements, array $grammarErrors, array $ruleAnalysis): array
+    public function extractEvidence(string $text, string $promptText, array $requirements, array $grammarErrors, array $ruleAnalysis, int $part = 2): array
     {
         return [
             'evidence' => [
@@ -23,8 +22,14 @@ final class FakeLlmGrader implements LlmGrader
                     'has_irrelevant_content' => false,
                 ],
             ],
+        ];
+    }
+
+    public function generateFeedback(string $text, string $promptText, array $metrics, array $grammarErrors, ?array $bandContext = null): array
+    {
+        return [
             'strengths' => ['Tra loi dung yeu cau de bai'],
-            'improvements' => [['message' => 'Dung them tu noi', 'explanation' => 'Su dung however, moreover.']],
+            'improvements' => ['Dung them tu noi'],
             'rewrites' => [],
         ];
     }

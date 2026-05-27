@@ -21,6 +21,7 @@ enum CoinTransactionType: string
     case PromoRedeem = 'promo_redeem';
     case AdminGrant = 'admin_grant';
     case StreakMilestone = 'streak_milestone';
+    case Refund = 'refund';
     case SupportLevelUse = 'support_level_use';
     case ExamCustom = 'exam_custom';
     case ExamFull = 'exam_full';
@@ -30,7 +31,7 @@ enum CoinTransactionType: string
     public function isCredit(): bool
     {
         return match ($this) {
-            self::Topup, self::OnboardingBonus, self::CourseBonus, self::PromoRedeem, self::AdminGrant, self::StreakMilestone => true,
+            self::Topup, self::OnboardingBonus, self::CourseBonus, self::PromoRedeem, self::AdminGrant, self::StreakMilestone, self::Refund => true,
             default => false,
         };
     }

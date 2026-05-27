@@ -11,6 +11,7 @@ export type NotificationType =
 	| "course_unenrolled"
 	| "booking_created"
 	| "booking_cancelled"
+	| "booking_meet_url_updated"
 
 export interface Notification {
 	id: string

@@ -61,8 +61,8 @@ final class WritingScoringFormula
     public function taskFulfillment(array $evidence): float
     {
         $p = $this->params['task_fulfillment'];
-        $covered = max(0, (int) ($evidence['points_covered'] ?? 0));
-        $required = max(1, (int) ($evidence['points_required'] ?? $p['default_points_required']));
+        $covered = max(0.0, (float) ($evidence['points_covered'] ?? 0));
+        $required = max(1.0, (float) ($evidence['points_required'] ?? $p['default_points_required']));
         $hasPosition = (bool) ($evidence['has_clear_position'] ?? false);
         $irrelevant = (bool) ($evidence['has_irrelevant_content'] ?? false);
 

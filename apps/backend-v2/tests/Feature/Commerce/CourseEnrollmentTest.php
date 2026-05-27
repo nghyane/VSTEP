@@ -8,16 +8,20 @@ use App\Enums\BookingStatus;
 use App\Enums\CoinTransactionType;
 use App\Enums\ExamSessionStatus;
 use App\Enums\SlotStatus;
+use App\Models\CoinTransaction;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\Exam;
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
 use App\Models\Profile;
+use App\Models\TeacherBooking;
 use App\Models\TeacherSlot;
 use App\Models\User;
+use App\Services\Admin\Course\AdminCourseBookingService;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class CourseEnrollmentTest extends TestCase
@@ -285,6 +289,52 @@ class CourseEnrollmentTest extends TestCase
 
         $this->assertDatabaseHas('teacher_slots', ['id' => $slot->id, 'status' => SlotStatus::Open->value]);
         $this->assertDatabaseMissing('teacher_bookings', ['slot_id' => $slot->id]);
+    }
+
+    public function test_admin_cancel_booking_refunds_once_and_reopens_slot(): void
+    {
+        [, $profile, $course] = $this->seedCourse(100_000, 0);
+        $wallet = $this->app->make(WalletService::class);
+        $wallet->credit($profile, 100, CoinTransactionType::AdminGrant);
+        $balanceBeforeBooking = $wallet->getBalance($profile);
+
+        $slot = TeacherSlot::create([
+            'course_id' => $course->id,
+            'teacher_id' => $course->teacher_id,
+            'starts_at' => now()->addDays(2),
+            'status' => SlotStatus::Booked,
+        ]);
+        $booking = TeacherBooking::create([
+            'slot_id' => $slot->id,
+            'profile_id' => $profile->id,
+            'status' => BookingStatus::Booked,
+            'booked_at' => now(),
+        ]);
+        $wallet->spend($profile, 50, CoinTransactionType::TeacherBooking, $booking);
+
+        $cancelled = $this->app->make(AdminCourseBookingService::class)->cancelBooking($booking);
+
+        $this->assertSame($balanceBeforeBooking, $wallet->getBalance($profile));
+        $this->assertSame(BookingStatus::Cancelled, $cancelled->status);
+        $this->assertNotNull($cancelled->cancelled_at);
+        $this->assertDatabaseHas('teacher_slots', ['id' => $slot->id, 'status' => SlotStatus::Open->value]);
+        $this->assertSame(1, CoinTransaction::query()
+            ->where('profile_id', $profile->id)
+            ->where('type', CoinTransactionType::Refund->value)
+            ->where('source_id', $booking->id)
+            ->count());
+
+        try {
+            $this->app->make(AdminCourseBookingService::class)->cancelBooking($booking->fresh());
+            $this->fail('Expected cancelling an already-cancelled booking to fail.');
+        } catch (ValidationException) {
+            $this->assertSame(1, CoinTransaction::query()
+                ->where('profile_id', $profile->id)
+                ->where('type', CoinTransactionType::Refund->value)
+                ->where('source_id', $booking->id)
+                ->count());
+            $this->assertSame($balanceBeforeBooking, $wallet->getBalance($profile));
+        }
     }
 
     private function seedCourse(int $priceVnd, int $bonus, int $maxSlots = 20): array

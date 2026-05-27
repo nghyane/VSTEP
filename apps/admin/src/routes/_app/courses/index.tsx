@@ -117,6 +117,21 @@ export const Route = createFileRoute("/_app/courses/")({
 	component: CoursesListPage,
 })
 
+function deleteDescription(c: AdminCourse): string {
+	const parts: string[] = [`Xoá khóa "${c.title}"?`]
+	const enrollments = c.enrollment_count ?? 0
+	const orders = c.enrollment_order_count ?? 0
+	if (enrollments > 0 || orders > 0) {
+		const warnings: string[] = []
+		if (enrollments > 0) warnings.push(`${enrollments} học viên ghi danh`)
+		if (orders > 0) warnings.push(`${orders} đơn mua`)
+		parts.push(`Hiện có ${warnings.join(" và ")} — không thể xoá.`)
+	} else {
+		parts.push("Hành động này không thể hoàn tác.")
+	}
+	return parts.join(" ")
+}
+
 function CoursesListPage() {
 	const navigate = useNavigate({ from: "/courses/" })
 	const search = Route.useSearch()
@@ -276,7 +291,19 @@ function CoursesListPage() {
 						},
 						{
 							title: "Học viên",
-							render: (_, c: AdminCourse) => `${c.enrollment_count ?? 0}/${c.max_slots}`,
+							render: (_, c: AdminCourse) => {
+								const orders = c.enrollment_order_count ?? 0
+								return (
+									<span>
+										{c.enrollment_count ?? 0}/{c.max_slots}
+										{orders > 0 && (
+											<Typography.Text type="secondary" style={{ fontSize: 11, marginLeft: 4 }}>
+												({orders} đơn)
+											</Typography.Text>
+										)}
+									</span>
+								)
+							},
 						},
 						{
 							title: "Lịch",
@@ -348,9 +375,7 @@ function CoursesListPage() {
 				onClose={() => setDeleting(null)}
 				onConfirm={onDelete}
 				title="Xoá khóa học"
-				description={
-					deleting ? `Xoá khóa "${deleting.title}"? Không thể xoá nếu đã có học viên ghi danh.` : undefined
-				}
+				description={deleting ? deleteDescription(deleting) : undefined}
 				loading={remove.isPending}
 			/>
 		</Flex>

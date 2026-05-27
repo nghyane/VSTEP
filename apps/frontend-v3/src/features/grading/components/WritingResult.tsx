@@ -2,16 +2,10 @@ import { useQuery } from "@tanstack/react-query"
 import { FeedbackSection, RewriteSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
 import { writingGradingQuery } from "#/features/grading/queries"
+import type { RubricCriteriaMeta } from "#/features/grading/types"
 import { round } from "#/lib/utils"
 
 const COLOR = "var(--color-skill-writing)"
-
-const RUBRIC_LABELS: Record<string, string> = {
-	task_achievement: "Task Achievement",
-	coherence: "Coherence & Cohesion",
-	lexical: "Lexical Resource",
-	grammar: "Grammar Range & Accuracy",
-}
 
 interface Props {
 	submissionId: string
@@ -23,6 +17,7 @@ export function WritingResult({ submissionId }: Props) {
 		refetchInterval: (query) => (query.state.data?.data ? false : 3000),
 	})
 	const result = data?.data
+	const criteria = (data?.rubric?.criteria ?? []) as RubricCriteriaMeta[]
 
 	if (isLoading || !result) {
 		return (
@@ -35,6 +30,14 @@ export function WritingResult({ submissionId }: Props) {
 				</div>
 			</div>
 		)
+	}
+
+	function label(key: string): string {
+		return criteria.find((c) => c.key === key)?.label ?? key
+	}
+
+	function max(key: string): number {
+		return criteria.find((c) => c.key === key)?.max ?? 10
 	}
 
 	return (
@@ -50,7 +53,7 @@ export function WritingResult({ submissionId }: Props) {
 			<div className="card p-6 space-y-3">
 				<p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">Rubric</p>
 				{Object.entries(result.rubric_scores).map(([key, score]) => (
-					<RubricBar key={key} label={RUBRIC_LABELS[key] ?? key} score={score} max={4} color={COLOR} />
+					<RubricBar key={key} label={label(key)} score={score} max={max(key)} color={COLOR} />
 				))}
 			</div>
 

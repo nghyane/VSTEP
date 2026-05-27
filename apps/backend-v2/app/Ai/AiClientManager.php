@@ -58,22 +58,6 @@ final class AiClientManager implements AiClient
         return $response->structured;
     }
 
-    public function text(string $service, string $prompt, ?string $instructions = null): string
-    {
-        $config = $this->resolveService($service);
-
-        $request = new WireRequest(
-            model: $config['model_id'],
-            prompt: $prompt,
-            instructions: $instructions,
-            timeout: $config['timeout'],
-            thinking: $config['thinking'],
-            temperature: $config['temperature'],
-        );
-
-        return $this->send($service, $config, $request)->text;
-    }
-
     private function send(string $service, array $config, WireRequest $request): WireResponse
     {
         $wire = $this->wires[$config['wire']] ?? null;

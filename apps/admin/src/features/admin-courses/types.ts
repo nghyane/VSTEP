@@ -31,6 +31,7 @@ export interface AdminCourse {
 	teacher?: TeacherOption
 	is_published: boolean
 	enrollment_count?: number
+	enrollment_order_count?: number
 	schedule_item_count?: number
 	created_at: string
 	updated_at: string

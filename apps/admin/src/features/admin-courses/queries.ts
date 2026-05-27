@@ -264,13 +264,17 @@ export function useDeleteSlot(courseId: string) {
 
 // ─── Teacher bookings (admin) ────────────────────────────
 
-export const bookingsQuery = (courseId: string, page: number) =>
+export const bookingsQuery = (courseId: string, page: number, filters?: { status?: string; search?: string; sort?: string; direction?: string }) =>
 	queryOptions({
-		queryKey: ["admin", "courses", "bookings", courseId, page],
-		queryFn: () =>
-			api
-				.get(`admin/courses/${courseId}/bookings?page=${page}&per_page=20`)
-				.json<PaginatedResponse<AdminTeacherBooking>>(),
+		queryKey: ["admin", "courses", "bookings", courseId, page, filters],
+		queryFn: () => {
+			const params = new URLSearchParams({ page: String(page), per_page: "20" })
+			if (filters?.status) params.set("status", filters.status)
+			if (filters?.search) params.set("search", filters.search)
+			if (filters?.sort) params.set("sort", filters.sort)
+			if (filters?.direction) params.set("direction", filters.direction)
+			return api.get(`admin/courses/${courseId}/bookings?${params}`).json<PaginatedResponse<AdminTeacherBooking>>()
+		},
 		staleTime: 15_000,
 	})
 

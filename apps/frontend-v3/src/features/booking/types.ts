@@ -31,5 +31,6 @@ export interface BookingPageData {
 	my_bookings_count: number
 	max_bookings_per_student: number
 	booking_coin_cost: number
+	booking_lead_time_hours: number
 	commitment: BookingCommitment
 }

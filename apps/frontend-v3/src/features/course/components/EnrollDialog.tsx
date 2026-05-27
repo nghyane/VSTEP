@@ -9,6 +9,7 @@ import { EnrollFailurePopup } from "#/features/course/components/EnrollFailurePo
 import { EnrollSuccessPopup } from "#/features/course/components/EnrollSuccessPopup"
 import { SignaturePadField, type SignaturePadFieldRef } from "#/features/course/components/SignaturePadField"
 import type { CourseWithRelations } from "#/features/course/types"
+import { useSession } from "#/lib/auth"
 import { formatNumber, formatVnd } from "#/lib/utils"
 
 interface Props {
@@ -26,6 +27,7 @@ type Phase = "form" | "success" | "failure"
  *  - "failure": EnrollFailurePopup (mascot buồn + retry)
  */
 export function EnrollDialog({ open, onClose, course }: Props) {
+	const { profile } = useSession()
 	const [agreed, setAgreed] = useState(false)
 	const [signatureEmpty, setSignatureEmpty] = useState(true)
 	const signatureRef = useRef<SignaturePadFieldRef>(null)
@@ -147,6 +149,13 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 							<div>
 								<p className="text-[11px] font-extrabold uppercase tracking-wider text-muted">Khóa học</p>
 								<p className="mt-1 font-extrabold text-foreground">{course.title}</p>
+							</div>
+
+							<div className="flex items-center justify-between gap-2 text-sm">
+								<span className="text-muted">Hồ sơ đăng ký</span>
+								<span className="font-bold text-foreground">
+									{profile.nickname} — {profile.target_level}
+								</span>
 							</div>
 
 							<div className="flex items-center justify-between gap-2 text-sm">

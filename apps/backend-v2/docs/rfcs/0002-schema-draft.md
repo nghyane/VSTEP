@@ -1020,6 +1020,7 @@ Indexes:
 | meet_url | VARCHAR(500) | yes | admin paste sau booking |
 | status | VARCHAR(20) | no | check IN ('booked','completed','cancelled','no_show') |
 | booked_at | TIMESTAMPTZ | no | |
+| cancelled_at | TIMESTAMPTZ | yes | set when booking is cancelled |
 | updated_at | TIMESTAMPTZ | no | |
 
 Indexes:

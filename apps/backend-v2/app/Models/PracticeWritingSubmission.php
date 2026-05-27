@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Writing submission. 1 submission → N grading results (Slice 8 versioning).
@@ -43,5 +44,12 @@ class PracticeWritingSubmission extends BaseModel
     public function prompt(): BelongsTo
     {
         return $this->belongsTo(PracticeWritingPrompt::class, 'prompt_id');
+    }
+
+    public function activeGradingResult(): HasOne
+    {
+        return $this->hasOne(WritingGradingResult::class, 'submission_id')
+            ->where('submission_type', 'practice_writing')
+            ->where('is_active', true);
     }
 }

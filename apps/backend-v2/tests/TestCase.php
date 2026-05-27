@@ -6,6 +6,7 @@ namespace Tests;
 
 use App\Ai\AiClient;
 use App\Services\Grading\LlmGrader;
+use App\Services\LanguageToolService;
 use App\Services\SpeechToText;
 use Database\Seeders\GradingRubricSeeder;
 use Database\Seeders\SystemConfigSeeder;
@@ -25,5 +26,13 @@ abstract class TestCase extends BaseTestCase
         $this->app->bind(LlmGrader::class, FakeLlmGrader::class);
         $this->app->bind(SpeechToText::class, FakeSpeechToText::class);
         $this->app->singleton(AiClient::class, FakeAiClient::class);
+
+        $this->app->bind(LanguageToolService::class, function () {
+            $mock = $this->createMock(LanguageToolService::class);
+            $mock->method('check')->willReturn([]);
+            $mock->method('toAnnotations')->willReturn([]);
+
+            return $mock;
+        });
     }
 }

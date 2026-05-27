@@ -11,12 +11,7 @@ export interface Rewrite {
 
 export interface WritingGradingResult {
 	id: string
-	rubric_scores: {
-		task_achievement: number
-		coherence: number
-		lexical: number
-		grammar: number
-	}
+	rubric_scores: Record<string, number>
 	overall_band: number
 	strengths: string[]
 	improvements: Improvement[]
@@ -40,6 +35,17 @@ export interface SpeakingGradingResult {
 	pronunciation_report: { accuracy_score: number } | null
 	transcript: string | null
 	created_at: string
+}
+
+export interface RubricCriteriaMeta {
+	key: string
+	label: string
+	max: number
+}
+
+export interface RubricMeta {
+	max_score: number
+	criteria: RubricCriteriaMeta[]
 }
 
 export interface GradingJob {
