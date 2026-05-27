@@ -24,11 +24,11 @@ export function FeedbackSection({ strengths, improvements }: FeedbackProps) {
 			{improvements.length > 0 && (
 				<div>
 					<p className="text-xs font-bold text-warning uppercase tracking-wide mb-2">Cần cải thiện</p>
-					<ul className="space-y-2">
+					<ul className="space-y-1.5">
 						{improvements.map((item) => (
-							<li key={item.message} className="text-sm">
-								<p className="font-bold text-foreground">{item.message}</p>
-								<p className="text-subtle mt-0.5">{item.explanation}</p>
+							<li key={item.message} className="flex gap-2 text-sm text-foreground">
+								<span className="text-warning shrink-0">•</span>
+								{item.message}
 							</li>
 						))}
 					</ul>

@@ -1,5 +1,10 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { GradingJob, SpeakingGradingResult, WritingGradingResult } from "#/features/grading/types"
+import type {
+	GradingJob,
+	RubricMeta,
+	SpeakingGradingResult,
+	WritingGradingResult,
+} from "#/features/grading/types"
 import { type ApiResponse, api } from "#/lib/api"
 
 export const gradingJobQuery = (jobId: string) =>
@@ -14,7 +19,7 @@ export const writingGradingQuery = (submissionType: string, submissionId: string
 		queryFn: () =>
 			api
 				.get(`grading/writing/${submissionType}/${submissionId}`)
-				.json<ApiResponse<WritingGradingResult | null>>(),
+				.json<ApiResponse<WritingGradingResult | null> & { rubric?: RubricMeta }>(),
 	})
 
 export const speakingGradingQuery = (submissionType: string, submissionId: string) =>
@@ -23,5 +28,5 @@ export const speakingGradingQuery = (submissionType: string, submissionId: strin
 		queryFn: () =>
 			api
 				.get(`grading/speaking/${submissionType}/${submissionId}`)
-				.json<ApiResponse<SpeakingGradingResult | null>>(),
+				.json<ApiResponse<SpeakingGradingResult | null> & { rubric?: RubricMeta }>(),
 	})
