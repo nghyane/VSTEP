@@ -1,5 +1,6 @@
 import { Icon } from "#/components/Icon"
 import type { PracticeItem } from "#/features/vocab/use-practice-session"
+import { useIpa } from "#/lib/phonemize"
 import { cn, speak } from "#/lib/utils"
 
 export interface PracticeReview {
@@ -17,12 +18,13 @@ interface BackProps extends Props {
 
 export function PracticeFront({ item }: Props) {
 	const w = item.entry.word
+	const ipa = useIpa(w.word, w.phonetic)
 	switch (item.mode) {
 		case "flashcard":
 			return (
 				<>
 					<span className="font-extrabold text-4xl text-foreground break-words">{w.word}</span>
-					{w.phonetic && <p className="text-base text-subtle">{w.phonetic}</p>}
+					{ipa && <p className="text-base text-subtle">/{ipa}/</p>}
 					{w.part_of_speech && <PartOfSpeech text={w.part_of_speech} />}
 				</>
 			)
@@ -72,11 +74,12 @@ export function PracticeFront({ item }: Props) {
 
 export function PracticeBack({ item, review }: BackProps) {
 	const w = item.entry.word
+	const ipa = useIpa(w.word, w.phonetic)
 	return (
 		<>
 			{review && <ReviewBanner review={review} correctWord={w.word} />}
 			<span className="font-extrabold text-3xl text-foreground break-words">{w.word}</span>
-			{w.phonetic && <p className="text-sm text-subtle">{w.phonetic}</p>}
+			{ipa && <p className="text-sm text-subtle">/{ipa}/</p>}
 			<p className="text-base text-foreground font-bold mt-1">{w.definition}</p>
 			{w.example && (
 				<p className="text-sm text-muted italic mt-2">

@@ -25,7 +25,7 @@ final class UpdateTopicRequest extends FormRequest
             ],
             'name' => ['sometimes', 'string', 'max:150'],
             'description' => ['sometimes', 'nullable', 'string'],
-            'level' => ['sometimes', 'string', 'in:A2,B1,B2,C1'],
+            'level' => ['sometimes', 'string', 'in:A1,A2,B1,B2,C1'],
             'icon_key' => ['sometimes', 'string', 'max:30'],
             'display_order' => ['sometimes', 'integer'],
             'is_published' => ['sometimes', 'boolean'],

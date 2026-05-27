@@ -25,6 +25,7 @@ final class AdminGrammarExerciseResource extends JsonResource
             'payload' => $this->resource->payload,
             'explanation' => $this->resource->explanation,
             'display_order' => $this->resource->display_order,
+            'is_active' => (bool) $this->resource->is_active,
         ];
     }
 }

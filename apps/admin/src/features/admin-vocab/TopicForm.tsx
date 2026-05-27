@@ -157,7 +157,7 @@ export function TopicForm({ initial, onSubmit, onCancel, submitting }: Props) {
 					label="Đã xuất bản"
 				/>
 
-				{generic && <Alert type="error" message={generic} showIcon />}
+				{generic && <Alert type="error" description={generic} showIcon />}
 
 				<Flex justify="end" gap={8} style={{ paddingTop: 8 }}>
 					<Button variant="ghost" onClick={onCancel} disabled={submitting}>

@@ -22,21 +22,13 @@ final class UpdateExerciseRequest extends FormRequest
         return [
             'explanation' => ['sometimes', 'string'],
             'display_order' => ['sometimes', 'integer'],
+            'is_active' => ['sometimes', 'boolean'],
             'payload' => ['sometimes', 'array'],
 
             'payload.prompt' => ['sometimes', 'string'],
             'payload.options' => ['sometimes', 'array', 'size:4'],
             'payload.options.*' => ['required_with:payload.options', 'string'],
             'payload.correct_index' => ['sometimes', 'integer', 'between:0,3'],
-            'payload.sentence' => ['sometimes', 'string'],
-            'payload.error_start' => ['sometimes', 'integer', 'min:0'],
-            'payload.error_end' => ['sometimes', 'integer', 'min:0'],
-            'payload.correction' => ['sometimes', 'string'],
-            'payload.template' => ['sometimes', 'string'],
-            'payload.instruction' => ['sometimes', 'string'],
-            'payload.original' => ['sometimes', 'string'],
-            'payload.accepted_answers' => ['sometimes', 'array', 'min:1'],
-            'payload.accepted_answers.*' => ['string'],
         ];
     }
 }

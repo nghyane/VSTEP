@@ -4,6 +4,7 @@ import { Header } from "#/components/Header"
 import { ExerciseModes } from "#/features/vocab/components/ExerciseModes"
 import { WordList } from "#/features/vocab/components/WordList"
 import { vocabTopicDetailQuery } from "#/features/vocab/queries"
+import { buildPracticeItems } from "#/features/vocab/use-practice-session"
 
 export const Route = createFileRoute("/_app/luyen-tap/tu-vung/$topicId")({
 	component: TopicDetailPage,
@@ -16,8 +17,8 @@ function TopicDetailPage() {
 	if (isLoading) return <Header title="Từ vựng" backTo="/luyen-tap/tu-vung" />
 	if (!data?.data?.topic) return null
 
-	const { topic, words, exercises } = data.data
-	const hasFillBlank = exercises.some((e) => e.kind === "fill_blank")
+	const { topic, words } = data.data
+	const hasFillBlank = buildPracticeItems(words, "fill_blank").length > 0
 
 	return (
 		<>

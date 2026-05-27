@@ -16,18 +16,8 @@ interface Props {
 	exercises: AdminGrammarExercise[]
 }
 
-const KIND_LABEL: Record<AdminGrammarExercise["kind"], string> = {
-	mcq: "Trắc nghiệm",
-	error_correction: "Sửa lỗi",
-	fill_blank: "Điền chỗ trống",
-	rewrite: "Viết lại",
-}
-
 function summary(ex: AdminGrammarExercise): string {
-	if (ex.kind === "mcq") return ex.payload.prompt
-	if (ex.kind === "error_correction") return `${ex.payload.sentence} → ${ex.payload.correction}`
-	if (ex.kind === "fill_blank") return ex.payload.template
-	return `${ex.payload.instruction} — ${ex.payload.original}`
+	return ex.payload.prompt
 }
 
 export function ExercisesTab({ pointId, exercises }: Props) {
@@ -78,7 +68,7 @@ export function ExercisesTab({ pointId, exercises }: Props) {
 						>
 							<div style={{ minWidth: 0, flex: 1 }}>
 								<Flex align="center" gap={8} style={{ marginBottom: 4 }}>
-									<Badge variant="info">{KIND_LABEL[ex.kind]}</Badge>
+									<Badge variant="info">Trắc nghiệm</Badge>
 									<Typography.Text type="secondary" style={{ fontSize: 12 }}>
 										#{ex.display_order}
 									</Typography.Text>

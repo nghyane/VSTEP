@@ -7,8 +7,8 @@ namespace App\Http\Requests\Admin\Grammar;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * category ∈ (foundation, sentence, task, error-clinic) — theo migration docblock.
- * levels[] ∈ A2/B1/B2/C1.
+ * category ∈ (foundation, sentence, task, writing, error-clinic).
+ * levels[] ∈ A1/A2/B1/B2/C1.
  * tasks[] ∈ WT1/WT2/SP1/SP2/SP3/READ.
  * functions[] — free-form string (vd: "expressing time", "comparison").
  */
@@ -26,11 +26,20 @@ final class StorePointRequest extends FormRequest
             'name' => ['required', 'string', 'max:150'],
             'vietnamese_name' => ['nullable', 'string', 'max:150'],
             'summary' => ['required', 'string'],
-            'category' => ['required', 'string', 'in:foundation,sentence,task,error-clinic'],
+            'learning_objective' => ['nullable', 'string', 'max:1000'],
+            'success_criteria' => ['nullable', 'string', 'max:1000'],
+            'prerequisite_slugs' => ['nullable', 'array'],
+            'prerequisite_slugs.*' => ['string', 'max:80'],
+            'cefr_descriptor' => ['nullable', 'string', 'max:1000'],
+            'vstep_use_case' => ['nullable', 'string', 'max:1000'],
+            'assessed_by' => ['nullable', 'array'],
+            'assessed_by.*' => ['string', 'max:80'],
+            'is_checkpoint' => ['nullable', 'boolean'],
+            'category' => ['required', 'string', 'in:foundation,sentence,task,writing,error-clinic'],
             'display_order' => ['nullable', 'integer'],
             'is_published' => ['nullable', 'boolean'],
             'levels' => ['nullable', 'array'],
-            'levels.*' => ['string', 'in:A2,B1,B2,C1'],
+            'levels.*' => ['string', 'in:A1,A2,B1,B2,C1'],
             'tasks' => ['nullable', 'array'],
             'tasks.*' => ['string', 'in:WT1,WT2,SP1,SP2,SP3,READ'],
             'functions' => ['nullable', 'array'],

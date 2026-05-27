@@ -12,13 +12,11 @@ export interface GrammarResult {
 interface State {
 	index: number
 	selected: number | null
-	textAnswer: string
 	result: GrammarResult | null
 }
 
 type Action =
 	| { type: "select"; index: number }
-	| { type: "text"; value: string }
 	| { type: "answered"; result: GrammarResult }
 	| { type: "next" }
 
@@ -26,12 +24,10 @@ function reducer(state: State, action: Action): State {
 	switch (action.type) {
 		case "select":
 			return { ...state, selected: action.index }
-		case "text":
-			return { ...state, textAnswer: action.value }
 		case "answered":
 			return { ...state, result: action.result }
 		case "next":
-			return { index: state.index + 1, selected: null, textAnswer: "", result: null }
+			return { index: state.index + 1, selected: null, result: null }
 	}
 }
 
@@ -41,17 +37,15 @@ interface GrammarExerciseSession {
 	index: number
 	done: boolean
 	selected: number | null
-	textAnswer: string
 	result: GrammarResult | null
 	submitting: boolean
 	select: (i: number) => void
-	setTextAnswer: (v: string) => void
 	submit: () => void
 	next: () => void
 }
 
 export function useGrammarExerciseSession(exercises: GrammarExercise[]): GrammarExerciseSession {
-	const [state, dispatch] = useReducer(reducer, { index: 0, selected: null, textAnswer: "", result: null })
+	const [state, dispatch] = useReducer(reducer, { index: 0, selected: null, result: null })
 
 	const mutation = useMutation({
 		mutationFn: ({ id, answer }: { id: string; answer: Record<string, unknown> }) =>
@@ -74,8 +68,7 @@ export function useGrammarExerciseSession(exercises: GrammarExercise[]): Grammar
 
 	function submit() {
 		if (!current || mutation.isPending) return
-		const answer = current.kind === "mcq" ? { selected_index: state.selected } : { text: state.textAnswer }
-		mutation.mutate({ id: current.id, answer })
+		mutation.mutate({ id: current.id, answer: { selected_index: state.selected } })
 	}
 
 	return {
@@ -84,11 +77,9 @@ export function useGrammarExerciseSession(exercises: GrammarExercise[]): Grammar
 		index: state.index,
 		done,
 		selected: state.selected,
-		textAnswer: state.textAnswer,
 		result: state.result,
 		submitting: mutation.isPending,
 		select: (i) => dispatch({ type: "select", index: i }),
-		setTextAnswer: (v) => dispatch({ type: "text", value: v }),
 		submit,
 		next: () => dispatch({ type: "next" }),
 	}

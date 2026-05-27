@@ -37,7 +37,7 @@ class AdminGrammarExerciseTest extends TestCase
         $res->assertJsonValidationErrors(['payload.options']);
     }
 
-    public function test_error_correction_requires_all_fields(): void
+    public function test_error_correction_is_rejected(): void
     {
         $staff = User::factory()->create(['role' => Role::Staff]);
         $point = GrammarPoint::factory()->create();
@@ -54,14 +54,10 @@ class AdminGrammarExerciseTest extends TestCase
             ]);
 
         $res->assertStatus(422);
-        $res->assertJsonValidationErrors([
-            'payload.error_start',
-            'payload.error_end',
-            'payload.correction',
-        ]);
+        $res->assertJsonValidationErrors(['kind']);
     }
 
-    public function test_fill_blank_requires_accepted_answers(): void
+    public function test_fill_blank_is_rejected(): void
     {
         $staff = User::factory()->create(['role' => Role::Staff]);
         $point = GrammarPoint::factory()->create();
@@ -77,10 +73,10 @@ class AdminGrammarExerciseTest extends TestCase
             ]);
 
         $res->assertStatus(422);
-        $res->assertJsonValidationErrors(['payload.accepted_answers']);
+        $res->assertJsonValidationErrors(['kind']);
     }
 
-    public function test_create_rewrite_succeeds(): void
+    public function test_rewrite_is_rejected(): void
     {
         $staff = User::factory()->create(['role' => Role::Staff]);
         $point = GrammarPoint::factory()->create();
@@ -97,9 +93,8 @@ class AdminGrammarExerciseTest extends TestCase
                 ],
             ]);
 
-        $res->assertCreated();
-        $res->assertJsonPath('data.kind', 'rewrite');
-        $this->assertSame(['How tall she is!'], $res->json('data.payload.accepted_answers'));
+        $res->assertStatus(422);
+        $res->assertJsonValidationErrors(['kind']);
     }
 
     public function test_strips_extra_payload_keys(): void

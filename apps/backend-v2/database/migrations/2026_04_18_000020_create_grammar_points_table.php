@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * category ∈ (foundation, sentence, task, error-clinic).
+ * category ∈ (foundation, sentence, task, error-clinic, writing).
  */
 return new class extends Migration
 {

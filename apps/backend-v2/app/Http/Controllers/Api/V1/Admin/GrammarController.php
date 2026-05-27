@@ -77,9 +77,12 @@ final class GrammarController extends Controller
                 'examples' => fn ($q) => $q->orderBy('display_order'),
                 'commonMistakes' => fn ($q) => $q->orderBy('display_order'),
                 'vstepTips' => fn ($q) => $q->orderBy('display_order'),
-                'exercises' => fn ($q) => $q->orderBy('display_order'),
+                'exercises' => fn ($q) => $q->where('is_active', true)->where('kind', 'mcq')->orderBy('display_order'),
             ])
-            ->withCount(['structures', 'examples', 'exercises'])
+            ->withCount([
+                'structures', 'examples',
+                'exercises' => fn ($query) => $query->where('is_active', true)->where('kind', 'mcq'),
+            ])
             ->findOrFail($id);
 
         return response()->json(['data' => [
@@ -337,7 +340,7 @@ final class GrammarController extends Controller
         $point = GrammarPoint::query()->findOrFail($id);
 
         return AdminGrammarExerciseResource::collection(
-            $point->exercises()->orderBy('display_order')->get(),
+            $point->exercises()->where('is_active', true)->where('kind', 'mcq')->orderBy('display_order')->get(),
         );
     }
 

@@ -1,5 +1,13 @@
 import { useEffect, useState } from "react"
 
+function stripDelimiters(ipa: string): string {
+	const trimmed = ipa.trim()
+	if (trimmed.startsWith("/") && trimmed.endsWith("/")) {
+		return trimmed.slice(1, -1)
+	}
+	return trimmed
+}
+
 /**
  * Get IPA phonetic transcription for English text via async dynamic import.
  * Returns admin-provided IPA immediately, falls back to phonemize client-side.
@@ -7,7 +15,7 @@ import { useEffect, useState } from "react"
 async function fetchIpa(text: string): Promise<string | null> {
 	try {
 		const { toIPA } = await import("phonemize")
-		return toIPA(text)
+		return stripDelimiters(toIPA(text))
 	} catch {
 		return null
 	}
@@ -21,14 +29,23 @@ async function fetchIpa(text: string): Promise<string | null> {
  */
 export function useIpa(text: string, adminIpa?: string | null): string | null {
 	const [ipa, setIpa] = useState<string | null>(() => {
-		if (adminIpa && adminIpa.length > 0) return adminIpa
+		if (adminIpa && adminIpa.length > 0) return stripDelimiters(adminIpa)
 		return null
 	})
 
 	useEffect(() => {
-		if (adminIpa || !text) return
+		if (adminIpa) {
+			setIpa(stripDelimiters(adminIpa))
+			return
+		}
+
+		if (!text) {
+			setIpa(null)
+			return
+		}
 
 		let cancelled = false
+		setIpa(null)
 		fetchIpa(text).then((result) => {
 			if (!cancelled) setIpa(result)
 		})

@@ -56,7 +56,7 @@ export function TopicGrid() {
 											}
 										: undefined
 								}
-								progressLabel="từ"
+
 								overlay={
 									<Link
 										to="/luyen-tap/tu-vung/$topicId"

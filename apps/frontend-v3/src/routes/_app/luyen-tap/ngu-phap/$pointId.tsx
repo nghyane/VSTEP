@@ -4,6 +4,7 @@ import { Header } from "#/components/Header"
 import {
 	CommonMistakes,
 	Examples,
+	LearningDesign,
 	PointHeader,
 	Structures,
 	VstepTips,
@@ -28,6 +29,7 @@ function GrammarDetailPage() {
 			<Header title={detail.point.name} backTo="/luyen-tap/ngu-phap" />
 			<div className="px-10 pb-12 space-y-8">
 				<PointHeader detail={detail} />
+				<LearningDesign point={detail.point} />
 				<Structures structures={detail.structures} />
 				<Examples examples={detail.examples} />
 				<CommonMistakes mistakes={detail.common_mistakes} />

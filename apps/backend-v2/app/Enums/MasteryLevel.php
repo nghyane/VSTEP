@@ -9,7 +9,7 @@ namespace App\Enums;
  *
  * Thresholds (khớp với FE src/lib/grammar/mastery.ts):
  * - new: 0 attempts
- * - mastered: >= 5 attempts AND accuracy >= 85%
+ * - mastered: >= 2 attempts, accuracy >= 85%, AND >= 2 distinct correct exercises
  * - practicing: >= 3 attempts AND accuracy >= 60%
  * - learning: everything else
  */
@@ -20,13 +20,13 @@ enum MasteryLevel: string
     case Practicing = 'practicing';
     case Mastered = 'mastered';
 
-    public static function compute(int $attempts, int $correct): self
+    public static function compute(int $attempts, int $correct, int $distinctCorrect = 0): self
     {
         if ($attempts === 0) {
             return self::New;
         }
         $accuracy = $correct / $attempts;
-        if ($attempts >= 5 && $accuracy >= 0.85) {
+        if ($attempts >= 2 && $accuracy >= 0.85 && $distinctCorrect >= 2) {
             return self::Mastered;
         }
         if ($attempts >= 3 && $accuracy >= 0.60) {

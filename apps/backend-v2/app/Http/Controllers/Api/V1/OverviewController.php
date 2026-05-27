@@ -24,6 +24,13 @@ final class OverviewController extends Controller
         ]);
     }
 
+    public function practiceSummary(Request $request): JsonResponse
+    {
+        return response()->json([
+            'data' => $this->progressService->getPracticeSummary($request->profile()),
+        ]);
+    }
+
     public function streak(Request $request): JsonResponse
     {
         return response()->json([

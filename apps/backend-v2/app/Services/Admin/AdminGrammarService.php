@@ -27,7 +27,10 @@ final class AdminGrammarService
     {
         $query = GrammarPoint::query()
             ->with(['levels', 'tasks', 'functions'])
-            ->withCount(['structures', 'examples', 'exercises']);
+            ->withCount([
+                'structures', 'examples',
+                'exercises' => fn ($query) => $query->where('is_active', true)->where('kind', 'mcq'),
+            ]);
 
         if (! empty($filters['q'])) {
             $term = '%'.$filters['q'].'%';
@@ -87,7 +90,10 @@ final class AdminGrammarService
             }
 
             return $point->load(['levels', 'tasks', 'functions'])
-                ->loadCount(['structures', 'examples', 'exercises']);
+                ->loadCount([
+                    'structures', 'examples',
+                    'exercises' => fn ($query) => $query->where('is_active', true)->where('kind', 'mcq'),
+                ]);
         });
     }
 
@@ -118,7 +124,10 @@ final class AdminGrammarService
 
             return $point->fresh()
                 ->load(['levels', 'tasks', 'functions'])
-                ->loadCount(['structures', 'examples', 'exercises']);
+                ->loadCount([
+                    'structures', 'examples',
+                    'exercises' => fn ($query) => $query->where('is_active', true)->where('kind', 'mcq'),
+                ]);
         });
     }
 
@@ -133,7 +142,10 @@ final class AdminGrammarService
 
         return $point->fresh()
             ->load(['levels', 'tasks', 'functions'])
-            ->loadCount(['structures', 'examples', 'exercises']);
+            ->loadCount([
+                'structures', 'examples',
+                'exercises' => fn ($query) => $query->where('is_active', true)->where('kind', 'mcq'),
+            ]);
     }
 
     /**

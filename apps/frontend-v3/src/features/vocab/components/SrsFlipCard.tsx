@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Icon } from "#/components/Icon"
 import type { VocabWord } from "#/features/vocab/types"
+import { useIpa } from "#/lib/phonemize"
 import { cn, speak } from "#/lib/utils"
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 export function SrsFlipCard({ word, flipped, onFlip }: Props) {
 	const [prevWord, setPrevWord] = useState(word.id)
 	const [animateFlip, setAnimateFlip] = useState(flipped)
+	const ipa = useIpa(word.word, word.phonetic)
 
 	useEffect(() => {
 		if (word.id !== prevWord) {
@@ -32,7 +34,7 @@ export function SrsFlipCard({ word, flipped, onFlip }: Props) {
 						<FlipHeader word={word.word} />
 						<div className="flex-1 flex flex-col items-center justify-center gap-3">
 							<span className="font-extrabold text-4xl text-foreground break-words">{word.word}</span>
-							{word.phonetic && <p className="text-base text-subtle">{word.phonetic}</p>}
+							{ipa && <p className="text-base text-subtle">/{ipa}/</p>}
 							{word.part_of_speech && (
 								<span className="text-sm text-muted bg-background px-2.5 py-1 rounded inline-block">
 									{word.part_of_speech}
@@ -48,7 +50,7 @@ export function SrsFlipCard({ word, flipped, onFlip }: Props) {
 						<FlipHeader word={word.word} />
 						<div className="flex-1 flex flex-col items-center justify-center gap-3">
 							<span className="font-extrabold text-3xl text-foreground break-words">{word.word}</span>
-							{word.phonetic && <p className="text-sm text-subtle">{word.phonetic}</p>}
+							{ipa && <p className="text-sm text-subtle">/{ipa}/</p>}
 							<p className="text-base text-foreground font-bold mt-1">{word.definition}</p>
 							{word.example && <p className="text-sm text-muted italic mt-2">"{word.example}"</p>}
 							{word.vstep_tip && (

@@ -20,6 +20,10 @@ final class GrammarExerciseResource extends JsonResource
         $payload = $this->resource->payload;
         if (is_array($payload)) {
             unset($payload['correct_index'], $payload['correction'], $payload['accepted_answers']);
+            // Ensure MCQ payload always has options array for frontend safety
+            if ($this->resource->kind === 'mcq' && ! isset($payload['options'])) {
+                $payload['options'] = [];
+            }
         }
 
         return [

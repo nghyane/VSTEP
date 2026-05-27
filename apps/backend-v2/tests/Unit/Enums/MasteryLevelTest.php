@@ -25,10 +25,15 @@ class MasteryLevelTest extends TestCase
         $this->assertSame(MasteryLevel::Practicing, MasteryLevel::compute(4, 3));
     }
 
-    public function test_five_plus_with_85_percent_is_mastered(): void
+    public function test_two_distinct_correct_answers_are_mastered(): void
     {
-        $this->assertSame(MasteryLevel::Mastered, MasteryLevel::compute(5, 5));
-        $this->assertSame(MasteryLevel::Mastered, MasteryLevel::compute(10, 9));
+        $this->assertSame(MasteryLevel::Mastered, MasteryLevel::compute(2, 2, 2));
+        $this->assertSame(MasteryLevel::Mastered, MasteryLevel::compute(10, 9, 6));
+    }
+
+    public function test_repeating_one_correct_exercise_does_not_master_a_point(): void
+    {
+        $this->assertSame(MasteryLevel::Practicing, MasteryLevel::compute(5, 5, 1));
     }
 
     public function test_high_attempts_low_accuracy_downgrades(): void

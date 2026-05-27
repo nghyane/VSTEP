@@ -14,7 +14,6 @@ interface Props {
 	meta: string
 	overlay: ReactNode
 	progress?: Progress
-	progressLabel?: string
 	level?: string
 	tag?: string
 }
@@ -34,13 +33,11 @@ export function ExerciseCard({
 	meta,
 	overlay,
 	progress,
-	progressLabel,
 	level,
 	tag,
 }: Props) {
 	const pct = progress ? Math.round((progress.score / progress.total) * 100) : 0
 	const hasBar = progress && progress.status !== "not_started" && progress.total > 0
-	const status = progress?.status ?? "not_started"
 	const levelStyle = level
 		? (LEVEL_COLORS[level.toUpperCase()] ?? "bg-muted/15 text-muted border-border")
 		: null
@@ -77,23 +74,8 @@ export function ExerciseCard({
 
 			{hasBar && (
 				<div className="mt-auto px-5 pb-4">
-					<div className="flex items-center justify-between text-xs text-muted tabular-nums mb-1">
-						<div className="flex items-center gap-2">
-							<span>
-								{progress.score}/{progress.total} {progressLabel ?? "đúng"}
-							</span>
-							{status === "completed" && (
-								<span className="text-[10px] font-bold text-primary bg-primary-tint px-1.5 py-0.5 rounded-full">
-									Hoàn thành
-								</span>
-							)}
-							{status === "in_progress" && (
-								<span className="text-[10px] font-bold text-warning bg-warning-tint px-1.5 py-0.5 rounded-full">
-									Đang làm
-								</span>
-							)}
-						</div>
-						<span className="font-bold">{pct}%</span>
+					<div className="flex items-center justify-between mb-1">
+						<span className="text-xs font-bold text-muted tabular-nums">{pct}%</span>
 					</div>
 					<div className="h-1.5 bg-background rounded-full overflow-hidden">
 						<div
