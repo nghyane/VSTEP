@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VSTEP Scoring — Academic Specification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono&display=swap');
+        body { font-family: 'Inter', sans-serif; background: #fafafa; color: #111; }
+        .math { font-family: 'JetBrains Mono', monospace; background: #f4f4f4; padding: 3px 7px; border-radius: 3px; font-size: 0.85em; border: 1px solid #ddd; }
+        .math-lg { font-family: 'JetBrains Mono', monospace; }
+        .card { background: #fff; border: 1px solid #ccc; }
+        .card-black { background: #fff; border: 2px solid #111; }
+        .sidebar-link { border: 1px solid transparent; transition: all 0.15s; }
+        .sidebar-link.active { background: #111; color: #fff; border-color: #111; }
+        .sidebar-link:hover:not(.active) { background: #f0f0f0; }
+        input[type="range"] { accent-color: #111; width: 100%; }
+        input[type="number"].big-input { width: 100%; font-size: 2.5rem; font-weight: 900; border: none; border-bottom: 3px solid #111; outline: none; padding: 4px 0; font-family: 'JetBrains Mono', monospace; }
+        .param-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #666; margin-bottom: 2px; }
+        .param-sublabel { font-size: 9px; color: #999; margin-top: 1px; }
+        .criterion-box { border: 1px solid #ddd; padding: 16px; margin-bottom: 8px; }
+        .criterion-box h4 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #555; margin-bottom: 8px; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+        .result-number { font-size: 4rem; font-weight: 900; line-height: 1; }
+        .result-label { font-size: 9px; font-weight: 700; text-transform: uppercase; color: #888; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col md:flex-row">
+
+<!-- Sidebar -->
+<nav class="w-full md:w-64 bg-white border-r border-gray-200 p-8 flex flex-col gap-2 shrink-0">
+    <div class="mb-12">
+        <h1 class="text-2xl font-black uppercase tracking-tight">VSTEP<br>Scoring</h1>
+        <p class="text-[10px] text-gray-400 mt-2 font-mono">FORMULA V4.0</p>
+    </div>
+    <button onclick="switchTab('overview')" id="btn-overview" class="sidebar-link active text-left px-4 py-2 text-sm font-bold">TONG QUAN</button>
+    <button onclick="switchTab('writing')" id="btn-writing" class="sidebar-link text-left px-4 py-2 text-sm font-bold">WRITING (4 criteria)</button>
+    <button onclick="switchTab('speaking')" id="btn-speaking" class="sidebar-link text-left px-4 py-2 text-sm font-bold">SPEAKING (5 criteria)</button>
+    <button onclick="switchTab('mcq')" id="btn-mcq" class="sidebar-link text-left px-4 py-2 text-sm font-bold">LISTENING / READING</button>
+    <div class="mt-auto pt-6 border-t border-gray-200 text-[10px] text-gray-400 uppercase tracking-widest font-mono">
+        Thong tu 23/2017/TT-BGDDT<br>
+        ULIS-VNU (2018)
+    </div>
+</nav>
+
+<!-- Main -->
+<main class="flex-1 p-6 md:p-10 overflow-y-auto max-w-4xl">
+
+<!-- ============ OVERVIEW ============ -->
+<section id="tab-overview" class="tab-content block">
+    <header class="mb-10 border-b-2 border-black pb-6">
+        <h2 class="text-3xl font-black uppercase mb-2">Dac ta Cong thuc Cham diem</h2>
+        <p class="text-gray-500 max-w-xl">LLM extract evidence → Formula tinh diem deterministic. Rubric params tu DB, khong can code.</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        <div class="space-y-6">
+            <div class="card-black p-8">
+                <h3 class="font-bold text-xs uppercase tracking-widest border-b pb-2 mb-5">Ham cot loi</h3>
+                <div class="space-y-5">
+                    <div><p class="text-xs text-gray-400 font-bold uppercase">Lam tron</p><p class="math text-base font-bold">clampRound(x) = round(max(1, min(10, x)) * 2) / 2</p></div>
+                    <div><p class="text-xs text-gray-400 font-bold uppercase">Overall</p><p class="math text-base font-bold">O = round((L + R + W + S) / 4, 0.5)</p></div>
+                    <div><p class="text-xs text-gray-400 font-bold uppercase">MCQ</p><p class="math text-sm font-bold">L = round(C_l/35 * 10, 1) &nbsp;|&nbsp; R = round(C_r/40 * 10, 1)</p></div>
+                </div>
+            </div>
+
+            <div class="card-black p-8">
+                <h3 class="font-bold text-xs uppercase tracking-widest border-b pb-2 mb-5">Quy doi CEFR</h3>
+                <div class="space-y-2 font-mono text-sm">
+                    <div class="flex justify-between border-b pb-1"><span>8.5 - 10.0</span><span class="font-bold">C1 (Bac 5)</span></div>
+                    <div class="flex justify-between border-b pb-1"><span>6.0 - 8.0</span><span class="font-bold">B2 (Bac 4)</span></div>
+                    <div class="flex justify-between border-b pb-1"><span>4.0 - 5.5</span><span class="font-bold">B1 (Bac 3)</span></div>
+                    <div class="flex justify-between text-gray-400"><span>0.0 - 3.5</span><span>Khong dat</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col items-center justify-center">
+            <h3 class="font-bold text-xs uppercase tracking-widest mb-6">Phan bo B2</h3>
+            <div class="w-full max-w-sm h-72"><canvas id="overviewChart"></canvas></div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ WRITING ============ -->
+<section id="tab-writing" class="tab-content hidden">
+    <header class="mb-6 border-b-2 border-black pb-4">
+        <h2 class="text-2xl font-black uppercase">Writing — 4 tieu chi</h2>
+        <p class="text-gray-500 text-sm">5-layer: LanguageTool → Metrics+Syntax → LLM Evidence → Formula → Sanity Penalty</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- GRAMMAR -->
+        <div class="criterion-box">
+            <h4>1. Grammar — G = clampRound((range + accuracy) / 2)</h4>
+            <p class="param-label">So kieu cau truc (0-7+) <span class="math" id="wg-types-label">3</span></p>
+            <input type="range" id="wg-types" min="0" max="8" value="3" oninput="updateWriting()">
+            <p class="param-sublabel">band: 0→5, 1→6, 3→7, 5→8, 6→9, 7+→10</p>
+
+            <div class="grid grid-cols-2 gap-3 mt-2">
+                <div>
+                    <p class="param-label">So loi ngu phap</p>
+                    <input type="number" id="wg-errors" value="1" min="0" max="50" class="big-input text-xl" oninput="updateWriting()">
+                </div>
+                <div>
+                    <p class="param-label">So cau</p>
+                    <input type="number" id="wg-sentences" value="8" min="1" max="50" class="big-input text-xl" oninput="updateWriting()">
+                </div>
+            </div>
+            <p class="param-sublabel mt-1">accuracy = min(maxAcc, max(0, 10 - errors/sentences * 5)) &nbsp;|&nbsp; maxAcc: 0-2→7, 3-4→9, 5+→10</p>
+        </div>
+
+        <!-- VOCABULARY -->
+        <div class="criterion-box">
+            <h4>2. Vocabulary — V = min(8, clampRound(3 + B_u + B_l + B_r + B_c))</h4>
+            <p class="param-label">Unique ratio <span class="math" id="wv-ur-label">0.55</span></p>
+            <input type="range" id="wv-ur" min="0" max="1" step="0.05" value="0.55" oninput="updateWriting()">
+            <p class="param-sublabel">B_u: >0.45→1, >0.55→2, >0.65→3</p>
+
+            <p class="param-label mt-2">Avg word length <span class="math" id="wv-awl-label">5.0</span></p>
+            <input type="range" id="wv-awl" min="2" max="8" step="0.1" value="5.0" oninput="updateWriting()">
+            <p class="param-sublabel">B_l: >4.5→1, >5.5→2</p>
+
+            <p class="param-label mt-2">Readability grade <span class="math" id="wv-rg-label">9</span></p>
+            <input type="range" id="wv-rg" min="0" max="15" value="9" oninput="updateWriting()">
+            <p class="param-sublabel">B_r: >8→1, >10→2</p>
+
+            <p class="param-label mt-2">Complex vocab count <span class="math" id="wv-cv-label">3</span></p>
+            <input type="range" id="wv-cv" min="0" max="10" value="3" oninput="updateWriting()">
+            <p class="param-sublabel">B_c: >2→1, >5→2</p>
+        </div>
+
+        <!-- TASK FULFILLMENT -->
+        <div class="criterion-box">
+            <h4>3. Task Fulfillment — T = clampRound((covered/required)*7 + pos - irr)</h4>
+            <p class="param-label">Yeu cau dap ung <span class="math" id="wt-covered-label">3</span> / <span id="wt-total-label">4</span></p>
+            <input type="range" id="wt-covered" min="0" max="5" value="3" oninput="updateWriting()">
+            <p class="param-sublabel">Tong yeu cau (required) = <input type="number" id="wt-total" value="4" min="1" max="10" class="w-12 border-b border-gray-400 text-center font-mono" oninput="updateWriting()"></p>
+
+            <div class="flex gap-4 mt-3">
+                <label class="flex items-center gap-1 text-sm"><input type="checkbox" id="wt-position" checked onchange="updateWriting()"> Co quan diem (+1)</label>
+                <label class="flex items-center gap-1 text-sm"><input type="checkbox" id="wt-irrelevant" onchange="updateWriting()"> Lac de (-2)</label>
+            </div>
+        </div>
+
+        <!-- ORGANIZATION -->
+        <div class="criterion-box">
+            <h4>4. Organization — O = clampRound(1 + P + L + V - C)</h4>
+            <p class="param-label">So doan <span class="math" id="wo-para-label">3</span></p>
+            <input type="range" id="wo-para" min="1" max="6" value="3" oninput="updateWriting()">
+            <p class="param-sublabel">P: 1→1, 2→3, 3+→4</p>
+
+            <p class="param-label mt-2">Linking words <span class="math" id="wo-link-label">5</span></p>
+            <input type="range" id="wo-link" min="0" max="15" value="5" oninput="updateWriting()">
+            <p class="param-sublabel">L = min(3, count * 0.5)</p>
+
+            <p class="param-label mt-2">Sentence variety (stddev) <span class="math" id="wo-var-label">5.0</span></p>
+            <input type="range" id="wo-var" min="0" max="12" step="0.5" value="5.0" oninput="updateWriting()">
+            <p class="param-sublabel">V: >4→1, >6→2</p>
+
+            <p class="param-label mt-2">So cau <span class="math" id="wo-sent-label">10</span></p>
+            <input type="range" id="wo-sent" min="1" max="30" value="10" oninput="updateWriting()">
+            <p class="param-sublabel">C (compact): 1 doan + >8 cau → -1</p>
+        </div>
+
+        <!-- RESULT -->
+        <div class="card-black p-6 lg:col-span-2">
+            <div class="grid grid-cols-5 gap-4 items-end">
+                <div class="text-center"><span class="result-label">Task Fulf.</span><br><span class="math-lg text-2xl font-bold" id="w-T">7.0</span></div>
+                <div class="text-center"><span class="result-label">Organization</span><br><span class="math-lg text-2xl font-bold" id="w-O">7.0</span></div>
+                <div class="text-center"><span class="result-label">Grammar</span><br><span class="math-lg text-2xl font-bold" id="w-G">7.0</span></div>
+                <div class="text-center"><span class="result-label">Vocabulary</span><br><span class="math-lg text-2xl font-bold" id="w-V">5.5</span></div>
+                <div class="text-center">
+                    <span class="result-label">Sanity</span><br>
+                    <span class="math-lg text-lg" id="w-penalty-label">1.00</span>
+                </div>
+            </div>
+            <div class="flex justify-between items-end border-t border-gray-300 pt-4 mt-4">
+                <div>
+                    <span class="result-label">W = round(mean(T,O,G,V) * min(1, words/120), 0.5)</span><br>
+                    <span class="text-[10px] text-gray-400">So tu: <input type="number" id="w-words" value="150" min="0" max="2000" class="w-16 border-b border-gray-400 text-center font-mono" oninput="updateWriting()"></span>
+                </div>
+                <span class="result-number" id="writing-res">7.0</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ SPEAKING ============ -->
+<section id="tab-speaking" class="tab-content hidden">
+    <header class="mb-6 border-b-2 border-black pb-4">
+        <h2 class="text-2xl font-black uppercase">Speaking — 5 tieu chi</h2>
+        <p class="text-gray-500 text-sm">5-layer: Azure STT+PA → Metrics+Syntax → [Exam: LLM Content] → Formula → Overall</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <!-- GRAMMAR -->
+        <div class="criterion-box">
+            <h4>1. Grammar — G = clampRound((range + accuracy) / 2)</h4>
+            <p class="param-label">So kieu cau truc <span class="math" id="sg-types-label">2</span></p>
+            <input type="range" id="sg-types" min="0" max="8" value="2" oninput="updateSpeaking()">
+            <p class="param-sublabel">band: 0→5, 1→6, 3→7, 5→8, 6→9, 7+→10 | maxAcc: 0-2→7</p>
+            <p class="param-sublabel mt-1">Speaking: LanguageTool errors = 0 (khong dung)</p>
+        </div>
+
+        <!-- VOCABULARY -->
+        <div class="criterion-box">
+            <h4>2. Vocabulary — V = min(8, clampRound(3 + B_u + B_l + B_r + B_c))</h4>
+            <p class="param-label">Unique ratio <span class="math" id="sv-ur-label">0.50</span></p>
+            <input type="range" id="sv-ur" min="0" max="1" step="0.05" value="0.50" oninput="updateSpeaking()">
+            <p class="param-sublabel">B_u: >0.45→1, >0.55→2, >0.65→3</p>
+            <p class="param-label mt-2">Avg word length <span class="math" id="sv-awl-label">4.5</span></p>
+            <input type="range" id="sv-awl" min="2" max="8" step="0.1" value="4.5" oninput="updateSpeaking()">
+            <p class="param-sublabel">B_l: >4.5→1, >5.5→2</p>
+        </div>
+
+        <!-- FLUENCY -->
+        <div class="criterion-box">
+            <h4>3. Fluency — F = clampRound(3 + rateBonus - pausePenalty)</h4>
+            <p class="param-label">WPM (tu/phut) <span class="math" id="sf-wpm-label">100</span></p>
+            <input type="range" id="sf-wpm" min="0" max="200" value="100" oninput="updateSpeaking()">
+            <p class="param-sublabel">rate: ≥60→1, ≥90→2, ≥120→3, ≥150→4</p>
+
+            <div class="grid grid-cols-2 gap-3 mt-2">
+                <div>
+                    <p class="param-label">Pause count</p>
+                    <input type="number" id="sf-pause" value="3" min="0" max="100" class="big-input text-xl" oninput="updateSpeaking()">
+                </div>
+                <div>
+                    <p class="param-label">Word count</p>
+                    <input type="number" id="sf-words" value="30" min="1" max="1000" class="big-input text-xl" oninput="updateSpeaking()">
+                </div>
+            </div>
+            <p class="param-sublabel mt-1">pausePenalty: pauses/100w >8%→1, >15%→2</p>
+        </div>
+
+        <!-- DISCOURSE -->
+        <div class="criterion-box">
+            <h4>4. Discourse — D = clampRound((1 + B_l + B_v) * CF)</h4>
+            <p class="param-label">Linking words <span class="math" id="sd-link-label">4</span></p>
+            <input type="range" id="sd-link" min="0" max="15" value="4" oninput="updateSpeaking()">
+            <p class="param-sublabel">B_l = min(3, count * 0.5)</p>
+
+            <p class="param-label mt-2">Sentence variety <span class="math" id="sd-var-label">4.0</span></p>
+            <input type="range" id="sd-var" min="0" max="12" step="0.5" value="4.0" oninput="updateSpeaking()">
+            <p class="param-sublabel">B_v: >4→1, >6→2</p>
+
+            <div class="mt-3 p-3 bg-yellow-50 border border-yellow-200">
+                <p class="param-label text-yellow-800">Content Factor (LLM — Exam only)</p>
+                <p class="param-sublabel">CF = 0.5 + (covered/required) * 0.5 &nbsp;|&nbsp; Practice: 1.0</p>
+                <input type="range" id="sd-cf" min="50" max="100" value="100" oninput="updateSpeaking()">
+                <div class="flex justify-between font-mono text-[10px]"><span>0.5</span><span id="sd-cf-label" class="font-bold">1.0</span><span>1.0</span></div>
+            </div>
+        </div>
+
+        <!-- PRONUNCIATION -->
+        <div class="criterion-box">
+            <h4>5. Pronunciation — P = clampRound(AzurePA_score)</h4>
+            <p class="param-label">Azure PA score (0-100) <span class="math" id="sp-pa-label">75</span></p>
+            <input type="range" id="sp-pa" min="0" max="100" value="75" oninput="updateSpeaking()">
+            <p class="param-sublabel text-red-600">Mandatory — khong co fallback. Thieu PA → GradingFailedException</p>
+        </div>
+
+        <!-- RESULT -->
+        <div class="card-black p-6 lg:col-span-2">
+            <div class="grid grid-cols-5 gap-4 items-end">
+                <div class="text-center"><span class="result-label">Grammar</span><br><span class="math-lg text-2xl font-bold" id="s-G">6.5</span></div>
+                <div class="text-center"><span class="result-label">Vocabulary</span><br><span class="math-lg text-2xl font-bold" id="s-V">4.0</span></div>
+                <div class="text-center"><span class="result-label">Fluency</span><br><span class="math-lg text-2xl font-bold" id="s-F">4.0</span></div>
+                <div class="text-center"><span class="result-label">Discourse</span><br><span class="math-lg text-2xl font-bold" id="s-D">4.0</span></div>
+                <div class="text-center"><span class="result-label">Pronunciation</span><br><span class="math-lg text-2xl font-bold" id="s-P">7.5</span></div>
+            </div>
+            <div class="flex justify-between items-end border-t border-gray-300 pt-4 mt-4">
+                <span class="result-label">S = round(mean(G, V, F, D, P), 0.5)<br><span class="text-[10px] text-gray-400">4/5 deterministic, 1/5 LLM content factor (exam)</span></span>
+                <span class="result-number" id="speaking-res">5.5</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============ MCQ ============ -->
+<section id="tab-mcq" class="tab-content hidden">
+    <div class="max-w-2xl mx-auto space-y-10 py-8">
+        <div class="card-black p-10">
+            <h3 class="text-xl font-black uppercase mb-6 border-b pb-4">Listening — 35 cau</h3>
+            <div class="grid grid-cols-2 gap-10 items-center">
+                <div>
+                    <p class="param-label">So cau dung</p>
+                    <input type="number" id="l-val" value="28" max="35" min="0" class="big-input" oninput="updateMcq()">
+                    <p class="math text-sm mt-2">L = round(C/35 * 10, 1)</p>
+                </div>
+                <div class="text-center">
+                    <span class="result-label">Listening</span>
+                    <span class="result-number block" id="l-res">8.0</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-black p-10">
+            <h3 class="text-xl font-black uppercase mb-6 border-b pb-4">Reading — 40 cau</h3>
+            <div class="grid grid-cols-2 gap-10 items-center">
+                <div>
+                    <p class="param-label">So cau dung</p>
+                    <input type="number" id="r-val" value="32" max="40" min="0" class="big-input" oninput="updateMcq()">
+                    <p class="math text-sm mt-2">R = round(C/40 * 10, 1)</p>
+                </div>
+                <div class="text-center">
+                    <span class="result-label">Reading</span>
+                    <span class="result-number block" id="r-res">8.0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+</main>
+
+<script>
+function $(id) { return document.getElementById(id); }
+function clampRound(x) { return Math.round(Math.max(1, Math.min(10, x)) * 2) / 2; }
+function round1(x) { return Math.round(x * 10) / 10; }
+
+/* ─── HELPERS ─── */
+
+function resolveBand(count) {
+    const t = {0:5, 1:6, 3:7, 5:8, 6:9, 7:10};
+    let band = 5;
+    for (const [k,v] of Object.entries(t)) { if (count >= +k) band = v; }
+    return band;
+}
+
+function maxAccuracy(count) {
+    if (count >= 5) return 10;
+    if (count >= 3) return 9;
+    return 7;
+}
+
+function thresholdBonus(val, thresholds) {
+    let bonus = 0;
+    for (const t of thresholds) { if (val >= t[0]) bonus = t[1]; }
+    return bonus;
+}
+
+/* ─── WRITING ─── */
+
+function updateWriting() {
+    // Grammar
+    const types = +$('wg-types').value;
+    const errors = +$('wg-errors').value;
+    const sentences = +$('wg-sentences').value || 1;
+    $('wg-types-label').innerText = types;
+
+    const range = resolveBand(types);
+    const errorPen = sentences > 0 ? Math.min(10, (errors / sentences) * 5) : 0;
+    const accuracy = Math.min(maxAccuracy(types), Math.max(0, 10 - errorPen));
+    const G = clampRound((range + accuracy) / 2);
+    $('w-G').innerText = G.toFixed(1);
+
+    // Vocabulary
+    const ur = +$('wv-ur').value;
+    const awl = +$('wv-awl').value;
+    const rg = +$('wv-rg').value;
+    const cv = +$('wv-cv').value;
+    $('wv-ur-label').innerText = ur.toFixed(2);
+    $('wv-awl-label').innerText = awl.toFixed(1);
+    $('wv-rg-label').innerText = rg;
+    $('wv-cv-label').innerText = cv;
+
+    const Bu = thresholdBonus(ur, [[0.45,1],[0.55,2],[0.65,3]]);
+    const Bl = thresholdBonus(awl, [[4.5,1],[5.5,2]]);
+    const Br = rg > 10 ? 2 : (rg > 8 ? 1 : 0);
+    const Bc = cv > 5 ? 2 : (cv > 2 ? 1 : 0);
+    const V = Math.min(8, clampRound(3 + Bu + Bl + Br + Bc));
+    $('w-V').innerText = V.toFixed(1);
+
+    // Task Fulfillment
+    const covered = +$('wt-covered').value;
+    const required = +$('wt-total').value;
+    const position = $('wt-position').checked ? 1 : 0;
+    const irrelevant = $('wt-irrelevant').checked ? 2 : 0;
+    $('wt-covered-label').innerText = covered;
+    $('wt-total-label').innerText = required;
+    const T = clampRound((covered / Math.max(1, required)) * 7 + position - irrelevant);
+    $('w-T').innerText = T.toFixed(1);
+
+    // Organization
+    const para = +$('wo-para').value;
+    const link = +$('wo-link').value;
+    const variety = +$('wo-var').value;
+    const oSent = +$('wo-sent').value;
+    $('wo-para-label').innerText = para;
+    $('wo-link-label').innerText = link;
+    $('wo-var-label').innerText = variety.toFixed(1);
+    $('wo-sent-label').innerText = oSent;
+
+    const paraBonus = {1:1, 2:3, 3:4, 4:4, 5:4, 6:4}[para] || 1;
+    const L = Math.min(3, link * 0.5);
+    const varBonus = thresholdBonus(variety, [[4,1],[6,2]]);
+    const compact = (para === 1 && oSent > 8) ? 1 : 0;
+    const O = clampRound(1 + paraBonus + L + varBonus - compact);
+    $('w-O').innerText = O.toFixed(1);
+
+    // Composite
+    const words = +$('w-words').value;
+    const penalty = words > 0 ? Math.min(1, words / 120) : 0;
+    $('w-penalty-label').innerText = penalty.toFixed(2);
+
+    const avg = (T + O + G + V) / 4;
+    const W = clampRound(avg * penalty);
+    $('writing-res').innerText = W.toFixed(1);
+}
+
+/* ─── SPEAKING ─── */
+
+function updateSpeaking() {
+    // Grammar
+    const types = +$('sg-types').value;
+    $('sg-types-label').innerText = types;
+    const range = resolveBand(types);
+    const accuracy = Math.min(maxAccuracy(types), 10); // no LT errors
+    const G = clampRound((range + accuracy) / 2);
+    $('s-G').innerText = G.toFixed(1);
+
+    // Vocabulary
+    const ur = +$('sv-ur').value;
+    const awl = +$('sv-awl').value;
+    $('sv-ur-label').innerText = ur.toFixed(2);
+    $('sv-awl-label').innerText = awl.toFixed(1);
+    const Bu = thresholdBonus(ur, [[0.45,1],[0.55,2],[0.65,3]]);
+    const Bl2 = thresholdBonus(awl, [[4.5,1],[5.5,2]]);
+    const V = Math.min(8, clampRound(3 + Bu + Bl2));
+    $('s-V').innerText = V.toFixed(1);
+
+    // Fluency
+    const wpm = +$('sf-wpm').value;
+    const pause = +$('sf-pause').value;
+    const words = +$('sf-words').value || 1;
+    $('sf-wpm-label').innerText = wpm;
+    const rateB = thresholdBonus(wpm, [[60,1],[90,2],[120,3],[150,4]]);
+    const pausesPer100 = (pause / words) * 100;
+    const pauseP = pausesPer100 > 15 ? 2 : (pausesPer100 > 8 ? 1 : 0);
+    const F = clampRound(3 + rateB - pauseP);
+    $('s-F').innerText = F.toFixed(1);
+
+    // Discourse
+    const link = +$('sd-link').value;
+    const variety = +$('sd-var').value;
+    const cf = +$('sd-cf').value / 100;
+    $('sd-link-label').innerText = link;
+    $('sd-var-label').innerText = variety.toFixed(1);
+    $('sd-cf-label').innerText = cf.toFixed(1);
+    const Bl3 = Math.min(3, link * 0.5);
+    const Bv = thresholdBonus(variety, [[4,1],[6,2]]);
+    const structural = clampRound(1 + Bl3 + Bv);
+    const D = clampRound(structural * Math.max(0.5, Math.min(1, cf)));
+    $('s-D').innerText = D.toFixed(1);
+
+    // Pronunciation
+    const pa = +$('sp-pa').value;
+    $('sp-pa-label').innerText = pa;
+    const P = clampRound(pa / 10);
+    $('s-P').innerText = P.toFixed(1);
+
+    // Overall
+    const avg = (G + V + F + D + P) / 5;
+    $('speaking-res').innerText = clampRound(avg).toFixed(1);
+}
+
+/* ─── MCQ ─── */
+
+function updateMcq() {
+    const lv = Math.min(35, Math.max(0, +$('l-val').value || 0));
+    const rv = Math.min(40, Math.max(0, +$('r-val').value || 0));
+    $('l-res').innerText = round1((lv / 35) * 10).toFixed(1);
+    $('r-res').innerText = round1((rv / 40) * 10).toFixed(1);
+}
+
+/* ─── TABS ─── */
+
+function switchTab(id) {
+    document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden'));
+    $('tab-' + id).classList.remove('hidden');
+    document.querySelectorAll('.sidebar-link').forEach(e => e.classList.remove('active'));
+    $('btn-' + id).classList.add('active');
+}
+
+/* ─── INIT ─── */
+
+window.onload = function() {
+    new Chart($('overviewChart'), {
+        type: 'radar',
+        data: {
+            labels: ['Listening', 'Reading', 'Writing', 'Speaking'],
+            datasets: [{
+                label: 'Candidate',
+                data: [8.0, 8.0, 7.0, 5.5],
+                backgroundColor: 'rgba(0,0,0,0.04)',
+                borderColor: '#111',
+                borderWidth: 2,
+                pointBackgroundColor: '#111'
+            }]
+        },
+        options: {
+            maintainAspectRatio: false,
+            scales: { r: { beginAtZero: true, max: 10, ticks: { display: false }, grid: { color: '#eee' }, angleLines: { color: '#eee' } } },
+            plugins: { legend: { display: false } }
+        }
+    });
+    updateWriting();
+    updateSpeaking();
+    updateMcq();
+};
+</script>
+</body>
+</html>
