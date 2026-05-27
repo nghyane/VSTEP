@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { loadGoogleIdentity } from "#/lib/google-identity"
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
@@ -12,6 +12,12 @@ interface Props {
 export function GoogleButton({ onToken, text = "continue_with", disabled }: Props) {
 	const containerRef = useRef<HTMLDivElement>(null)
 	const [error, setError] = useState(false)
+	const onTokenRef = useRef(onToken)
+	onTokenRef.current = onToken
+
+	const stableCallback = useCallback((resp: { credential: string }) => {
+		if (resp.credential) onTokenRef.current(resp.credential)
+	}, [])
 
 	useEffect(() => {
 		if (!CLIENT_ID || !containerRef.current) return
@@ -25,9 +31,7 @@ export function GoogleButton({ onToken, text = "continue_with", disabled }: Prop
 				if (!google) throw new Error("Google Identity not available")
 				google.initialize({
 					client_id: CLIENT_ID,
-					callback: (resp) => {
-						if (resp.credential) onToken(resp.credential)
-					},
+					callback: stableCallback,
 					auto_select: false,
 					cancel_on_tap_outside: true,
 					use_fedcm_for_prompt: true,
@@ -52,7 +56,7 @@ export function GoogleButton({ onToken, text = "continue_with", disabled }: Prop
 		return () => {
 			cancelled = true
 		}
-	}, [onToken, text])
+	}, [stableCallback, text])
 
 	if (!CLIENT_ID) {
 		return (
