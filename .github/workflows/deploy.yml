@@ -38,9 +38,11 @@ jobs:
               rm apps/backend-v2/.env.deploy-backup
             fi
 
-            # Backend + horizon + dependencies: rebuild locally, then recreate all.
-            # --force-recreate on backend alone can cause postgres/redis to stop
-            # without restarting → 500. Always include infrastructure.
-            docker compose -f docker-compose.yml --env-file .env up -d --build --force-recreate --remove-orphans backend horizon postgres redis
+            # Rebuild + recreate only application containers (backend, horizon).
+            # Infrastructure (postgres, redis) stays running → zero-downtime check.
+            # Forcing postgres/redis would cause ~30s window where rate limiter
+            # and DB queries fail → 500 on every request.
+            docker compose -f docker-compose.yml --env-file .env up -d --build --force-recreate --remove-orphans backend horizon
+            docker compose -f docker-compose.yml --env-file .env up -d --remove-orphans
 
             docker image prune -f
