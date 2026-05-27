@@ -167,12 +167,47 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
         $slot->delete();
     }
 
-    public function listBookings(Course $course): Builder
-    {
-        return TeacherBooking::query()
+    public function listBookings(
+        Course $course,
+        ?string $status = null,
+        ?string $search = null,
+        string $sort = 'booked_at',
+        string $direction = 'desc',
+    ): Builder {
+        $query = TeacherBooking::query()
             ->whereHas('slot', fn ($q) => $q->where('course_id', $course->id))
-            ->with(['slot:id,course_id,starts_at,duration_minutes', 'profile:id,account_id,nickname', 'profile.account:id,full_name,email'])
-            ->orderByDesc('booked_at');
+            ->with(['slot:id,course_id,starts_at,duration_minutes', 'profile:id,account_id,nickname', 'profile.account:id,full_name,email']);
+
+        if ($status !== null && $status !== '') {
+            $query->where('status', $status);
+        }
+
+        if ($search !== null && $search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('profile.account', fn ($a) => $a->where('full_name', 'ilike', "%{$search}%")->orWhere('email', 'ilike', "%{$search}%"))
+                    ->orWhereHas('profile', fn ($p) => $p->where('nickname', 'ilike', "%{$search}%"));
+            });
+        }
+
+        $allowedSorts = ['booked_at', 'status', 'starts_at'];
+        $sortCol = in_array($sort, $allowedSorts, true) ? $sort : 'booked_at';
+        $dir = $direction === 'asc' ? 'asc' : 'desc';
+
+        if ($sortCol === 'starts_at') {
+            $query->orderBy(
+                \App\Models\TeacherSlot::query()
+                    ->select('starts_at')
+                    ->whereColumn('teacher_slots.id', 'teacher_bookings.slot_id')
+                    ->limit(1),
+                $dir,
+            );
+        } elseif ($sortCol === 'booked_at') {
+            $query->orderBy('booked_at', $dir);
+        } else {
+            $query->orderBy($sortCol, $dir)->orderByDesc('booked_at');
+        }
+
+        return $query;
     }
 
     public function updateBookingMeetUrl(TeacherBooking $booking, ?string $meetUrl): TeacherBooking
