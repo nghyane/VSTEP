@@ -348,7 +348,7 @@ function EnrolledCard({
 					rel="noreferrer"
 					className="btn btn-primary w-full py-3 text-sm font-bold inline-flex items-center justify-center"
 				>
-					Vào Zoom
+					Vào Meet
 				</a>
 			)}
 			<Link
@@ -624,7 +624,7 @@ function SessionDetailDialog({
 			? "from-border-light to-transparent"
 			: "from-primary-tint/60 to-transparent"
 
-	const showZoom = livestreamUrl !== null && !past
+	const showMeet = livestreamUrl !== null && !past
 
 	return createPortal(
 		<div
@@ -697,7 +697,7 @@ function SessionDetailDialog({
 						</div>
 					</div>
 
-					{showZoom && livestreamUrl !== null && (
+					{showMeet && livestreamUrl !== null && (
 						<a
 							href={livestreamUrl}
 							target="_blank"
@@ -705,7 +705,7 @@ function SessionDetailDialog({
 							className="btn btn-primary w-full py-3 text-sm"
 						>
 							<Icon name="play" size="xs" className="text-white" />
-							{today ? "Vào lớp Zoom ngay" : "Mở link Zoom"}
+							{today ? "Vào lớp Meet ngay" : "Mở link Meet"}
 						</a>
 					)}
 

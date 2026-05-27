@@ -209,7 +209,7 @@ function EnrolledCardActions({ course, status }: { course: Course; status: { act
 						className="btn btn-primary flex-1 text-sm"
 					>
 						<Icon name="play" size="xs" className="text-white" />
-						Vào Zoom
+						Vào Meet
 					</a>
 					<Link
 						to="/khoa-hoc/$courseId"

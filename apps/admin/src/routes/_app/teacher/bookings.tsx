@@ -1,3 +1,4 @@
+import { LinkOutlined } from "@ant-design/icons"
 import { createFileRoute, redirect } from "@tanstack/react-router"
 import { Card, Empty, Skeleton, Table, Tag, Typography } from "antd"
 import type { ColumnsType } from "antd/es/table"
@@ -34,6 +35,18 @@ const columns: ColumnsType<TeacherBookingItem> = [
 		title: "Thời gian",
 		dataIndex: ["slot", "starts_at"],
 		render: (v) => (v ? dayjs(v).format("DD/MM/YYYY HH:mm") : "—"),
+	},
+	{
+		title: "Google Meet",
+		dataIndex: "meet_url",
+		render: (v: string | null) =>
+			v ? (
+				<Typography.Link href={v} target="_blank" rel="noreferrer" ellipsis>
+					<LinkOutlined /> {v}
+				</Typography.Link>
+			) : (
+				<Typography.Text type="secondary">—</Typography.Text>
+			),
 	},
 	{
 		title: "Trạng thái",
