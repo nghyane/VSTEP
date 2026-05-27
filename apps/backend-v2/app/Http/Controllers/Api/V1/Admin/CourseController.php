@@ -264,9 +264,15 @@ final class CourseController extends Controller
         $course = Course::query()->findOrFail($id);
         $perPage = max(1, min((int) $request->integer('per_page', 20), 100));
 
-        return AdminTeacherBookingResource::collection(
-            $this->service->listBookings($course)->paginate($perPage),
+        $query = $this->service->listBookings(
+            $course,
+            status: $request->query('status'),
+            search: $request->query('search'),
+            sort: $request->query('sort', 'booked_at'),
+            direction: $request->query('direction', 'desc'),
         );
+
+        return AdminTeacherBookingResource::collection($query->paginate($perPage));
     }
 
     public function updateBooking(UpdateBookingRequest $request, string $bookingId): AdminTeacherBookingResource

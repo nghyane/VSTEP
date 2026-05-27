@@ -52,6 +52,10 @@ final class AdminCourseResource extends JsonResource
                 isset($this->resource->schedule_items_count),
                 fn () => (int) $this->resource->schedule_items_count,
             ),
+            'enrollment_order_count' => $this->when(
+                isset($this->resource->enrollment_orders_count),
+                fn () => (int) $this->resource->enrollment_orders_count,
+            ),
             'created_at' => $this->resource->created_at,
             'updated_at' => $this->resource->updated_at,
         ];

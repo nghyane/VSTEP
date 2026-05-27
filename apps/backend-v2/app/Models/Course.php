@@ -45,6 +45,11 @@ class Course extends BaseModel
         return $this->hasMany(CourseEnrollment::class);
     }
 
+    public function enrollmentOrders(): HasMany
+    {
+        return $this->hasMany(CourseEnrollmentOrder::class);
+    }
+
     public function slots(): HasMany
     {
         return $this->hasMany(TeacherSlot::class);

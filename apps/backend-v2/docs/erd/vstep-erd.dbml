@@ -703,6 +703,7 @@ Table teacher_bookings {
   meet_url varchar(500)
   status varchar(20) [not null]
   booked_at timestamp [not null]
+  cancelled_at timestamp
   created_at timestamp
   updated_at timestamp
 }
@@ -965,4 +966,3 @@ TableGroup wallet_promo {
   promo_code_redemptions
   system_configs
 }
-

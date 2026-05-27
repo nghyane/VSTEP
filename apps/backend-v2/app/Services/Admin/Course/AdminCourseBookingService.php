@@ -97,11 +97,11 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
             }
             foreach ($times as $time) {
                 [$h, $m] = array_map('intval', explode(':', $time));
-                $slotStart = $dayImm->setTime($h, $m);
+                $slotStart = $dayImm->setTime($h, $m)->utc();
                 if ($slotStart->lessThanOrEqualTo($now)) {
                     continue;
                 }
-                $key = $slotStart->utc()->toDateTimeString();
+                $key = $slotStart->toDateTimeString();
                 $candidates[$key] = $slotStart;
             }
         }
@@ -117,7 +117,7 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
                 ->where('course_id', $course->id)
                 ->whereIn('starts_at', array_keys($candidates))
                 ->pluck('starts_at')
-                ->map(fn ($v) => CarbonImmutable::parse($v)->toDateTimeString())->all();
+                ->map(fn ($v) => CarbonImmutable::parse($v)->utc()->toDateTimeString())->all();
             $existingSet = array_flip($existing);
 
             $rows = [];
@@ -135,7 +135,13 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
             }
 
             if ($rows !== []) {
-                TeacherSlot::query()->insert($rows);
+                try {
+                    TeacherSlot::query()->insert($rows);
+                } catch (UniqueConstraintViolationException) {
+                    throw ValidationException::withMessages([
+                        'slots' => ['Một số slot trùng lịch đã tồn tại. Vui lòng kiểm tra lại khung giờ.'],
+                    ]);
+                }
             }
 
             return ['created' => count($rows), 'skipped' => count($candidates) - count($rows)];
@@ -167,12 +173,47 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
         $slot->delete();
     }
 
-    public function listBookings(Course $course): Builder
-    {
-        return TeacherBooking::query()
+    public function listBookings(
+        Course $course,
+        ?string $status = null,
+        ?string $search = null,
+        string $sort = 'booked_at',
+        string $direction = 'desc',
+    ): Builder {
+        $query = TeacherBooking::query()
             ->whereHas('slot', fn ($q) => $q->where('course_id', $course->id))
-            ->with(['slot:id,course_id,starts_at,duration_minutes', 'profile:id,account_id,nickname', 'profile.account:id,full_name,email'])
-            ->orderByDesc('booked_at');
+            ->with(['slot:id,course_id,starts_at,duration_minutes', 'profile:id,account_id,nickname', 'profile.account:id,full_name,email']);
+
+        if ($status !== null && $status !== '') {
+            $query->where('status', $status);
+        }
+
+        if ($search !== null && $search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('profile.account', fn ($a) => $a->where('full_name', 'ilike', "%{$search}%")->orWhere('email', 'ilike', "%{$search}%"))
+                    ->orWhereHas('profile', fn ($p) => $p->where('nickname', 'ilike', "%{$search}%"));
+            });
+        }
+
+        $allowedSorts = ['booked_at', 'status', 'starts_at'];
+        $sortCol = in_array($sort, $allowedSorts, true) ? $sort : 'booked_at';
+        $dir = $direction === 'asc' ? 'asc' : 'desc';
+
+        if ($sortCol === 'starts_at') {
+            $query->orderBy(
+                TeacherSlot::query()
+                    ->select('starts_at')
+                    ->whereColumn('teacher_slots.id', 'teacher_bookings.slot_id')
+                    ->limit(1),
+                $dir,
+            );
+        } elseif ($sortCol === 'booked_at') {
+            $query->orderBy('booked_at', $dir);
+        } else {
+            $query->orderBy($sortCol, $dir)->orderByDesc('booked_at');
+        }
+
+        return $query;
     }
 
     public function updateBookingMeetUrl(TeacherBooking $booking, ?string $meetUrl): TeacherBooking
@@ -180,36 +221,93 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
         if (! in_array($booking->status, BookingStatus::activeStatuses(), true)) {
             throw ValidationException::withMessages(['booking' => ['Chỉ booking đang active mới chỉnh được meet URL.']]);
         }
+
+        $previous = $booking->meet_url;
+        if ($previous === $meetUrl) {
+            return $booking->fresh(['slot', 'profile.account']);
+        }
+
         $booking->update(['meet_url' => $meetUrl]);
+
+        $startsAt = $booking->slot->starts_at->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i');
+        if ($meetUrl === null) {
+            $title = 'Link buổi học đã bị gỡ';
+            $body = "Trung tâm đã gỡ link phòng học cho buổi {$startsAt}. Vui lòng chờ link mới.";
+        } elseif ($previous === null) {
+            $title = 'Đã có link phòng học';
+            $body = "Buổi học {$startsAt} đã có link phòng học. Bấm vào để xem chi tiết.";
+        } else {
+            $title = 'Link phòng học đã được cập nhật';
+            $body = "Trung tâm đã cập nhật link phòng học cho buổi {$startsAt}.";
+        }
+
+        $this->notification->push(
+            $booking->profile,
+            type: NotificationType::BookingMeetUrlUpdated,
+            title: $title,
+            body: $body,
+            iconKey: IconKey::Calendar,
+            payload: ['booking_id' => $booking->id, 'meet_url' => $meetUrl],
+            dedupKey: "booking_meet_url:{$booking->id}:".md5((string) $meetUrl),
+        );
 
         return $booking->fresh(['slot', 'profile.account']);
     }
 
     public function cancelBooking(TeacherBooking $booking): TeacherBooking
     {
-        if ($booking->status === BookingStatus::Cancelled) {
-            throw ValidationException::withMessages(['booking' => ['Booking đã hủy rồi.']]);
-        }
+        $booking = DB::transaction(function () use ($booking) {
+            /** @var TeacherBooking $locked */
+            $locked = TeacherBooking::query()
+                ->whereKey($booking->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        $booking->update(['status' => BookingStatus::Cancelled, 'cancelled_at' => now()]);
+            if ($locked->status === BookingStatus::Cancelled) {
+                throw ValidationException::withMessages(['booking' => ['Booking đã hủy rồi.']]);
+            }
 
-        $coinTx = CoinTransaction::query()
-            ->where('source_type', CoinSourceType::TeacherBooking)
-            ->where('source_id', $booking->id)
-            ->where('type', CoinTransactionType::Spend)
-            ->first();
+            $locked->loadMissing(['slot', 'profile']);
+            $locked->update(['status' => BookingStatus::Cancelled, 'cancelled_at' => now()]);
 
-        if ($coinTx) {
-            $amount = abs($coinTx->delta);
-            $this->wallet->credit($booking->profile, $amount, CoinTransactionType::Refund, CoinSourceType::TeacherBooking, $booking->id);
-            $this->wallet->recalculateSpendingToday($booking->profile);
-        }
+            $slot = $locked->slot;
+            if ($slot && $slot->status === SlotStatus::Booked) {
+                $slot->update(['status' => SlotStatus::Open]);
+            }
+
+            $coinTx = CoinTransaction::query()
+                ->where('source_type', CoinSourceType::TeacherBooking->value)
+                ->where('source_id', $locked->id)
+                ->where('type', CoinTransactionType::TeacherBooking)
+                ->first();
+
+            $alreadyRefunded = CoinTransaction::query()
+                ->where('source_type', CoinSourceType::TeacherBooking->value)
+                ->where('source_id', $locked->id)
+                ->where('type', CoinTransactionType::Refund)
+                ->exists();
+
+            if ($coinTx && ! $alreadyRefunded) {
+                $amount = abs((int) $coinTx->delta);
+                if ($amount > 0) {
+                    $this->wallet->credit(
+                        $locked->profile,
+                        $amount,
+                        CoinTransactionType::Refund,
+                        $locked,
+                        ['reason' => 'booking_cancelled'],
+                    );
+                }
+            }
+
+            return $locked;
+        });
 
         $this->notification->push(
             $booking->profile,
             type: NotificationType::BookingCancelled,
             title: 'Buổi học đã bị hủy',
-            body: "Buổi học {$booking->slot->starts_at->format('d/m/Y H:i')} đã bị hủy bởi trung tâm.",
+            body: "Buổi học {$booking->slot->starts_at->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i')} đã bị hủy bởi trung tâm.",
             iconKey: IconKey::Alert,
             dedupKey: "booking_cancelled:{$booking->id}",
         );

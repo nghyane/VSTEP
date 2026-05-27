@@ -52,9 +52,11 @@ export function AddEnrollmentDialog({ open, onClose, courseId }: Props) {
 	// Auto-expand: chỉ có 1 user kết quả → mở luôn để admin chọn ngay.
 	// Còn lại: tất cả collapsed; admin click vào user để expand.
 	const [expanded, setExpanded] = useState<Set<string>>(new Set())
+	const userIds = useMemo(() => users.map((u) => u.id).join(","), [users])
 	useEffect(() => {
 		setExpanded(users.length === 1 ? new Set([users[0].id]) : new Set())
-	}, [users])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [userIds])
 
 	function toggleUser(id: string): void {
 		setExpanded((prev) => {

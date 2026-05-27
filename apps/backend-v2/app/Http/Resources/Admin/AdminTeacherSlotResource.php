@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources\Admin;
 
+use App\Enums\BookingStatus;
 use App\Models\TeacherBooking;
 use App\Models\TeacherSlot;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ final class AdminTeacherSlotResource extends JsonResource
     public function toArray(Request $request): array
     {
         $activeBooking = $this->resource->relationLoaded('bookings')
-            ? $this->resource->bookings->whereIn('status', ['booked', 'completed'])->first()
+            ? $this->resource->bookings->whereIn('status', BookingStatus::activeStatuses())->first()
             : null;
 
         return [

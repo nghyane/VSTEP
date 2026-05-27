@@ -25,7 +25,13 @@ interface AdminCourseBookingInterface
 
     public function deleteSlot(TeacherSlot $slot): void;
 
-    public function listBookings(Course $course): Builder;
+    public function listBookings(
+        Course $course,
+        ?string $status = null,
+        ?string $search = null,
+        string $sort = 'booked_at',
+        string $direction = 'desc',
+    ): Builder;
 
     public function updateBookingMeetUrl(TeacherBooking $booking, ?string $meetUrl): TeacherBooking;
 

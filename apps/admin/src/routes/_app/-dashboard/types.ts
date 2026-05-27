@@ -112,3 +112,14 @@ export interface TopContent {
 	vocab: Array<{ title: string; sessions: number }>
 	grammar: Array<{ title: string; sessions: number }>
 }
+
+export interface AdminNotificationItem {
+	id: number
+	type: string
+	title: string
+	body: string
+	icon_key: string
+	payload: Record<string, string> | null
+	read_at: string | null
+	created_at: string
+}
