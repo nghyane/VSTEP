@@ -258,7 +258,7 @@ final class ValidateScoring extends Command
             [
                 'label' => 'Bài 3: Mua sắm online',
                 'type' => 'Task 2 - Essay',
-                'expected_level' => 'B2',
+                'expected_level' => 'B1',
                 'prompt' => 'Nowadays online shopping becomes more popular than in-store shopping. Is it a positive or a negative development? Write an essay discussing advantages and disadvantages, and give your opinion.',
                 'requirements' => [
                     'Discuss advantages of online shopping',
@@ -354,7 +354,7 @@ final class ValidateScoring extends Command
             [
                 'label' => 'Bài 9: B1 — good but simple',
                 'type' => 'Task 2 - Essay',
-                'expected_level' => 'B2',
+                'expected_level' => 'B1',
                 'prompt' => 'Air pollution: who is responsible — government or individuals?',
                 'requirements' => ['State opinion', 'Discuss government role', 'Discuss individual role'],
                 'text' => "Air pollution is becoming a serious problem in many cities around the world. Some people believe that only the government should solve this problem. However, I think both government and individuals have important roles.\n\nFirst, the government can make strict laws to control pollution from factories and vehicles. For example, they can limit cars in the city center and encourage people to use public transport. The government can also invest in clean energy like solar power.\n\nSecond, individuals also have responsibility. People can do small things like using public transport instead of driving a car. They can also plant trees and save electricity at home. If everyone does a little, it can make a big difference.\n\nIn conclusion, I believe that solving air pollution need both government and individuals to work together. Only when both sides take action can we have clean air.",
