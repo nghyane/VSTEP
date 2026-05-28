@@ -84,6 +84,8 @@ final class WritingGradingStrategy implements GradingStrategy
 
         $job->addProgress('metrics', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
 
+        $part = $this->extractPart($submission);
+
         // Phase 3: LLM check — requirement YES/NO (both modes, <1s)
         $t = microtime(true);
         $requirements = $this->extractRequirements($submission);
