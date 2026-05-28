@@ -8,6 +8,7 @@ use App\Enums\AdminNotificationType;
 use App\Enums\IconKey;
 use App\Models\AdminNotification;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
 final class AdminNotificationService
 {
@@ -62,7 +63,7 @@ final class AdminNotificationService
     }
 
     /**
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     * @return LengthAwarePaginator
      */
     public function list(User $user, int $perPage = 20): mixed
     {

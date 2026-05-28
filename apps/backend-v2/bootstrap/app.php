@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Middleware\ActiveProfile;
-use App\Http\Middleware\AiCircuitBreaker;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\JsonUtf8;
 use Illuminate\Auth\AuthenticationException;
@@ -23,7 +22,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => CheckRole::class,
             'active-profile' => ActiveProfile::class,
-            'ai-circuit-breaker' => AiCircuitBreaker::class,
         ]);
 
         $middleware->append(JsonUtf8::class);

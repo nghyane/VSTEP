@@ -8,79 +8,124 @@ namespace App\Services;
  * Lightweight syntactic structure counter — no external NLP dependency.
  *
  * Counts complex structure types in English text via regex patterns.
- * Used to anchor VSTEP grammar rubric (v3) which specifies required
+ * Used to anchor VSTEP grammar rubric which specifies required
  * structure counts per band level (Thông tư 23/2017/TT-BGDĐT, operationalized).
  *
  * Runtime: <1ms per essay. Deterministic output.
  *
  * Limitations (documented):
  *   - Regex-based, not a full parser. May have ±1 type count error vs manual analysis.
- *   - Relative clause detection may include some non-restrictive "that" usages.
- *   - Passive detection may misclassify participial adjectives (e.g. "I am tired").
- *   - Suitable as an objective signal for LLM context, not as a standalone grader.
+ *   - Suitable as an objective signal, not as a standalone grader.
  */
 final class SyntaxAnalyzer
 {
     /** @var array<string, string> */
     private const STRUCTURES = [
-        // Band 6+: conditional sentences
+
+        // ── Conditional ─────────────────────────────────────────────
         'conditional' => '~
             \bif\b(?!.*\?)
             |\bunless\b
             |\bprovided\s+that\b
             |\b(?:what\s+if|suppose|supposing|imagine)\b
-            |\bwish\b\s+(?:I|we|he|she|they)\s+\w+ed\b
+            |\bwish\b\s+(?:I|we|he|she|they)\s+(?:\w+ed|had\s+\w+ed|could|would)\b
         ~ix',
 
+        // ── Relative Clause ─────────────────────────────────────────
+        // who/which + auxiliary verb → relative clause intro
+        // Excludes: this, always, plus, its (common false positives)
         'relative_clause' => '~
-            \bwho\s+(?:is|are|was|were|has|have|had|will|would|can|could|\w+s\b)
-            |\bwhich\s+(?:is|are|was|were|has|have|had|will|would|can|could|\w+s\b)
+            \bwho\s+(?:is|are|was|were|has|have|had|will|would|can|could|may|might|must|should|shall)\b
+            |\bwhich\s+(?:is|are|was|were|has|have|had|will|would|can|could|may|might|must|should|shall)\b
             |\bwhom\b
             |\bwhose\b
         ~ix',
 
+        // ── Passive Voice ───────────────────────────────────────────
+        // be/get + (not) + (adverb) + past_participle
+        // Matches: -ed, -en, and common irregular participles
+        // Excludes participial adjectives (state, not action)
         'passive_voice' => '~
             \b(?:am|is|are|was|were|been|being|got|get)\s+
-            (?:not\s+)?(?:also\s+|often\s+|usually\s+|always\s+|never\s+)?
-            (?!tired|excited|interested|bored|worried|surprised|confused|disappointed|satisfied|relaxed|scared|frightened|pleased|annoyed|embarrassed|frustrated|shocked|amazed|based|located|situated)(\w+(?:ed|en))\b
+            (?:not\s+)?(?:also\s+|often\s+|usually\s+|always\s+|never\s+|frequently\s+|sometimes\s+)?
+            (?!tired|excited|interested|bored|worried|surprised|confused|disappointed
+               |satisfied|relaxed|scared|frightened|pleased|annoyed|embarrassed|frustrated
+               |shocked|amazed|based|located|situated|concerned|depressed|exhausted
+               |involved|married|prepared|supposed|used|determined|experienced|qualified
+               |related|skilled|specialized|united|devoted|dedicated|complicated|balanced
+               |convinced|educated|employed|organized|published|recognized|respected
+               |stressed|supported|talented|designed|expected|required|honored|known
+               |pleased|annoyed|embarrassed|frustrated)\b
+            (?: \w+(?:ed|en)\b
+               | \b(?:built|sent|spent|kept|left|lost|made|paid|sold|told
+                     |bought|taught|caught|thought|found|heard|held|led|met
+                     |felt|dealt|meant|won|read|cut|put|set|hit|brought)\b)
         ~ix',
 
+        // ── Complex Conjunction ─────────────────────────────────────
         'complex_conjunction' => '~
             \b(?:although|though|even\s+though)\b
             |\b(?:despite|in\s+spite\s+of)\b
             |\bwhereas\b
             |\bwhile\b(?!.*\?)
             |\b(?:so\s+that|in\s+order\s+(?:that|to))\b
+            |\b(?:as\s+long\s+as|as\s+soon\s+as|as\s+far\s+as)\b
         ~ix',
 
+        // ── Participle Phrase (sentence opener) ─────────────────────
         'participle_phrase' => '~
-            ^\s*(?:Having|Being|Facing|Considering|Given|Looking|Taking|Based|Compared)\s+\w+(?:ed|en|ing)\b
+            ^\s*(?:Having|Being|Facing|Considering|Given|Looking|Taking|Based|Compared
+                  |Assuming|Regarding|Depending|Following|Including|Speaking|Using)\s+\w+
         ~imx',
 
+        // ── Inversion ───────────────────────────────────────────────
         'inversion' => '~
-            \b(?:Not\s+only|Never|Rarely|Seldom|Hardly|No\s+sooner|Only\s+then|Only\s+in\s+this\s+way|Under\s+no\s+circumstances|At\s+no\s+time)\b
+            \b(?:Not\s+only|Never|Rarely|Seldom|Hardly|No\s+sooner
+               |Only\s+then|Only\s+in\s+this\s+way|Only\s+after|Only\s+when
+               |Under\s+no\s+circumstances|At\s+no\s+time|In\s+no\s+way
+               |On\s+no\s+account|Not\s+until|Little\s+did|Nowhere)\b
         ~ix',
 
+        // ── Cleft Sentence ──────────────────────────────────────────
+        // It is/was + NOT adjective + ... + that/who/which/when/where
         'cleft_sentence' => '~
-            \bIt\s+(?:is|was)\s+(?!clear|important|obvious|necessary|essential|true|likely|possible|probable|difficult|easy|hard|good|bad|nice|interesting|surprising|well.known|worth|better|worse)\b.+\b(?:that|who|which|when|where)\b
-            |\bWhat\b.+\b(?:is|was)\b.+\b(?:is|was|that)\b
-            |\bAll\b.+\b(?:is|was)\b.+\b(?:is|was|that)\b
+            \bIt\s+(?:is|was)\s+
+            (?!clear|important|obvious|necessary|essential|true|likely|possible
+               |probable|difficult|easy|hard|good|bad|nice|interesting|surprising
+               |well\-known|worth|better|worse|vital|crucial|strange|unusual|common
+               |rare|natural|normal|typical|unlikely|impossible|reasonable|evident
+               |apparent|fortunate|unfortunate|fair|unfair|appropriate|relevant)\b
+            .+\b(?:that|who|which|when|where)\b
+            |\bWhat\b.+\b(?:is|was)\b
+            |\bAll\b.+\b(?:is|was)\b
         ~ix',
 
+        // ── Subjunctive ─────────────────────────────────────────────
         'subjunctive' => '~
-            \b(?:suggest|recommend|insist|demand|propose|request|require|advise)\s+that\b
+            \b(?:suggest|recommend|insist|demand|propose|request|require|advise|order|command)\s+that\b
             |\b(?:if\s+I\s+were|if\s+he\s+were|if\s+she\s+were|if\s+it\s+were)\b
-            |\bas\s+(?:if|though)\b
+            |\b(?:it\s+is\s+(?:essential|vital|important|necessary|crucial)\s+that)\b
             |\bwould\s+(?:rather|sooner)\b
         ~ix',
 
+        // ── Comparative Correlative ─────────────────────────────────
+        // the + comparative ... the + comparative
         'comparative_correlative' => '~
-            \bthe\s+(?:more|less|fewer|better|worse|bigger|greater)\b.*\bthe\s+(?:more|less|fewer|better|worse|bigger|greater)\b
+            \bthe\s+(?:more|less|fewer|better|worse|bigger|greater|sooner|longer
+                     |harder|easier|higher|lower|faster|slower|stronger|weaker
+                     |closer|further|cheaper|later|earlier|smaller|larger)\b
+            [^.!?]*?\bthe\s+(?:more|less|fewer|better|worse|bigger|greater|sooner|longer
+                             |harder|easier|higher|lower|faster|slower|stronger|weaker
+                             |closer|further|cheaper|later|earlier|smaller|larger)\b
         ~ix',
 
+        // ── Causative ───────────────────────────────────────────────
         'causative' => '~
-            \b(?:have|get|had|got)\s+\w+\s+(?:\w+ed|done|fixed|repaired|cleaned|built|made)\b
-            |\b(?:make|let|help)\s+\w+\s+\w+\b
+            \b(?:have|get|had|got)\s+\w+(?:\s+\w+)*?\s+
+            (?:\w+ed|done|fixed|repaired|cleaned|built|made|painted|washed|cooked
+               |prepared|delivered|installed|checked|designed|developed|written
+               |taken|sent|bought|sold|created|changed|cut|set|baked)\b
+            |\b(?:make|let|help)\s+(?:me|him|her|us|them|you|it|\w+)\s+\w+\b
         ~ix',
     ];
 
@@ -107,27 +152,5 @@ final class SyntaxAnalyzer
             'count' => count($types),
             'details' => $details,
         ];
-    }
-
-    /**
-     * Map structure type count to VSTEP grammar band (v3 rubric anchor).
-     *
-     * Band 5: 0 complex types (simple sentences only — and/but/so/because)
-     * Band 6: 1-2 types (conditional, relative clause, or complex conjunction)
-     * Band 7: 3-4 types (adds passive, participle, comparative correlative)
-     * Band 8: 5 types     (adds cleft, subjunctive, inversion)
-     * Band 9: 6+ types    (full range mastered)
-     * Band 10: 7+ types   (nearly all types present)
-     */
-    public function structureBand(int $typeCount): int
-    {
-        return match (true) {
-            $typeCount >= 7 => 10,
-            $typeCount >= 6 => 9,
-            $typeCount >= 5 => 8,
-            $typeCount >= 3 => 7,
-            $typeCount >= 1 => 6,
-            default => 5,
-        };
     }
 }

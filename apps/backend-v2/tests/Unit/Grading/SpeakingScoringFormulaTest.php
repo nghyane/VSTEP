@@ -86,10 +86,10 @@ final class SpeakingScoringFormulaTest extends TestCase
 
     /* ─── Discourse — content factor ─── */
 
-    /** Khi contentFactor=0.5: điểm structural=6.0 bị giảm 50% → 3.0. */
+    /** Khi contentFactor=0.5: điểm structural=6.0 → clamp về 0.7 → 6.0×0.7=4.2→4.0. */
     public function test_discourse_content_factor_point_five(): void
     {
-        $this->assertSame(3.0, $this->formula->discourse(8, 7.0, 0.5));
+        $this->assertSame(4.0, $this->formula->discourse(8, 7.0, 0.5));
     }
 
     /** Khi contentFactor=1.0: điểm giữ nguyên (bài đúng trọng tâm). */
@@ -104,10 +104,10 @@ final class SpeakingScoringFormulaTest extends TestCase
         $this->assertSame(6.0, $this->formula->discourse(8, 7.0));
     }
 
-    /** contentFactor=0 → tự clamp về 0.5, không cho điểm về 0. */
+    /** contentFactor=0 → tự clamp về 0.7, không cho điểm về 0. */
     public function test_discourse_content_factor_clamped_below_minimum(): void
     {
-        $this->assertSame(3.0, $this->formula->discourse(8, 7.0, 0.0));
+        $this->assertSame(4.0, $this->formula->discourse(8, 7.0, 0.0));
     }
 
     /** contentFactor > 1 → tự clamp về 1.0, không vượt quá điểm gốc. */

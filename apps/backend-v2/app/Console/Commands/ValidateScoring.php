@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\GradingRubric;
-use App\Services\Grading\LlmGradingService;
+use App\Services\Ai\LlmTaskFulfillmentAssessor;
 use App\Services\Grading\WritingScoringFormula;
 use App\Services\RuleBasedScoringService;
 use App\Services\SyntaxAnalyzer;
@@ -27,7 +27,7 @@ final class ValidateScoring extends Command
     /** @var array<int, array{label: string, text: string, type: string, expected_level: string, expert_analysis: array<string,string>}> */
     private array $essays;
 
-    public function handle(LlmGradingService $llm, RuleBasedScoringService $metrics, SyntaxAnalyzer $syntax, WritingScoringFormula $formula): int
+    public function handle(LlmTaskFulfillmentAssessor $extractor, RuleBasedScoringService $metrics, SyntaxAnalyzer $syntax, WritingScoringFormula $formula): int
     {
         $rubric = GradingRubric::where('skill', 'writing')->where('is_active', true)->first();
 
@@ -58,19 +58,20 @@ final class ValidateScoring extends Command
 
             // Layer 2: LLM extracts evidence (task-specific requirements)
             try {
-                $llmResult = $llm->extractEvidence($essay['text'], $essay['prompt'] ?? '', $essay['requirements'] ?? [], [], $ruleAnalysis);
+                $evidence = $extractor->assess($essay['text'], $essay['prompt'] ?? '', $essay['requirements'] ?? [], [], $ruleAnalysis);
             } catch (\Throwable $e) {
                 $this->error("  LLM call failed: {$e->getMessage()}");
 
                 return self::FAILURE;
             }
 
-            $evidence = $llmResult['evidence'];
-
             // Layer 3: Formula computes scores from objective features
             // Only task_fulfillment uses LLM evidence (the only semantic criterion)
             $rubricScores = [
-                'task_fulfillment' => $formula->taskFulfillment($evidence['task_fulfillment'] ?? []),
+                'task_fulfillment' => $formula->taskFulfillment([
+                    'points_covered' => $evidence['points_covered'],
+                    'points_required' => $evidence['points_required'],
+                ]),
                 'organization' => $formula->organization(
                     $ruleAnalysis['metrics']['paragraph_count'],
                     $ruleAnalysis['metrics']['linking_word_count'],
@@ -94,8 +95,8 @@ final class ValidateScoring extends Command
                 'words' => $wordCount,
                 'expected_level' => $essay['expected_level'],
                 'actual_level' => $level,
-                'req_met' => $evidence['task_fulfillment']['points_covered'] ?? 0,
-                'req_total' => $evidence['task_fulfillment']['points_required'] ?? 0,
+                'req_met' => $evidence['points_covered'] ?? 0,
+                'req_total' => $evidence['points_required'] ?? 0,
                 'task_fulfillment' => $rubricScores['task_fulfillment'] ?? 0,
                 'organization' => $rubricScores['organization'] ?? 0,
                 'grammar' => $rubricScores['grammar'] ?? 0,
@@ -103,8 +104,6 @@ final class ValidateScoring extends Command
                 'overall_raw' => $overallBand,
                 'penalty' => $penalty,
                 'overall_final' => $finalBand,
-                'strengths' => $llmResult['strengths'] ?? [],
-                'improvements' => $llmResult['improvements'] ?? [],
                 'expert_analysis' => $essay['expert_analysis'],
             ];
         }
@@ -128,7 +127,7 @@ final class ValidateScoring extends Command
             foreach (['task_fulfillment', 'organization', 'grammar', 'vocabulary'] as $criterion) {
                 $score = number_format($r[$criterion], 1);
                 $expert = str_pad(mb_substr($r['expert_analysis'][$criterion], 0, 48), 48);
-                $this->line("  │ " . str_pad($criterion, 16) . " │ " . str_pad($score, 8) . " │ " . $expert . " │");
+                $this->line('  │ '.str_pad($criterion, 16).' │ '.str_pad($score, 8).' │ '.$expert.' │');
             }
             $this->line('  └──────────────────┴──────────┴──────────────────────────────────┘');
             $this->newLine();
@@ -169,7 +168,7 @@ final class ValidateScoring extends Command
             $this->line("  {$status} {$r['label']}: expected {$r['expected_level']} → got {$r['actual_level']} ({$r['overall_final']}/10)");
         }
         $this->newLine();
-        $this->info("  Alignment: {$matchCount}/" . count($results) . " essays match expected CEFR level");
+        $this->info("  Alignment: {$matchCount}/".count($results).' essays match expected CEFR level');
 
         $this->newLine();
         $this->line(str_repeat('═', 100));
@@ -262,7 +261,7 @@ final class ValidateScoring extends Command
                     'Discuss disadvantages of online shopping',
                     'State personal opinion',
                 ],
-                'text' => "We cannot deny that more and more people are becoming interested in online shopping. However, there are both good and bad things about shopping on the internet. On the one hand, online shopping has some advantages. First, it is convenient because we do not have to go to physical stores to buy things. We just need a phone or computer connected to the internet and the products will be delivered to our house. Second, it is cheaper than in-store shopping. You can easily compare prices on different websites in a few minutes. On the other hand, there are some disadvantages. Firstly, sometimes the products might be of low quality. When you order online, you only see the pictures and you cannot check the quality in person. Secondly, your personal information like bank account could be stolen by hackers and scammers. Thirdly, shopping online can make people spend too much money because it is so easy to place an order. In conclusion, online shopping has both benefits and drawbacks. In my opinion, it is a positive development overall because it makes life more convenient. However, people should be careful when shopping online to avoid problems.",
+                'text' => 'We cannot deny that more and more people are becoming interested in online shopping. However, there are both good and bad things about shopping on the internet. On the one hand, online shopping has some advantages. First, it is convenient because we do not have to go to physical stores to buy things. We just need a phone or computer connected to the internet and the products will be delivered to our house. Second, it is cheaper than in-store shopping. You can easily compare prices on different websites in a few minutes. On the other hand, there are some disadvantages. Firstly, sometimes the products might be of low quality. When you order online, you only see the pictures and you cannot check the quality in person. Secondly, your personal information like bank account could be stolen by hackers and scammers. Thirdly, shopping online can make people spend too much money because it is so easy to place an order. In conclusion, online shopping has both benefits and drawbacks. In my opinion, it is a positive development overall because it makes life more convenient. However, people should be careful when shopping online to avoid problems.',
                 'expert_analysis' => [
                     'task_fulfillment' => 'Đúng: 2 lợi ích + 3 bất lợi, ý kiến cá nhân',
                     'organization' => 'Rõ: intro→adv→disadv→conclusion, On one hand/On the other hand',
@@ -279,7 +278,7 @@ final class ValidateScoring extends Command
                     'Discuss effects of youth unemployment',
                     'Suggest solutions to the problem',
                 ],
-                'text' => "Nowadays, unemployment among young people is becoming a serious problem in many countries. This essay will discuss the effects of youth unemployment and suggest some possible solutions. Firstly, being jobless can make young people feel very sad and stressed. They have no income, so they cannot support themselves or help their families. This often leads to frustration in their life. Secondly, if they cannot find a job related to what they studied, they might forget the important knowledge and skills they learned in school. Some of them may have to take any work just to earn money, and over time they lose their professional skills. Finally, high unemployment among young people can lead to social problems. For example, a few unemployed youths might start stealing or doing other crimes to get money. However, there are some solutions to help reduce youth unemployment. On one hand, each young person should try to improve their abilities to meet the needs of employers. They can learn new skills or even start a small business. On the other hand, the government should create more job opportunities. For instance, they can invest in projects that need many workers or support young people to start new companies. In conclusion, youth unemployment has many negative effects on individuals and society. However, if both young people and the government work together, this problem can be solved.",
+                'text' => 'Nowadays, unemployment among young people is becoming a serious problem in many countries. This essay will discuss the effects of youth unemployment and suggest some possible solutions. Firstly, being jobless can make young people feel very sad and stressed. They have no income, so they cannot support themselves or help their families. This often leads to frustration in their life. Secondly, if they cannot find a job related to what they studied, they might forget the important knowledge and skills they learned in school. Some of them may have to take any work just to earn money, and over time they lose their professional skills. Finally, high unemployment among young people can lead to social problems. For example, a few unemployed youths might start stealing or doing other crimes to get money. However, there are some solutions to help reduce youth unemployment. On one hand, each young person should try to improve their abilities to meet the needs of employers. They can learn new skills or even start a small business. On the other hand, the government should create more job opportunities. For instance, they can invest in projects that need many workers or support young people to start new companies. In conclusion, youth unemployment has many negative effects on individuals and society. However, if both young people and the government work together, this problem can be solved.',
                 'expert_analysis' => [
                     'task_fulfillment' => 'Đầy đủ: 3 effects + 2 solutions, ví dụ, ~260 từ',
                     'organization' => '4 đoạn: intro→effects→solutions→conclusion',
@@ -297,7 +296,7 @@ final class ValidateScoring extends Command
                     'Discuss government role',
                     'Discuss individual role',
                 ],
-                'text' => "Air pollution is becoming a big problem in many countries. Some people think that normal individuals cannot do anything to solve this problem and only the government is responsible for it. I do not agree with this opinion, because I believe that both the government and ordinary people should work together to reduce air pollution. On the one hand, the government plays the most important role in fighting air pollution. The authorities can make strict laws to control pollution from factories and vehicles. For example, they can limit the number of cars in city centers or require factories to install filters to clean the smoke before releasing it into the air. They can also invest in renewable energy like solar or wind power, which can greatly cut down air pollution in the long term. On the other hand, individuals are also responsible for reducing air pollution. Every person can do small things that make a big difference. For example, instead of using private cars or motorbikes, people can use public transport like buses or trains. They can also plant more trees around their houses because trees help clean the air. Furthermore, people can save electricity at home by turning off lights and appliances when they are not using them, which helps reduce the amount of pollution from power plants. In conclusion, I strongly believe that both the government and individuals play important roles in reducing air pollution. If both sides work together, we can have cleaner air and a healthier environment.",
+                'text' => 'Air pollution is becoming a big problem in many countries. Some people think that normal individuals cannot do anything to solve this problem and only the government is responsible for it. I do not agree with this opinion, because I believe that both the government and ordinary people should work together to reduce air pollution. On the one hand, the government plays the most important role in fighting air pollution. The authorities can make strict laws to control pollution from factories and vehicles. For example, they can limit the number of cars in city centers or require factories to install filters to clean the smoke before releasing it into the air. They can also invest in renewable energy like solar or wind power, which can greatly cut down air pollution in the long term. On the other hand, individuals are also responsible for reducing air pollution. Every person can do small things that make a big difference. For example, instead of using private cars or motorbikes, people can use public transport like buses or trains. They can also plant more trees around their houses because trees help clean the air. Furthermore, people can save electricity at home by turning off lights and appliances when they are not using them, which helps reduce the amount of pollution from power plants. In conclusion, I strongly believe that both the government and individuals play important roles in reducing air pollution. If both sides work together, we can have cleaner air and a healthier environment.',
                 'expert_analysis' => [
                     'task_fulfillment' => 'Xuất sắc: quan điểm rõ, vai trò chính phủ + cá nhân, ví dụ',
                     'organization' => 'Mở-thân-kết rõ: intro+gov+individual+conclusion',
@@ -312,7 +311,7 @@ final class ValidateScoring extends Command
                 'expected_level' => 'Không đạt',
                 'prompt' => 'Youth unemployment is a serious problem. Discuss effects and suggest solutions.',
                 'requirements' => ['Discuss effects', 'Suggest solutions'],
-                'text' => "Unemployment is bad for young people. They cannot find job and they has no money. They feel very bad. I think government should help them to find job. Government should make many job for young people. Young people need to learn more skill to get job. If they have skill they can have better job. I think this problem is very important. Thank you.",
+                'text' => 'Unemployment is bad for young people. They cannot find job and they has no money. They feel very bad. I think government should help them to find job. Government should make many job for young people. Young people need to learn more skill to get job. If they have skill they can have better job. I think this problem is very important. Thank you.',
                 'expert_analysis' => [
                     'task_fulfillment' => 'Thiếu effects cụ thể, solutions sơ sài, quá ngắn (~50 từ)',
                     'organization' => 'Không có đoạn, không có linking words',
@@ -326,7 +325,7 @@ final class ValidateScoring extends Command
                 'expected_level' => 'B1',
                 'prompt' => 'Online shopping: advantages and disadvantages? Give your opinion.',
                 'requirements' => ['Discuss advantages', 'Discuss disadvantages', 'State opinion'],
-                'text' => "Nowadays many people do online shopping. It is very popular. There are some good things about online shopping. First, it is easy and we can buy things at home. We dont need to go to shop. Second, online shopping have many products and we can see many things. But there are also bad things. Sometimes we buy something and it is not the same as the picture. And we must wait for delivery. Sometimes it take many days. And we cannot try the clothes. I think online shopping is good but we need to be careful. We should check the product before we buy.",
+                'text' => 'Nowadays many people do online shopping. It is very popular. There are some good things about online shopping. First, it is easy and we can buy things at home. We dont need to go to shop. Second, online shopping have many products and we can see many things. But there are also bad things. Sometimes we buy something and it is not the same as the picture. And we must wait for delivery. Sometimes it take many days. And we cannot try the clothes. I think online shopping is good but we need to be careful. We should check the product before we buy.',
                 'expert_analysis' => [
                     'task_fulfillment' => 'Cover cả 3 requirement nhưng phát triển yếu',
                     'organization' => 'Không đoạn, ít linking words',

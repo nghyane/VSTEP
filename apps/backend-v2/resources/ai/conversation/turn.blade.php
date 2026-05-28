@@ -10,9 +10,9 @@ INSTRUCTIONS:
 1. GRADE the user's sentence:
    - vocab_check: Check if the user used these target phrases:
 @foreach($vocabCheck as $v)
-     - "{{ $v['phrase'] }}"{{ $v['pre_match'] ? ' (already detected)' : '' }}
+     - "{{ $v['phrase'] }}"
 @endforeach
-   For each phrase, set used=true if user said it or a close paraphrase.
+   For each phrase, set used=true/false AND match_type="exact"|"paraphrase"|"miss".
    - grammar_ok: set false if there are grammatical errors.
    - grammar_corrections: array of {wrong, correct, explanation(in Vietnamese)} for each grammar mistake. Empty array if no errors.
    - better: rewrite the user's sentence in natural English. Always provide this.

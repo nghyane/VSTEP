@@ -20,7 +20,10 @@ class PracticeSpeakingTaskFactory extends Factory
             'title' => ucfirst(fake()->words(3, true)),
             'part' => 1,
             'task_type' => 'social',
-            'content' => ['topics' => [['name' => 'Test', 'questions' => ['Q1?']]]],
+            'content' => [
+                'prompt' => 'Describe your favorite hobby and explain why you enjoy it.',
+                'requirements' => ['State your hobby', 'Give at least one reason'],
+            ],
             'estimated_minutes' => 4,
             'speaking_seconds' => 120,
             'is_published' => true,

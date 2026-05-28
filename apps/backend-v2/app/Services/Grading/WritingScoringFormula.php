@@ -4,34 +4,31 @@ declare(strict_types=1);
 
 namespace App\Services\Grading;
 
+use App\DTOs\Grading\Params\GrammarParams;
+use App\DTOs\Grading\Params\OrganizationParams;
+use App\DTOs\Grading\Params\TaskFulfillmentParams;
+use App\DTOs\Grading\Params\VocabularyParams;
 use App\Models\GradingRubric;
 
 final class WritingScoringFormula
 {
-    /** @var array<string, array> Cached criterion params keyed by criterion key. */
-    private array $params = [];
-
     public function __construct(
         private readonly GradingRubric $rubric,
-    ) {
-        foreach ($rubric->criteria as $criterion) {
-            $key = $criterion['key'] ?? '';
-            if ($key !== '') {
-                $this->params[$key] = $criterion['params'] ?? [];
-            }
-        }
+    ) {}
+
+    public function taskFulfillmentParams(): TaskFulfillmentParams
+    {
+        return $this->rubric->taskFulfillmentParams();
     }
 
     public function grammar(array $syntax, int $languageToolErrors, int $sentenceCount): float
     {
-        $p = $this->params['grammar'];
+        $p = $this->rubric->grammarParams();
         $typeCount = $syntax['count'] ?? 0;
-        $gRange = $this->resolveBand($typeCount, $p['band_thresholds']);
+        $gRange = $this->resolveBand($typeCount, $p->bandThresholds);
 
-        $factor = (float) $p['accuracy_factor'];
-        $errorPenalty = $sentenceCount > 0 ? min(10.0, ($languageToolErrors / $sentenceCount) * $factor) : 0;
-
-        $maxAcc = $this->resolveMaxAccuracy($typeCount, $p['max_accuracy']);
+        $errorPenalty = $sentenceCount > 0 ? min(10.0, ($languageToolErrors / $sentenceCount) * $p->accuracyFactor) : 0;
+        $maxAcc = $this->resolveMaxAccuracy($typeCount, $p->maxAccuracy);
         $gAccuracy = min($maxAcc, max(0.0, 10.0 - $errorPenalty));
 
         return $this->clampRound(($gRange + $gAccuracy) / 2);
@@ -39,50 +36,41 @@ final class WritingScoringFormula
 
     public function vocabulary(array $metrics): float
     {
-        $p = $this->params['vocabulary'];
-        $uniqueRatio = (float) ($metrics['unique_ratio'] ?? 0);
-        $avgWordLength = (float) ($metrics['avg_word_length'] ?? 4);
+        $p = $this->rubric->vocabularyParams();
 
-        $uniqueBonus = $this->resolveThreshold($uniqueRatio, $p['unique_thresholds']);
-        $lengthBonus = $this->resolveThreshold($avgWordLength, $p['length_thresholds']);
+        $uniqueBonus = $this->resolveThreshold((float) ($metrics['unique_ratio'] ?? 0), $p->uniqueThresholds);
+        $lengthBonus = $this->resolveThreshold((float) ($metrics['avg_word_length'] ?? 4), $p->lengthThresholds);
+        $readabilityBonus = $this->resolveThreshold((float) ($metrics['readability_grade'] ?? 0), $p->readabilityThresholds);
+        $complexBonus = $this->resolveThreshold((float) ($metrics['complex_vocab_count'] ?? 0), $p->complexThresholds);
 
-        $readability = (float) ($metrics['readability_grade'] ?? 0);
-        $readabilityBonus = $readability > 10 ? 2 : ($readability > 8 ? 1 : 0);
-
-        $complexCount = (int) ($metrics['complex_vocab_count'] ?? 0);
-        $complexBonus = $complexCount > 5 ? 2 : ($complexCount > 2 ? 1 : 0);
-
-        $base = (int) $p['base'];
-        $cap = (float) $p['cap'];
-
-        return min($cap, $this->clampRound($base + $uniqueBonus + $lengthBonus + $readabilityBonus + $complexBonus));
+        return min($p->cap, $this->clampRound($p->base + $uniqueBonus + $lengthBonus + $readabilityBonus + $complexBonus));
     }
 
     public function taskFulfillment(array $evidence): float
     {
-        $p = $this->params['task_fulfillment'];
+        $p = $this->rubric->taskFulfillmentParams();
         $covered = max(0.0, (float) ($evidence['points_covered'] ?? 0));
-        $required = max(1.0, (float) ($evidence['points_required'] ?? $p['default_points_required']));
+        $required = max(1.0, (float) ($evidence['points_required'] ?? $p->defaultPointsRequired));
         $hasPosition = (bool) ($evidence['has_clear_position'] ?? false);
         $irrelevant = (bool) ($evidence['has_irrelevant_content'] ?? false);
 
         return $this->clampRound(
-            ($covered / $required) * $p['coverage_multiplier']
-            + ($hasPosition ? $p['position_bonus'] : 0)
-            - ($irrelevant ? $p['irrelevant_penalty'] : 0)
+            ($covered / $required) * $p->coverageMultiplier
+            + ($hasPosition ? $p->positionBonus : 0)
+            - ($irrelevant ? $p->irrelevantPenalty : 0)
         );
     }
 
     public function organization(int $paragraphCount, int $linkingWordCount, int $sentenceCount, float $sentenceVariety = 0): float
     {
-        $p = $this->params['organization'];
-        $paraBonus = (int) ($p['para_bonus'][$paragraphCount] ?? $p['para_bonus'][1]);
-        $linkingBonus = min((float) $p['linking_cap'], $linkingWordCount * (float) $p['linking_factor']);
-        $varietyBonus = $this->resolveThreshold($sentenceVariety, $p['variety_thresholds']);
-        $compactPenalty = ($sentenceCount > (int) $p['compact_threshold'] && $paragraphCount === 1)
-            ? (float) $p['compact_penalty'] : 0;
+        $p = $this->rubric->organizationParams();
+        $paraBonus = (int) ($p->paraBonus[$paragraphCount] ?? $p->paraBonus[1]);
+        $linkingDensity = $sentenceCount > 0 ? $linkingWordCount / $sentenceCount : 0;
+        $linkingBonus = min($p->linkingCap, $linkingDensity * $p->linkingDensityFactor);
+        $varietyBonus = $this->resolveThreshold($sentenceVariety, $p->varietyThresholds);
+        $compactPenalty = ($sentenceCount > $p->compactThreshold && $paragraphCount === 1) ? $p->compactPenalty : 0;
 
-        return $this->clampRound((float) $p['base'] + $paraBonus + $linkingBonus + $varietyBonus - $compactPenalty);
+        return $this->clampRound($p->base + $paraBonus + $linkingBonus + $varietyBonus - $compactPenalty);
     }
 
     private function resolveBand(int $value, array $thresholds): int
@@ -98,6 +86,7 @@ final class WritingScoringFormula
         return $band;
     }
 
+    /** @param list<array{threshold: float, bonus: int}> $thresholds */
     private function resolveThreshold(float $value, array $thresholds): int
     {
         $bonus = 0;

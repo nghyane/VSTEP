@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Grading;
 
+use App\Ai\Contracts\ContentRelevanceAssessor;
 use App\DTOs\Grading\GradingResultData;
 use App\DTOs\Grading\SpeakingGradingData;
 use App\Enums\GradingJobStatus;
@@ -27,7 +28,7 @@ final class SpeakingGradingStrategy implements GradingStrategy
         private readonly SyntaxAnalyzer $syntax,
         private readonly RuleBasedScoringService $metrics,
         private readonly SpeakingScoringFormula $formula,
-        private readonly LlmGrader $llm,
+        private readonly ContentRelevanceAssessor $relevance,
         private readonly RubricResolver $rubricResolver,
     ) {}
 
@@ -39,7 +40,7 @@ final class SpeakingGradingStrategy implements GradingStrategy
     public function loadSubmission(GradingJob $job): ?Model
     {
         return match ($job->submission_type) {
-            'practice_speaking' => PracticeSpeakingSubmission::query()->find($job->submission_id),
+            'practice_speaking' => PracticeSpeakingSubmission::query()->with('speakingTask')->find($job->submission_id),
             'exam_speaking' => ExamSpeakingSubmission::query()->with('part')->find($job->submission_id),
             default => null,
         };
@@ -76,7 +77,6 @@ final class SpeakingGradingStrategy implements GradingStrategy
             );
         }
 
-        // Content relevance: LLM checks transcript against task prompt + requirements
         $contentFactor = $this->checkContentRelevance($transcript, $submission);
 
         $pronunciationScore = (float) $azurePron['overall'];
@@ -148,50 +148,35 @@ final class SpeakingGradingStrategy implements GradingStrategy
         ]];
     }
 
-    /** Check content relevance: LLM verifies transcript addresses the task. */
     private function checkContentRelevance(string $transcript, Model $submission): float
     {
-        if (! $submission instanceof ExamSpeakingSubmission) {
-            return 1.0;
-        }
+        $prompt = '';
+        $requirements = [];
 
-        $part = $submission->part;
-        $requirements = $part?->requirements;
-        $prompt = $this->buildPromptFromPart($part);
-
-        if (empty($requirements) && empty($prompt)) {
-            return 1.0;
+        if ($submission instanceof ExamSpeakingSubmission) {
+            $part = $submission->part;
+            $prompt = $this->buildPromptFromContent($part?->content);
+            $requirements = $part?->requirements;
+        } elseif ($submission instanceof PracticeSpeakingSubmission) {
+            $task = $submission->speakingTask;
+            $prompt = $this->buildPromptFromContent($task?->content);
+            $requirements = $task?->content['requirements'] ?? [];
         }
 
         $reqs = is_array($requirements) ? array_values(array_filter($requirements, fn ($v) => is_string($v) && $v !== '')) : [];
 
-        try {
-            $evidence = $this->llm->extractEvidence(
-                $transcript,
-                $prompt,
-                $reqs,
-                [],
-                ['metrics' => ['word_count' => str_word_count($transcript)], 'flags' => []],
+        if ($prompt === '' && $reqs === []) {
+            throw new GradingFailedException(
+                'Speaking task has no prompt or requirements configured. This is a task configuration error.',
             );
-
-            $task = $evidence['evidence']['task_fulfillment'] ?? [];
-            $met = max(0, (int) ($task['points_covered'] ?? 0));
-            $total = max(1, (int) ($task['points_required'] ?? count($reqs)));
-
-            return 0.5 + ($met / $total) * 0.5;
-        } catch (\Throwable) {
-            return 1.0;
         }
+
+        return $this->relevance->assess($transcript, $prompt, $reqs);
     }
 
-    /** Build a prompt string from the speaking part's content data. */
-    private function buildPromptFromPart($part): string
+    /** Build a prompt string from content array (works for both exam part and practice task). */
+    private function buildPromptFromContent(mixed $content): string
     {
-        if ($part === null) {
-            return '';
-        }
-
-        $content = $part->content;
         if (! is_array($content)) {
             return '';
         }
@@ -207,6 +192,7 @@ final class SpeakingGradingStrategy implements GradingStrategy
 
         return implode('. ', $parts);
     }
+
 
     /** @return array{text: string, confidence: float, speaking_rate: float, pause_count: int, word_count: int, pronunciation: ?array} */
     private function transcribeOrFail(string $audioUrl): array

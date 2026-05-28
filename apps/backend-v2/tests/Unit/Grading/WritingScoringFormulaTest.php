@@ -98,12 +98,12 @@ final class WritingScoringFormulaTest extends TestCase
 
     /* ─── Task Fulfillment ───
      * T = clampRound((covered/required) × M + position - irrelevant)
-     * M = coverage_multiplier = 7
+     * M = coverage_multiplier = 9
      * position_bonus = 1
      * irrelevant_penalty = 2
      */
 
-    /** 4/4 yêu cầu: (4/4)×7=7, có quan điểm +1, không lạc đề → 8.0. */
+    /** 4/4 yêu cầu: (4/4)×9=9, có quan điểm +1, không lạc đề → 10.0. */
     public function test_task_fulfillment_all_met(): void
     {
         $score = $this->formula->taskFulfillment([
@@ -112,10 +112,10 @@ final class WritingScoringFormulaTest extends TestCase
             'has_clear_position' => true,
             'has_irrelevant_content' => false,
         ]);
-        $this->assertSame(8.0, $score);
+        $this->assertSame(10.0, $score);
     }
 
-    /** 2/4 yêu cầu: (2/4)×7=3.5, không quan điểm, không lạc đề → 3.5. */
+    /** 2/4 yêu cầu: (2/4)×9=4.5, không quan điểm, không lạc đề → 4.5. */
     public function test_task_fulfillment_half_met_no_position(): void
     {
         $score = $this->formula->taskFulfillment([
@@ -124,10 +124,10 @@ final class WritingScoringFormulaTest extends TestCase
             'has_clear_position' => false,
             'has_irrelevant_content' => false,
         ]);
-        $this->assertSame(3.5, $score);
+        $this->assertSame(4.5, $score);
     }
 
-    /** 3/3 yêu cầu: (3/3)×7=7, có quan điểm +1, lạc đề -2 → 6.0. */
+    /** 3/3 yêu cầu: (3/3)×9=9, có quan điểm +1, lạc đề -2 → 8.0. */
     public function test_task_fulfillment_irrelevant_penalty(): void
     {
         $score = $this->formula->taskFulfillment([
@@ -136,33 +136,33 @@ final class WritingScoringFormulaTest extends TestCase
             'has_clear_position' => true,
             'has_irrelevant_content' => true,
         ]);
-        $this->assertSame(6.0, $score);
+        $this->assertSame(8.0, $score);
     }
 
     /* ─── Organization ───
      * O = clampRound(base + para + linking + variety - compact)
      * base = 1
      * para: 1→1, 2→3, 3+→4
-     * linking = min(cap=3, count × 0.5)
+     * linking_density = count / sentences, bonus = density × factor(4), cap=3
      * variety: >4→1, >6→2
      * compact: 1 đoạn + >8 câu → -1
      */
 
-    /** 3 đoạn → +4, 6 linking từ ×0.5=3, variety=7→+2. 1+4+3+2 = 10. */
+    /** 3 đoạn → +4, density=6/12=0.5×4=2.0, variety=7→+2. 1+4+2+2 = 9. */
     public function test_organization_well_structured(): void
     {
         $score = $this->formula->organization(3, 6, 12, 7.0);
-        $this->assertSame(10.0, $score);
+        $this->assertSame(9.0, $score);
     }
 
-    /** 1 đoạn → +1, 2 linking từ ×0.5=1, variety=3→0, 15 câu >8 → -1. 1+1+1+0-1 = 2. */
+    /** 1 đoạn → +1, density=2/15=0.133×4=0.53, variety=3→0, 15 câu >8 → -1. 1+1+0.53-1 = 1.5. */
     public function test_organization_single_paragraph(): void
     {
         $score = $this->formula->organization(1, 2, 15, 3.0);
-        $this->assertSame(2.0, $score);
+        $this->assertSame(1.5, $score);
     }
 
-    /** 2 đoạn → +3, 4 linking từ ×0.5=2, variety=5→+1. 1+3+2+1 = 7. */
+    /** 2 đoạn → +3, density=4/8=0.5×4=2.0, variety=5→+1. 1+3+2+1 = 7. */
     public function test_organization_two_paragraphs_medium(): void
     {
         $score = $this->formula->organization(2, 4, 8, 5.0);

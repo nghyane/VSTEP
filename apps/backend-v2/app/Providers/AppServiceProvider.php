@@ -7,6 +7,12 @@ namespace App\Providers;
 use App\Ai\AiClient;
 use App\Ai\AiClientManager;
 use App\Ai\AiConfigValidator;
+use App\Ai\Contracts\ContentRelevanceAssessor;
+use App\Ai\Contracts\ConversationReviewer;
+use App\Ai\Contracts\ConversationTurnHandler;
+use App\Ai\Contracts\PronunciationAnalyzer;
+use App\Ai\Contracts\TaskFulfillmentAssessor;
+use App\Ai\Contracts\WritingFeedbackGenerator;
 use App\Models\Profile;
 use App\Services\Admin\Course\AdminCourseBookingService;
 use App\Services\Admin\Course\AdminCourseEnrollmentService;
@@ -14,16 +20,20 @@ use App\Services\Admin\Course\AdminCourseScheduleService;
 use App\Services\Admin\Course\Contracts\AdminCourseBookingInterface;
 use App\Services\Admin\Course\Contracts\AdminCourseEnrollmentInterface;
 use App\Services\Admin\Course\Contracts\AdminCourseScheduleInterface;
+use App\Services\Ai\LlmContentRelevanceAssessor;
+use App\Services\Ai\LlmConversationReviewer;
+use App\Services\Ai\LlmConversationTurnHandler;
+use App\Services\Ai\LlmPronunciationAnalyzer;
+use App\Services\Ai\LlmTaskFulfillmentAssessor;
+use App\Services\Ai\LlmWritingFeedbackGenerator;
 use App\Services\Contracts\LearningPathInterface;
 use App\Services\ConversationServiceInterface;
 use App\Services\Grading\GradingStrategyResolver;
-use App\Services\Grading\LlmGrader;
-use App\Services\Grading\LlmGradingService;
 use App\Services\Grading\RubricResolver;
 use App\Services\Grading\SpeakingGradingStrategy;
+use App\Services\Grading\SpeakingScoringFormula;
 use App\Services\Grading\WritingGradingStrategy;
 use App\Services\Grading\WritingScoringFormula;
-use App\Services\Grading\SpeakingScoringFormula;
 use App\Services\LearningPathService;
 use App\Services\Payment\PaymentGatewayRegistry;
 use App\Services\Payment\PayOsGateway;
@@ -46,9 +56,6 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(FsrsConfig::class, fn () => FsrsConfig::default());
 
-        // Google OAuth client — singleton so JWKS cache + Guzzle client are
-        // reused across Octane requests. Verifying client_id at boot fails
-        // fast in production if the env is missing.
         $this->app->singleton(GoogleClient::class, function () {
             $clientId = (string) config('services.google.client_id');
             if ($clientId === '') {
@@ -58,46 +65,44 @@ class AppServiceProvider extends ServiceProvider
             return new GoogleClient(['client_id' => $clientId]);
         });
 
-        // AI Client — provider-agnostic gateway.
+        // ── AI Client — provider-agnostic gateway, retry + circuit breaker built-in
         $this->app->singleton(AiClient::class, AiClientManager::class);
 
-        // Default LLM grader implementation.
-        $this->app->bind(LlmGrader::class, LlmGradingService::class);
+        // ── AI Contracts → Implementations
+        $this->app->bind(TaskFulfillmentAssessor::class, LlmTaskFulfillmentAssessor::class);
+        $this->app->bind(WritingFeedbackGenerator::class, LlmWritingFeedbackGenerator::class);
+        $this->app->bind(ContentRelevanceAssessor::class, LlmContentRelevanceAssessor::class);
+        $this->app->bind(ConversationTurnHandler::class, LlmConversationTurnHandler::class);
+        $this->app->bind(ConversationReviewer::class, LlmConversationReviewer::class);
+        $this->app->bind(PronunciationAnalyzer::class, LlmPronunciationAnalyzer::class);
 
-        // STT: Azure Speech-to-Text. Required for speaking grading.
+        // STT: Azure Speech-to-Text.
         $this->app->bind(SpeechToText::class, SpeechToTextService::class);
 
         // Rubric resolver — scoped so cache resets per request (Octane-safe).
         $this->app->scoped(RubricResolver::class);
 
-        // Writing scoring formula — reads params from active rubric.
         $this->app->scoped(WritingScoringFormula::class, fn ($app) => new WritingScoringFormula(
             $app->make(RubricResolver::class)->active('writing'),
         ));
 
-        // Speaking scoring formula — reads params from active rubric.
         $this->app->scoped(SpeakingScoringFormula::class, fn ($app) => new SpeakingScoringFormula(
             $app->make(RubricResolver::class)->active('speaking'),
         ));
 
-        // Grading strategy registry — explicit list, ordered.
         $this->app->singleton(GradingStrategyResolver::class, fn ($app) => new GradingStrategyResolver([
             $app->make(WritingGradingStrategy::class),
             $app->make(SpeakingGradingStrategy::class),
         ]));
 
-        // Conversation service — interface binding for testability.
         $this->app->bind(ConversationServiceInterface::class, SpeakingConversationService::class);
 
-        // Learning path — read-only aggregate of progress data.
         $this->app->bind(LearningPathInterface::class, LearningPathService::class);
 
-        // Admin course sub-services for decomposition.
         $this->app->bind(AdminCourseBookingInterface::class, AdminCourseBookingService::class);
         $this->app->bind(AdminCourseEnrollmentInterface::class, AdminCourseEnrollmentService::class);
         $this->app->bind(AdminCourseScheduleInterface::class, AdminCourseScheduleService::class);
 
-        // Payment gateway registry.
         $this->app->singleton(PaymentGatewayRegistry::class, fn () => new PaymentGatewayRegistry([
             'payos' => $this->app->make(PayOsGateway::class),
             'vnpay' => $this->app->make(VnPayGateway::class),
@@ -111,7 +116,6 @@ class AppServiceProvider extends ServiceProvider
 
         View::addLocation(resource_path());
 
-        // Fail-fast: validate AI config at boot.
         (new AiConfigValidator)->validate();
 
         Request::macro('profile', function (): Profile {

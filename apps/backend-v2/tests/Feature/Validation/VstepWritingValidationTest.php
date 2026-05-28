@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Validation;
 
+use App\Models\PracticeSession;
 use App\Models\PracticeWritingPrompt;
 use App\Models\PracticeWritingSubmission;
-use App\Models\PracticeSession;
 use App\Models\Profile;
 use App\Models\User;
 use App\Models\WritingGradingResult;
@@ -28,6 +28,7 @@ final class VstepWritingValidationTest extends TestCase
     use RefreshDatabase;
 
     private GradingService $grading;
+
     private RuleBasedScoringService $metrics;
 
     protected function setUp(): void
@@ -138,7 +139,7 @@ final class VstepWritingValidationTest extends TestCase
 
         // 6. Verify task fulfillment uses requirements from prompt
         // Factory creates required_points = ['State your opinion', 'Give at least two reasons', 'Provide a conclusion']
-        // FakeLlmGrader returns points_covered=3, points_required=3, position=true
+        // FakeTaskFulfillmentAssessor returns points_covered=3, points_required=3, position=true
         // Formula: (3/3)×7 + 1 = 8.0, clampRound → 8.0
         $this->assertTrue(
             $gradingResult->rubric_scores['task_fulfillment'] >= 5.0
@@ -168,15 +169,23 @@ final class VstepWritingValidationTest extends TestCase
         );
     }
 
-    // ─── Sanity penalty formula: W' = W × min(1, w/120), round 0.5 ───
+    // ─── Sanity penalty formula: W' = W × min(1, w/θ), θ=120(task1) or 250(task2) ───
 
-    public function test_sanity_penalty_formula(): void
+    public function test_sanity_penalty_task1_letter(): void
     {
-        $this->assertSame(0.0, $this->penalty(0, 7.0));
-        $this->assertSame(3.5, $this->penalty(60, 7.0));
-        $this->assertSame(5.5, $this->penalty(90, 7.0));
-        $this->assertSame(7.0, $this->penalty(120, 7.0));
-        $this->assertSame(7.0, $this->penalty(250, 7.0));
+        $this->assertSame(0.0, $this->penalty(0, 7.0, 120));
+        $this->assertSame(3.5, $this->penalty(60, 7.0, 120));
+        $this->assertSame(5.5, $this->penalty(90, 7.0, 120));
+        $this->assertSame(7.0, $this->penalty(120, 7.0, 120));
+        $this->assertSame(7.0, $this->penalty(200, 7.0, 120));
+    }
+
+    public function test_sanity_penalty_task2_essay(): void
+    {
+        $this->assertSame(0.0, $this->penalty(0, 7.0, 250));
+        $this->assertSame(1.0, $this->penalty(30, 7.0, 250));   // 30/250=0.12×7=0.84→1.0
+        $this->assertSame(3.5, $this->penalty(125, 7.0, 250));  // 125/250=0.5×7=3.5
+        $this->assertSame(7.0, $this->penalty(250, 7.0, 250));
     }
 
     public function test_overall_band_rounding(): void
@@ -209,9 +218,9 @@ final class VstepWritingValidationTest extends TestCase
 
     // ─── Helpers ───
 
-    private function penalty(int $w, float $b): float
+    private function penalty(int $w, float $b, int $min = 120): float
     {
-        return $w === 0 ? 0.0 : round($b * min(1.0, $w / 120.0) * 2) / 2;
+        return $w === 0 ? 0.0 : round($b * min(1.0, $w / $min) * 2) / 2;
     }
 
     private function r05(float $v): float
@@ -240,9 +249,9 @@ final class VstepWritingValidationTest extends TestCase
 
     private const B2_JOB_APP = "Dear Sir/Madam,\n\nI am writing to express my interest in the Sales Manager position at BetTok Company, as advertised on your website. I have over three years of experience in sales and customer service, and I also have good communication and negotiation skills. I have successfully increased sales in my current role by 15% over the past year. I think my ability to understand customer needs and build relationships makes me a suitable candidate for this job. I am confident that my skills and experience will fit well with the requirements of your team. I hope to discuss my application further in an interview at your earliest convenience. Thank you for considering my application.\n\nYours faithfully,\nNguyen Van A";
 
-    private const B3_ONLINE_SHOPPING = "We cannot deny that more and more people are becoming interested in online shopping. However, there are both good and bad things about shopping on the internet. On the one hand, online shopping has some advantages. First, it is convenient because we do not have to go to physical stores to buy things. We just need a phone or computer connected to the internet and the products will be delivered to our house. Second, it is cheaper than in-store shopping. You can easily compare prices on different websites in a few minutes. On the other hand, there are some disadvantages. Firstly, sometimes the products might be of low quality. When you order online, you only see the pictures and you cannot check the quality in person. Secondly, your personal information like bank account could be stolen by hackers and scammers. Thirdly, shopping online can make people spend too much money because it is so easy to place an order. In conclusion, online shopping has both benefits and drawbacks. In my opinion, it is a positive development overall because it makes life more convenient. However, people should be careful when shopping online to avoid problems.";
+    private const B3_ONLINE_SHOPPING = 'We cannot deny that more and more people are becoming interested in online shopping. However, there are both good and bad things about shopping on the internet. On the one hand, online shopping has some advantages. First, it is convenient because we do not have to go to physical stores to buy things. We just need a phone or computer connected to the internet and the products will be delivered to our house. Second, it is cheaper than in-store shopping. You can easily compare prices on different websites in a few minutes. On the other hand, there are some disadvantages. Firstly, sometimes the products might be of low quality. When you order online, you only see the pictures and you cannot check the quality in person. Secondly, your personal information like bank account could be stolen by hackers and scammers. Thirdly, shopping online can make people spend too much money because it is so easy to place an order. In conclusion, online shopping has both benefits and drawbacks. In my opinion, it is a positive development overall because it makes life more convenient. However, people should be careful when shopping online to avoid problems.';
 
-    private const B4_YOUTH_UNEMPLOYMENT = "Nowadays, unemployment among young people is becoming a serious problem in many countries. This essay will discuss the effects of youth unemployment and suggest some possible solutions. Firstly, being jobless can make young people feel very sad and stressed. They have no income, so they cannot support themselves or help their families. This often leads to frustration in their life. Secondly, if they cannot find a job related to what they studied, they might forget the important knowledge and skills they learned in school. Some of them may have to take any work just to earn money, and over time they lose their professional skills. Finally, high unemployment among young people can lead to social problems. For example, a few unemployed youths might start stealing or doing other crimes to get money. However, there are some solutions to help reduce youth unemployment. On one hand, each young person should try to improve their abilities to meet the needs of employers. They can learn new skills or even start a small business. On the other hand, the government should create more job opportunities. For instance, they can invest in projects that need many workers or support young people to start new companies. In conclusion, youth unemployment has many negative effects on individuals and society. However, if both young people and the government work together, this problem can be solved.";
+    private const B4_YOUTH_UNEMPLOYMENT = 'Nowadays, unemployment among young people is becoming a serious problem in many countries. This essay will discuss the effects of youth unemployment and suggest some possible solutions. Firstly, being jobless can make young people feel very sad and stressed. They have no income, so they cannot support themselves or help their families. This often leads to frustration in their life. Secondly, if they cannot find a job related to what they studied, they might forget the important knowledge and skills they learned in school. Some of them may have to take any work just to earn money, and over time they lose their professional skills. Finally, high unemployment among young people can lead to social problems. For example, a few unemployed youths might start stealing or doing other crimes to get money. However, there are some solutions to help reduce youth unemployment. On one hand, each young person should try to improve their abilities to meet the needs of employers. They can learn new skills or even start a small business. On the other hand, the government should create more job opportunities. For instance, they can invest in projects that need many workers or support young people to start new companies. In conclusion, youth unemployment has many negative effects on individuals and society. However, if both young people and the government work together, this problem can be solved.';
 
-    private const B5_AIR_POLLUTION = "Air pollution is becoming a big problem in many countries. Some people think that normal individuals cannot do anything to solve this problem and only the government is responsible for it. I do not agree with this opinion, because I believe that both the government and ordinary people should work together to reduce air pollution. On the one hand, the government plays the most important role in fighting air pollution. The authorities can make strict laws to control pollution from factories and vehicles. For example, they can limit the number of cars in city centers or require factories to install filters to clean the smoke before releasing it into the air. They can also invest in renewable energy like solar or wind power, which can greatly cut down air pollution in the long term. On the other hand, individuals are also responsible for reducing air pollution. Every person can do small things that make a big difference. For example, instead of using private cars or motorbikes, people can use public transport like buses or trains. They can also plant more trees around their houses because trees help clean the air. Furthermore, people can save electricity at home by turning off lights and appliances when they are not using them, which helps reduce the amount of pollution from power plants. In conclusion, I strongly believe that both the government and individuals play important roles in reducing air pollution. If both sides work together, we can have cleaner air and a healthier environment.";
+    private const B5_AIR_POLLUTION = 'Air pollution is becoming a big problem in many countries. Some people think that normal individuals cannot do anything to solve this problem and only the government is responsible for it. I do not agree with this opinion, because I believe that both the government and ordinary people should work together to reduce air pollution. On the one hand, the government plays the most important role in fighting air pollution. The authorities can make strict laws to control pollution from factories and vehicles. For example, they can limit the number of cars in city centers or require factories to install filters to clean the smoke before releasing it into the air. They can also invest in renewable energy like solar or wind power, which can greatly cut down air pollution in the long term. On the other hand, individuals are also responsible for reducing air pollution. Every person can do small things that make a big difference. For example, instead of using private cars or motorbikes, people can use public transport like buses or trains. They can also plant more trees around their houses because trees help clean the air. Furthermore, people can save electricity at home by turning off lights and appliances when they are not using them, which helps reduce the amount of pollution from power plants. In conclusion, I strongly believe that both the government and individuals play important roles in reducing air pollution. If both sides work together, we can have cleaner air and a healthier environment.';
 }

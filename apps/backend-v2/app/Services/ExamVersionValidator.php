@@ -35,7 +35,7 @@ final class ExamVersionValidator
     /**
      * Validate a loaded ExamVersion model (relationships eager-loaded).
      *
-     * @throws ValidationException  with 'exam_version' errors + 'checklist' (pass/fail per item)
+     * @throws ValidationException with 'exam_version' errors + 'checklist' (pass/fail per item)
      */
     public function validateForVersion(object $version): void
     {
@@ -282,7 +282,7 @@ final class ExamVersionValidator
             $missing = array_diff($expectedTypes, $actualTypes);
             $detail = $missing ? ' Thiếu: '.implode(', ', $missing).'.' : '';
             $checklist[] = [
-                'label' => "Viết — loại bài: yêu cầu [".implode(', ', $expectedTypes)."], hiện có [".implode(', ', $actualTypes)."].{$detail}",
+                'label' => 'Viết — loại bài: yêu cầu ['.implode(', ', $expectedTypes).'], hiện có ['.implode(', ', $actualTypes)."].{$detail}",
                 'pass' => false,
             ];
         } else {

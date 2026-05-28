@@ -19,6 +19,12 @@ Commands: `php artisan serve` · `./vendor/bin/pint` · `php artisan test` · `p
 - **`declare(strict_types=1)` mọi file.** [pint]
 - **Naming.** snake_case: DB, API fields. PascalCase: class. camelCase: method/variable.
 - **Không magic numbers.** Extract thành const hoặc enum.
+- **Không silent fallback.** Lỗi phải throw ra, không âm thầm dùng default.
+  - ❌ `(float) ($data['coverage_multiplier'] ?? 7)` — admin sai param → dùng 7, không ai biết bug.
+  - ✅ `(float) $data['coverage_multiplier']` + validate thiếu key → `InvalidArgumentException` ngay khi boot/test.
+  - ❌ `try { $llm->assess() } catch {} return 1.0` — LLM lỗi → điểm tối đa, học sinh DDoS AI server.
+  - ✅ Throw exception → queue retry → job fail → admin thấy lỗi.
+  - Pattern: DTO `fromArray()` dùng `self::REQUIRED` + `array_diff()` để validate.
 - **Error handling.** Laravel exceptions (abort, ValidationException). Không try-catch chung.
 - **Comments giải thích why, không what.**
 

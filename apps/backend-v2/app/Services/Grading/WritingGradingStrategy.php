@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Grading;
 
+use App\Ai\Contracts\TaskFulfillmentAssessor;
+use App\Ai\Contracts\WritingFeedbackGenerator;
 use App\DTOs\Grading\GradingResultData;
 use App\DTOs\Grading\WritingGradingData;
 use App\Enums\GradingJobStatus;
@@ -26,7 +28,8 @@ final class WritingGradingStrategy implements GradingStrategy
         private readonly RuleBasedScoringService $ruleScoring,
         private readonly SyntaxAnalyzer $syntax,
         private readonly WritingScoringFormula $formula,
-        private readonly LlmGrader $llm,
+        private readonly TaskFulfillmentAssessor $taskAssessor,
+        private readonly WritingFeedbackGenerator $feedbackGenerator,
         private readonly RubricResolver $rubricResolver,
     ) {}
 
@@ -72,24 +75,24 @@ final class WritingGradingStrategy implements GradingStrategy
         $ruleAnalysis['syntax'] = $syntaxAnalysis;
         $job->addProgress('metrics', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
 
-        // Phase 3: LLM evidence extraction (fast — simple fields)
+        // Phase 3: LLM evidence extraction (fast — returns flat structure)
         $t = microtime(true);
         $requirements = $this->extractRequirements($submission);
         $part = $this->extractPart($submission);
-        $bandContext = $submission instanceof PracticeWritingSubmission
-            ? $this->resolveBandContext($submission)
-            : null;
-        $result = $this->llm->extractEvidence($text, $promptText, $requirements, $ltMatches, $ruleAnalysis, $part);
-        $evidence = $result['evidence'];
+        $evidence = $this->taskAssessor->assess($text, $promptText, $requirements, $ltMatches, $ruleAnalysis, $part);
         $job->addProgress('llm_evidence', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
 
         // Phase 4: Formula scoring (deterministic, instant)
         $t = microtime(true);
         $sentenceCount = $ruleAnalysis['metrics']['sentence_count'];
+        $taskFulfillment = [
+            'points_covered' => $evidence['points_covered'],
+            'points_required' => $evidence['points_required'],
+        ];
         $rubricScores = [
-            'grammar' => $this->formula->grammar($syntaxAnalysis, count($ltMatches), $sentenceCount),
+            'grammar' => $this->formula->grammar($syntaxAnalysis, $ruleAnalysis['metrics']['grammar_error_count'], $sentenceCount),
             'vocabulary' => $this->formula->vocabulary($ruleAnalysis['metrics']),
-            'task_fulfillment' => $this->formula->taskFulfillment($evidence['task_fulfillment'] ?? []),
+            'task_fulfillment' => $this->formula->taskFulfillment($taskFulfillment),
             'organization' => $this->formula->organization(
                 $ruleAnalysis['metrics']['paragraph_count'],
                 $ruleAnalysis['metrics']['linking_word_count'],
@@ -98,8 +101,7 @@ final class WritingGradingStrategy implements GradingStrategy
             ),
         ];
         $overallBand = $rubric->computeOverallBand($rubricScores);
-        $overallBand = $this->applySanityCap($text, $overallBand);
-        // Emit scores immediately — feedback comes next (slower)
+        $overallBand = $this->applySanityCap($text, $overallBand, $part);
         $job->addProgress('scores', [
             'duration_ms' => (int) ((microtime(true) - $t) * 1000),
             'rubric_scores' => $rubricScores,
@@ -108,7 +110,10 @@ final class WritingGradingStrategy implements GradingStrategy
 
         // Phase 5: LLM feedback generation (slower — Vietnamese prose)
         $t = microtime(true);
-        $feedback = $this->llm->generateFeedback($text, $promptText, $ruleAnalysis['metrics'], $ltMatches, $bandContext);
+        $bandContext = $submission instanceof PracticeWritingSubmission
+            ? $this->resolveBandContext($submission)
+            : null;
+        $feedback = $this->feedbackGenerator->generate($text, $promptText, $ruleAnalysis['metrics'], $ltMatches, $bandContext);
         $job->addProgress('llm_feedback', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
 
         return new WritingGradingData(
@@ -122,28 +127,7 @@ final class WritingGradingStrategy implements GradingStrategy
         );
     }
 
-    /**
-     * Apply linear word-count penalty based on VSTEP Task 1 minimum.
-     *
-     * Formula: W' = W × min(1, w / θ)
-     *   w = word count
-     *   θ = 120 (VSTEP Task 1 minimum per Thông tư 23/2017/TT-BGDĐT)
-     *
-     * Properties:
-     *   - w = 0 → W' = 0 (no text = band 0 per rubric)
-     *   - w = 60 → W' = 0.5W (50% of minimum = 50% penalty)
-     *   - w ≥ θ → W' = W (no penalty)
-     *
-     * Result rounded to nearest 0.5 per VSTEP convention.
-     */
-    /**
-     * Extract scoring requirements from submission's task model.
-     *
-     * Exam tasks: `requirements` array configured by admin per task (e.g. ["State opinion", "Give 2 reasons"]).
-     * Practice tasks: `required_points` array configured by admin per prompt.
-     *
-     * @return list<string>
-     */
+    /** @return list<string> */
     private function extractRequirements(Model $submission): array
     {
         if ($submission instanceof ExamWritingSubmission) {
@@ -161,9 +145,6 @@ final class WritingGradingStrategy implements GradingStrategy
         return [];
     }
 
-    /**
-     * Get task part: 1=letter, 2=essay. Used to adapt evidence evaluation criteria.
-     */
     private function extractPart(Model $submission): int
     {
         if ($submission instanceof ExamWritingSubmission) {
@@ -177,13 +158,7 @@ final class WritingGradingStrategy implements GradingStrategy
         return 2;
     }
 
-    /**
-     * Resolve user's current band + target goal for practice feedback personalization.
-     *
-     * Does NOT affect scoring — only calibrates LLM feedback toward the target level.
-     *
-     * @return array{current: string, target: string}|null
-     */
+    /** @return array{current: string, target: string}|null */
     private function resolveBandContext(PracticeWritingSubmission $submission): ?array
     {
         $profile = Profile::query()->find($submission->profile_id);
@@ -197,7 +172,16 @@ final class WritingGradingStrategy implements GradingStrategy
         ];
     }
 
-    private function applySanityCap(string $text, float $band): float
+    /**
+     * Apply word-count penalty per VSTEP task minimum (from rubric DB params).
+     *
+     * Task 1: word_minimum_task1 (default 120 per Thông tư 23/2017).
+     * Task 2: word_minimum_task2 (default 250 per Thông tư 23/2017).
+     *
+     * Formula: W' = W × min(1, w / θ)
+     * Result rounded to nearest 0.5 per VSTEP convention.
+     */
+    private function applySanityCap(string $text, float $band, int $part = 2): float
     {
         $wordCount = str_word_count(trim($text));
 
@@ -205,17 +189,15 @@ final class WritingGradingStrategy implements GradingStrategy
             return 0.0;
         }
 
-        $penalty = min(1.0, $wordCount / 120.0);
+        $tf = $this->formula->taskFulfillmentParams();
+        $minimum = $part === 1 ? $tf->wordMinimumTask1 : $tf->wordMinimumTask2;
+        $penalty = min(1.0, $wordCount / $minimum);
 
         return round($band * $penalty * 2) / 2;
     }
 
-    /**
-     * Convert flat string feedback to [{message, explanation}] format for DB/API compat.
-     *
-     * @param  list<string>  $items
-     * @return list<array{message: string, explanation: string}>
-     */
+    /** @param  list<string>  $items
+     *  @return list<array{message: string, explanation: string}> */
     private function normalizeFeedback(array $items): array
     {
         return array_map(fn (string $s) => ['message' => $s, 'explanation' => ''], $items);
@@ -224,8 +206,6 @@ final class WritingGradingStrategy implements GradingStrategy
     public function persistResult(GradingJob $job, GradingResultData $data): void
     {
         DB::transaction(function () use ($job, $data) {
-            // Serialize concurrent grading for same submission via advisory lock
-            // keyed by submission id hash. Cheaper than locking submission row.
             DB::statement('SELECT pg_advisory_xact_lock(?)', [crc32($job->submission_type.':'.$job->submission_id)]);
 
             $version = WritingGradingResult::query()

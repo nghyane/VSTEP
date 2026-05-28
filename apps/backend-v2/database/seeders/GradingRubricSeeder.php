@@ -26,7 +26,7 @@ class GradingRubricSeeder extends Seeder
 
     private function seedWritingRubric(): void
     {
-        if (GradingRubric::where('skill', 'writing')->where('version', 4)->exists()) {
+        if (GradingRubric::where('skill', 'writing')->where('version', 5)->exists()) {
             return;
         }
 
@@ -35,8 +35,8 @@ class GradingRubricSeeder extends Seeder
 
         GradingRubric::create([
             'skill' => 'writing',
-            'version' => 4,
-            'name' => 'VSTEP Writing Rubric v4',
+            'version' => 5,
+            'name' => 'VSTEP Writing Rubric v5',
             'source_reference' => 'Thông tư 23/2017/TT-BGDĐT, Phụ lục III. '
                 .'v4: band descriptors + quantitative params for deterministic formula.',
             'criteria' => $this->writingCriteriaV4(),
@@ -48,7 +48,7 @@ class GradingRubricSeeder extends Seeder
 
     private function seedSpeakingRubric(): void
     {
-        if (GradingRubric::where('skill', 'speaking')->where('version', 3)->exists()) {
+        if (GradingRubric::where('skill', 'speaking')->where('version', 4)->exists()) {
             return;
         }
 
@@ -56,10 +56,10 @@ class GradingRubricSeeder extends Seeder
 
         GradingRubric::create([
             'skill' => 'speaking',
-            'version' => 3,
-            'name' => 'VSTEP Speaking Rubric v3',
+            'version' => 4,
+            'name' => 'VSTEP Speaking Rubric v4',
             'source_reference' => 'Thông tư 23/2017/TT-BGDĐT, Phụ lục III. '
-                .'v3: band descriptors + quantitative params for deterministic formula.',
+                .'v4: band descriptors + quantitative params for deterministic formula.',
             'criteria' => $this->speakingCriteriaV3(),
             'scoring_formula' => 'mean_rounded_half',
             'is_active' => true,
@@ -85,7 +85,7 @@ class GradingRubricSeeder extends Seeder
                 '0' => 'Không có thông tin.',
             ], [
                 'base' => 3,
-                'cap' => 8,
+                'cap' => 9,
                 'unique_thresholds' => [
                     ['threshold' => 0.45, 'bonus' => 1],
                     ['threshold' => 0.55, 'bonus' => 2],
@@ -94,6 +94,14 @@ class GradingRubricSeeder extends Seeder
                 'length_thresholds' => [
                     ['threshold' => 4.5, 'bonus' => 1],
                     ['threshold' => 5.5, 'bonus' => 2],
+                ],
+                'readability_thresholds' => [
+                    ['threshold' => 8, 'bonus' => 1],
+                    ['threshold' => 10, 'bonus' => 2],
+                ],
+                'complex_thresholds' => [
+                    ['threshold' => 2, 'bonus' => 1],
+                    ['threshold' => 5, 'bonus' => 2],
                 ],
             ]),
             $this->criterionV4('fluency', 'Fluency', 'Độ trôi chảy', [
@@ -129,8 +137,7 @@ class GradingRubricSeeder extends Seeder
                 '10' => 'Is intelligible with individual sounds clearly articulated, sentence and word stress accurately placed.',
                 '0' => 'Không có thông tin.',
             ], [
-                'type' => 'llm_scored',
-                'stt_weight' => 0.3,
+                'type' => 'azure_scored',
             ]),
         ];
     }
@@ -148,10 +155,12 @@ class GradingRubricSeeder extends Seeder
                 '5' => 'Chỉ đáp ứng một phần yêu cầu đề bài.',
                 '0' => 'Không viết bài hoặc lạc đề hoàn toàn.',
             ], [
-                'coverage_multiplier' => 7,
+                'coverage_multiplier' => 9,
                 'position_bonus' => 1,
                 'irrelevant_penalty' => 2,
                 'default_points_required' => 3,
+                'word_minimum_task1' => 120,
+                'word_minimum_task2' => 250,
                 '_sources' => [
                     'coverage_multiplier' => '7 = full range (0→10) reserved for 0%→100% coverage. Scaling factor derived from VSTEP rubric: Band 0 "lạc đề", Band 5 "đáp ứng một phần", Band 10 "đầy đủ". Linear interpolation: 100% coverage × 7 + position_bonus(1) ≤ 8 (not 10 — reserves top 2 bands for exceptional quality beyond checklist).',
                     'position_bonus' => '1 band for expressing a clear position/stance. VSTEP descriptors mention "thể hiện quan điểm rõ ràng" at Band 7+. Conservative bonus — position is expected, not exceptional.',
@@ -166,6 +175,7 @@ class GradingRubricSeeder extends Seeder
                 'base' => 1,
                 'para_bonus' => [1 => 1, 2 => 3, 3 => 4],
                 'linking_factor' => 0.5,
+                'linking_density_factor' => 4,
                 'linking_cap' => 3,
                 'variety_thresholds' => [
                     ['threshold' => 4, 'bonus' => 1],
@@ -208,7 +218,7 @@ class GradingRubricSeeder extends Seeder
                 '0' => 'Không viết bài.',
             ], [
                 'base' => 3,
-                'cap' => 8,
+                'cap' => 9,
                 'unique_thresholds' => [
                     ['threshold' => 0.45, 'bonus' => 1],
                     ['threshold' => 0.55, 'bonus' => 2],
@@ -217,6 +227,14 @@ class GradingRubricSeeder extends Seeder
                 'length_thresholds' => [
                     ['threshold' => 4.5, 'bonus' => 1],
                     ['threshold' => 5.5, 'bonus' => 2],
+                ],
+                'readability_thresholds' => [
+                    ['threshold' => 8, 'bonus' => 1],
+                    ['threshold' => 10, 'bonus' => 2],
+                ],
+                'complex_thresholds' => [
+                    ['threshold' => 2, 'bonus' => 1],
+                    ['threshold' => 5, 'bonus' => 2],
                 ],
                 '_sources' => [
                     'base' => '3: baseline vocabulary score for any text. VSTEP Band 3-4 describes "từ vựng cơ bản, lặp đi lặp lại". Base=3 allows 1 bonus → Band 4, 2 bonuses → Band 5, which matches descriptors.',

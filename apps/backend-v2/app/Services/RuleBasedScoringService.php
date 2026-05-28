@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
@@ -111,7 +112,7 @@ final class RuleBasedScoringService
     /**
      * Population standard deviation.
      *
-     * @param  \Illuminate\Support\Collection<int, int|float>  $values
+     * @param  Collection<int, int|float>  $values
      */
     private function stdDev($values, float $mean): float
     {

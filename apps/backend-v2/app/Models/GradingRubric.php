@@ -4,16 +4,23 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\DTOs\Grading\Params\DiscourseParams;
+use App\DTOs\Grading\Params\FluencyParams;
+use App\DTOs\Grading\Params\GrammarParams;
+use App\DTOs\Grading\Params\OrganizationParams;
+use App\DTOs\Grading\Params\PronunciationParams;
+use App\DTOs\Grading\Params\TaskFulfillmentParams;
+use App\DTOs\Grading\Params\VocabularyParams;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
- * Immutable grading rubric — reference data from Bộ GD&ĐT.
+ * Immutable grading rubric — reference data from Bo GD&DT.
  *
- * One active rubric per skill at any time (partial unique index).
- * Criteria contain band descriptors used to render LLM prompts
- * and validate structured output keys.
+ * One active rubric per skill at any time. Criteria contain band descriptors
+ * and formula parameters. Typed accessors parse DB JSON into DTOs for
+ * type-safe consumption by scoring formulas.
  */
 #[Fillable([
     'skill', 'version', 'name', 'source_reference',
@@ -44,21 +51,13 @@ class GradingRubric extends BaseModel
             ->where('is_active', true);
     }
 
-    /**
-     * Criteria keys for this rubric (e.g. ['task_fulfillment', 'organization', ...]).
-     *
-     * @return list<string>
-     */
+    /** @return list<string> */
     public function criteriaKeys(): array
     {
         return array_column($this->criteria, 'key');
     }
 
-    /**
-     * Build JSON schema for LLM structured output from criteria.
-     *
-     * @return array<string,mixed>
-     */
+    /** @return array<string,mixed> */
     public function toRubricScoresSchema(): array
     {
         $properties = [];
@@ -74,11 +73,7 @@ class GradingRubric extends BaseModel
         ];
     }
 
-    /**
-     * Compute overall band from rubric scores using this rubric's formula.
-     *
-     * @param  array<string,float>  $scores
-     */
+    /** @param  array<string,float>  $scores */
     public function computeOverallBand(array $scores): float
     {
         $maxPossible = array_sum(array_column($this->criteria, 'max_score'));
@@ -89,5 +84,54 @@ class GradingRubric extends BaseModel
         $raw = (array_sum($scores) / $maxPossible) * 10;
 
         return round($raw * 2) / 2;
+    }
+
+    // ── Typed param accessors ──────────────────────────────────────
+
+    public function taskFulfillmentParams(): TaskFulfillmentParams
+    {
+        return TaskFulfillmentParams::fromArray($this->criterionParams('task_fulfillment'));
+    }
+
+    public function organizationParams(): OrganizationParams
+    {
+        return OrganizationParams::fromArray($this->criterionParams('organization'));
+    }
+
+    public function grammarParams(): GrammarParams
+    {
+        return GrammarParams::fromArray($this->criterionParams('grammar'));
+    }
+
+    public function vocabularyParams(): VocabularyParams
+    {
+        return VocabularyParams::fromArray($this->criterionParams('vocabulary'));
+    }
+
+    public function fluencyParams(): FluencyParams
+    {
+        return FluencyParams::fromArray($this->criterionParams('fluency'));
+    }
+
+    public function discourseParams(): DiscourseParams
+    {
+        return DiscourseParams::fromArray($this->criterionParams('discourse_management'));
+    }
+
+    public function pronunciationParams(): PronunciationParams
+    {
+        return PronunciationParams::fromArray($this->criterionParams('pronunciation'));
+    }
+
+    /** @return array<string,mixed> */
+    private function criterionParams(string $key): array
+    {
+        foreach ($this->criteria as $criterion) {
+            if (($criterion['key'] ?? '') === $key) {
+                return $criterion['params'] ?? [];
+            }
+        }
+
+        return [];
     }
 }

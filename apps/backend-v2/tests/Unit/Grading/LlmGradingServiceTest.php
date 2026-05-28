@@ -5,26 +5,27 @@ declare(strict_types=1);
 namespace Tests\Unit\Grading;
 
 use App\Ai\AiClient;
-use App\Services\Grading\LlmGradingService;
+use App\Services\Ai\LlmTaskFulfillmentAssessor;
+use App\Services\Ai\LlmWritingFeedbackGenerator;
 use Tests\TestCase;
 
-/**
- * LlmGradingService unit tests — no database, uses inline FakeAiClient.
- */
 final class LlmGradingServiceTest extends TestCase
 {
-    private LlmGradingService $grader;
+    private LlmTaskFulfillmentAssessor $extractor;
+
+    private LlmWritingFeedbackGenerator $feedback;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->grader = new LlmGradingService($this->makeFakeAi());
+        $fakeAi = $this->makeFakeAi();
+        $this->extractor = new LlmTaskFulfillmentAssessor($fakeAi);
+        $this->feedback = new LlmWritingFeedbackGenerator($fakeAi);
     }
 
-    /** extractEvidence returns evidence only (no feedback). */
-    public function test_extract_evidence_returns_structured_output(): void
+    public function test_extract_evidence_returns_flat_structure(): void
     {
-        $result = $this->grader->extractEvidence(
+        $result = $this->extractor->assess(
             text: 'I like reading books because it helps me relax.',
             promptText: 'Write about your hobby.',
             requirements: ['State your hobby', 'Give a reason'],
@@ -32,30 +33,12 @@ final class LlmGradingServiceTest extends TestCase
             ruleAnalysis: $this->fakeRuleAnalysis(),
         );
 
-        $this->assertArrayHasKey('evidence', $result);
-        $this->assertArrayHasKey('task_fulfillment', $result['evidence']);
-        $this->assertArrayHasKey('points_covered', $result['evidence']['task_fulfillment']);
-        $this->assertArrayHasKey('points_required', $result['evidence']['task_fulfillment']);
+        $this->assertArrayHasKey('points_covered', $result);
+        $this->assertArrayHasKey('points_required', $result);
+        $this->assertArrayHasKey('has_clear_position', $result);
+        $this->assertArrayHasKey('has_irrelevant_content', $result);
     }
 
-    /** evidence met <= total. */
-    public function test_extract_evidence_met_not_exceed_total(): void
-    {
-        $result = $this->grader->extractEvidence(
-            text: 'I like books.',
-            promptText: 'Write.',
-            requirements: ['Req 1', 'Req 2'],
-            grammarErrors: [],
-            ruleAnalysis: $this->fakeRuleAnalysis(),
-        );
-
-        $covered = $result['evidence']['task_fulfillment']['points_covered'];
-        $required = $result['evidence']['task_fulfillment']['points_required'];
-
-        $this->assertLessThanOrEqual($required, $covered);
-    }
-
-    /** LLM returns empty -> values fallback to 0/1/false. */
     public function test_extract_evidence_fallback_on_empty_llm_output(): void
     {
         $fakeAi = new class implements AiClient
@@ -64,12 +47,11 @@ final class LlmGradingServiceTest extends TestCase
             {
                 return [];
             }
-
         };
 
-        $grader = new LlmGradingService($fakeAi);
+        $extractor = new LlmTaskFulfillmentAssessor($fakeAi);
 
-        $result = $grader->extractEvidence(
+        $result = $extractor->assess(
             text: 'Test.',
             promptText: 'Test.',
             requirements: ['X'],
@@ -77,14 +59,13 @@ final class LlmGradingServiceTest extends TestCase
             ruleAnalysis: $this->fakeRuleAnalysis(),
         );
 
-        $this->assertSame(0.0, $result['evidence']['task_fulfillment']['points_covered']);
-        $this->assertSame(1.0, $result['evidence']['task_fulfillment']['points_required']);
+        $this->assertSame(0.0, $result['points_covered']);
+        $this->assertSame(1.0, $result['points_required']);
     }
 
-    /** generateFeedback returns strengths, improvements, rewrites. */
-    public function test_generate_feedback_returns_structured_output(): void
+    public function test_generate_feedback_returns_arrays(): void
     {
-        $result = $this->grader->generateFeedback(
+        $result = $this->feedback->generate(
             text: 'I like reading.',
             promptText: 'Write about hobbies.',
             metrics: $this->fakeMetrics(),
@@ -96,7 +77,6 @@ final class LlmGradingServiceTest extends TestCase
         $this->assertIsArray($result['rewrites']);
     }
 
-    /** generateFeedback with empty LLM output returns empty arrays. */
     public function test_generate_feedback_fallback_on_empty_llm_output(): void
     {
         $fakeAi = new class implements AiClient
@@ -105,12 +85,11 @@ final class LlmGradingServiceTest extends TestCase
             {
                 return [];
             }
-
         };
 
-        $grader = new LlmGradingService($fakeAi);
+        $generator = new LlmWritingFeedbackGenerator($fakeAi);
 
-        $result = $grader->generateFeedback(
+        $result = $generator->generate(
             text: 'Test.',
             promptText: 'Test.',
             metrics: $this->fakeMetrics(),
@@ -136,7 +115,6 @@ final class LlmGradingServiceTest extends TestCase
         ];
     }
 
-    /** @return AiClient */
     private function makeFakeAi(): AiClient
     {
         return new class implements AiClient
@@ -153,7 +131,6 @@ final class LlmGradingServiceTest extends TestCase
                     'rewrites' => [],
                 ];
             }
-
         };
     }
 

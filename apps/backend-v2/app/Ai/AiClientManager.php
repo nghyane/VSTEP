@@ -10,17 +10,28 @@ use App\Ai\Wire\ResponsesWire;
 use App\Ai\Wire\WireFormat;
 use App\Ai\Wire\WireRequest;
 use App\Ai\Wire\WireResponse;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
+use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
  * Adapter — resolves service config → connection + wire → sends request.
- * Domain services only see AiClient interface.
+ * Retry and circuit breaker are centralized here. Domain services never see them.
  */
 final class AiClientManager implements AiClient
 {
+    private const FAILURE_THRESHOLD = 5;
+
+    private const CIRCUIT_WINDOW_SECONDS = 60;
+
+    private const COOLDOWN_SECONDS = 30;
+
+    private const MAX_RETRIES = 3;
+
     /** @var array<string, WireFormat> */
     private array $wires = [];
 
@@ -60,6 +71,8 @@ final class AiClientManager implements AiClient
 
     private function send(string $service, array $config, WireRequest $request): WireResponse
     {
+        $this->failIfCircuitOpen();
+
         $wire = $this->wires[$config['wire']] ?? null;
 
         if ($wire === null) {
@@ -70,8 +83,20 @@ final class AiClientManager implements AiClient
         $start = microtime(true);
 
         try {
-            $response = $wire->send($http, $request);
+            /** @var WireResponse $response */
+            $response = Http::retry(self::MAX_RETRIES, function (int $attempt, \Throwable $e): int|false {
+                return match (true) {
+                    $e instanceof ConnectionException => $attempt * 1000 + random_int(0, 500),
+                    $e instanceof RequestException => $this->retryable($e->response->status())
+                        ? $attempt * 1000 + random_int(0, 500)
+                        : false,
+                    default => false,
+                };
+            })->send(function () use ($wire, $http, $request): WireResponse {
+                return $wire->send($http, $request);
+            });
         } catch (\Throwable $e) {
+            $this->recordFailure();
             $this->logCall($service, $config, microtime(true) - $start, null, $e);
 
             throw $e;
@@ -80,6 +105,34 @@ final class AiClientManager implements AiClient
         $this->logCall($service, $config, microtime(true) - $start, $response);
 
         return $response;
+    }
+
+    private function retryable(int $status): bool
+    {
+        return $status === 429   // Rate limit — let provider recover
+            || $status >= 500;   // Server error — likely transient
+        // 4xx (except 429): auth error, bad request, content filter — never retry
+    }
+
+    private function failIfCircuitOpen(): void
+    {
+        if (Cache::has('ai_circuit:open')) {
+            throw new RuntimeException(sprintf(
+                'AI circuit breaker open. Cooling down for %d seconds.',
+                self::COOLDOWN_SECONDS,
+            ));
+        }
+    }
+
+    private function recordFailure(): void
+    {
+        $failures = (int) Cache::get('ai_circuit:failures', 0) + 1;
+        Cache::put('ai_circuit:failures', $failures, self::CIRCUIT_WINDOW_SECONDS);
+
+        if ($failures >= self::FAILURE_THRESHOLD) {
+            Cache::put('ai_circuit:open', true, self::COOLDOWN_SECONDS);
+            Cache::forget('ai_circuit:failures');
+        }
     }
 
     private function logCall(string $service, array $config, float $duration, ?WireResponse $response, ?\Throwable $error = null): void
@@ -105,8 +158,6 @@ final class AiClientManager implements AiClient
     }
 
     /**
-     * Resolve service name → merged config (connection + model).
-     *
      * @return array{model_id: string, wire: string, url: string, key: string, timeout: int, thinking: string, temperature: ?float}
      */
     private function resolveService(string $service): array
