@@ -79,22 +79,23 @@ final class AiClientManager implements AiClient
             throw new RuntimeException("Unknown wire format: {$config['wire']}");
         }
 
-        $http = $this->buildHttp($config);
+        $http = Http::retry(self::MAX_RETRIES, function (int $attempt, \Throwable $e): int|false {
+            return match (true) {
+                $e instanceof ConnectionException => $attempt * 1000 + random_int(0, 500),
+                $e instanceof RequestException => $this->retryable($e->response->status())
+                    ? $attempt * 1000 + random_int(0, 500)
+                    : false,
+                default => false,
+            };
+        })
+            ->baseUrl($config['url'])
+            ->withToken($config['key'])
+            ->throw();
+
         $start = microtime(true);
 
         try {
-            /** @var WireResponse $response */
-            $response = Http::retry(self::MAX_RETRIES, function (int $attempt, \Throwable $e): int|false {
-                return match (true) {
-                    $e instanceof ConnectionException => $attempt * 1000 + random_int(0, 500),
-                    $e instanceof RequestException => $this->retryable($e->response->status())
-                        ? $attempt * 1000 + random_int(0, 500)
-                        : false,
-                    default => false,
-                };
-            })->send(function () use ($wire, $http, $request): WireResponse {
-                return $wire->send($http, $request);
-            });
+            $response = $wire->send($http, $request);
         } catch (\Throwable $e) {
             $this->recordFailure();
             $this->logCall($service, $config, microtime(true) - $start, null, $e);
