@@ -84,8 +84,12 @@ final class ValidateScoring extends Command
 
             $overallBand = $rubric->computeOverallBand($rubricScores);
 
-            // Sanity penalty
-            $penalty = $wordCount > 0 ? min(1.0, $wordCount / 120.0) : 0.0;
+            // Sanity penalty — use rubric params (task-specific word minimums)
+            $tf = $rubric->taskFulfillmentParams();
+            $minimum = $essay['type'] === 'Task 1 - Letter'
+                ? $tf->wordMinimumTask1
+                : $tf->wordMinimumTask2;
+            $penalty = $wordCount > 0 ? min(1.0, $wordCount / $minimum) : 0.0;
             $finalBand = round($overallBand * $penalty * 2) / 2;
             $level = $this->bandToLevel($finalBand);
 
@@ -194,7 +198,7 @@ final class ValidateScoring extends Command
         $this->comment('  - 5 VSTEP B1 sample essays from luyenthivstep.vn with expert criterion-level analysis');
         $this->comment('  - LLM grading with VSTEP rubric band descriptors (Thông tư 23/2017/TT-BGDĐT)');
         $this->comment('  - temperature=0 for deterministic output');
-        $this->comment('  - Sanity penalty: W × min(1, words/120)');
+        $this->comment('  - Sanity penalty: W × min(1, words/120) for Task 1, words/250 for Task 2');
         $this->comment('  - Reference: ULIS-VNU scoring validity study (VNU J. Foreign Studies, 2018)');
 
         return self::SUCCESS;
