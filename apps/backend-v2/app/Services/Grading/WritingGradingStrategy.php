@@ -18,6 +18,7 @@ use App\Models\WritingGradingResult;
 use App\Services\LanguageToolService;
 use App\Services\RuleBasedScoringService;
 use App\Services\SyntaxAnalyzer;
+use App\Services\Vocab\CefrVocabularyClassifier;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -31,6 +32,7 @@ final class WritingGradingStrategy implements GradingStrategy
         private readonly TaskFulfillmentAssessor $taskAssessor,
         private readonly WritingFeedbackGenerator $feedbackGenerator,
         private readonly RubricResolver $rubricResolver,
+        private readonly CefrVocabularyClassifier $cefrClassifier,
     ) {}
 
     public function supports(): array
@@ -73,6 +75,13 @@ final class WritingGradingStrategy implements GradingStrategy
         $ruleAnalysis = $this->ruleScoring->analyze($text, $ltMatches);
         $syntaxAnalysis = $this->syntax->analyze($text);
         $ruleAnalysis['syntax'] = $syntaxAnalysis;
+
+        // CEFR vocabulary classification (replaces hardcoded complex_vocab_count)
+        $cefr = $this->cefrClassifier->analyze($text);
+        $ruleAnalysis['metrics']['cefr_weighted_avg'] = $cefr['cefr_weighted_avg'];
+        $ruleAnalysis['metrics']['cefr_advanced_ratio'] = $cefr['advanced_ratio'];
+        $ruleAnalysis['metrics']['cefr_vocab_count'] = $cefr['cefr_vocab_count'];
+
         $job->addProgress('metrics', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
 
         // Phase 3: LLM evidence extraction (fast — returns flat structure)
