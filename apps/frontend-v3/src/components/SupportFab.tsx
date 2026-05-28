@@ -2,6 +2,7 @@ import { useState } from "react"
 import { createPortal } from "react-dom"
 
 const ZALO_URL = "https://zalo.me/0343062376"
+const ZALO_BRAND_BLUE = "#0068FF"
 
 export function SupportFab() {
 	const [open, setOpen] = useState(false)

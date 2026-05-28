@@ -1,16 +1,12 @@
 import { LinkOutlined } from "@ant-design/icons"
-import { createFileRoute, redirect } from "@tanstack/react-router"
-import { Card, Empty, Skeleton, Table, Tag, Typography } from "antd"
+import { createFileRoute } from "@tanstack/react-router"
+import { Empty, Flex, Skeleton, Table, Tag, Typography } from "antd"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
+import { PageHeader } from "#/components/PageHeader"
 import { type TeacherBookingItem, useTeacherBookings } from "#/features/teacher/queries"
-import { useAuth } from "#/lib/auth"
 
 export const Route = createFileRoute("/_app/teacher/bookings")({
-	beforeLoad: () => {
-		const user = useAuth.getState().user
-		if (!user || user.role !== "teacher") throw redirect({ to: "/" })
-	},
 	component: TeacherBookings,
 })
 
@@ -62,21 +58,19 @@ function TeacherBookings() {
 	const { data, isLoading } = useTeacherBookings()
 
 	return (
-		<div>
-			<Typography.Title level={3}>Buổi học</Typography.Title>
-			<Card>
-				{isLoading ? (
-					<Skeleton active />
-				) : (
-					<Table
-						rowKey="id"
-						columns={columns}
-						dataSource={data ?? []}
-						locale={{ emptyText: <Empty description="Chưa có buổi học nào" /> }}
-						pagination={{ pageSize: 10 }}
-					/>
-				)}
-			</Card>
-		</div>
+		<Flex vertical gap={24}>
+			<PageHeader title="Buổi học" subtitle="Danh sách học viên đã đặt lịch 1-1 với bạn." />
+			{isLoading ? (
+				<Skeleton active />
+			) : (
+				<Table
+					rowKey="id"
+					columns={columns}
+					dataSource={data ?? []}
+					locale={{ emptyText: <Empty description="Chưa có buổi học nào" /> }}
+					pagination={{ pageSize: 10 }}
+				/>
+			)}
+		</Flex>
 	)
 }

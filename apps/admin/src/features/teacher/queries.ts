@@ -58,12 +58,14 @@ export interface TeacherLeaveRequestItem {
 
 const get = <T>(path: string) => api.get(path).json<ApiResponse<T>>()
 
+const TEACHER_STALE_MS = 60_000
+
 export const useTeacherDashboard = () =>
 	useQuery({
 		queryKey: ["teacher", "dashboard"],
 		queryFn: () => get<TeacherDashboardData>("teacher/dashboard"),
 		select: (r) => r.data,
-		staleTime: 60_000,
+		staleTime: TEACHER_STALE_MS,
 	})
 
 export const useTeacherSlots = (from?: string, to?: string) =>
@@ -77,7 +79,7 @@ export const useTeacherSlots = (from?: string, to?: string) =>
 			return get<{ data: TeacherSlotItem[] }>(`teacher/slots${qs ? `?${qs}` : ""}`)
 		},
 		select: (r) => r.data.data,
-		staleTime: 60_000,
+		staleTime: TEACHER_STALE_MS,
 	})
 
 export const useTeacherScheduleItems = (from?: string, to?: string) =>
@@ -91,7 +93,7 @@ export const useTeacherScheduleItems = (from?: string, to?: string) =>
 			return get<TeacherScheduleItem[]>(`teacher/schedule-items${qs ? `?${qs}` : ""}`)
 		},
 		select: (r) => r.data,
-		staleTime: 60_000,
+		staleTime: TEACHER_STALE_MS,
 	})
 
 export const useTeacherBookings = (status?: string) =>
@@ -102,7 +104,7 @@ export const useTeacherBookings = (status?: string) =>
 			return get<{ data: TeacherBookingItem[] }>(`teacher/bookings${qs}`)
 		},
 		select: (r) => r.data.data,
-		staleTime: 60_000,
+		staleTime: TEACHER_STALE_MS,
 	})
 
 export const useTeacherLeaveRequests = () =>
@@ -110,7 +112,7 @@ export const useTeacherLeaveRequests = () =>
 		queryKey: ["teacher", "leave-requests"],
 		queryFn: () => get<{ data: TeacherLeaveRequestItem[] }>("teacher/leave-requests"),
 		select: (r) => r.data.data,
-		staleTime: 60_000,
+		staleTime: TEACHER_STALE_MS,
 	})
 
 export const useCreateLeaveRequest = () => {
