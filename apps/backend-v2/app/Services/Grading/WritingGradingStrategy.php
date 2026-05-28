@@ -84,22 +84,58 @@ final class WritingGradingStrategy implements GradingStrategy
 
         $job->addProgress('metrics', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
 
-        // Phase 3: LLM evidence extraction (fast — returns flat structure)
-        $t = microtime(true);
-        $requirements = $this->extractRequirements($submission);
         $part = $this->extractPart($submission);
-        $evidence = $this->taskAssessor->assess($text, $promptText, $requirements, $ltMatches, $ruleAnalysis, $part);
-        $job->addProgress('llm_evidence', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
+        $isExam = $submission instanceof ExamWritingSubmission;
+
+        // Phase 3: LLM (exam only) — evidence + feedback
+        $strengths = [];
+        $improvements = [];
+        $rewrites = [];
+
+        if ($isExam) {
+            $t = microtime(true);
+            $requirements = $this->extractRequirements($submission);
+            $evidence = $this->taskAssessor->assess($text, $promptText, $requirements, $ltMatches, $ruleAnalysis, $part);
+            $job->addProgress('llm_evidence', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
+
+            // Phase 5: LLM feedback (exam only)
+            $t = microtime(true);
+            $bandContext = $submission instanceof PracticeWritingSubmission
+                ? $this->resolveBandContext($submission)
+                : null;
+            $feedback = $this->feedbackGenerator->generate($text, $promptText, $ruleAnalysis['metrics'], $ltMatches, $bandContext);
+            $job->addProgress('llm_feedback', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
+
+            $strengths = $feedback['strengths'];
+            $improvements = $this->normalizeFeedback($feedback['improvements']);
+            $rewrites = $feedback['rewrites'];
+        }
 
         // Phase 4: Formula scoring (deterministic, instant)
         $t = microtime(true);
         $sentenceCount = $ruleAnalysis['metrics']['sentence_count'];
+        $wordCount = $ruleAnalysis['metrics']['word_count'];
+        $paragraphCount = $ruleAnalysis['metrics']['paragraph_count'];
+
+        if ($isExam && isset($evidence)) {
+            $tfScore = $this->formula->taskFulfillment($evidence, $part);
+        } else {
+            $tfScore = $this->formula->taskFulfillment([
+                'points_covered' => min($paragraphCount, $part === 1 ? 3 : 4),
+                'points_required' => $part === 1 ? 3 : 4,
+                'depth_factor' => min(1.0, $wordCount / ($part === 1 ? 120 : 250)),
+                'has_examples' => str_contains(strtolower($text), 'for example') || str_contains(strtolower($text), 'for instance'),
+                'has_clear_position' => str_contains(strtolower($text), 'i believe') || str_contains(strtolower($text), 'i think') || str_contains(strtolower($text), 'in my opinion') || str_contains(strtolower($text), 'in conclusion'),
+                'has_irrelevant_content' => false,
+            ], $part);
+        }
+
         $rubricScores = [
             'grammar' => $this->formula->grammar($syntaxAnalysis, $ruleAnalysis['metrics']['grammar_error_count'], $sentenceCount),
             'vocabulary' => $this->formula->vocabulary($ruleAnalysis['metrics']),
-            'task_fulfillment' => $this->formula->taskFulfillment($evidence, $part),
+            'task_fulfillment' => $tfScore,
             'organization' => $this->formula->organization(
-                $ruleAnalysis['metrics']['paragraph_count'],
+                $paragraphCount,
                 $ruleAnalysis['metrics']['linking_word_count'],
                 $sentenceCount,
                 (float) ($ruleAnalysis['metrics']['sentence_variety'] ?? 0),
@@ -113,20 +149,12 @@ final class WritingGradingStrategy implements GradingStrategy
             'overall_band' => $overallBand,
         ]);
 
-        // Phase 5: LLM feedback generation (slower — Vietnamese prose)
-        $t = microtime(true);
-        $bandContext = $submission instanceof PracticeWritingSubmission
-            ? $this->resolveBandContext($submission)
-            : null;
-        $feedback = $this->feedbackGenerator->generate($text, $promptText, $ruleAnalysis['metrics'], $ltMatches, $bandContext);
-        $job->addProgress('llm_feedback', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
-
         return new WritingGradingData(
             rubricScores: $rubricScores,
             overallBand: $overallBand,
-            strengths: $feedback['strengths'],
-            improvements: $this->normalizeFeedback($feedback['improvements']),
-            rewrites: $feedback['rewrites'],
+            strengths: $strengths,
+            improvements: $improvements,
+            rewrites: $rewrites,
             annotations: $annotations,
             rubricId: $rubric->id,
         );
