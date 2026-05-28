@@ -366,7 +366,7 @@ final class GrammarController extends Controller
     {
         /** @var GrammarExercise $exercise */
         $exercise = GrammarExercise::query()->findOrFail($childId);
-        $exercise->delete();
+        $this->service->deleteChild($exercise);
 
         return response()->noContent();
     }
