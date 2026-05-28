@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Admin;
 
+use App\Enums\LeaveRequestStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Teacher\StoreLeaveRequestRequest;
+use App\Http\Requests\Admin\Teacher\UpdateLeaveRequestStatusRequest;
 use App\Http\Resources\Admin\TeacherScheduleItemResource;
+use App\Models\TeacherLeaveRequest;
 use App\Services\Admin\TeacherDashboardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -69,5 +72,35 @@ final class TeacherController extends Controller
         );
 
         return response()->json(['data' => $leave], 201);
+    }
+
+    // ─── Staff: leave request management ──────────────────────────────
+
+    public function staffLeaveRequests(Request $request): JsonResponse
+    {
+        $paginator = $this->service->listAllLeaveRequests(
+            status: $request->input('status'),
+            teacherId: $request->input('teacher_id'),
+            from: $request->input('from'),
+            to: $request->input('to'),
+        );
+
+        return response()->json(['data' => $paginator]);
+    }
+
+    public function staffUpdateLeaveRequest(
+        UpdateLeaveRequestStatusRequest $request,
+        string $leaveId,
+    ): JsonResponse {
+        /** @var TeacherLeaveRequest $leave */
+        $leave = TeacherLeaveRequest::query()->findOrFail($leaveId);
+
+        $updated = $this->service->updateLeaveRequestStatus(
+            $leave,
+            $request->enum('status', LeaveRequestStatus::class),
+            $request->user(),
+        );
+
+        return response()->json(['data' => $updated]);
     }
 }

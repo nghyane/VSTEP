@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Admin\Teacher;
 
+use App\Enums\LeaveRequestStatus;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-final class StoreLeaveRequestRequest extends FormRequest
+final class UpdateLeaveRequestStatusRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -16,8 +18,7 @@ final class StoreLeaveRequestRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'date' => ['required', 'date', 'after_or_equal:today'],
-            'reason' => ['nullable', 'string', 'max:500'],
+            'status' => ['required', 'string', Rule::in([LeaveRequestStatus::Approved->value, LeaveRequestStatus::Rejected->value])],
         ];
     }
 }

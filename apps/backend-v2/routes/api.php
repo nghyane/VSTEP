@@ -494,6 +494,12 @@ Route::prefix('v1')->group(function () {
         Route::patch('/enrollments/{enrollmentId}/commitment', [Admin\CourseController::class, 'setEnrollmentCommitment'])->whereUuid('enrollmentId');
         Route::delete('/enrollments/{enrollmentId}', [Admin\CourseController::class, 'destroyEnrollment'])->whereUuid('enrollmentId');
 
+        // Leave request management (staff approve/reject)
+        Route::prefix('leave-requests')->group(function () {
+            Route::get('/', [Admin\TeacherController::class, 'staffLeaveRequests']);
+            Route::patch('/{leaveId}', [Admin\TeacherController::class, 'staffUpdateLeaveRequest'])->whereUuid('leaveId');
+        });
+
         // Practice Speaking — Tasks (VSTEP)
         Route::prefix('practice/speaking-tasks')->group(function () {
             Route::get('/', [Admin\SpeakingTaskController::class, 'indexTasks']);

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
+use App\Enums\BookingStatus;
 use App\Enums\LeaveRequestStatus;
-use App\Enums\SlotStatus;
 use App\Models\CourseScheduleItem;
 use App\Models\TeacherBooking;
 use App\Models\TeacherLeaveRequest;
@@ -13,6 +13,7 @@ use App\Models\TeacherSlot;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 final class TeacherDashboardService
 {
@@ -25,10 +26,10 @@ final class TeacherDashboardService
                 ->where('teacher_id', $teacher->id)
                 ->whereDate('starts_at', $today)
                 ->count(),
-            'upcoming_bookings' => TeacherSlot::query()
-                ->where('teacher_id', $teacher->id)
-                ->where('starts_at', '>', now())
-                ->where('status', SlotStatus::Booked)
+            'upcoming_bookings' => TeacherBooking::query()
+                ->whereHas('slot', fn ($q) => $q->where('teacher_id', $teacher->id))
+                ->where('status', BookingStatus::Booked)
+                ->whereHas('slot', fn ($q) => $q->where('starts_at', '>', now()))
                 ->count(),
             'pending_leaves' => TeacherLeaveRequest::query()
                 ->where('teacher_id', $teacher->id)
@@ -41,7 +42,11 @@ final class TeacherDashboardService
     {
         $query = TeacherSlot::query()
             ->where('teacher_id', $teacher->id)
-            ->with('course:id,title', 'bookings.profile.account:id,full_name')
+            ->with('course:id,title')
+            ->with(['bookings' => fn ($q) => $q
+                ->whereIn('status', BookingStatus::activeValues())
+                ->with('profile.account:id,full_name'),
+            ])
             ->orderBy('starts_at');
 
         if ($from) {
@@ -63,10 +68,10 @@ final class TeacherDashboardService
             ->orderBy('start_time');
 
         if ($from) {
-            $query->whereDate('date', '>=', Carbon::parse($from)->toDateString());
+            $query->whereDate('date', '>=', Carbon::parse($from)->setTimezone('Asia/Ho_Chi_Minh')->toDateString());
         }
         if ($to) {
-            $query->whereDate('date', '<=', Carbon::parse($to)->toDateString());
+            $query->whereDate('date', '<=', Carbon::parse($to)->setTimezone('Asia/Ho_Chi_Minh')->toDateString());
         }
 
         return $query->paginate(100);
@@ -96,11 +101,62 @@ final class TeacherDashboardService
 
     public function storeLeaveRequest(User $teacher, string $date, ?string $reason): TeacherLeaveRequest
     {
-        return TeacherLeaveRequest::create([
-            'teacher_id' => $teacher->id,
-            'date' => $date,
-            'reason' => $reason,
-            'status' => LeaveRequestStatus::Pending,
+        return TeacherLeaveRequest::firstOrCreate(
+            ['teacher_id' => $teacher->id, 'date' => $date],
+            [
+                'reason' => $reason,
+                'status' => LeaveRequestStatus::Pending,
+            ],
+        );
+    }
+
+    /**
+     * Staff: list all leave requests with optional filters.
+     */
+    public function listAllLeaveRequests(
+        ?string $status = null,
+        ?string $teacherId = null,
+        ?string $from = null,
+        ?string $to = null,
+    ): LengthAwarePaginator {
+        $query = TeacherLeaveRequest::query()
+            ->with('teacher:id,full_name,email')
+            ->orderByDesc('date');
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+        if ($teacherId) {
+            $query->where('teacher_id', $teacherId);
+        }
+        if ($from) {
+            $query->whereDate('date', '>=', $from);
+        }
+        if ($to) {
+            $query->whereDate('date', '<=', $to);
+        }
+
+        return $query->paginate(30);
+    }
+
+    /**
+     * Staff: approve or reject a leave request.
+     */
+    public function updateLeaveRequestStatus(
+        TeacherLeaveRequest $leave,
+        LeaveRequestStatus $status,
+        User $reviewer,
+    ): TeacherLeaveRequest {
+        if ($leave->status !== LeaveRequestStatus::Pending) {
+            throw new UnprocessableEntityHttpException('Chỉ có thể duyệt/từ chối đơn đang ở trạng thái chờ.');
+        }
+
+        $leave->update([
+            'status' => $status,
+            'reviewed_by' => $reviewer->id,
+            'reviewed_at' => now(),
         ]);
+
+        return $leave->fresh();
     }
 }
