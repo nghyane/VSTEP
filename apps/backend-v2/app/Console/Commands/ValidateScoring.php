@@ -10,6 +10,7 @@ use App\Services\Grading\WritingScoringFormula;
 use App\Services\RuleBasedScoringService;
 use App\Services\SyntaxAnalyzer;
 use Illuminate\Console\Command;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Qualitative validation: grade 5 VSTEP B1 sample essays through real LLM
@@ -217,18 +218,59 @@ final class ValidateScoring extends Command
     /** @return list<array{label: string, text: string, type: string, expected_level: string, expert_analysis: array<string,string>}> */
     private function loadDataset(): array
     {
-        $path = database_path('fixtures/vstep_writing_samples.json');
+        $essays = [];
+        $baseDir = database_path('fixtures/writing_samples');
 
-        if (! file_exists($path)) {
-            throw new \RuntimeException("Dataset not found: {$path}");
+        if (! is_dir($baseDir)) {
+            throw new \RuntimeException("Writing samples directory not found: {$baseDir}");
         }
 
-        $data = json_decode(file_get_contents($path), true);
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($baseDir, \RecursiveDirectoryIterator::SKIP_DOTS),
+        );
 
-        if (! is_array($data)) {
-            throw new \RuntimeException('Invalid dataset JSON');
+        foreach ($iterator as $file) {
+            if ($file->getExtension() !== 'md') {
+                continue;
+            }
+
+            $content = file_get_contents($file->getPathname());
+            $parts = $this->parseFrontmatter($content);
+
+            if ($parts === null) {
+                continue;
+            }
+
+            $essays[] = [
+                'label' => (string) ($parts['label'] ?? $file->getBasename('.md')),
+                'type' => (string) ($parts['type'] ?? ''),
+                'expected_level' => (string) ($parts['expected_level'] ?? ''),
+                'prompt' => (string) ($parts['prompt'] ?? ''),
+                'requirements' => (array) ($parts['requirements'] ?? []),
+                'text' => trim($parts['body'] ?? ''),
+                'expert_analysis' => (array) ($parts['expert_analysis'] ?? []),
+            ];
         }
 
-        return $data;
+        return $essays;
+    }
+
+    /** @return array{label?: string, type?: string, expected_level?: string, prompt?: string, requirements?: array, expert_analysis?: array, body: string}|null */
+    private function parseFrontmatter(string $content): ?array
+    {
+        // Match YAML frontmatter between --- delimiters
+        if (! preg_match('/^---\s*\n(.*?)\n---\s*\n(.*)$/s', $content, $matches)) {
+            return null;
+        }
+
+        $frontmatter = Yaml::parse($matches[1]);
+
+        if (! is_array($frontmatter)) {
+            return null;
+        }
+
+        $frontmatter['body'] = $matches[2];
+
+        return $frontmatter;
     }
 }
