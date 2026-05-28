@@ -105,6 +105,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/practice/writing/sessions', [WritingPracticeController::class, 'startSession']);
         Route::post('/practice/writing/sessions/{practice_session}/support', [WritingPracticeController::class, 'useSupport']);
         Route::post('/practice/writing/sessions/{practice_session}/submit', [WritingPracticeController::class, 'submit']);
+        Route::post('/practice/writing/submissions/{practice_writing_submission}/feedback', [WritingFeedbackController::class, 'generate']);
 
         // Practice Speaking — drill + VSTEP.
         Route::get('/practice/speaking/drills', [SpeakingPracticeController::class, 'listDrills']);
