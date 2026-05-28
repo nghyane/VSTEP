@@ -26,7 +26,7 @@ class GradingRubricSeeder extends Seeder
 
     private function seedWritingRubric(): void
     {
-        if (GradingRubric::where('skill', 'writing')->where('version', 7)->exists()) {
+        if (GradingRubric::where('skill', 'writing')->where('version', 8)->exists()) {
             return;
         }
 
@@ -34,8 +34,8 @@ class GradingRubricSeeder extends Seeder
 
         GradingRubric::create([
             'skill' => 'writing',
-            'version' => 7,
-            'name' => 'VSTEP Writing Rubric v7',
+            'version' => 8,
+            'name' => 'VSTEP Writing Rubric v8',
             'source_reference' => 'Thông tư 23/2017/TT-BGDĐT, Phụ lục III. '
                 .'v4: band descriptors + quantitative params for deterministic formula.',
             'criteria' => $this->writingCriteriaV4(),
@@ -155,11 +155,17 @@ class GradingRubricSeeder extends Seeder
                 '0' => 'Không viết bài hoặc lạc đề hoàn toàn.',
             ], [
                 'coverage_multiplier' => 8,
+                'task1_multiplier' => 6,
                 'position_bonus' => 1,
                 'irrelevant_penalty' => 2,
                 'default_points_required' => 3,
                 'word_minimum_task1' => 120,
                 'word_minimum_task2' => 250,
+                'depth_minimum' => 0.25,
+                'short_essay_caps' => [
+                    ['max_words' => 80, 'cap' => 4],
+                    ['max_words' => 120, 'cap' => 6],
+                ],
                 '_sources' => [
                     'coverage_multiplier' => '7 = full range (0→10) reserved for 0%→100% coverage. Scaling factor derived from VSTEP rubric: Band 0 "lạc đề", Band 5 "đáp ứng một phần", Band 10 "đầy đủ". Linear interpolation: 100% coverage × 7 + position_bonus(1) ≤ 8 (not 10 — reserves top 2 bands for exceptional quality beyond checklist).',
                     'position_bonus' => '1 band for expressing a clear position/stance. VSTEP descriptors mention "thể hiện quan điểm rõ ràng" at Band 7+. Conservative bonus — position is expected, not exceptional.',
@@ -234,6 +240,17 @@ class GradingRubricSeeder extends Seeder
                 'complex_thresholds' => [
                     ['threshold' => 2, 'bonus' => 1],
                     ['threshold' => 5, 'bonus' => 2],
+                ],
+                'cefr_thresholds' => [
+                    ['threshold' => 2.0, 'bonus' => 1],
+                    ['threshold' => 2.5, 'bonus' => 2],
+                    ['threshold' => 3.0, 'bonus' => 3],
+                    ['threshold' => 3.5, 'bonus' => 4],
+                    ['threshold' => 4.0, 'bonus' => 5],
+                ],
+                'advanced_thresholds' => [
+                    ['threshold' => 0.15, 'bonus' => 1],
+                    ['threshold' => 0.30, 'bonus' => 2],
                 ],
                 '_sources' => [
                     'base' => '3: baseline vocabulary score for any text. VSTEP Band 3-4 describes "từ vựng cơ bản, lặp đi lặp lại". Base=3 allows 1 bonus → Band 4, 2 bonuses → Band 5, which matches descriptors.',

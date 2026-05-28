@@ -42,24 +42,11 @@ final class WritingScoringFormula
         $lengthBonus = $this->resolveThreshold((float) ($metrics['avg_word_length'] ?? 4), $p->lengthThresholds);
         $readabilityBonus = $this->resolveThreshold((float) ($metrics['readability_grade'] ?? 0), $p->readabilityThresholds);
 
-        // CEFR-level vocabulary scoring (replaces hardcoded complex_vocab_count)
         $cefrAvg = (float) ($metrics['cefr_weighted_avg'] ?? 0);
         $cefrAdvanced = (float) ($metrics['cefr_advanced_ratio'] ?? 0);
 
-        $cefrBonus = match (true) {
-            $cefrAvg >= 4.0 => 5,
-            $cefrAvg >= 3.5 => 4,
-            $cefrAvg >= 3.0 => 3,
-            $cefrAvg >= 2.5 => 2,
-            $cefrAvg >= 2.0 => 1,
-            default => 0,
-        };
-
-        $advancedBonus = match (true) {
-            $cefrAdvanced >= 0.3 => 2,
-            $cefrAdvanced >= 0.15 => 1,
-            default => 0,
-        };
+        $cefrBonus = $this->resolveThreshold($cefrAvg, $p->cefrThresholds);
+        $advancedBonus = $this->resolveThreshold($cefrAdvanced, $p->advancedThresholds);
 
         // Fallback: use complex_vocab_count if CEFR data insufficient
         $complexCount = (int) ($metrics['complex_vocab_count'] ?? 0);
@@ -80,20 +67,19 @@ final class WritingScoringFormula
         $hasPosition = (bool) ($evidence['has_clear_position'] ?? false);
         $irrelevant = (bool) ($evidence['has_irrelevant_content'] ?? false);
 
-        // Task 1 letters: shorter, fewer requirements → lower coverage weight
-        $multiplier = $part === 1 ? 6 : $p->coverageMultiplier;
+        $multiplier = $part === 1 ? $p->task1Multiplier : $p->coverageMultiplier;
 
-        // Short essays: cap TF to prevent over-scoring empty content
+        // Short essay caps from rubric params
         $wordCount = (int) ($evidence['word_count'] ?? 0);
-        if ($wordCount > 0 && $wordCount < 80) {
-            $multiplier = min($multiplier, 4);
-        } elseif ($wordCount > 0 && $wordCount < 120) {
-            $multiplier = min($multiplier, 6);
+        foreach ($p->shortEssayCaps as $cap) {
+            if ($wordCount > 0 && $wordCount < (int) ($cap['max_words'] ?? 0)) {
+                $multiplier = min($multiplier, (float) ($cap['cap'] ?? $multiplier));
+                break;
+            }
         }
 
-        // Minimum depth when any requirement is covered (implicit development)
-        if ($depthFactor < 0.25 && $covered > 0) {
-            $depthFactor = 0.25;
+        if ($depthFactor < $p->depthMinimum && $covered > 0) {
+            $depthFactor = $p->depthMinimum;
         }
 
         return $this->clampRound(

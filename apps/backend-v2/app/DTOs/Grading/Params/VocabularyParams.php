@@ -11,12 +11,10 @@ final readonly class VocabularyParams
     private const REQUIRED = [
         'base', 'cap', 'unique_thresholds', 'length_thresholds',
         'readability_thresholds', 'complex_thresholds',
+        'cefr_thresholds', 'advanced_thresholds',
     ];
 
-    /** @param list<array{threshold: float, bonus: int}> $uniqueThresholds */
-    /** @param list<array{threshold: float, bonus: int}> $lengthThresholds */
-    /** @param list<array{threshold: float, bonus: int}> $readabilityThresholds */
-    /** @param list<array{threshold: float, bonus: int}> $complexThresholds */
+    /** @param list<array{threshold: float, bonus: int}> $uniqueThresholds, $lengthThresholds, $readabilityThresholds, $complexThresholds, $cefrThresholds, $advancedThresholds */
     public function __construct(
         public int $base,
         public float $cap,
@@ -24,6 +22,8 @@ final readonly class VocabularyParams
         public array $lengthThresholds,
         public array $readabilityThresholds,
         public array $complexThresholds,
+        public array $cefrThresholds,
+        public array $advancedThresholds,
     ) {}
 
     /** @param array<string,mixed> $data */
@@ -38,6 +38,8 @@ final readonly class VocabularyParams
             lengthThresholds: (array) $data['length_thresholds'],
             readabilityThresholds: (array) $data['readability_thresholds'],
             complexThresholds: (array) $data['complex_thresholds'],
+            cefrThresholds: (array) ($data['cefr_thresholds'] ?? []),
+            advancedThresholds: (array) ($data['advanced_thresholds'] ?? []),
         );
     }
 

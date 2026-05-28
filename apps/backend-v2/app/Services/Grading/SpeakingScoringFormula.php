@@ -43,20 +43,8 @@ final class SpeakingScoringFormula
         $cefrAvg = (float) ($metrics['cefr_weighted_avg'] ?? 0);
         $cefrAdvanced = (float) ($metrics['cefr_advanced_ratio'] ?? 0);
 
-        $cefrBonus = match (true) {
-            $cefrAvg >= 4.0 => 5,
-            $cefrAvg >= 3.5 => 4,
-            $cefrAvg >= 3.0 => 3,
-            $cefrAvg >= 2.5 => 2,
-            $cefrAvg >= 2.0 => 1,
-            default => 0,
-        };
-
-        $advancedBonus = match (true) {
-            $cefrAdvanced >= 0.3 => 2,
-            $cefrAdvanced >= 0.15 => 1,
-            default => 0,
-        };
+        $cefrBonus = $this->resolveThreshold($cefrAvg, $p->cefrThresholds);
+        $advancedBonus = $this->resolveThreshold($cefrAdvanced, $p->advancedThresholds);
 
         $complexCount = (int) ($metrics['complex_vocab_count'] ?? 0);
         $complexBonus = $this->resolveThreshold((float) $complexCount, $p->complexThresholds);
