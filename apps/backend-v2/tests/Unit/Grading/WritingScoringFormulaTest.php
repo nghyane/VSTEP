@@ -97,46 +97,49 @@ final class WritingScoringFormulaTest extends TestCase
     }
 
     /* ─── Task Fulfillment ───
-     * T = clampRound((covered/required) × M + position - irrelevant)
-     * M = coverage_multiplier = 9
-     * position_bonus = 1
-     * irrelevant_penalty = 2
+     * T = clampRound((covered/required) × 8 + depthFactor×3 + examples + position - irrelevant)
      */
 
-    /** 4/4 yêu cầu: (4/4)×9=9, có quan điểm +1, không lạc đề → 10.0. */
+    /** 3/3, depth=0.8, examples, position → 8 + 2.4 + 1 + 1 = 12.4 → clamp 10. */
     public function test_task_fulfillment_all_met(): void
     {
         $score = $this->formula->taskFulfillment([
-            'points_covered' => 4,
-            'points_required' => 4,
+            'points_covered' => 3,
+            'points_required' => 3,
+            'depth_factor' => 0.8,
+            'has_examples' => true,
             'has_clear_position' => true,
             'has_irrelevant_content' => false,
         ]);
         $this->assertSame(10.0, $score);
     }
 
-    /** 2/4 yêu cầu: (2/4)×9=4.5, không quan điểm, không lạc đề → 4.5. */
+    /** 2/4, depth=0.3, no extras → (2/4)×8=4 +0.9 = 4.9→5.0. */
     public function test_task_fulfillment_half_met_no_position(): void
     {
         $score = $this->formula->taskFulfillment([
             'points_covered' => 2,
             'points_required' => 4,
+            'depth_factor' => 0.3,
+            'has_examples' => false,
             'has_clear_position' => false,
             'has_irrelevant_content' => false,
         ]);
-        $this->assertSame(4.5, $score);
+        $this->assertSame(5.0, $score);
     }
 
-    /** 3/3 yêu cầu: (3/3)×9=9, có quan điểm +1, lạc đề -2 → 8.0. */
+    /** 3/3, depth=0.5, position, irrelevant → 8+1.5+0+1-2=8.5. */
     public function test_task_fulfillment_irrelevant_penalty(): void
     {
         $score = $this->formula->taskFulfillment([
             'points_covered' => 3,
             'points_required' => 3,
+            'depth_factor' => 0.5,
+            'has_examples' => false,
             'has_clear_position' => true,
             'has_irrelevant_content' => true,
         ]);
-        $this->assertSame(8.0, $score);
+        $this->assertSame(8.5, $score);
     }
 
     /* ─── Organization ───
@@ -185,12 +188,14 @@ final class WritingScoringFormulaTest extends TestCase
 
     /* ─── Task Fulfillment — edge cases ─── */
 
-    /** Không đáp ứng yêu cầu nào (0/3) → điểm bị clamp về sàn 1.0. */
+    /** Không đáp ứng yêu cầu nào (0/3), no depth → clamp về 1.0. */
     public function test_task_fulfillment_zero_covered(): void
     {
         $score = $this->formula->taskFulfillment([
             'points_covered' => 0,
             'points_required' => 3,
+            'depth_factor' => 0,
+            'has_examples' => false,
             'has_clear_position' => false,
             'has_irrelevant_content' => false,
         ]);
@@ -203,6 +208,8 @@ final class WritingScoringFormulaTest extends TestCase
         $score = $this->formula->taskFulfillment([
             'points_covered' => 0,
             'points_required' => 3,
+            'depth_factor' => 0,
+            'has_examples' => false,
             'has_clear_position' => false,
             'has_irrelevant_content' => true,
         ]);

@@ -51,11 +51,15 @@ final class WritingScoringFormula
         $p = $this->rubric->taskFulfillmentParams();
         $covered = max(0.0, (float) ($evidence['points_covered'] ?? 0));
         $required = max(1.0, (float) ($evidence['points_required'] ?? $p->defaultPointsRequired));
+        $depthFactor = (float) ($evidence['depth_factor'] ?? 0.5);
+        $hasExamples = (bool) ($evidence['has_examples'] ?? false);
         $hasPosition = (bool) ($evidence['has_clear_position'] ?? false);
         $irrelevant = (bool) ($evidence['has_irrelevant_content'] ?? false);
 
         return $this->clampRound(
             ($covered / $required) * $p->coverageMultiplier
+            + $depthFactor * 3
+            + ($hasExamples ? $p->positionBonus : 0)
             + ($hasPosition ? $p->positionBonus : 0)
             - ($irrelevant ? $p->irrelevantPenalty : 0)
         );

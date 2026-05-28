@@ -13,8 +13,11 @@ final class FakeTaskFulfillmentAssessor implements TaskFulfillmentAssessor
         return [
             'points_covered' => 3,
             'points_required' => 3,
+            'depth_factor' => 0.6,
+            'has_examples' => true,
             'has_clear_position' => true,
             'has_irrelevant_content' => false,
+            'evidence' => [],
         ];
     }
 }

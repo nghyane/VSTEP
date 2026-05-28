@@ -14,54 +14,36 @@
 @if(isset($syntax) && $syntax['count'] > 0)
 == SYNTAX STRUCTURES DETECTED ==
 Types found: {{ implode(', ', $syntax['types']) }} ({{ $syntax['count'] }} total)
-@foreach($syntax['details'] as $type => $count)
-  - {{ $type }}: {{ $count }}
-@endforeach
 @endif
 
 @if(count($grammarErrors) > 0)
 == DETECTED GRAMMAR ISSUES (LanguageTool) ==
 @foreach($grammarErrors as $e)
 - {{ $e['message'] }} ({{ $e['category'] }})
-@if(!empty($e['replacements']))
-  Suggested: {{ implode(', ', array_slice($e['replacements'], 0, 3)) }}
-@endif
 @endforeach
 @endif
 
-== TASK REQUIREMENTS ==
-{{ $promptText }}
+== TASK ==
+For EACH requirement below, find evidence in the student's response that addresses it.
+Quote the exact sentences from the essay (copy-paste, do NOT paraphrase).
 
 @if(count($requirements) > 0)
-== SPECIFIC REQUIREMENTS TO CHECK ==
 @foreach($requirements as $i => $req)
-{{ $i + 1 }}. {{ $req }}
+{{ $i + 1 }}. [key: req_{{ $i + 1 }}] "{{ $req }}"
 @endforeach
-
-For EACH requirement above, assign a completion score:
-- 1.0 = FULLY addressed with explanation, examples, or details
-- 0.5 = PARTIALLY addressed (mentioned but not developed, or vague)
-- 0.0 = NOT addressed at all
-
-Sum the scores: requirements_met = total of all requirement scores (can be a decimal like 1.5, 2.0, 2.5, etc.)
-requirements_total = {{ count($requirements) }} (one point available per requirement)
-
 @else
-== REQUIREMENT ANALYSIS ==
-No specific requirements are listed. Infer 3-5 key expectations from the task description above.
-Score each the same way (1.0/0.5/0.0).
-requirements_total = number of key expectations you identified
-requirements_met = your summed score (decimal allowed)
-
+No specific requirements given. Infer 3-5 key expectations from the task description.
+Use keys: req_1, req_2, req_3...
 @endif
+
+IMPORTANT: A requirement is MET if the student addresses it with any level of detail.
+Even a brief mention counts as MET. Only mark as NOT met if the topic is completely absent.
 
 Also determine:
-- has_clear_position:
+- has_clear_position: 
 @if($part === 1)
-  TRUE if the letter clearly expresses its core purpose (apology, complaint, invitation, request, etc.) and supports it with details. Mere mention without detail is FALSE.
+  TRUE if the letter clearly expresses its core purpose with supporting details.
 @else
-  TRUE only if the student clearly states an opinion/stance AND supports it with reasoning or evidence. Mere mention without support is FALSE.
+  TRUE if the essay states an opinion AND supports it with at least one reason.
 @endif
-- has_irrelevant_content: TRUE only if there is genuinely off-topic or unrelated content.
-
-Be precise. Do NOT inflate scores. A partially addressed requirement is 0.5, not 1.0.
+- has_irrelevant_content: TRUE only if there is content completely unrelated to the task.

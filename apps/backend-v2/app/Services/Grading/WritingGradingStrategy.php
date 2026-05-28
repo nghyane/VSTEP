@@ -85,14 +85,10 @@ final class WritingGradingStrategy implements GradingStrategy
         // Phase 4: Formula scoring (deterministic, instant)
         $t = microtime(true);
         $sentenceCount = $ruleAnalysis['metrics']['sentence_count'];
-        $taskFulfillment = [
-            'points_covered' => $evidence['points_covered'],
-            'points_required' => $evidence['points_required'],
-        ];
         $rubricScores = [
             'grammar' => $this->formula->grammar($syntaxAnalysis, $ruleAnalysis['metrics']['grammar_error_count'], $sentenceCount),
             'vocabulary' => $this->formula->vocabulary($ruleAnalysis['metrics']),
-            'task_fulfillment' => $this->formula->taskFulfillment($taskFulfillment),
+            'task_fulfillment' => $this->formula->taskFulfillment($evidence),
             'organization' => $this->formula->organization(
                 $ruleAnalysis['metrics']['paragraph_count'],
                 $ruleAnalysis['metrics']['linking_word_count'],

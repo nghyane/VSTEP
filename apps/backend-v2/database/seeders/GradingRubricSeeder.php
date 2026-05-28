@@ -26,17 +26,16 @@ class GradingRubricSeeder extends Seeder
 
     private function seedWritingRubric(): void
     {
-        if (GradingRubric::where('skill', 'writing')->where('version', 5)->exists()) {
+        if (GradingRubric::where('skill', 'writing')->where('version', 7)->exists()) {
             return;
         }
 
-        // Deactivate old versions
         GradingRubric::where('skill', 'writing')->where('is_active', true)->update(['is_active' => false]);
 
         GradingRubric::create([
             'skill' => 'writing',
-            'version' => 5,
-            'name' => 'VSTEP Writing Rubric v5',
+            'version' => 7,
+            'name' => 'VSTEP Writing Rubric v7',
             'source_reference' => 'Thông tư 23/2017/TT-BGDĐT, Phụ lục III. '
                 .'v4: band descriptors + quantitative params for deterministic formula.',
             'criteria' => $this->writingCriteriaV4(),
@@ -155,7 +154,7 @@ class GradingRubricSeeder extends Seeder
                 '5' => 'Chỉ đáp ứng một phần yêu cầu đề bài.',
                 '0' => 'Không viết bài hoặc lạc đề hoàn toàn.',
             ], [
-                'coverage_multiplier' => 9,
+                'coverage_multiplier' => 8,
                 'position_bonus' => 1,
                 'irrelevant_penalty' => 2,
                 'default_points_required' => 3,

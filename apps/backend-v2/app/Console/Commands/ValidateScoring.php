@@ -69,10 +69,7 @@ final class ValidateScoring extends Command
             // Layer 3: Formula computes scores from objective features
             // Only task_fulfillment uses LLM evidence (the only semantic criterion)
             $rubricScores = [
-                'task_fulfillment' => $formula->taskFulfillment([
-                    'points_covered' => $evidence['points_covered'],
-                    'points_required' => $evidence['points_required'],
-                ]),
+                'task_fulfillment' => $formula->taskFulfillment($evidence),
                 'organization' => $formula->organization(
                     $ruleAnalysis['metrics']['paragraph_count'],
                     $ruleAnalysis['metrics']['linking_word_count'],
@@ -102,6 +99,7 @@ final class ValidateScoring extends Command
                 'actual_level' => $level,
                 'req_met' => $evidence['points_covered'] ?? 0,
                 'req_total' => $evidence['points_required'] ?? 0,
+                'depth_factor' => $evidence['depth_factor'] ?? 0,
                 'task_fulfillment' => $rubricScores['task_fulfillment'] ?? 0,
                 'organization' => $rubricScores['organization'] ?? 0,
                 'grammar' => $rubricScores['grammar'] ?? 0,
