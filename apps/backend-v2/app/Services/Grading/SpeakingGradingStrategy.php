@@ -150,18 +150,14 @@ final class SpeakingGradingStrategy implements GradingStrategy
 
     private function checkContentRelevance(string $transcript, Model $submission): float
     {
-        $prompt = '';
-        $requirements = [];
-
-        if ($submission instanceof ExamSpeakingSubmission) {
-            $part = $submission->part;
-            $prompt = $this->buildPromptFromContent($part?->content);
-            $requirements = $part?->requirements;
-        } elseif ($submission instanceof PracticeSpeakingSubmission) {
-            $task = $submission->speakingTask;
-            $prompt = $this->buildPromptFromContent($task?->content);
-            $requirements = $task?->content['requirements'] ?? [];
+        // Practice: skip LLM content check (formula-only scoring)
+        if (! $submission instanceof ExamSpeakingSubmission) {
+            return 0.8;
         }
+
+        $part = $submission->part;
+        $prompt = $this->buildPromptFromContent($part?->content);
+        $requirements = $part?->requirements;
 
         $reqs = is_array($requirements) ? array_values(array_filter($requirements, fn ($v) => is_string($v) && $v !== '')) : [];
 
