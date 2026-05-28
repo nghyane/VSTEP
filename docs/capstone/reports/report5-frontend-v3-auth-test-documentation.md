@@ -14,14 +14,16 @@ Hanoi, May 2026
 |---|---|---|---|
 | 2026-05-28 | A | QA / Frontend Team | Created test documentation for learner login and registration in `apps/frontend-v3`. |
 | 2026-05-28 | M | QA / Frontend Team | Added exam library and exam room test scope, test cases, risks, and report statistics. |
+| 2026-05-29 | M | QA / Frontend Team | Refined test strategy wording and test-case appendix references for combined authentication and exam-room scope. |
+| 2026-05-29 | M | QA / Frontend Team | Added wallet balance, top-up package, coin payment, and profile promo-code redemption test scope and cases. |
 
 ## II. Testing Documentation
 
 ## 1. Scope of Testing
 
-This document defines the test scope for the learner authentication entry points and exam room workflow in the VSTEP frontend application located at `apps/frontend-v3`. The tested authentication feature set includes the landing authentication overlay, email/password login, email/password registration, onboarding profile setup during registration, Google Sign-In integration behavior, authenticated redirection, learner-only role enforcement, and session initialization through stored refresh tokens. The tested exam room feature set includes exam library filtering, exam detail and skill selection, session start and coin charging, device check, timed exam execution, Listening/Reading/Writing/Speaking panels, autosave draft, section transition locking, manual and automatic submission, result summary, and detailed answer/feedback review.
+This document defines the test scope for the learner authentication entry points, exam room workflow, and learner wallet/coin workflow in the VSTEP frontend application located at `apps/frontend-v3`. The tested authentication feature set includes the landing authentication overlay, email/password login, email/password registration, onboarding profile setup during registration, Google Sign-In integration behavior, authenticated redirection, learner-only role enforcement, and session initialization through stored refresh tokens. The tested exam room feature set includes exam library filtering, exam detail and skill selection, session start and coin charging, device check, timed exam execution, Listening/Reading/Writing/Speaking panels, autosave draft, section transition locking, manual and automatic submission, result summary, and detailed answer/feedback review. The tested wallet feature set includes wallet balance display in the application header, top-up package loading and selection, payment-order creation, insufficient-coin top-up prompts from exam start, coin deduction after exam-session creation, and promo-code redemption from the profile page.
 
-The main source files used to derive the authentication test scope are `src/routes/index.tsx`, `src/features/landing/components/LandingAuthOverlay.tsx`, `src/features/auth/AuthShell.tsx`, `src/features/auth/LoginForm.tsx`, `src/features/auth/RegisterForm.tsx`, `src/features/auth/GoogleButton.tsx`, `src/features/auth/PasswordInput.tsx`, `src/features/auth/DatePicker.tsx`, `src/lib/auth.ts`, and `src/lib/vstep.ts`. The main source files used to derive the exam room test scope are `src/routes/_app/thi-thu/index.tsx`, `src/routes/_app/thi-thu/$examId.tsx`, `src/routes/_focused/phong-thi/$sessionId.tsx`, `src/routes/_focused/phong-thi/$sessionId_.chi-tiet.tsx`, `src/features/exam/actions.ts`, `src/features/exam/queries.ts`, `src/features/exam/use-exam-session.ts`, `src/features/exam/components/ExamCard.tsx`, `src/features/exam/components/SectionSelector.tsx`, `src/features/exam/components/BottomActionBar.tsx`, `src/features/exam/components/DeviceCheckScreen.tsx`, `src/features/exam/components/ListeningPanel.tsx`, `src/features/exam/components/ReadingPanel.tsx`, `src/features/exam/components/WritingPanel.tsx`, `src/features/exam/components/SpeakingPanel.tsx`, and `src/features/practice/use-voice-recorder.ts`.
+The main source files used to derive the authentication test scope are `src/routes/index.tsx`, `src/features/landing/components/LandingAuthOverlay.tsx`, `src/features/auth/AuthShell.tsx`, `src/features/auth/LoginForm.tsx`, `src/features/auth/RegisterForm.tsx`, `src/features/auth/GoogleButton.tsx`, `src/features/auth/PasswordInput.tsx`, `src/features/auth/DatePicker.tsx`, `src/lib/auth.ts`, and `src/lib/vstep.ts`. The main source files used to derive the exam room test scope are `src/routes/_app/thi-thu/index.tsx`, `src/routes/_app/thi-thu/$examId.tsx`, `src/routes/_focused/phong-thi/$sessionId.tsx`, `src/routes/_focused/phong-thi/$sessionId_.chi-tiet.tsx`, `src/features/exam/actions.ts`, `src/features/exam/queries.ts`, `src/features/exam/use-exam-session.ts`, `src/features/exam/components/ExamCard.tsx`, `src/features/exam/components/SectionSelector.tsx`, `src/features/exam/components/BottomActionBar.tsx`, `src/features/exam/components/DeviceCheckScreen.tsx`, `src/features/exam/components/ListeningPanel.tsx`, `src/features/exam/components/ReadingPanel.tsx`, `src/features/exam/components/WritingPanel.tsx`, `src/features/exam/components/SpeakingPanel.tsx`, and `src/features/practice/use-voice-recorder.ts`. The main source files used to derive the wallet and promo-code redemption test scope are `src/components/Header.tsx`, `src/routes/_app/ho-so.tsx`, `src/features/wallet/TopUpDialog.tsx`, `src/features/wallet/use-topup-dialog.ts`, `src/features/wallet/PromoRedeemCard.tsx`, `src/features/wallet/PromoRedeemSuccessPopup.tsx`, `src/features/wallet/TopUpSuccessPopup.tsx`, `src/features/wallet/actions.ts`, `src/features/wallet/queries.ts`, and `src/features/wallet/types.ts`.
 
 The following functions and behaviors are in scope:
 
@@ -58,6 +60,18 @@ The following exam room functions and behaviors are in scope:
 | Result summary | Display MCQ score, per-skill performance, pending AI grading badges for Writing/Speaking, and link to detailed result. | `src/routes/_focused/phong-thi/$sessionId.tsx` |
 | Result detail | Show MCQ selected/correct answers, writing rubric/feedback/rewrites, speaking transcript/audio/rubric/pronunciation, and pending feedback state. | `src/routes/_focused/phong-thi/$sessionId_.chi-tiet.tsx` |
 
+The following wallet, coin, and promo-code functions and behaviors are in scope:
+
+| Scope Item | Description | Evidence |
+|---|---|---|
+| Header wallet balance | Load `wallet/balance`, display formatted balance in the authenticated header, and open top-up dialog from the coin pill. | `src/components/Header.tsx`, `src/features/wallet/queries.ts` |
+| Top-up package list | Load `wallet/topup-packages`, show package label, total coins, bonus coins, VND price, best-value badge, and computed savings/price-per-coin metadata. | `src/features/wallet/use-topup-dialog.ts`, `src/features/wallet/TopUpDialog.tsx` |
+| Top-up payment order | Create payment order through `POST wallet/topup` with package id, provider `payos`, and dashboard return URL; redirect browser to returned `payment_url`. | `src/features/wallet/actions.ts`, `src/features/wallet/TopUpDialog.tsx` |
+| Insufficient coin prompt | Open top-up dialog instead of starting an exam when wallet balance is lower than computed full-test or custom-skill cost. | `src/features/exam/components/DurationPanel.tsx`, `src/features/exam/components/BottomActionBar.tsx` |
+| Coin deduction after exam start | Invalidate wallet balance and exam-session caches after successful exam-session creation and show charged-coin toast. | `src/features/exam/components/DurationPanel.tsx`, `src/features/exam/components/BottomActionBar.tsx` |
+| Profile promo-code redemption | Render promo-code card on profile page, normalize input to uppercase, submit `POST wallet/promo-redeem`, show field errors, clear code on success, and invalidate wallet balance. | `src/routes/_app/ho-so.tsx`, `src/features/wallet/PromoRedeemCard.tsx`, `src/features/wallet/actions.ts` |
+| Promo redeem success feedback | Show coins granted, new balance, success dialog, and header coin-gain animation after closing success popup. | `src/features/wallet/PromoRedeemSuccessPopup.tsx`, `src/lib/coin-gain.ts`, `src/components/Header.tsx` |
+
 The following items are out of scope for this feature-level document:
 
 | Out-of-scope Item | Reason |
@@ -68,8 +82,10 @@ The following items are out of scope for this feature-level document:
 | Course enrollment registration | Course registration is a separate domain flow from account registration. |
 | Backend scoring and grading internals | This document validates frontend calls, result rendering, and pending/graded states; the grading algorithm itself belongs to backend/AI tests. |
 | Uploading speaking audio to backend | The inspected frontend speaking flow records and marks parts as done, but the current submit payload builder sends MCQ and writing answers only. This is tracked as a risk for exam-room testing. |
+| Payment provider settlement internals | This document validates frontend order creation and redirect behavior only; PayOS/webhook settlement and ledger reconciliation belong to backend/payment tests. |
+| Promo-code generation and campaign rules | This document validates frontend redemption behavior only; campaign creation, eligibility rules, and code inventory belong to backend/admin tests. |
 
-Testing levels applied to this feature include unit, integration, system, and acceptance testing. Unit testing focuses on field-level and state-level behavior such as password visibility, password rules, target-level filtering, minimum target-date calculation, auth store state transitions, exam reducer transitions, timer calculation, draft payload construction, cost calculation, and answer-progress derivation. Integration testing focuses on API calls, token persistence, query cache clearing, Google Identity handoff, routing between login/registration/onboarding/dashboard, exam session creation, draft save/restore, listening-play logging, submit payloads, result polling, and wallet/session cache invalidation. System testing validates complete browser flows from landing page to authenticated dashboard and from exam library to exam room, device check, answering, submission, result summary, and detail review. Acceptance testing confirms that the learner can register, log in, start a test, complete selected skills, submit, and review results according to the project requirement.
+Testing levels applied to this feature include unit, integration, system, and acceptance testing. Unit testing focuses on field-level and state-level behavior such as password visibility, password rules, target-level filtering, minimum target-date calculation, auth store state transitions, exam reducer transitions, timer calculation, draft payload construction, cost calculation, answer-progress derivation, top-up package enrichment, redeem-code normalization, and wallet-balance display state. Integration testing focuses on API calls, token persistence, query cache clearing, Google Identity handoff, routing between login/registration/onboarding/dashboard, exam session creation, draft save/restore, listening-play logging, submit payloads, result polling, wallet/session cache invalidation, top-up order creation, and promo-code redemption. System testing validates complete browser flows from landing page to authenticated dashboard, from exam library to exam room, and from profile/header wallet entry points to top-up or promo-code redemption feedback. Acceptance testing confirms that the learner can register, log in, start a test, complete selected skills, submit, review results, view wallet balance, top up coins, and redeem reward codes according to the project requirement.
 
 Assumptions and constraints:
 
@@ -84,20 +100,22 @@ Assumptions and constraints:
 | Constraint | Full Speaking submission verification requires backend support for receiving/storing speaking audio answers; the inspected frontend currently marks speaking completion locally but does not include recorded audio in the submit payload builder. |
 | Constraint | Listening audio playback tests require valid `audio_url` assets and browser audio autoplay behavior must be handled through user interaction. |
 | Constraint | Microphone recording tests require HTTPS or localhost browser context and microphone permission. |
+| Constraint | Full top-up payment completion requires a configured PayOS/test payment environment; local frontend-only testing can validate order creation and redirect URL handling but not settlement. |
+| Constraint | Promo-code pass/fail execution requires backend seed data for valid, invalid, expired, and already-used reward codes scoped to the active learner profile. |
 
 ## 2. Test Strategy
 
-The test strategy combines source-based test design, component behavior validation, API integration checks, browser-based end-to-end execution, and acceptance verification. The feature has security-sensitive behavior because it stores access and refresh tokens, initializes sessions, rejects non-learner roles, and redirects users into protected routes. Therefore, negative tests and session-state tests are required in addition to happy-path login and registration tests.
+The test strategy combines source-based test design, component behavior validation, API integration checks, browser-based end-to-end execution, and acceptance verification. The authentication scope has security-sensitive behavior because it stores access and refresh tokens, initializes sessions, rejects non-learner roles, and redirects users into protected routes. The exam-room scope has reliability-sensitive behavior because it manages paid session creation, timed progression, autosave, media playback/recording, irreversible skill transitions, and final submission. The wallet scope has financial/ledger-sensitive behavior because it displays spendable balance, starts paid exam sessions, redirects users to a payment provider, and grants coins from reward codes. Therefore, negative tests, session-state tests, media-permission tests, autosave/resume tests, timeout/submit tests, insufficient-balance tests, payment redirect tests, and promo-code error tests are required in addition to happy-path login, registration, exam completion, top-up, and reward-code redemption tests.
 
 ## 2.1 Testing Types
 
 | Testing Type | Objective | Technique | Completion Criteria |
 |---|---|---|---|
-| Unit Testing | Verify isolated frontend logic used by authentication forms, auth store, exam state, timer, cost, progress, and draft payload behavior. | Test password rules, target-level filtering, date constraints, token handling branches, visible/hidden password input states, exam reducer transitions, timer expiration, draft payload construction, word count, and score/result helpers with mocked dependencies. | All planned unit cases pass; no unhandled state branch remains for learner, non-learner, onboarding, active exam, expired exam, submitted exam, and error cases. |
-| Component/UI Testing | Verify the login, registration, exam library, exam detail, device check, exam panels, dialogs, result summary, and detail pages render correct controls, labels, disabled/loading states, validation messages, and navigation links. | Render components with mocked auth/exam stores, router, media APIs, and query responses; simulate user input, clicks, audio play events, and microphone states. | UI reacts correctly for required fields, invalid passwords, confirmation mismatch, loading states, exam status filters, skill selection, unanswered warnings, recording states, and result pending states. |
-| API Integration Testing | Verify frontend calls the correct authentication and exam endpoints and processes API responses correctly. | Use controlled API responses for `auth/*`, `exams`, `exam-sessions`, `exam-sessions/{id}/draft`, `exam-sessions/{id}/submit`, `exam-sessions/{id}/results`, `exam-sessions/{id}/listening-played`, wallet balance, and app config. | Correct request payloads are sent; success stores session data; errors show expected messages or safe fallback states; related query caches are invalidated. |
-| System Testing | Validate full browser workflows from landing page to dashboard, exam library, exam detail, exam room, submission, and result review. | Run the app against a test backend and execute user journeys in a browser on desktop and mobile viewport sizes with real audio/microphone where possible. | A learner can register, log in, start an exam, complete selected skills, submit, and review results; invalid users cannot enter protected learner routes. |
-| Acceptance Testing | Confirm the delivered behavior satisfies learner authentication and exam-room requirements. | Execute scenario-based checks with product acceptance criteria, test accounts, test wallet balance, and representative exams. | Stakeholder accepts the tested flows and no critical or high authentication/exam-room defect remains open. |
+| Unit Testing | Verify isolated frontend logic used by authentication forms, auth store, exam state, timer, cost, progress, draft payload, top-up package enrichment, and promo-code input behavior. | Test password rules, target-level filtering, date constraints, token handling branches, visible/hidden password input states, exam reducer transitions, timer expiration, draft payload construction, word count, score/result helpers, top-up savings calculation, empty package fallback, redeem-code normalization, and disabled states with mocked dependencies. | All planned unit cases pass; no unhandled state branch remains for learner, non-learner, onboarding, active exam, expired exam, submitted exam, wallet loading, top-up, redeem success, and error cases. |
+| Component/UI Testing | Verify the login, registration, exam library, exam detail, device check, exam panels, dialogs, result summary, detail pages, wallet top-up dialog, header coin pill, and profile promo-code card render correct controls, labels, disabled/loading states, validation messages, and navigation links. | Render components with mocked auth/exam/wallet stores, router, media APIs, and query responses; simulate user input, clicks, audio play events, microphone states, package selection, top-up submit, and promo-code redemption. | UI reacts correctly for required fields, invalid passwords, confirmation mismatch, loading states, exam status filters, skill selection, unanswered warnings, recording states, result pending states, insufficient coins, top-up package states, and promo-code errors. |
+| API Integration Testing | Verify frontend calls the correct authentication, exam, and wallet endpoints and processes API responses correctly. | Use controlled API responses for `auth/*`, `exams`, `exam-sessions`, `exam-sessions/{id}/draft`, `exam-sessions/{id}/submit`, `exam-sessions/{id}/results`, `exam-sessions/{id}/listening-played`, `wallet/balance`, `wallet/topup-packages`, `wallet/topup`, `wallet/promo-redeem`, and app config. | Correct request payloads are sent; success stores session data or redirects safely; errors show expected messages or safe fallback states; related query caches are invalidated. |
+| System Testing | Validate full browser workflows from landing page to dashboard, exam library, exam detail, exam room, submission, result review, wallet top-up entry points, and profile reward-code redemption. | Run the app against a test backend and execute user journeys in a browser on desktop and mobile viewport sizes with real audio/microphone and payment test environment where possible. | A learner can register, log in, view wallet balance, redeem a reward code, start an exam, complete selected skills, submit, and review results; invalid users cannot enter protected learner routes; insufficient coin flow opens top-up instead of starting an exam. |
+| Acceptance Testing | Confirm the delivered behavior satisfies learner authentication, exam-room, wallet, and reward-code requirements. | Execute scenario-based checks with product acceptance criteria, test accounts, test wallet balance, promo-code fixtures, payment-provider sandbox data, and representative exams. | Stakeholder accepts the tested flows and no critical or high authentication/exam-room/wallet defect remains open. |
 | Security Testing | Verify authentication does not keep invalid, expired, or unauthorized role sessions. | Test failed login, non-learner login, expired refresh token, and Google conflict cases. | Tokens and query cache are cleared for rejected roles and invalid sessions; protected routes redirect unauthenticated users to login. |
 | Compatibility Testing | Confirm the overlay and form steps work across common browser and viewport combinations. | Execute smoke flows in Chromium-based browser and responsive desktop/mobile sizes. | Login and registration remain usable on desktop and mobile layouts. |
 | Regression Testing | Ensure future changes do not break existing learner authentication behavior. | Re-run the auth test suite after changes to routes, auth store, API client, or onboarding forms. | No previously passed critical auth scenario regresses. |
@@ -132,6 +150,8 @@ The test strategy combines source-based test design, component behavior validati
 | Backend API dependency | `apps/backend-v2` authentication API | In-house | Current VSTEP backend |
 | Exam session API dependency | `apps/backend-v2` exam/session API | In-house | Current VSTEP backend |
 | Wallet API dependency | `apps/backend-v2` wallet API | In-house | Current VSTEP backend |
+| Payment provider redirect | PayOS checkout URL returned by backend | Vendor | Test/sandbox environment |
+| Reward code API dependency | `apps/backend-v2` wallet promo-code API | In-house | Current VSTEP backend |
 | Google Sign-In dependency | Google Identity Services | Vendor | Loaded from Google script at runtime |
 | Browser media APIs | HTMLAudioElement, MediaRecorder, getUserMedia, AudioContext | Vendor | Browser implementation |
 
@@ -141,12 +161,13 @@ The test strategy combines source-based test design, component behavior validati
 
 | Worker/Doer | Role | Specific Responsibilities/Comments |
 |---|---|---|
-| QA Engineer | Test designer and executor | Prepare auth test scenarios, execute manual/system tests, record defects and evidence. |
-| Frontend Developer | Defect owner | Fix defects in `apps/frontend-v3` login, registration, routing, and auth state handling. |
+| QA Engineer | Test designer and executor | Prepare authentication, exam-room, wallet, and reward-code test scenarios, execute manual/system tests, record defects and evidence. |
+| Frontend Developer | Defect owner | Fix defects in `apps/frontend-v3` login, registration, routing, auth state, exam UI, wallet UI, top-up, and promo-code handling. |
 | Backend Developer | API support | Provide stable auth API, test users, role data, and error responses for integration testing. |
 | Exam Feature Developer | Defect owner | Fix defects in exam list/detail, session start, exam room panels, autosave, timer, submit, and result pages. |
+| Wallet/Payment Developer | API and payment support | Provide wallet balance, top-up package, top-up order, promo-code fixtures, payment sandbox, and ledger error responses for testing. |
 | AI/Grading Developer | Grading support | Provide predictable Writing/Speaking grading states and feedback samples for result testing. |
-| Product Owner / Mentor | Acceptance reviewer | Confirm that login and registration behavior matches capstone requirements and user expectations. |
+| Product Owner / Mentor | Acceptance reviewer | Confirm that authentication, exam-room, wallet, and reward-code behavior matches capstone requirements and user expectations. |
 
 ## 3.2 Test Environment
 
@@ -160,6 +181,9 @@ The test strategy combines source-based test design, component behavior validati
 | Authentication API base URL | `VITE_API_URL` | Environment variable | Test environment value |
 | Exam data | Published exam with Listening, Reading, Writing, and Speaking content | VSTEP backend seed/test data | Test environment value |
 | Test wallet balance | Learner wallet with enough and insufficient coin scenarios | VSTEP backend seed/test data | Test environment value |
+| Top-up packages | Active wallet top-up package fixtures with base, bonus, and best-value scenarios | VSTEP backend seed/test data | Test environment value |
+| Promo-code fixtures | Valid, invalid, expired, and already-used reward codes for active learner profile | VSTEP backend seed/test data | Test environment value |
+| Payment sandbox | PayOS/test payment redirect URL returned by backend top-up order API | Payment provider / VSTEP backend | Test environment value |
 | Google OAuth client | `VITE_GOOGLE_CLIENT_ID` | Environment variable | Test environment value |
 | Audio playback | Browser audio subsystem and valid Listening `audio_url` assets | Browser / VSTEP content | Test environment value |
 | Microphone recording | Browser `getUserMedia` and `MediaRecorder` APIs | Browser | Test machine version |
@@ -174,18 +198,22 @@ The test strategy combines source-based test design, component behavior validati
 | Prepare feature-level test cases and acceptance criteria | 2026-05-28 | 2026-05-28 |
 | Analyze current exam library and exam room implementation and derive test scope | 2026-05-28 | 2026-05-28 |
 | Prepare exam-room test cases and acceptance criteria | 2026-05-28 | 2026-05-28 |
+| Analyze wallet, top-up, coin charging, and profile promo-code implementation | 2026-05-29 | 2026-05-29 |
+| Prepare wallet and reward-code test cases and acceptance criteria | 2026-05-29 | 2026-05-29 |
 | Execute unit/component tests for auth UI and auth store | TBD | TBD |
 | Execute unit/component tests for exam room state, panels, and result views | TBD | TBD |
+| Execute unit/component tests for wallet top-up and promo-code UI | TBD | TBD |
 | Execute integration tests against backend authentication API | TBD | TBD |
 | Execute integration tests against backend exam/session/wallet APIs | TBD | TBD |
+| Execute integration tests against backend wallet top-up and promo-code APIs | TBD | TBD |
 | Execute system and acceptance tests on desktop/mobile browser viewports | TBD | TBD |
 | Consolidate test report, defects, and evidence | TBD | TBD |
 
 ## 4. Test Cases
 
-Unit Test Cases: `Report5_FrontendV3_Auth_Unit_Test.xlsx` or equivalent test-case appendix.
+Unit Test Cases: `Report5_FrontendV3_Auth_Exam_Unit_Test.xlsx` or equivalent test-case appendix.
 
-Other Test Cases (IT, ST, AT): `Report5_FrontendV3_Auth_Test_Report.xlsx` or equivalent test-case appendix.
+Other Test Cases (IT, ST, AT): `Report5_FrontendV3_Auth_Exam_Test_Report.xlsx` or equivalent test-case appendix.
 
 ### 4.1 Unit Test Cases
 
@@ -321,17 +349,62 @@ Other Test Cases (IT, ST, AT): `Report5_FrontendV3_Auth_Test_Report.xlsx` or equ
 | AT-EXAM-006 | Learner can review results after submission | Given a submitted exam session, when the learner opens result summary and detail, then the system shows score, per-skill performance, answers, and available AI feedback. | Results and details are visible; pending AI grading is clearly indicated. | Critical |
 | AT-EXAM-007 | Learner cannot start without enough coins | Given learner wallet balance is lower than the computed exam cost, when the learner clicks start, then the system asks for top-up instead of creating a session. | Top-up dialog opens and no session is created. | High |
 
+### 4.9 Wallet and Reward Code Unit Test Cases
+
+| Test Case ID | Test Case Name | Preconditions | Test Steps | Expected Result | Priority |
+|---|---|---|---|---|---|
+| UT-WALLET-001 | Header wallet balance displays formatted coins | `walletBalanceQuery` returns a numeric balance. | Render `Header` with authenticated session and wallet response. | Coin pill displays balance using Vietnamese thousands formatting and exposes an aria label for top-up. | High |
+| UT-WALLET-002 | Header opens top-up dialog from coin pill | `Header` is rendered with wallet balance. | Click the coin balance pill. | Top-up dialog opens with `aria-label="Nạp xu"` and coin click animation state is triggered. | High |
+| UT-WALLET-003 | Top-up package enrichment calculates savings | Top-up packages include one base package and one bonus package. | Call `useTopupDialog` with mocked package and wallet query data. | Bonus package has computed `pricePerCoin` and positive `savingsPct`; base package has `savingsPct` equal to 0. | Medium |
+| UT-WALLET-004 | Top-up dialog handles empty package list | `wallet/topup-packages` returns an empty list. | Render `TopUpDialog`. | Message `Không có gói nạp` is shown and no buy button is rendered. | Medium |
+| UT-WALLET-005 | Promo code input is normalized to uppercase | Profile promo-code card is rendered. | Type lowercase and mixed-case characters in the code field. | Input value is converted to uppercase and submit button is enabled only when trimmed value is non-empty. | High |
+| UT-WALLET-006 | Promo code field error clears after editing | Promo-code redemption previously returned a field error. | Change the code input value. | Existing error message is cleared before the next submit attempt. | Medium |
+| UT-WALLET-007 | Promo redeem success popup shows granted coins and balance | Success state contains granted coins and updated balance. | Render `PromoRedeemSuccessPopup`. | Dialog displays `Đổi mã thành công`, `+<coins>`, updated balance, and close action. | High |
+
+### 4.10 Wallet and Reward Code Integration Test Cases
+
+| Test Case ID | Test Case Name | Preconditions | Test Steps | Expected Result | Priority |
+|---|---|---|---|---|---|
+| IT-WALLET-001 | Header loads wallet balance | Learner is authenticated. | Open any `_app` route with header. | Frontend calls `GET wallet/balance` and displays returned balance. | High |
+| IT-WALLET-002 | Top-up dialog loads packages and balance | Learner opens top-up dialog from header. | Click coin pill. | Frontend calls `GET wallet/topup-packages` and `GET wallet/balance`; package cards and current balance are displayed. | High |
+| IT-WALLET-003 | Selecting top-up package updates buy button | Multiple top-up packages are returned. | Click a non-default package card. | Selected package is marked with `aria-pressed=true`; buy button text uses selected total coins and VND amount. | Medium |
+| IT-WALLET-004 | Top-up order redirects to payment URL | Selected package has a valid backend order response. | Click buy button. | Frontend calls `POST wallet/topup` with `package_id`, `payment_provider: payos`, and dashboard `return_url`; browser navigates to returned `payment_url`. | Critical |
+| IT-WALLET-005 | Top-up order without payment URL does not redirect | Backend returns top-up order with `payment_url: null`. | Click buy button. | Order request completes without unsafe redirect; user remains in the app for backend/payment error handling. | High |
+| IT-WALLET-006 | Insufficient coins opens top-up instead of exam session | Wallet balance is lower than computed exam cost. | Click full-test or custom-skill start action. | Top-up dialog opens; `POST exams/{examId}/sessions` is not called. | Critical |
+| IT-WALLET-007 | Exam start invalidates wallet balance after coin charge | Wallet balance is enough and session creation succeeds with `coins_charged`. | Start exam. | Frontend calls session creation API, invalidates `wallet/balance` and `exam-sessions`, shows charged-coin toast, and navigates to exam room. | Critical |
+| IT-WALLET-008 | Promo-code redemption succeeds and refreshes balance | Profile page is open and backend has a valid reward code. | Enter valid code and submit. | Frontend calls `POST wallet/promo-redeem` with uppercase code, clears input, invalidates `wallet/balance`, and shows success popup with `coins_granted` and `balance_after`. | Critical |
+| IT-WALLET-009 | Promo-code redemption displays backend error | Backend rejects code as invalid, expired, already used, or unavailable. | Submit the rejected code. | User remains on profile page and sees field-level backend error or default invalid-code message. | High |
+
+### 4.11 Wallet and Reward Code System Test Cases
+
+| Test Case ID | Test Case Name | Preconditions | Test Steps | Expected Result | Priority |
+|---|---|---|---|---|---|
+| ST-WALLET-001 | Header top-up happy path to payment provider | Learner is authenticated and top-up packages are configured. | Click header coin pill, select a package, click buy. | Top-up dialog shows balance/packages and browser redirects to payment-provider checkout URL. | Critical |
+| ST-WALLET-002 | Insufficient coins during exam start | Learner wallet balance is below exam cost. | Open exam detail and click start. | Exam session is not created; top-up dialog opens from the exam page. | Critical |
+| ST-WALLET-003 | Exam start deducts coins in visible wallet state | Learner has enough coins and starts an exam. | Start full test or selected-skill practice, then return to an app page with header. | Wallet balance is refetched after session creation and reflects the backend charged-coin state. | High |
+| ST-WALLET-004 | Profile reward-code happy path | Learner profile page is open and valid promo code exists. | Enter reward code and submit. | Success popup appears, displays coins granted and new balance, and header balance updates after refetch/animation. | Critical |
+| ST-WALLET-005 | Profile reward-code negative path | Learner profile page is open and invalid/expired/used promo code exists. | Enter rejected reward code and submit. | Field error appears, wallet balance does not increase, and success popup is not shown. | High |
+
+### 4.12 Wallet and Reward Code Acceptance Test Cases
+
+| Test Case ID | Scenario | Acceptance Criteria | Expected Result | Priority |
+|---|---|---|---|---|
+| AT-WALLET-001 | Learner can view current coin balance | Given an authenticated learner, when the learner opens the app, then the current wallet balance is visible in the header. | Header coin pill shows the backend wallet balance and opens top-up when clicked. | High |
+| AT-WALLET-002 | Learner can start a top-up payment | Given active top-up packages, when the learner selects a package and confirms purchase, then a payment order is created. | Learner is redirected to the provider checkout URL returned by backend. | Critical |
+| AT-WALLET-003 | Learner cannot start paid exam without enough coins | Given wallet balance below exam cost, when the learner starts an exam, then the system blocks session creation and offers top-up. | Top-up dialog opens and no paid session is created. | Critical |
+| AT-WALLET-004 | Learner can redeem a reward code from profile | Given a valid reward code for the active learner profile, when the learner submits it from profile, then coins are granted to the wallet. | Success popup shows granted coins and new balance; wallet balance refreshes. | Critical |
+
 ## 5. Test Reports
 
-This report is prepared from the current `apps/frontend-v3` implementation and is ready for execution. No automated or manual test execution evidence is attached in this document yet, so pass/fail status is recorded as `Not Executed` until the test cases are run against a configured test environment. The exam-room test cases were derived from the inspected frontend implementation and should be executed with seeded exam content, wallet balance scenarios, valid listening audio assets, and browser microphone permission scenarios.
+This report is prepared from the current `apps/frontend-v3` implementation and is ready for execution. No automated or manual test execution evidence is attached in this document yet, so pass/fail status is recorded as `Not Executed` until the test cases are run against a configured test environment. The exam-room and wallet test cases were derived from the inspected frontend implementation and should be executed with seeded exam content, wallet balance scenarios, top-up package fixtures, promo-code fixtures, payment-provider sandbox behavior, valid listening audio assets, and browser microphone permission scenarios.
 
 | Test Level | Planned Cases | Passed | Failed | Blocked | Not Executed | Notes |
 |---|---:|---:|---:|---:|---:|---|
-| Unit | 29 | 0 | 0 | 0 | 29 | Requires component/store/hook test harness and mocked API/media dependencies. |
-| Integration | 33 | 0 | 0 | 0 | 33 | Requires backend auth, exam, session, wallet APIs or API mock server. |
-| System | 18 | 0 | 0 | 0 | 18 | Requires running frontend, backend, browser, test accounts, test wallet, test exams, audio assets, and microphone scenarios. |
-| Acceptance | 14 | 0 | 0 | 0 | 14 | Requires stakeholder review after execution. |
-| Total | 94 | 0 | 0 | 0 | 94 | Initial auth and exam-room test design completed. |
+| Unit | 36 | 0 | 0 | 0 | 36 | Requires component/store/hook test harness and mocked API/media/payment dependencies. |
+| Integration | 42 | 0 | 0 | 0 | 42 | Requires backend auth, exam, session, wallet, top-up, promo-code APIs or API mock server. |
+| System | 23 | 0 | 0 | 0 | 23 | Requires running frontend, backend, browser, test accounts, test wallet, test exams, top-up packages, promo codes, audio assets, and microphone scenarios. |
+| Acceptance | 18 | 0 | 0 | 0 | 18 | Requires stakeholder review after execution. |
+| Total | 119 | 0 | 0 | 0 | 119 | Initial auth, exam-room, wallet, and reward-code test design completed. |
 
 Initial risk analysis:
 
@@ -348,6 +421,9 @@ Initial risk analysis:
 | R-EXAM-004 | Listening playback depends on browser audio behavior and valid media URLs. | Audio may fail or not log played sections in some environments. | Test with real audio assets and include browser compatibility smoke tests. |
 | R-EXAM-005 | Microphone recording depends on browser permissions and `MediaRecorder` support. | Speaking test may be blocked for users with denied permission or unsupported browser. | Test granted, denied, and unavailable recorder scenarios; document supported browsers. |
 | R-EXAM-006 | Leaving the exam room uses frontend confirmation but does not save speaking audio in draft. | Learner may lose unsubmitted speaking recordings after refresh/exit. | Confirm intended behavior and add persistence/upload if required by product scope. |
+| R-WALLET-001 | Top-up success depends on external payment provider redirect and backend settlement/webhook flow. | Frontend can create an order but cannot prove coin credit without payment sandbox/backend evidence. | Execute order creation separately from settlement tests; attach payment sandbox and backend ledger evidence after execution. |
+| R-WALLET-002 | Promo-code test outcomes depend on backend seed data and active profile scope. | Valid/invalid expectations may fail if codes are missing, expired, or already redeemed by another profile. | Prepare deterministic promo-code fixtures before execution and reset them between test runs. |
+| R-WALLET-003 | Wallet balance is cached through TanStack Query and invalidated after exam start or redeem success. | Header may temporarily show stale balance if invalidation/refetch fails. | Prioritize integration/system tests for `wallet/balance` invalidation after paid exam start and promo-code redemption. |
 
 Execution evidence to attach after running tests:
 
@@ -355,5 +431,5 @@ Execution evidence to attach after running tests:
 |---|---|
 | Automated unit/component result | Test runner output or CI job link. |
 | Integration result | API mock logs or backend request logs showing auth endpoint calls. |
-| System result | Browser screenshots/video for login, registration, onboarding, redirect, non-learner rejection, exam start, device check, answering, autosave/resume, submit, result summary, and result detail. |
+| System result | Browser screenshots/video for login, registration, onboarding, redirect, non-learner rejection, exam start, device check, answering, autosave/resume, submit, result summary, result detail, wallet top-up, and promo-code redemption. |
 | Defect log | Issue IDs, severity, owner, status, and retest result. |
