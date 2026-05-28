@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { FeedbackSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
-import { speakingGradingQuery } from "#/features/grading/queries"
+import { speakingResultQuery } from "#/features/grading/queries"
 import type { RubricCriteriaMeta } from "#/features/grading/types"
 import { round } from "#/lib/utils"
 
@@ -13,7 +13,7 @@ interface Props {
 
 export function SpeakingResult({ submissionId }: Props) {
 	const { data, isLoading } = useQuery({
-		...speakingGradingQuery("practice_speaking", submissionId),
+		...speakingResultQuery("practice_speaking", submissionId),
 		refetchInterval: (query) => (query.state.data?.data ? false : 3000),
 	})
 	const result = data?.data

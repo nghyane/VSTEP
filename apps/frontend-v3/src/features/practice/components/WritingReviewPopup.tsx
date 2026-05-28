@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router"
 import { Icon } from "#/components/Icon"
 import { FeedbackSection, RewriteSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
-import { writingGradingQuery } from "#/features/grading/queries"
+import { writingResultQuery } from "#/features/grading/queries"
 import type { RubricCriteriaMeta } from "#/features/grading/types"
 import { round } from "#/lib/utils"
 
@@ -16,7 +16,7 @@ interface Props {
 
 export function WritingReviewPopup({ submissionId, onClose }: Props) {
 	const { data, isPending, isError, refetch } = useQuery({
-		...writingGradingQuery("practice_writing", submissionId),
+		...writingResultQuery("practice_writing", submissionId),
 		refetchInterval: (query) => (query.state.data?.data ? false : 3000),
 	})
 	const result = data?.data
