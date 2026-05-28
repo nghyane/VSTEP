@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Models\GradingRubric;
 use App\Services\Ai\LlmTaskFulfillmentAssessor;
 use App\Services\Grading\WritingScoringFormula;
+use App\Services\LanguageToolService;
 use App\Services\RuleBasedScoringService;
 use App\Services\SyntaxAnalyzer;
 use Illuminate\Console\Command;
@@ -28,7 +29,7 @@ final class ValidateScoring extends Command
     /** @var array<int, array{label: string, text: string, type: string, expected_level: string, expert_analysis: array<string,string>}> */
     private array $essays;
 
-    public function handle(LlmTaskFulfillmentAssessor $extractor, RuleBasedScoringService $metrics, SyntaxAnalyzer $syntax, WritingScoringFormula $formula): int
+    public function handle(LlmTaskFulfillmentAssessor $extractor, RuleBasedScoringService $metrics, SyntaxAnalyzer $syntax, WritingScoringFormula $formula, LanguageToolService $lt): int
     {
         $rubric = GradingRubric::where('skill', 'writing')->where('is_active', true)->first();
 
@@ -51,15 +52,19 @@ final class ValidateScoring extends Command
         foreach ($this->essays as $essay) {
             $this->info("Grading: {$essay['label']} ({$essay['type']}, expected {$essay['expected_level']})...");
 
+            // Layer 0: LanguageTool grammar check
+            $ltMatches = $lt->check($essay['text']);
+            $grammarErrors = array_filter($ltMatches, fn ($e) => str_contains(strtolower($e['category'] ?? ''), 'grammar'));
+
             // Layer 1: Metrics + Syntax
-            $ruleAnalysis = $metrics->analyze($essay['text'], []);
+            $ruleAnalysis = $metrics->analyze($essay['text'], $ltMatches);
             $syntaxAnalysis = $syntax->analyze($essay['text']);
             $ruleAnalysis['syntax'] = $syntaxAnalysis;
             $wordCount = $ruleAnalysis['metrics']['word_count'];
 
             // Layer 2: LLM extracts evidence (task-specific requirements)
             try {
-                $evidence = $extractor->assess($essay['text'], $essay['prompt'] ?? '', $essay['requirements'] ?? [], [], $ruleAnalysis);
+                $evidence = $extractor->assess($essay['text'], $essay['prompt'] ?? '', $essay['requirements'] ?? [], $ltMatches, $ruleAnalysis);
             } catch (\Throwable $e) {
                 $this->error("  LLM call failed: {$e->getMessage()}");
 
@@ -76,7 +81,7 @@ final class ValidateScoring extends Command
                     $ruleAnalysis['metrics']['sentence_count'],
                     (float) ($ruleAnalysis['metrics']['sentence_variety'] ?? 0),
                 ),
-                'grammar' => $formula->grammar($syntaxAnalysis, 0, $ruleAnalysis['metrics']['sentence_count']),
+                'grammar' => $formula->grammar($syntaxAnalysis, count($grammarErrors), $ruleAnalysis['metrics']['sentence_count']),
                 'vocabulary' => $formula->vocabulary($ruleAnalysis['metrics']),
             ];
 

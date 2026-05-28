@@ -83,6 +83,14 @@ final class WritingScoringFormula
         // Task 1 letters: shorter, fewer requirements → lower coverage weight
         $multiplier = $part === 1 ? 6 : $p->coverageMultiplier;
 
+        // Short essays: cap TF to prevent over-scoring empty content
+        $wordCount = (int) ($evidence['word_count'] ?? 0);
+        if ($wordCount > 0 && $wordCount < 80) {
+            $multiplier = min($multiplier, 4);
+        } elseif ($wordCount > 0 && $wordCount < 120) {
+            $multiplier = min($multiplier, 6);
+        }
+
         // Minimum depth when any requirement is covered (implicit development)
         if ($depthFactor < 0.25 && $covered > 0) {
             $depthFactor = 0.25;

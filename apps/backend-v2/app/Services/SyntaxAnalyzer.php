@@ -125,7 +125,7 @@ final class SyntaxAnalyzer
             (?:\w+ed|done|fixed|repaired|cleaned|built|made|painted|washed|cooked
                |prepared|delivered|installed|checked|designed|developed|written
                |taken|sent|bought|sold|created|changed|cut|set|baked)\b
-            |\b(?:make|let|help)\s+(?:me|him|her|us|them|you|it|\w+)\s+\w+\b
+            |\b(?:make|let|help)\s+(?:me|him|her|us|them|you|it)\s+(?:feel|understand|see|know|do|go|get|learn|relax|believe|realize|stay|become)\b
         ~ix',
     ];
 
