@@ -84,25 +84,20 @@ final class WritingGradingStrategy implements GradingStrategy
 
         $job->addProgress('metrics', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
 
-        $part = $this->extractPart($submission);
-        $isExam = $submission instanceof ExamWritingSubmission;
+        // Phase 3: LLM check — requirement YES/NO (both modes, <1s)
+        $t = microtime(true);
+        $requirements = $this->extractRequirements($submission);
+        $evidence = $this->taskAssessor->assess($text, $promptText, $requirements, $ltMatches, $ruleAnalysis, $part);
+        $job->addProgress('llm_evidence', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
 
-        // Phase 3: LLM (exam only) — evidence + feedback
+        // Phase 5: LLM feedback — exam only (auto), practice on-demand (separate API)
         $strengths = [];
         $improvements = [];
         $rewrites = [];
 
-        if ($isExam) {
+        if ($submission instanceof ExamWritingSubmission) {
             $t = microtime(true);
-            $requirements = $this->extractRequirements($submission);
-            $evidence = $this->taskAssessor->assess($text, $promptText, $requirements, $ltMatches, $ruleAnalysis, $part);
-            $job->addProgress('llm_evidence', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
-
-            // Phase 5: LLM feedback (exam only)
-            $t = microtime(true);
-            $bandContext = $submission instanceof PracticeWritingSubmission
-                ? $this->resolveBandContext($submission)
-                : null;
+            $bandContext = null;
             $feedback = $this->feedbackGenerator->generate($text, $promptText, $ruleAnalysis['metrics'], $ltMatches, $bandContext);
             $job->addProgress('llm_feedback', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
 
@@ -117,18 +112,7 @@ final class WritingGradingStrategy implements GradingStrategy
         $wordCount = $ruleAnalysis['metrics']['word_count'];
         $paragraphCount = $ruleAnalysis['metrics']['paragraph_count'];
 
-        if ($isExam && isset($evidence)) {
-            $tfScore = $this->formula->taskFulfillment($evidence, $part);
-        } else {
-            $tfScore = $this->formula->taskFulfillment([
-                'points_covered' => min($paragraphCount, $part === 1 ? 3 : 4),
-                'points_required' => $part === 1 ? 3 : 4,
-                'depth_factor' => min(1.0, $wordCount / ($part === 1 ? 120 : 250)),
-                'has_examples' => str_contains(strtolower($text), 'for example') || str_contains(strtolower($text), 'for instance'),
-                'has_clear_position' => str_contains(strtolower($text), 'i believe') || str_contains(strtolower($text), 'i think') || str_contains(strtolower($text), 'in my opinion') || str_contains(strtolower($text), 'in conclusion'),
-                'has_irrelevant_content' => false,
-            ], $part);
-        }
+        $tfScore = $this->formula->taskFulfillment($evidence, $part);
 
         $rubricScores = [
             'grammar' => $this->formula->grammar($syntaxAnalysis, $ruleAnalysis['metrics']['grammar_error_count'], $sentenceCount),
