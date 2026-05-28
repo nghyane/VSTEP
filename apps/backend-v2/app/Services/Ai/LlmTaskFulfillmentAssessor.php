@@ -15,12 +15,13 @@ final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
 
     public function assess(string $text, string $promptText, array $requirements, array $grammarErrors, array $ruleAnalysis, int $part = 2): array
     {
+        $wordCount = str_word_count($text);
         $grammarErrors = array_slice($grammarErrors, 0, 10);
 
         $prompt = view('ai.grading.writing-evidence', [
             'promptText' => $promptText,
             'text' => $text,
-            'wordCount' => str_word_count($text),
+            'wordCount' => $wordCount,
             'grammarErrors' => $grammarErrors,
             'metrics' => $ruleAnalysis['metrics'] ?? [],
             'syntax' => $ruleAnalysis['syntax'] ?? null,
@@ -31,52 +32,64 @@ final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
 
         $reqKeys = $this->buildRequirementKeys($requirements);
 
+        // LLM: binary YES/NO per requirement (simplest possible output)
         $structured = $this->ai->toolCall(
             service: 'grading',
             prompt: $prompt,
-            toolName: 'extract_writing_evidence',
-            toolDescription: 'Find evidence in the student text for each requirement. Quote exact sentences.',
+            toolName: 'check_requirements',
+            toolDescription: 'For each requirement, answer YES if the essay addresses it, NO if not.',
             parametersSchema: [
-                'requirements' => [
-                    'type' => 'array',
-                    'items' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'key' => ['type' => 'string'],
-                            'met' => ['type' => 'boolean'],
-                            'evidence' => ['type' => 'string'],
-                        ],
-                        'required' => ['key', 'met', 'evidence'],
-                        'additionalProperties' => false,
+                'requirements' => ['type' => 'array', 'items' => [
+                    'type' => 'object',
+                    'properties' => [
+                        'key' => ['type' => 'string'],
+                        'met' => ['type' => 'boolean'],
                     ],
-                ],
-                'has_clear_position' => ['type' => 'boolean'],
-                'has_irrelevant_content' => ['type' => 'boolean'],
+                    'required' => ['key', 'met'],
+                    'additionalProperties' => false,
+                ]],
             ],
-            instructions: 'You are a VSTEP writing evidence collector. Match requirements to text. '
-                .'Quote exact sentences. Do NOT score or evaluate quality.',
+            instructions: 'You are grading a VSTEP essay against task requirements. '
+                .'Read the full essay carefully. For each requirement, answer YES or NO only. '
+                .'A requirement is met if the essay addresses the topic, even briefly.',
         );
 
-        $evidence = $this->normalize($structured, $reqKeys);
-
-        $metCount = count(array_filter($evidence, fn ($r) => $r['met']));
+        $metCount = 0;
         $total = max(1, count($reqKeys));
+        foreach ($reqKeys as $key) {
+            $llmReqs = $structured['requirements'] ?? [];
+            $found = false;
+            foreach ($llmReqs as $r) {
+                if (($r['key'] ?? '') === $key && ($r['met'] ?? false)) {
+                    $found = true;
+                    break;
+                }
+            }
+            if ($found) {
+                $metCount++;
+            }
+        }
 
-        $totalWords = max(1, str_word_count($text));
-        $evidenceWords = array_sum(array_map(fn ($r) => str_word_count((string) ($r['evidence'] ?? '')), $evidence));
-        $depthFactor = min(1.0, $evidenceWords / ($totalWords * 0.5));
-
-        $hasExamples = str_contains(strtolower(implode(' ', array_column($evidence, 'evidence'))), 'for example')
-            || str_contains(strtolower(implode(' ', array_column($evidence, 'evidence'))), 'for instance');
+        // Deterministic depth/examples/position (no LLM needed)
+        $depthFactor = $wordCount > 0 ? min(1.0, $wordCount / 250) : 0;
+        $lowerText = strtolower($text);
+        $hasExamples = str_contains($lowerText, 'for example')
+            || str_contains($lowerText, 'for instance')
+            || str_contains($lowerText, 'such as');
+        $hasPosition = str_contains($lowerText, 'i believe')
+            || str_contains($lowerText, 'i think')
+            || str_contains($lowerText, 'in my opinion')
+            || str_contains($lowerText, 'i agree')
+            || str_contains($lowerText, 'i disagree')
+            || str_contains($lowerText, 'in conclusion');
 
         return [
             'points_covered' => $metCount,
             'points_required' => $total,
             'depth_factor' => round($depthFactor, 2),
             'has_examples' => $hasExamples,
-            'has_clear_position' => (bool) ($structured['has_clear_position'] ?? false),
-            'has_irrelevant_content' => (bool) ($structured['has_irrelevant_content'] ?? false),
-            'evidence' => $evidence,
+            'has_clear_position' => $hasPosition,
+            'has_irrelevant_content' => false, // LLM doesn't check this with binary approach
         ];
     }
 
@@ -88,37 +101,6 @@ final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
         }
 
         return array_map(fn (int $i) => 'req_'.($i + 1), array_keys($requirements));
-    }
-
-    /**
-     * @param  list<string>  $reqKeys
-     * @return list<array{key: string, met: bool, evidence: string}>
-     */
-    private function normalize(array $structured, array $reqKeys): array
-    {
-        $llmReqs = $structured['requirements'] ?? [];
-
-        if (! is_array($llmReqs)) {
-            $llmReqs = [];
-        }
-
-        $byKey = [];
-        foreach ($llmReqs as $r) {
-            if (is_array($r) && isset($r['key'])) {
-                $byKey[(string) $r['key']] = [
-                    'key' => (string) $r['key'],
-                    'met' => (bool) ($r['met'] ?? false),
-                    'evidence' => (string) ($r['evidence'] ?? ''),
-                ];
-            }
-        }
-
-        $result = [];
-        foreach ($reqKeys as $key) {
-            $result[] = $byKey[$key] ?? ['key' => $key, 'met' => false, 'evidence' => ''];
-        }
-
-        return $result;
     }
 
     /** @return list<string> */

@@ -5,45 +5,30 @@
 {{ $text }}
 
 == PRE-COMPUTED METRICS ==
-- Word count: {{ $metrics['word_count'] }}
-- Sentence count: {{ $metrics['sentence_count'] }}
-- Paragraph count: {{ $metrics['paragraph_count'] }}
-- Linking words found: {{ $metrics['linking_word_count'] }} ({{ implode(', ', $linkingWords) }})
-- Unique word ratio: {{ $metrics['unique_ratio'] }}
+- Sentences: {{ $metrics['sentence_count'] }}, Paragraphs: {{ $metrics['paragraph_count'] }}
+- Linking words: {{ $metrics['linking_word_count'] }} ({{ implode(', ', $linkingWords) }})
+- Unique word ratio: {{ $metrics['unique_ratio'] }}, Avg word length: {{ $metrics['avg_word_length'] }}
 
 @if(isset($syntax) && $syntax['count'] > 0)
-== SYNTAX STRUCTURES DETECTED ==
-Types found: {{ implode(', ', $syntax['types']) }} ({{ $syntax['count'] }} total)
+== SYNTAX STRUCTURES ==
+{{ implode(', ', $syntax['types']) }} ({{ $syntax['count'] }} types)
 @endif
 
 @if(count($grammarErrors) > 0)
-== DETECTED GRAMMAR ISSUES (LanguageTool) ==
+== GRAMMAR ISSUES (LanguageTool) ==
 @foreach($grammarErrors as $e)
-- {{ $e['message'] }} ({{ $e['category'] }})
+- {{ $e['message'] }}
 @endforeach
 @endif
 
-== TASK ==
-For EACH requirement below, find evidence in the student's response that addresses it.
-Quote the exact sentences from the essay (copy-paste, do NOT paraphrase).
-
+== REQUIREMENTS ==
 @if(count($requirements) > 0)
 @foreach($requirements as $i => $req)
-{{ $i + 1 }}. [key: req_{{ $i + 1 }}] "{{ $req }}"
+{{ $i + 1 }}. [req_{{ $i + 1 }}] {{ $req }}
 @endforeach
 @else
-No specific requirements given. Infer 3-5 key expectations from the task description.
-Use keys: req_1, req_2, req_3...
+Infer 3-5 key requirements from the task.
 @endif
 
-IMPORTANT: A requirement is MET if the student addresses it with any level of detail.
-Even a brief mention counts as MET. Only mark as NOT met if the topic is completely absent.
-
-Also determine:
-- has_clear_position: 
-@if($part === 1)
-  TRUE if the letter clearly expresses its core purpose with supporting details.
-@else
-  TRUE if the essay states an opinion AND supports it with at least one reason.
-@endif
-- has_irrelevant_content: TRUE only if there is content completely unrelated to the task.
+TASK: Read the full essay above. For each requirement, answer ONLY YES or NO.
+YES = the essay addresses this topic, even briefly. NO = the topic is completely absent.
