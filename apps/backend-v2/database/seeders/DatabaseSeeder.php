@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
             SystemConfigSeeder::class,
             WalletSeeder::class,
             GradingRubricSeeder::class,
+            CefrVocabularySeeder::class,
             ContentSeeder::class,
             LegacyCurriculumContentSeeder::class,
             VocabCurriculumSeeder::class,
