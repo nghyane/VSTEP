@@ -109,6 +109,7 @@ final class WritingScoringFormula
     {
         $p = $this->rubric->organizationParams();
         $paraBonus = (int) ($p->paraBonus[$paragraphCount] ?? $p->paraBonus[1]);
+
         $linkingDensity = $sentenceCount > 0 ? $linkingWordCount / $sentenceCount : 0;
         $linkingBonus = min($p->linkingCap, $linkingDensity * $p->linkingDensityFactor);
         $varietyBonus = $this->resolveThreshold($sentenceVariety, $p->varietyThresholds);

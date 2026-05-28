@@ -72,13 +72,13 @@ final class ValidateScoring extends Command
             }
 
             // Layer 3: Formula computes scores from objective features
-            // Only task_fulfillment uses LLM evidence (the only semantic criterion)
+            $sentenceCount = $ruleAnalysis['metrics']['sentence_count'];
             $rubricScores = [
                 'task_fulfillment' => $formula->taskFulfillment($evidence, $essay['type'] === 'Task 1 - Letter' ? 1 : 2),
                 'organization' => $formula->organization(
                     $ruleAnalysis['metrics']['paragraph_count'],
                     $ruleAnalysis['metrics']['linking_word_count'],
-                    $ruleAnalysis['metrics']['sentence_count'],
+                    $sentenceCount,
                     (float) ($ruleAnalysis['metrics']['sentence_variety'] ?? 0),
                 ),
                 'grammar' => $formula->grammar($syntaxAnalysis, count($grammarErrors), $ruleAnalysis['metrics']['sentence_count']),
