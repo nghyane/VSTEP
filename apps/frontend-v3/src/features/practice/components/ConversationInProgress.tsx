@@ -12,7 +12,14 @@ import type { ConversationSessionDetail, ConversationTurn } from "#/features/pra
 import { extractFirstName, getAvatarUrl } from "#/lib/avatar"
 import { useToast } from "#/lib/toast"
 import { tokens } from "#/lib/tokens"
-import { pickEnglishVoice, shortVoiceName, speak, stopSpeaking, warmupTTS } from "#/lib/utils"
+import {
+	pickEnglishVoice,
+	shortVoiceName,
+	speak,
+	speechRecognitionNetworkMessage,
+	stopSpeaking,
+	warmupTTS,
+} from "#/lib/utils"
 
 interface Props {
 	session: ConversationSessionDetail
@@ -198,7 +205,10 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 		setEmptyWarning(false)
 
 		const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-		if (!SR) return
+		if (!SR) {
+			useToast.getState().add("Trình duyệt này không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome.")
+			return
+		}
 
 		const recognition = new SR()
 		recognition.lang = "en-US"
@@ -240,14 +250,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 				recognition.abort()
 				setMic("idle")
 				cleanup()
-				const isEdge = /Edg\//.test(navigator.userAgent)
-				useToast
-					.getState()
-					.add(
-						isEdge
-							? "Edge trên Mac không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome."
-							: "Không kết nối được dịch vụ nhận dạng giọng nói. Kiểm tra mạng và thử lại.",
-					)
+				useToast.getState().add(speechRecognitionNetworkMessage(navigator.userAgent, navigator.onLine))
 				return
 			}
 			// "no-speech" / "aborted": recoverable, onend will auto-restart (capped)

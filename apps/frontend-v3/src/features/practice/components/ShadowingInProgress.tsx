@@ -10,7 +10,15 @@ import { ShadowingSidebar } from "#/features/practice/components/ShadowingSideba
 import { shadowingProgressQuery, useMarkShadowingDone } from "#/features/practice/shadowing-progress"
 import type { ShadowingLessonDetail } from "#/features/practice/types"
 import { useToast } from "#/lib/toast"
-import { cn, compareWords, pickEnglishVoice, speak, stopSpeaking, warmupTTS } from "#/lib/utils"
+import {
+	cn,
+	compareWords,
+	pickEnglishVoice,
+	speak,
+	speechRecognitionNetworkMessage,
+	stopSpeaking,
+	warmupTTS,
+} from "#/lib/utils"
 
 interface Props {
 	lesson: ShadowingLessonDetail
@@ -114,7 +122,10 @@ export function ShadowingInProgress({ lesson }: Props) {
 		setEmptyWarning(false)
 
 		const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-		if (!SR) return
+		if (!SR) {
+			useToast.getState().add("Trình duyệt này không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome.")
+			return
+		}
 
 		const recognition = new SR()
 		recognition.lang = "en-US"
@@ -154,14 +165,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 				setMic("idle")
 				if (timerRef.current) clearInterval(timerRef.current)
 				timerRef.current = null
-				const isEdge = /Edg\//.test(navigator.userAgent)
-				useToast
-					.getState()
-					.add(
-						isEdge
-							? "Edge trên Mac không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome."
-							: "Không kết nối được dịch vụ nhận dạng giọng nói. Kiểm tra mạng và thử lại.",
-					)
+				useToast.getState().add(speechRecognitionNetworkMessage(navigator.userAgent, navigator.onLine))
 				return
 			}
 		}
