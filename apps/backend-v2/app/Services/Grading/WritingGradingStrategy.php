@@ -88,7 +88,7 @@ final class WritingGradingStrategy implements GradingStrategy
         $rubricScores = [
             'grammar' => $this->formula->grammar($syntaxAnalysis, $ruleAnalysis['metrics']['grammar_error_count'], $sentenceCount),
             'vocabulary' => $this->formula->vocabulary($ruleAnalysis['metrics']),
-            'task_fulfillment' => $this->formula->taskFulfillment($evidence),
+            'task_fulfillment' => $this->formula->taskFulfillment($evidence, $part),
             'organization' => $this->formula->organization(
                 $ruleAnalysis['metrics']['paragraph_count'],
                 $ruleAnalysis['metrics']['linking_word_count'],

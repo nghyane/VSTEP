@@ -97,10 +97,11 @@ final class WritingScoringFormulaTest extends TestCase
     }
 
     /* ─── Task Fulfillment ───
-     * T = clampRound((covered/required) × 8 + depthFactor×3 + examples + position - irrelevant)
+     * T = clampRound((covered/required)×M + depth×3 + pos + examples − irrelevant)
+     * M = 6 (Task 1) or 8 (Task 2)
      */
 
-    /** 3/3, depth=0.8, examples, position → 8 + 2.4 + 1 + 1 = 12.4 → clamp 10. */
+    /** 3/3, depth=0.8, examples, position → (3/3)×8=8+2.4+1+1=12.4→10. */
     public function test_task_fulfillment_all_met(): void
     {
         $score = $this->formula->taskFulfillment([
@@ -110,11 +111,11 @@ final class WritingScoringFormulaTest extends TestCase
             'has_examples' => true,
             'has_clear_position' => true,
             'has_irrelevant_content' => false,
-        ]);
+        ], 2);
         $this->assertSame(10.0, $score);
     }
 
-    /** 2/4, depth=0.3, no extras → (2/4)×8=4 +0.9 = 4.9→5.0. */
+    /** 2/4, depth=0.3, no extras → (2/4)×8=4+0.9=4.9→5.0. */
     public function test_task_fulfillment_half_met_no_position(): void
     {
         $score = $this->formula->taskFulfillment([
@@ -124,7 +125,7 @@ final class WritingScoringFormulaTest extends TestCase
             'has_examples' => false,
             'has_clear_position' => false,
             'has_irrelevant_content' => false,
-        ]);
+        ], 2);
         $this->assertSame(5.0, $score);
     }
 
@@ -138,7 +139,21 @@ final class WritingScoringFormulaTest extends TestCase
             'has_examples' => false,
             'has_clear_position' => true,
             'has_irrelevant_content' => true,
-        ]);
+        ], 2);
+        $this->assertSame(8.5, $score);
+    }
+
+    /** Task 1 letter: 3/3, depth=0.5, position → (3/3)×6=6+1.5+0+1=8.5. */
+    public function test_task_fulfillment_task1_letter(): void
+    {
+        $score = $this->formula->taskFulfillment([
+            'points_covered' => 3,
+            'points_required' => 3,
+            'depth_factor' => 0.5,
+            'has_examples' => false,
+            'has_clear_position' => true,
+            'has_irrelevant_content' => false,
+        ], 1);
         $this->assertSame(8.5, $score);
     }
 
@@ -198,7 +213,7 @@ final class WritingScoringFormulaTest extends TestCase
             'has_examples' => false,
             'has_clear_position' => false,
             'has_irrelevant_content' => false,
-        ]);
+        ], 2);
         $this->assertSame(1.0, $score);
     }
 
@@ -212,7 +227,7 @@ final class WritingScoringFormulaTest extends TestCase
             'has_examples' => false,
             'has_clear_position' => false,
             'has_irrelevant_content' => true,
-        ]);
+        ], 2);
         $this->assertSame(1.0, $score);
     }
 

@@ -46,18 +46,26 @@ final class WritingScoringFormula
         return min($p->cap, $this->clampRound($p->base + $uniqueBonus + $lengthBonus + $readabilityBonus + $complexBonus));
     }
 
-    public function taskFulfillment(array $evidence): float
+    public function taskFulfillment(array $evidence, int $part = 2): float
     {
         $p = $this->rubric->taskFulfillmentParams();
         $covered = max(0.0, (float) ($evidence['points_covered'] ?? 0));
         $required = max(1.0, (float) ($evidence['points_required'] ?? $p->defaultPointsRequired));
-        $depthFactor = (float) ($evidence['depth_factor'] ?? 0.5);
+        $depthFactor = (float) ($evidence['depth_factor'] ?? 0);
         $hasExamples = (bool) ($evidence['has_examples'] ?? false);
         $hasPosition = (bool) ($evidence['has_clear_position'] ?? false);
         $irrelevant = (bool) ($evidence['has_irrelevant_content'] ?? false);
 
+        // Task 1 letters: shorter, fewer requirements → lower coverage weight
+        $multiplier = $part === 1 ? 6 : $p->coverageMultiplier;
+
+        // Minimum depth when any requirement is covered (implicit development)
+        if ($depthFactor < 0.25 && $covered > 0) {
+            $depthFactor = 0.25;
+        }
+
         return $this->clampRound(
-            ($covered / $required) * $p->coverageMultiplier
+            ($covered / $required) * $multiplier
             + $depthFactor * 3
             + ($hasExamples ? $p->positionBonus : 0)
             + ($hasPosition ? $p->positionBonus : 0)
