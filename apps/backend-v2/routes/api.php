@@ -107,6 +107,9 @@ Route::prefix('v1')->group(function () {
         Route::post('/practice/writing/sessions/{practice_session}/submit', [WritingPracticeController::class, 'submit']);
         Route::post('/practice/writing/submissions/{practice_writing_submission}/feedback', [WritingFeedbackController::class, 'generate']);
 
+        // Grading SSE stream — single connection for progress + scores + feedback
+        Route::get('/grading-jobs/{grading_job}/stream', [GradingStreamController::class, 'stream'])->whereUuid('grading_job');
+
         // Practice Speaking — drill + VSTEP.
         Route::get('/practice/speaking/drills', [SpeakingPracticeController::class, 'listDrills']);
         Route::get('/practice/speaking/drills/{id}', [SpeakingPracticeController::class, 'showDrill']);
