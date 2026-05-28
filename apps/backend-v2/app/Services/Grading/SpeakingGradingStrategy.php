@@ -150,9 +150,9 @@ final class SpeakingGradingStrategy implements GradingStrategy
 
     private function checkContentRelevance(string $transcript, Model $submission): float
     {
-        // Practice: skip LLM content check (formula-only scoring)
+        // Practice: formula-only scoring, no content penalty
         if (! $submission instanceof ExamSpeakingSubmission) {
-            return 0.8;
+            return 1.0;
         }
 
         $part = $submission->part;
