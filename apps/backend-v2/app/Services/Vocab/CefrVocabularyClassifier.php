@@ -33,7 +33,7 @@ final class CefrVocabularyClassifier
      */
     public function analyze(string $text): array
     {
-        $words = $this->tokenize($text);
+        $words = $this->tokenizeContent($text);
         $lookup = $this->getLookup();
 
         $counts = ['A1' => 0, 'A2' => 0, 'B1' => 0, 'B2' => 0, 'C1' => 0];
@@ -123,5 +123,52 @@ final class CefrVocabularyClassifier
         preg_match_all('/\b[a-z]+(?:[\'-][a-z]+)*\b/', $text, $matches);
 
         return $matches[0] ?? [];
+    }
+
+    /** @return list<string> */
+    private function tokenizeContent(string $text): array
+    {
+        $words = $this->tokenize($text);
+        $functionWords = $this->functionWords();
+
+        return array_values(array_filter($words, fn ($w) => ! isset($functionWords[$w])));
+    }
+
+    /** @return array<string, true> */
+    private function functionWords(): array
+    {
+        static $fw = null;
+        if ($fw === null) {
+            // Common English function words — stop words for vocabulary assessment
+            $list = [
+                'a', 'an', 'the',
+                'is', 'am', 'are', 'was', 'were', 'be', 'been', 'being',
+                'have', 'has', 'had', 'having',
+                'do', 'does', 'did', 'doing',
+                'will', 'would', 'shall', 'should', 'can', 'could', 'may', 'might', 'must',
+                'i', 'you', 'he', 'she', 'it', 'we', 'they',
+                'me', 'him', 'her', 'us', 'them',
+                'my', 'your', 'his', 'its', 'our', 'their',
+                'this', 'that', 'these', 'those',
+                'here', 'there',
+                'in', 'on', 'at', 'to', 'for', 'of', 'from', 'with', 'by', 'about',
+                'as', 'than', 'like',
+                'and', 'but', 'or', 'so', 'if', 'because', 'when', 'while', 'although',
+                'not', 'no', 'nor',
+                'all', 'some', 'any', 'many', 'much', 'more', 'most',
+                'very', 'just', 'also', 'only', 'even', 'still', 'too', 'quite',
+                'up', 'down', 'out', 'off', 'over', 'under', 'into', 'onto',
+                'what', 'which', 'who', 'whom', 'whose', 'where', 'when', 'why', 'how',
+                'one', 'two', 'first', 'second', 'other', 'another', 'such',
+                'well', 'back', 'way', 'thing', 'things', 'people', 'time', 'day', 'year',
+                'yes', 'no', 'really', 'perhaps', 'maybe',
+                'got', 'get', 'make', 'made', 'take', 'took', 'come', 'came', 'go', 'went',
+                'say', 'said', 'tell', 'told', 'see', 'know', 'think', 'need', 'want',
+                'use', 'used', 'give', 'find', 'ask', 'try', 'let', 'put',
+            ];
+            $fw = array_fill_keys($list, true);
+        }
+
+        return $fw;
     }
 }
