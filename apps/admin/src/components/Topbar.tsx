@@ -5,12 +5,11 @@ import {
 	KeyOutlined,
 	LinkOutlined,
 	LogoutOutlined,
-	SearchOutlined,
 	UserOutlined,
 	WarningOutlined,
 } from "@ant-design/icons"
 import { useNavigate } from "@tanstack/react-router"
-import { Avatar, Badge, Button, Dropdown, Empty, Input, Space, Spin, Tabs, Tag, Typography } from "antd"
+import { Avatar, Badge, Button, Dropdown, Empty, Space, Spin, Tabs, Tag, Typography } from "antd"
 import { useState } from "react"
 import { ChangeMyPasswordModal } from "#/features/admin-users/ChangeMyPasswordModal"
 import { useAuth } from "#/lib/auth"
@@ -48,14 +47,13 @@ export function Topbar() {
 				display: "flex",
 				height: 56,
 				alignItems: "center",
-				justifyContent: "space-between",
+				justifyContent: "flex-end",
 				padding: "0 24px",
 				borderBottom: "1px solid rgba(5,5,5,0.06)",
 				background: "rgba(255,255,255,0.85)",
 				backdropFilter: "blur(8px)",
 			}}
 		>
-			<Input prefix={<SearchOutlined />} placeholder="Tìm kiếm…" allowClear style={{ width: 280 }} />
 			<Space size="middle" align="center">
 				<Dropdown
 					trigger={["click"]}
@@ -185,47 +183,53 @@ function NotificationsTab({
 				</div>
 			)}
 			<Space direction="vertical" size={6} style={{ width: "100%" }}>
-				{notifications.map((n) => (
-					<div
-						key={n.id}
-						style={{
-							padding: "10px 12px",
-							background: n.read_at ? "#fafafa" : "#e6f4ff",
-							border: `1px solid ${n.read_at ? "#f0f0f0" : "#91caff"}`,
-							borderRadius: 8,
-						}}
-					>
-						<div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-							<CalendarOutlined style={{ color: "#1677ff", marginTop: 3, fontSize: 14 }} />
-							<div style={{ flex: 1, minWidth: 0 }}>
-								<Typography.Text strong style={{ fontSize: 13 }}>
-									{n.title}
-								</Typography.Text>
-								<div style={{ fontSize: 12, color: "rgba(0,0,0,0.65)", marginTop: 3, lineHeight: 1.5 }}>
-									{n.body}
+				{notifications.map((n) => {
+					const courseId = n.payload?.course_id
+					return (
+						<div
+							key={n.id}
+							style={{
+								padding: "10px 12px",
+								background: n.read_at ? "#fafafa" : "#e6f4ff",
+								border: `1px solid ${n.read_at ? "#f0f0f0" : "#91caff"}`,
+								borderRadius: 8,
+							}}
+						>
+							<div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+								<CalendarOutlined style={{ color: "#1677ff", marginTop: 3, fontSize: 14 }} />
+								<div style={{ flex: 1, minWidth: 0 }}>
+									<Typography.Text strong style={{ fontSize: 13 }}>
+										{n.title}
+									</Typography.Text>
+									<div style={{ fontSize: 12, color: "rgba(0,0,0,0.65)", marginTop: 3, lineHeight: 1.5 }}>
+										{n.body}
+									</div>
 								</div>
 							</div>
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									justifyContent: "space-between",
+									marginTop: 8,
+								}}
+							>
+								<span style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>{formatTimeAgo(n.created_at)}</span>
+								{courseId && (
+									<Button
+										type="primary"
+										size="small"
+										icon={<LinkOutlined />}
+										onClick={() => navigate({ to: "/courses/$courseId", params: { courseId } })}
+										style={{ fontSize: 11 }}
+									>
+										Xem khóa học
+									</Button>
+								)}
+							</div>
 						</div>
-						<div
-							style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}
-						>
-							<span style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>{formatTimeAgo(n.created_at)}</span>
-							{n.payload?.course_id && (
-								<Button
-									type="primary"
-									size="small"
-									icon={<LinkOutlined />}
-									onClick={() =>
-										navigate({ to: "/courses/$courseId", params: { courseId: n.payload!.course_id } })
-									}
-									style={{ fontSize: 11 }}
-								>
-									Xem khóa học
-								</Button>
-							)}
-						</div>
-					</div>
-				))}
+					)
+				})}
 			</Space>
 		</div>
 	)
