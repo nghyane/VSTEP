@@ -46,35 +46,38 @@ Problems identified:
 
 ### 3.1 Traditional VSTEP Training Centers
 
-Training centers offer in-person classes and static textbooks following a fixed curriculum for all students. While content aligns with the official exam structure, these methods lack personalization, do not track individual skill progress, and require fixed schedules unsuitable for busy learners.
+Training centers offer in-person classes and static textbooks following a fixed curriculum for all students.
+
+- Pros: Content aligns with the official exam structure; direct interaction with instructors.
+- Cons: No personalization; no individual skill progress tracking; fixed schedules unsuitable for busy learners.
 
 ### 3.2 General English Learning Applications (Duolingo, ELSA)
 
-These apps provide interactive, gamified learning experiences at low cost. However, their content is not designed for the VSTEP format. ELSA focuses only on pronunciation, while Duolingo lacks academic writing at B2-C1 levels and does not cover all four skills comprehensively.
+These apps provide interactive, gamified learning experiences at low cost.
+
+- Pros: High interactivity with gamification; easy access, low cost.
+- Cons: Content not designed for VSTEP format; ELSA focuses only on pronunciation; Duolingo lacks academic writing at B2-C1 levels and does not cover all four skills.
 
 ### 3.3 VSTEP Mock Test Websites
 
-Vietnamese platforms such as luyenthivstep.vn and vstepmaster.edu.vn offer large question banks with computer-based test simulation. They provide instant scoring for Listening and Reading, but lack AI-powered assessment for Writing and Speaking. They display scores without detailed analysis and do not offer adaptive learning paths.
+Vietnamese platforms such as luyenthivstep.vn and vstepmaster.edu.vn offer large question banks with computer-based test simulation.
+
+- Pros: Interface simulates computer-based testing; instant results for Listening and Reading; large question banks.
+- Cons: No AI-powered assessment for Writing and Speaking; no adaptive learning paths; scores displayed without detailed analysis.
 
 ### 3.4 AI Writing and Speaking Tools (Grammarly, Write & Improve)
 
-These tools provide instant AI feedback for grammar and pronunciation using advanced technology. However, they do not follow the VSTEP scoring rubric, focus on only one or two skills, and lack integrated mock test functionality in the VSTEP format.
+These tools provide instant AI feedback for grammar and pronunciation using advanced technology.
+
+- Pros: Instant AI feedback for grammar and pronunciation; advanced technology, good UX.
+- Cons: Not based on VSTEP scoring rubric; focus on only one or two skills; no mock test functionality in VSTEP format.
 
 ### 3.5 IELTS/TOEFL Preparation Platforms (Magoosh, British Council)
 
-Established platforms with proven adaptive learning models and complete ecosystems. However, their format and scoring rubrics differ entirely from VSTEP. Costs are high (USD 100-200/year), and they do not serve the Vietnamese certification goal.
+Established platforms with proven adaptive learning models and complete ecosystems.
 
-### 3.6 Comparative Analysis
-
-| Criteria | Training Centers | Duolingo/ELSA | Mock Test Sites | AI Tools | IELTS Prep | Proposed System |
-|----------|-----------------|---------------|-----------------|----------|------------|-----------------|
-| Personalization | No | Partial | No | Partial | Yes | Yes |
-| 4-skill Assessment | Yes | No | 2/4 | No | Yes | Yes |
-| Instant Feedback | No | Yes | MCQ only | Yes | Partial | Yes |
-| Progress Tracking | No | Basic | No | No | Partial | Yes |
-| VSTEP Alignment | Yes | No | Yes | No | No | Yes |
-
-No existing solution combines all three factors: VSTEP alignment, adaptive personalization, and comprehensive 4-skill assessment with instant feedback.
+- Pros: Proven adaptive learning models; complete ecosystem.
+- Cons: Format and scoring rubrics differ entirely from VSTEP; high costs (USD 100-200/year); do not serve Vietnamese certification goals.
 
 ## 4. Business Opportunity
 
