@@ -23,12 +23,13 @@ export default function RootLayout() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [status, setStatus] = useState<AuthStatus>("initializing");
+  const [suggestedNickname, setSuggestedNickname] = useState<string | null>(null);
 
   const [fontsLoaded] = useFonts({
-    "Nunito-Regular":   require("../assets/fonts/Nunito-Regular.ttf"),
-    "Nunito-Medium":    require("../assets/fonts/Nunito-Medium.ttf"),
-    "Nunito-SemiBold":  require("../assets/fonts/Nunito-SemiBold.ttf"),
-    "Nunito-Bold":      require("../assets/fonts/Nunito-Bold.ttf"),
+    "Nunito-Regular": require("../assets/fonts/Nunito-Regular.ttf"),
+    "Nunito-Medium": require("../assets/fonts/Nunito-Medium.ttf"),
+    "Nunito-SemiBold": require("../assets/fonts/Nunito-SemiBold.ttf"),
+    "Nunito-Bold": require("../assets/fonts/Nunito-Bold.ttf"),
     "Nunito-ExtraBold": require("../assets/fonts/Nunito-ExtraBold.ttf"),
   });
 
@@ -39,11 +40,10 @@ export default function RootLayout() {
         if (session.status === "ok") {
           setUser(session.user);
           setProfile(session.profile);
+          setSuggestedNickname(null);
           setStatus("authenticated");
         } else {
           if (session.status === "expired") {
-            // Refresh token bị reject (BE rotate sang SHA-256 / TTL hết / revoke).
-            // Báo user để họ biết tại sao bị bật về login thay vì silent redirect.
             Alert.alert(
               "Phiên đăng nhập đã hết hạn",
               "Vui lòng đăng nhập lại để tiếp tục.",
@@ -55,6 +55,7 @@ export default function RootLayout() {
       } catch {
         setUser(null);
         setProfile(null);
+        setSuggestedNickname(null);
         setStatus("unauthenticated");
       }
     })();
@@ -72,6 +73,7 @@ export default function RootLayout() {
       queryClient.clear();
       setUser(u);
       setProfile(p);
+      if (p) setSuggestedNickname(null);
       setStatus("authenticated");
     },
     [],
@@ -82,6 +84,7 @@ export default function RootLayout() {
       if (!user) return;
       await saveTokens(accessToken, refreshToken, user, p);
       setProfile(p);
+      setSuggestedNickname(null);
       setStatus("authenticated");
     },
     [user],
@@ -91,38 +94,32 @@ export default function RootLayout() {
     await clearTokens().catch(() => undefined);
     setUser(null);
     setProfile(null);
+    setSuggestedNickname(null);
     queryClient.clear();
     setStatus("unauthenticated");
   }, []);
 
-  const updateUser = useCallback(
-    async (patch: Partial<AuthUser>) => {
-      // Use functional setState to avoid stale-closure: rotate the latest user
-      // through SecureStore so the next refreshSession() restores correctly.
-      setUser((prev) => {
-        if (!prev) return prev;
-        const next = { ...prev, ...patch };
-        (async () => {
-          try {
-            const [accessToken, refreshToken] = await Promise.all([
-              getAccessToken(),
-              getRefreshToken(),
-            ]);
-            if (accessToken && refreshToken) {
-              await saveTokens(accessToken, refreshToken, next, profileRef.current);
-            }
-          } catch {
-            // Persist best-effort — state is already correct in memory.
+  const updateUser = useCallback(async (patch: Partial<AuthUser>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      (async () => {
+        try {
+          const [accessToken, refreshToken] = await Promise.all([
+            getAccessToken(),
+            getRefreshToken(),
+          ]);
+          if (accessToken && refreshToken) {
+            await saveTokens(accessToken, refreshToken, next, profileRef.current);
           }
-        })();
-        return next;
-      });
-    },
-    [],
-  );
+        } catch {
+          // Persist best-effort only.
+        }
+      })();
+      return next;
+    });
+  }, []);
 
-  // Keep a ref to latest profile so updateUser can pass it to saveTokens
-  // without listing `profile` as dependency (would close over stale value).
   const profileRef = useRef<Profile | null>(null);
   useEffect(() => {
     profileRef.current = profile;
@@ -148,7 +145,20 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
-        <AuthContext.Provider value={{ status, user, profile, isLoading: false, signIn, switchSession, signOut, updateUser }}>
+        <AuthContext.Provider
+          value={{
+            status,
+            user,
+            profile,
+            isLoading: false,
+            suggestedNickname,
+            signIn,
+            switchSession,
+            signOut,
+            updateUser,
+            setSuggestedNickname,
+          }}
+        >
           <HapticsProvider>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" />

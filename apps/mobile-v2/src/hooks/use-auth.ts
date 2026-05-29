@@ -8,6 +8,7 @@ interface AuthCtx {
   user: AuthUser | null;
   profile: Profile | null;
   isLoading: boolean;
+  suggestedNickname: string | null;
   signIn: (
     accessToken: string,
     refreshToken: string,
@@ -21,6 +22,7 @@ interface AuthCtx {
   ) => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (patch: Partial<AuthUser>) => Promise<void>;
+  setSuggestedNickname: (value: string | null) => void;
 }
 
 export const AuthContext = createContext<AuthCtx>({
@@ -28,10 +30,12 @@ export const AuthContext = createContext<AuthCtx>({
   user: null,
   profile: null,
   isLoading: true,
+  suggestedNickname: null,
   signIn: async () => undefined,
   switchSession: async () => undefined,
   signOut: async () => undefined,
   updateUser: async () => undefined,
+  setSuggestedNickname: () => undefined,
 });
 
 export function useAuth() {
