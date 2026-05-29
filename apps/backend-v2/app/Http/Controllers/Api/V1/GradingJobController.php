@@ -10,21 +10,25 @@ use App\Models\GradingJob;
 use App\Models\SpeakingGradingResult;
 use App\Models\WritingGradingResult;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 
 final class GradingJobController extends Controller
 {
     public function show(GradingJob $job): JsonResponse
     {
-        // Octane reuses model instances across requests — the bound model
-        // may have stale attributes. fresh() forces a clean DB read.
-        $job = $job->fresh() ?? $job;
+        // Octane reuses model instances — attributes may be stale.
+        // Read status + progress directly from DB to guarantee freshness.
+        $row = DB::table('grading_jobs')->where('id', $job->id)->first();
+
+        $status = $row->status ?? GradingJobStatus::Pending->value;
+        $progress = $row->progress ? json_decode($row->progress, true) : [];
 
         $data = [
-            'status' => $job->status->value,
-            'progress' => $job->progress ?? [],
+            'status' => $status,
+            'progress' => $progress,
         ];
 
-        if ($job->status === GradingJobStatus::Ready) {
+        if ($status === GradingJobStatus::Ready->value) {
             $result = $this->loadResult($job);
             if ($result !== null) {
                 $data['scores'] = $result;
@@ -32,8 +36,8 @@ final class GradingJobController extends Controller
             $data['feedback_ready'] = $this->isFeedbackReady($job);
         }
 
-        if ($job->status === GradingJobStatus::Failed) {
-            $data['error'] = $job->last_error ?? 'Grading failed';
+        if ($status === GradingJobStatus::Failed->value) {
+            $data['error'] = $row->last_error ?? 'Grading failed';
         }
 
         return response()->json(['data' => $data]);
