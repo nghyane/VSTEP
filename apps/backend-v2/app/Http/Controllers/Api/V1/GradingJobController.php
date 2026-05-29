@@ -15,12 +15,14 @@ final class GradingJobController extends Controller
 {
     public function show(GradingJob $job): JsonResponse
     {
+        $status = $job->status?->value ?? GradingJobStatus::Pending->value;
+
         $data = [
-            'status' => $job->status->value,
+            'status' => $status,
             'progress' => $job->progress ?? [],
         ];
 
-        if ($job->status === GradingJobStatus::Ready) {
+        if ($status === GradingJobStatus::Ready->value) {
             $result = $this->loadResult($job);
             if ($result !== null) {
                 $data['scores'] = $result;
@@ -28,7 +30,7 @@ final class GradingJobController extends Controller
             $data['feedback_ready'] = $this->isFeedbackReady($job);
         }
 
-        if ($job->status === GradingJobStatus::Failed) {
+        if ($status === GradingJobStatus::Failed->value) {
             $data['error'] = $job->last_error ?? 'Grading failed';
         }
 
