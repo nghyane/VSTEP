@@ -41,7 +41,7 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
   // ── Dashboard (Phase 10) ──
   {
     area: "Dashboard",
-    flow: "Overview, stats, next action, spider chart, score trend details",
+    flow: "Learner overview, activity streak, skill heatmap, spider chart, score trend details",
     frontendV3: [
       "src/routes/_app/dashboard.tsx",
       "src/features/dashboard/queries.ts",
@@ -53,6 +53,24 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "src/hooks/use-progress.ts",
     ],
     backendApi: ["GET /api/v1/overview", "GET /api/v1/streak", "GET /api/v1/activity-heatmap", "GET /api/v1/exam-sessions"],
+    status: "done",
+    gaps: [],
+    nextPhase: 10,
+  },
+  {
+    area: "Practice",
+    flow: "Practice hub learning-path recommendations",
+    frontendV3: [
+      "src/routes/_app/luyen-tap/index.tsx",
+      "src/features/practice/components/RecommendationSection.tsx",
+      "src/features/practice/queries.ts",
+    ],
+    mobileV2: [
+      "app/(app)/(tabs)/practice.tsx",
+      "src/features/practice/RecommendationSection.tsx",
+      "src/features/practice/use-learning-path.ts",
+    ],
+    backendApi: ["GET /api/v1/learning-path"],
     status: "done",
     gaps: [],
     nextPhase: 10,
@@ -142,7 +160,6 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "GET /api/v1/practice/listening/exercises/{id}",
       "POST /api/v1/practice/listening/sessions",
       "POST /api/v1/practice/listening/sessions/{sessionId}/submit",
-      "POST /api/v1/practice/listening/sessions/{sessionId}/support",
       "GET /api/v1/practice/listening/progress",
     ],
     status: "done",
@@ -173,7 +190,6 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "GET /api/v1/practice/reading/exercises/{id}",
       "POST /api/v1/practice/reading/sessions",
       "POST /api/v1/practice/reading/sessions/{sessionId}/submit",
-      "POST /api/v1/practice/reading/sessions/{sessionId}/support",
       "GET /api/v1/practice/reading/progress",
     ],
     status: "done",
@@ -207,7 +223,6 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "GET /api/v1/practice/writing/prompts/{id}",
       "GET /api/v1/practice/writing/history",
       "POST /api/v1/practice/writing/sessions",
-      "POST /api/v1/practice/writing/sessions/{sessionId}/support",
       "POST /api/v1/practice/writing/sessions/{sessionId}/submit",
       "GET /api/v1/grading/writing/practice_writing/{submissionId}",
     ],

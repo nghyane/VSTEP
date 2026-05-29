@@ -24,6 +24,7 @@ import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } 
 import type { Skill } from "@/types/api";
 
 const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
+const MIN_TESTS_FOR_CHART = 5;
 
 const SKILL_META: Record<Skill, { vi: string }> = {
   listening: { vi: "Nghe" },
@@ -44,7 +45,7 @@ function useStaggerFade(count: number, baseDelay = 0, step = 80) {
         useNativeDriver: true,
       }).start();
     });
-  }, []);
+  }, [anims, baseDelay, step]);
 
   return anims;
 }
@@ -64,7 +65,7 @@ export default function DashboardScreen() {
   const targetLevel = profile?.targetLevel ?? overview?.profile?.targetLevel ?? "B2";
   const targetDeadline = profile?.targetDeadline ?? overview?.profile?.targetDeadline ?? null;
   const stats = overview?.stats;
-  const chart = overview?.chart ?? null;
+  const chart = overview?.scores.spider ?? null;
 
   const targetBand = getTargetBand(targetLevel);
   const weakest = chart
@@ -98,7 +99,7 @@ export default function DashboardScreen() {
       <Animated.View style={[styles.topBar, toAnimStyle(0)]}>
         <Text style={[styles.topBarTitle, { color: c.foreground }]}>Tổng quan</Text>
         <View style={styles.topRight}>
-          <StreakButton streak={streakData?.currentStreak ?? 0} />
+          <StreakButton streak={streakData?.current ?? 0} />
           <CoinButton />
           <NotificationButton />
         </View>
@@ -153,9 +154,8 @@ export default function DashboardScreen() {
       <Animated.View style={toAnimStyle(2)}>
         <NextActionCard
           totalTests={stats?.totalTests ?? 0}
-          todaySessions={streakData?.todaySessions ?? 0}
-          dailyGoal={streakData?.dailyGoal ?? 1}
-          currentStreak={streakData?.currentStreak ?? 0}
+          todayActive={streakData?.todayActive ?? false}
+          currentStreak={streakData?.current ?? 0}
           weakest={weakest}
         />
       </Animated.View>
@@ -204,7 +204,7 @@ export default function DashboardScreen() {
             <View style={styles.chartLocked}>
               <Mascot name="think" size={72} animation="none" />
               <Text style={[styles.chartLockedTitle, { color: c.foreground }]}>Chưa đủ dữ liệu biểu đồ</Text>
-              <Text style={[styles.chartLockedSub, { color: c.mutedForeground }]}>Cần thêm {Math.max(0, (stats.minTestsRequired ?? 5) - (stats.totalTests ?? 0))} bài thi để hiển thị biểu đồ mạng nhện.</Text>
+              <Text style={[styles.chartLockedSub, { color: c.mutedForeground }]}>Cần thêm {Math.max(0, MIN_TESTS_FOR_CHART - (stats.totalTests ?? 0))} bài thi để hiển thị biểu đồ mạng nhện.</Text>
             </View>
           </DepthCard>
         ) : null}
@@ -299,14 +299,12 @@ function SkillCard({
 
 function NextActionCard({
   totalTests,
-  todaySessions,
-  dailyGoal,
+  todayActive,
   currentStreak,
   weakest,
 }: {
   totalTests: number;
-  todaySessions: number;
-  dailyGoal: number;
+  todayActive: boolean;
   currentStreak: number;
   weakest: Skill;
 }) {
@@ -331,19 +329,22 @@ function NextActionCard({
     );
   }
 
-  // Case 2: Today goal not met — streak nudge
-  if (todaySessions < dailyGoal) {
-    const remaining = dailyGoal - todaySessions;
+  // Case 2: Today has no activity yet — streak nudge
+  if (!todayActive) {
+    const streakCopy = currentStreak > 0
+      ? `Bắt đầu luyện tập hôm nay để duy trì streak ${currentStreak} ngày`
+      : "Bắt đầu một phiên ngắn để tạo streak học tập đầu tiên";
+
     return (
       <DepthCard style={styles.nextCard}>
         <View style={[styles.nextIcon, { backgroundColor: c.streak + "18" }]}>
           <GameIcon name="fire" size={22} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.nextTitle, { color: c.foreground }]}>Hôm nay chưa làm bài thi nào!</Text>
-          <Text style={[styles.nextSub, { color: c.subtle }]}>Cần {remaining} bài full-test để giữ streak {currentStreak + 1} ngày</Text>
+          <Text style={[styles.nextTitle, { color: c.foreground }]}>Hôm nay chưa luyện tập!</Text>
+          <Text style={[styles.nextSub, { color: c.subtle }]}>{streakCopy}</Text>
         </View>
-        <DepthButton onPress={() => router.push("/(app)/(tabs)/exams" as any)} size="sm">
+        <DepthButton onPress={() => router.push("/(app)/(tabs)/practice" as any)} size="sm">
           Bắt đầu
         </DepthButton>
       </DepthCard>

@@ -35,12 +35,6 @@ export interface SubmitResult {
   items: { questionId: string; isCorrect: boolean; correctIndex: number; explanation: string }[];
 }
 
-export interface SupportResult {
-  coinsSpent: number;
-  balanceAfter: number;
-  supportLevelsUsed: { level: number; usedAt: string }[];
-}
-
 export interface ReadingExercise {
   id: string; slug: string; title: string;
   description: string | null; part: number;
@@ -585,24 +579,6 @@ export async function submitSpeakingSession(sessionId: string, audioUrl: string,
   );
 }
 
-export async function requestSupport(
-  skill: "listening" | "reading",
-  sessionId: string,
-  level: number,
-) {
-  return api.post<SupportResult>(
-    `/api/v1/practice/${skill}/sessions/${sessionId}/support`,
-    { level },
-  );
-}
-
-export async function requestWritingSupport(sessionId: string, level: number) {
-  return api.post<SupportResult>(
-    `/api/v1/practice/writing/sessions/${sessionId}/support`,
-    { level },
-  );
-}
-
 // ── Writing history ──
 
 export interface WritingHistoryResponse {
@@ -658,18 +634,5 @@ export function useSpeakingGradingResult(submissionId: string) {
       ),
     refetchInterval: (q) => (q.state.data?.overallBand != null ? false : 5000),
     retry: false,
-  });
-}
-
-// ── Writing support ──
-
-export function useWritingSupportMutation(sessionId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ level }: { level: number }) =>
-      requestWritingSupport(sessionId, level),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["practice", "writing", "history"] });
-    },
   });
 }
