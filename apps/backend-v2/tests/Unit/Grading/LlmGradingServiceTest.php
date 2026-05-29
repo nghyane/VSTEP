@@ -59,8 +59,8 @@ final class LlmGradingServiceTest extends TestCase
             ruleAnalysis: $this->fakeRuleAnalysis(),
         );
 
-        $this->assertSame(0.0, $result['points_covered']);
-        $this->assertSame(1.0, $result['points_required']);
+        $this->assertSame(0, $result['points_covered']);
+        $this->assertSame(1, $result['points_required']);
     }
 
     public function test_generate_feedback_returns_arrays(): void
@@ -144,6 +144,7 @@ final class LlmGradingServiceTest extends TestCase
                 'paragraph_count' => 1,
                 'linking_word_count' => 1,
                 'unique_ratio' => 0.5,
+                'avg_word_length' => 4.5,
             ],
             'syntax' => null,
             'flags' => [],

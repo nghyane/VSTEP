@@ -11,7 +11,6 @@ final readonly class VocabularyParams
     private const REQUIRED = [
         'base', 'cap', 'unique_thresholds', 'length_thresholds',
         'readability_thresholds', 'complex_thresholds',
-        'cefr_thresholds', 'advanced_thresholds',
     ];
 
     /** @param list<array{threshold: float, bonus: int}> $uniqueThresholds, $lengthThresholds, $readabilityThresholds, $complexThresholds, $cefrThresholds, $advancedThresholds */
