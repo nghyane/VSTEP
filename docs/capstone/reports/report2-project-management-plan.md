@@ -30,23 +30,23 @@
 | 3.2 | Web reading practice screens | Medium | 8 |
 | 3.3 | Mobile reading practice screens | Medium | 7 |
 | **4** | **FE-04: Practice — Writing** | | **38** |
-| 4.1 | Writing practice backend functions and feedback processing | Complex | 14 |
+| 4.1 | Writing practice backend functions, rubric-based scoring, and feedback processing | Complex | 14 |
 | 4.2 | Web writing editor and grading result display | Complex | 12 |
 | 4.3 | Mobile writing practice screens | Complex | 12 |
 | **5** | **FE-05: Practice — Speaking** | | **46** |
-| 5.1 | Speaking practice backend functions and speech processing | Complex | 18 |
+| 5.1 | Speaking practice backend functions, speech processing, and rubric-based scoring | Complex | 18 |
 | 5.2 | Web speaking practice screens | Complex | 14 |
 | 5.3 | Mobile speaking practice screens | Complex | 14 |
 | **6** | **FE-06: Mock Test Mode** | | **48** |
-| 6.1 | Mock test session management and scoring | Complex | 18 |
+| 6.1 | Mock test session management and 4-skill scoring, including rubric-based formulas for Writing and Speaking | Complex | 18 |
 | 6.2 | Web mock test room screens | Complex | 16 |
 | 6.3 | Mobile mock test screens | Complex | 14 |
 | **7** | **FE-07: AI Grading Engine** | | **52** |
 | 7.1 | VSTEP rubric setup and scoring rules | Complex | 12 |
-| 7.2 | AI grading workflow with provider fallback | Complex | 14 |
+| 7.2 | AI evidence extraction and feedback workflow with provider fallback | Complex | 14 |
 | 7.3 | External language support tools integration | Complex | 10 |
 | 7.4 | Background processing for grading feedback | Complex | 10 |
-| 7.5 | Writing and Speaking feedback generation | Medium | 6 |
+| 7.5 | Writing and Speaking evidence-based feedback generation | Medium | 6 |
 | **8** | **FE-08: Progress Tracking** | | **30** |
 | 8.1 | Learner statistics and progress analysis | Complex | 12 |
 | 8.2 | Web dashboard and progress visualization | Complex | 10 |
@@ -96,7 +96,7 @@
 | # | Testing Stage | Test Coverage | Est. Defects | % of Defect | Notes |
 |---|--------------|---------------|-------------|-------------|-------|
 | 1 | Reviewing | 100% code reviewed via Pull Request | ~15 | 10% | Automated style checks are enforced |
-| 2 | Unit Test | ≥ 70% on critical services (AI grading, FSRS, scoring) | ~30 | 21% | PHPUnit; external services isolated by test doubles |
+| 2 | Unit Test | ≥ 70% on critical services (scoring formulas, AI evidence extraction, FSRS) | ~30 | 21% | PHPUnit; external services isolated by test doubles |
 | 3 | Integration Test | Main API endpoints and cross-module flows | ~45 | 31% | Auth, Wallet, Practice, Exams, Learning Path, Admin |
 | 4 | System Test | All 13 features (FE-01 through FE-13) | ~35 | 24% | Full VSTEP exam flow; cross-skill scenarios |
 | 5 | Acceptance Test | Verified against SRS and URS by academic supervisor | ~20 | 14% | Lâm Hữu Khánh Phương + Trần Trọng Huỳnh sign-off |
@@ -119,9 +119,9 @@
 
 | # | Risk Description | Impact | Possibility | Response Plans |
 |---|-----------------|--------|-------------|----------------|
-| 1 | External AI service instability or rate limiting disrupts AI grading pipeline | High | Medium | Maintain fallback providers, retry failed requests with backoff, cache completed grading results, and provide a rule-based fallback for essential scoring |
+| 1 | External AI service instability or rate limiting disrupts evidence extraction and feedback generation | High | Medium | Maintain fallback providers, retry failed requests with backoff, cache completed results, and provide a rule-based fallback for essential scoring |
 | 2 | Speech processing service rate limits or service downtime blocks Speaking practice feature | High | Medium | Process speech tasks asynchronously, retry temporary failures, show clear processing status to users, and validate uploaded audio before processing |
-| 3 | Limited team experience with AI integration and prompt design slows AI Grading Engine progress | Medium | High | Allocate research time early, use an abstraction layer for AI services, pair program on complex components, and study official provider documentation |
+| 3 | Limited team experience with AI evidence extraction and prompt design slows AI Grading Engine progress | Medium | High | Allocate research time early, use an abstraction layer for AI services, pair program on complex components, and study official provider documentation |
 | 4 | Scope creep — unplanned features or Phase 2 scope leaking into MVP timeline | High | Medium | Strict MVP scope enforcement; features LI-08 (adaptive difficulty), LI-09 (instructor assignment), LI-10 (ML predictive analytics) explicitly excluded per Report 1; weekly backlog grooming and scope review with supervisor |
 | 5 | Payment gateway integration complexity delays Wallet and Course enrollment features | Medium | Medium | Prioritize one primary payment flow for MVP, keep other payment options optional, and abstract gateway logic for future substitution |
 | 6 | Team members work across different technology stacks leading to inconsistent coding patterns across modules | Medium | Medium | Team lead reviews all Pull Requests for pattern consistency; shared coding conventions are documented; periodic refactoring aligns cross-module patterns; Design System guidance is maintained |
@@ -154,7 +154,7 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 | Sprint 1 | 1–2 (Jan) | Training + Foundation | Docker infrastructure, DB schema, tech stack training, URS draft |
 | Sprint 2 | 3–4 (Jan) | FE-01 Auth + FE-11 Base | Authentication, user profile management, content management foundation, SRS draft |
 | Sprint 3 | 5–6 (Feb) | FE-02/03 Listening/Reading + FE-07 Start | MCQ practice APIs, audio pipeline, VSTEP rubric seeding |
-| Sprint 4 | 7–8 (Feb) | FE-04 Writing + FE-07 Continue | Writing practice, AI-assisted grading, feedback processing, Architecture & DDD docs |
+| Sprint 4 | 7–8 (Feb) | FE-04 Writing + FE-07 Continue | Writing practice, scoring formulas, AI evidence extraction, feedback processing, Architecture & DDD docs |
 | Sprint 5 | 9–10 (Mar) | FE-05 Speaking + FE-06 Mock Test | Speech processing, exam session management, conversation practice |
 | Sprint 6 | 11–12 (Mar) | FE-08/09 Progress/Learning Path + FE-12 | Dashboard, spider chart, learning recommendations, notifications |
 | Sprint 7 | 13–14 (Apr) | FE-10 Courses + Wallet + FE-13 | Course enrollment, booking, payment, exercise feedback |
@@ -183,7 +183,7 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 | # | Testing Stage | Scope | Tools | Responsibility |
 |---|--------------|-------|-------|---------------|
 | 1 | Code Review | All Pull Requests | GitHub Pull Request review + automated linting | All team members |
-| 2 | Unit Test | Core business logic such as scoring, scheduling, authentication, and grading support logic | PHPUnit | Backend developers |
+| 2 | Unit Test | Core business logic such as scoring formulas, scheduling, authentication, and evidence extraction support logic | PHPUnit | Backend developers |
 | 3 | Integration Test | API flows across authentication, practice, exams, payment, progress, and administration modules | PHPUnit + test doubles for external services | Backend + QA |
 | 4 | System Test | Full VSTEP exam flow: Listening→Reading→Writing→Speaking; payment→enrollment→booking | Manual + automated scripts | All team members |
 | 5 | Acceptance Test | Verify against SRS functional requirements and URS user stories | Manual verification | Academic supervisor |
@@ -196,7 +196,7 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 |--------------|-------------|----------------|-----------------|
 | Laravel + Eloquent ORM | All 4 members | Week 1, 3 days | Mandatory — backend foundation for all members |
 | React + TanStack | All 4 members | Week 1–2, 4 days | Mandatory — frontend framework for web + admin |
-| AI Integration | Nghĩa, Nhật Phát | Week 3–4, 3 days | Mandatory — core technology for AI grading engine |
+| AI Evidence Extraction and Feedback | Nghĩa, Nhật Phát | Week 3–4, 3 days | Mandatory — core technology for Writing and Speaking assessment support |
 | Docker + GitHub Actions CI/CD | Nghĩa, Khôi | Week 3–4, 2 days | Mandatory — infrastructure and deployment pipeline |
 | Speech-to-Text and Pronunciation Assessment | Nghĩa, Nhật Phát | Week 5, 2 days | Mandatory — core dependency for Speaking module |
 | Expo + React Native | Khôi, Tấn Phát | Week 2, 3 days | Mandatory — mobile application development |
@@ -214,7 +214,7 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 | 6 | Web Application | 31/03/2026 | Learner-facing web functions for practice, mock tests, dashboard, and courses |
 | 7 | Mobile Application | 31/03/2026 | Learner-facing mobile functions for practice, mock tests, and learning support |
 | 8 | Admin Application | 07/04/2026 | Administration functions for content, users, analytics, and courses |
-| 9 | AI Grading Module | 07/04/2026 | Automated Writing and Speaking assessment based on VSTEP rubrics |
+| 9 | AI-supported Scoring Module | 07/04/2026 | Writing and Speaking assessment using rubric-based formulas with AI-extracted evidence and feedback support |
 | 10 | Testing Report and Test Cases | 15/04/2026 | Test plan, test cases, test results, and defect summary |
 | 11 | Installation Guide and Deployment Package | 22/04/2026 | Environment setup, deployment instruction, and release package |
 | 12 | User Guide / Tutorial | 25/04/2026 | Instructions for learners, instructors, and administrators |

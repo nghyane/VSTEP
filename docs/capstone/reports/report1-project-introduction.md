@@ -87,11 +87,11 @@ The EdTech market in Vietnam is growing rapidly, projected to reach USD 1.1 bill
 
 Within this landscape, the VSTEP preparation market shows a clear gap. Traditional classes and textbooks use static materials without flexible feedback. VSTEP mock test websites primarily offer MCQ question banks, leaving Writing and Speaking assessment unaddressed. International apps like Duolingo or Grammarly do not align with VSTEP structure and do not serve Vietnamese certification goals.
 
-The proposed system differentiates through: (1) AI-assisted grading for Writing and Speaking based on VSTEP-oriented rubrics, (2) personalized learning recommendations based on identified skill gaps, (3) comprehensive progress visualization, and (4) controlled usage of AI services to support sustainable operation.
+The proposed system differentiates through: (1) rubric-based scoring for Writing and Speaking, where AI helps extract task evidence and generate feedback, (2) personalized learning recommendations based on identified skill gaps, (3) comprehensive progress visualization, and (4) controlled usage of AI services to support sustainable operation.
 
 ## 5. Software Product Vision
 
-For university students who need to meet graduation requirements and working professionals who need certification for career advancement in Vietnam, who struggle with VSTEP preparation methods that lack personalization and provide slow feedback, the Adaptive VSTEP Preparation System is a web and mobile platform that provides personalized learning paths, 4-skill assessment with rapid AI-powered feedback, and visual progress tracking. Unlike static mock test websites that only offer questions and answer keys, or general English apps that do not align with VSTEP, this product combines AI grading, learning path recommendations, and analytics to effectively close skill gaps.
+For university students who need to meet graduation requirements and working professionals who need certification for career advancement in Vietnam, who struggle with VSTEP preparation methods that lack personalization and provide slow feedback, the Adaptive VSTEP Preparation System is a web and mobile platform that provides personalized learning paths, 4-skill assessment with rapid evidence-based feedback, and visual progress tracking. Unlike static mock test websites that only offer questions and answer keys, or general English apps that do not align with VSTEP, this product combines rubric-based scoring, AI-supported evidence extraction, learning path recommendations, and analytics to effectively close skill gaps.
 
 ## 6. Project Scope and Limitations
 
@@ -100,10 +100,10 @@ For university students who need to meet graduation requirements and working pro
 - FE-01: User Authentication — Register, login, and profile management for the main user roles.
 - FE-02: Practice Mode — Listening — Listening exercises with audio playback, transcript support, and instant auto-grading.
 - FE-03: Practice Mode — Reading — Reading exercises with MCQ format and instant auto-grading.
-- FE-04: Practice Mode — Writing — Writing exercises with AI-assisted grading and feedback based on VSTEP Writing criteria.
-- FE-05: Practice Mode — Speaking — Speaking exercises with speech transcription and AI-assisted grading based on VSTEP Speaking criteria.
-- FE-06: Mock Test Mode — Full simulated VSTEP exam across all 4 skills with session saving, timer, and score calculation.
-- FE-07: AI Grading Engine — Automated support for Writing and Speaking assessment using scoring rubrics and language analysis tools.
+- FE-04: Practice Mode — Writing — Writing exercises scored by rubric-based formulas, with AI used to extract task evidence and support feedback.
+- FE-05: Practice Mode — Speaking — Speaking exercises scored by rubric-based formulas using transcript, fluency, pronunciation, and content-relevance signals.
+- FE-06: Mock Test Mode — Full simulated VSTEP exam across all 4 skills with session saving, timer, auto-grading for objective skills, and rubric-based scoring for Writing and Speaking.
+- FE-07: AI Grading Engine — Automated support for Writing and Speaking assessment using scoring formulas, rubric parameters, language metrics, and AI-extracted evidence.
 - FE-08: Progress Tracking — Dashboard for skill performance, learning activity, score trends, and level progress.
 - FE-09: Learning Path — Skill gap analysis from mock exam results with personalized practice recommendations.
 - FE-10: Course Management — Course creation, teacher assignment, schedule management, and session booking between learners and teachers.
@@ -114,11 +114,11 @@ For university students who need to meet graduation requirements and working pro
 ### 6.2 Limitations and Exclusions
 
 - LI-01: The system only supports the VSTEP format (B1–C1 levels). Other exams such as IELTS, TOEFL, and TOEIC are not supported.
-- LI-02: AI grading for Writing and Speaking is a supplementary practice tool. Official scores require instructor verification.
+- LI-02: Automated scoring for Writing and Speaking is a supplementary practice tool. Official scores require instructor verification.
 - LI-03: The MVP version supports only Vietnamese as the interface language.
 - LI-04: The MVP supports only the selected payment flow. Additional payment gateways are excluded from the current scope.
 - LI-05: Development timeline: 17 weeks (4 months), team of 4 members.
-- LI-06: The system depends on external AI and speech-processing services for automated grading functionality.
+- LI-06: The system depends on external AI and speech-processing services for evidence extraction, feedback support, transcription, and pronunciation signals.
 - LI-07: Reading exercises use 100% MCQ format (4 options, single correct answer), matching the official VSTEP Reading structure. Other question types (True/False/Not Given, Matching Headings, Gap Fill) are not part of the VSTEP format and are not implemented.
 - LI-08: Adaptive exercise difficulty adjustment and dynamic sequencing are not included. Exercises are served with static difficulty (filtered by skill part, not learner proficiency).
 - LI-09: Instructor assignment of exercises or learning modules to individual learners is not included. Teachers monitor progress and manage 1-on-1 bookings only.
