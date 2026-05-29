@@ -78,7 +78,7 @@ final class DemoProgressSeeder extends Seeder
         }
 
         // ── Main Profile ──
-        $this->seedActivityAndStreak($profile, self::ACTIVITY_DAYS, self::ACTIVITY_PROBABILITY);
+        $this->seedActivityAndStreak($profile, self::ACTIVITY_DAYS, self::ACTIVITY_PROBABILITY, 12);
         $this->seedExamSessions($profile, $version, self::MAIN_BANDS);
         $this->seedPracticeHistory($profile, $mcqService);
         $this->seedVocabSrs($profile);
@@ -95,7 +95,7 @@ final class DemoProgressSeeder extends Seeder
             $this->seedExamSessions($extra, $version, $bands);
 
             if ($nickname !== 'inactive_student') {
-                $this->seedActivityAndStreak($extra, 14, 0.5);
+                $this->seedActivityAndStreak($extra, 14, 0.5, 3);
             }
         }
 
@@ -108,7 +108,7 @@ final class DemoProgressSeeder extends Seeder
     // ACTIVITY + STREAK — uses ProfileDailyActivity ACTIVITY_TYPES
     // ═══════════════════════════════════════════════════════════════
 
-    private function seedActivityAndStreak(Profile $profile, int $days, float $probability): void
+    private function seedActivityAndStreak(Profile $profile, int $days, float $probability, int $streakDays): void
     {
         if (ProfileDailyActivity::query()->where('profile_id', $profile->id)->exists()) {
             return;
@@ -118,76 +118,28 @@ final class DemoProgressSeeder extends Seeder
         $activeDates = collect();
         $typePool = ['listening', 'reading', 'vocab_review', 'exam_session'];
 
-        for ($i = 0; $i < $days; $i++) {
-            if (mt_rand() / mt_getrandmax() > $probability) {
-                continue;
-            }
-
-            $type = $typePool[array_rand($typePool)];
+        // Phase 1: deterministic streak — today + ($streakDays-1) past days are always active
+        for ($i = 0; $i < $streakDays; $i++) {
             $date = $today->copy()->subDays($i);
-            $dateLocal = $date->toDateString();
-
-            // Use the ACTIVITY_TYPES columns to ensure schema integrity.
-            // Separate path for INSERT vs UPDATE because COALESCE doesn't
-            // work in VALUES clause on PostgreSQL.
-            $config = ProfileDailyActivity::ACTIVITY_TYPES[$type];
-            $count = rand(1, 5);
-            $duration = $type === 'exam_session' ? rand(60, 120) * 60 : rand(300, 1800);
-            $now = now();
-
-            $existing = ProfileDailyActivity::query()
-                ->where('profile_id', $profile->id)
-                ->where('date_local', $dateLocal)
-                ->first();
-
-            if ($existing) {
-                // UPDATE: increment existing counters
-                $existing->increment($config['count'], $count);
-                $existing->increment('total_duration_seconds', $duration);
-                if (isset($config['duration'])) {
-                    $existing->increment($config['duration'], $duration);
-                }
-                $existing->update(['updated_at' => $now]);
-            } else {
-                // INSERT: fresh row with exact values
-                ProfileDailyActivity::query()->insert([
-                    'profile_id' => $profile->id,
-                    'date_local' => $dateLocal,
-                    $config['count'] => $count,
-                    'total_duration_seconds' => $duration,
-                    'updated_at' => $now,
-                    ...(isset($config['duration']) ? [$config['duration'] => $duration] : []),
-                ]);
-            }
-
+            $this->insertActivity($profile, $date, $typePool[array_rand($typePool)]);
             $activeDates->push($date);
         }
 
-        if ($activeDates->isEmpty()) {
-            ProfileStreakState::query()->where('profile_id', $profile->id)->delete();
-
-            return;
-        }
-
-        $sorted = $activeDates->sort()->values();
-        $latest = $sorted->last();
-        $current = 0;
-        $todayCarbon = Carbon::today();
-
-        if ($latest->equalTo($todayCarbon) || $latest->equalTo($todayCarbon->copy()->subDay())) {
-            $current = 1;
-            $cursor = $latest->copy();
-            for ($i = $sorted->count() - 2; $i >= 0; $i--) {
-                if ($sorted[$i]->equalTo($cursor->copy()->subDay())) {
-                    $current++;
-                    $cursor = $sorted[$i];
-                } else {
-                    break;
-                }
+        // Phase 2: random activity for remaining days (skip first $streakDays)
+        for ($i = $streakDays; $i < $days; $i++) {
+            if (mt_rand() / mt_getrandmax() > $probability) {
+                continue;
             }
+            $date = $today->copy()->subDays($i);
+            $this->insertActivity($profile, $date, $typePool[array_rand($typePool)]);
+            $activeDates->push($date);
         }
 
-        $longest = max(1, $current);
+        // ── Streak state ──
+        $sorted = $activeDates->sort()->values();
+
+        // Longest streak: scan all active dates for max consecutive run
+        $longest = $streakDays;
         $run = 1;
         for ($i = 1; $i < $sorted->count(); $i++) {
             $diff = $sorted[$i - 1]->diffInDays($sorted[$i]);
@@ -195,15 +147,32 @@ final class DemoProgressSeeder extends Seeder
             $longest = max($longest, $run);
         }
 
+        // Current streak = $streakDays (guaranteed consecutive, ends today)
         ProfileStreakState::query()->updateOrInsert(
             ['profile_id' => $profile->id],
             [
-                'current_streak' => $current,
-                'longest_streak' => max($longest, $current),
-                'last_active_date_local' => $latest->toDateString(),
+                'current_streak' => $streakDays,
+                'longest_streak' => max($longest, $streakDays),
+                'last_active_date_local' => $today->toDateString(),
                 'updated_at' => now(),
             ],
         );
+    }
+
+    private function insertActivity(Profile $profile, \DateTimeInterface $date, string $type): void
+    {
+        $config = ProfileDailyActivity::ACTIVITY_TYPES[$type];
+        $count = rand(1, 5);
+        $duration = $type === 'exam_session' ? rand(60, 120) * 60 : rand(300, 1800);
+
+        ProfileDailyActivity::query()->insert([
+            'profile_id' => $profile->id,
+            'date_local' => $date->format('Y-m-d'),
+            $config['count'] => $count,
+            'total_duration_seconds' => $duration,
+            'updated_at' => now(),
+            ...(isset($config['duration']) ? [$config['duration'] => $duration] : []),
+        ]);
     }
 
     // ═══════════════════════════════════════════════════════════════
