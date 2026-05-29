@@ -44,37 +44,27 @@ class ProgressService
      * Record completed practice session → chỉ update study time + heatmap drill,
      * KHÔNG còn driver streak.
      */
+    /**
+     * Record completed practice session → update daily activity by skill module.
+     * Uses ACTIVITY_TYPES columns for correct heatmap per-skill breakdown.
+     */
     public function recordPracticeCompletion(PracticeSession $session): void
     {
-        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
-        $dateLocal = Carbon::parse($session->ended_at, 'UTC')->setTimezone($tz)->toDateString();
-        $duration = $session->duration_seconds ?? 0;
+        // Map session module to activity type
+        $activityType = match ($session->module) {
+            'listening' => 'listening',
+            'reading' => 'reading',
+            'writing' => 'writing',
+            'speaking' => 'speaking_submission',
+            default => 'mcq',
+        };
 
-        DB::transaction(function () use ($session, $dateLocal, $duration) {
-            $row = ProfileDailyActivity::query()
-                ->where('profile_id', $session->profile_id)
-                ->where('date_local', $dateLocal)
-                ->first();
-
-            if ($row) {
-                ProfileDailyActivity::query()
-                    ->where('profile_id', $session->profile_id)
-                    ->where('date_local', $dateLocal)
-                    ->update([
-                        'drill_session_count' => $row->drill_session_count + 1,
-                        'drill_duration_seconds' => $row->drill_duration_seconds + $duration,
-                        'updated_at' => now(),
-                    ]);
-            } else {
-                ProfileDailyActivity::query()->insert([
-                    'profile_id' => $session->profile_id,
-                    'date_local' => $dateLocal,
-                    'drill_session_count' => 1,
-                    'drill_duration_seconds' => $duration,
-                    'updated_at' => now(),
-                ]);
-            }
-        });
+        ProfileDailyActivity::addActivity(
+            profileId: $session->profile_id,
+            activityType: $activityType,
+            count: 1,
+            durationSeconds: $session->duration_seconds ?? 0,
+        );
     }
 
     /**
