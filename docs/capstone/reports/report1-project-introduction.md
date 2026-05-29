@@ -4,6 +4,8 @@
 |------|-------|-----------|-------------------|
 | 10/03/2026 | A | Hoàng Văn Anh Nghĩa | Initial version |
 | 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Corrected factual discrepancies between report and implementation; added limitations reflecting registration form scope gaps |
+| 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Corrected FE-05: Speaking grading uses 5 criteria (added missing Discourse Management) |
+| 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Added LI-11: no placement test — users self-select target; first mock test = real baseline |
 
 *A - Added   M - Modified   D - Deleted
 
@@ -99,9 +101,9 @@ For university students who need to meet graduation requirements and working pro
 - FE-02: Practice Mode — Listening — Listening exercises with audio playback, transcript support, and instant auto-grading.
 - FE-03: Practice Mode — Reading — Reading exercises with MCQ format and instant auto-grading.
 - FE-04: Practice Mode — Writing — Writing exercises (Task 1: Letter/Email, Task 2: Essay) with AI grading against 4 VSTEP criteria (Grammar, Vocabulary, Organization, Task Fulfillment) and real-time progress via SSE streaming.
-- FE-05: Practice Mode — Speaking — Speaking exercises (Parts 1-3) with Azure Speech-to-Text transcription and AI grading against 4 VSTEP criteria (Grammar, Vocabulary, Fluency, Pronunciation).
+- FE-05: Practice Mode — Speaking — Speaking exercises (Parts 1-3) with Azure Speech-to-Text transcription and AI grading against 5 VSTEP criteria (Grammar, Vocabulary, Fluency, Discourse Management, Pronunciation).
 - FE-06: Mock Test Mode — Full simulated VSTEP exam across all 4 skills with auto-save, countdown timer, and composite scoring (Task 1 × ⅓ + Task 2 × ⅔).
-- FE-07: AI Grading Engine — Deterministic scoring formulas based on the VSTEP Writing rubric v8 and Speaking rubric v4, using CEFR vocabulary classification, LanguageTool grammar checking, and SyntaxAnalyzer for structural complexity.
+- FE-07: AI Grading Engine — Deterministic scoring formulas based on the official VSTEP scoring rubric issued by the Ministry of Education and Training (MOET), using CEFR vocabulary classification, LanguageTool grammar checking, and SyntaxAnalyzer for structural complexity.
 - FE-08: Progress Tracking — Spider chart showing 4-skill competency, sliding window trend analysis, streak tracking, activity heatmap, and predicted CEFR level projection.
 - FE-09: Learning Path — Skill gap analysis from mock exam results with personalized practice recommendations prioritizing weak skills (threshold-based, band < 5.0).
 - FE-10: Course Management — Course creation with teacher assignment, schedule management, and 1-on-1 session booking between learners and teachers.
@@ -121,3 +123,4 @@ For university students who need to meet graduation requirements and working pro
 - LI-08: Adaptive exercise difficulty adjustment and dynamic sequencing are not included. Exercises are served with static difficulty (filtered by skill part, not learner proficiency).
 - LI-09: Instructor assignment of exercises or learning modules to individual learners is not included. Teachers monitor progress and manage 1-on-1 bookings only.
 - LI-10: Predictive analytics for learner outcomes uses rule-based risk detection (band, streak, deadline proximity, trend direction), not machine-learning models.
+- LI-11: No placement or diagnostic test is administered at onboarding. Users self-select their target CEFR level and optionally provide a self-assessed entry level for cold-start AI context. The first mock test serves as the real baseline, after which all calculations use actual performance data.
