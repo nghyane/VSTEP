@@ -56,7 +56,6 @@ export function TopicGrid() {
 											}
 										: undefined
 								}
-
 								overlay={
 									<Link
 										to="/luyen-tap/tu-vung/$topicId"

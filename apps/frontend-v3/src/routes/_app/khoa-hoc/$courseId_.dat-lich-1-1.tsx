@@ -161,7 +161,8 @@ function BookingBody({
 				<div className="flex items-start gap-2.5 p-3 rounded-(--radius-card) bg-sky-50 border border-sky-200 text-sm text-sky-800">
 					<Icon name="timer" size="xs" className="mt-0.5 shrink-0 text-sky-600" />
 					<span>
-						Cần đặt lịch trước ít nhất <strong>{data.booking_lead_time_hours} giờ</strong> so với giờ bắt đầu buổi học để giảng viên có thời gian chuẩn bị.
+						Cần đặt lịch trước ít nhất <strong>{data.booking_lead_time_hours} giờ</strong> so với giờ bắt đầu
+						buổi học để giảng viên có thời gian chuẩn bị.
 					</span>
 				</div>
 			)}

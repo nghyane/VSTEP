@@ -189,7 +189,6 @@ final class SpeakingGradingStrategy implements GradingStrategy
         return implode('. ', $parts);
     }
 
-
     /** @return array{text: string, confidence: float, speaking_rate: float, pause_count: int, word_count: int, pronunciation: ?array} */
     private function transcribeOrFail(string $audioUrl): array
     {

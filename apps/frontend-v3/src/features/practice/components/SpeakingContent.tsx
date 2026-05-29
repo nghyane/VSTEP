@@ -99,7 +99,6 @@ function ShadowingSection({
 										? { status: pct >= 100 ? "completed" : "in_progress", score: doneCount, total }
 										: undefined
 								}
-
 								overlay={
 									<Link
 										to="/speaking/shadowing/$lessonId"

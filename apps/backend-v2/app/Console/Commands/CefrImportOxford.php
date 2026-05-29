@@ -19,9 +19,11 @@ class CefrImportOxford extends Command
 {
     protected $signature = 'cefr:import-oxford
         {--csv= : Local CSV file path (downloads from GitHub if not provided)}';
+
     protected $description = 'Import full Oxford 3000/5000 CEFR vocabulary from CSV';
 
     private const CSV_URL = 'https://raw.githubusercontent.com/winterdl/oxford-5000-vocabulary-audio-definition/main/data/oxford_3000.csv';
+
     private const CSV_URL_5000 = 'https://raw.githubusercontent.com/winterdl/oxford-5000-vocabulary-audio-definition/main/data/oxford_5000.csv';
 
     public function handle(): int
@@ -91,6 +93,7 @@ class CefrImportOxford extends Command
 
             if (in_array($word, $existing, true)) {
                 $skipped++;
+
                 continue;
             }
 
@@ -126,7 +129,7 @@ class CefrImportOxford extends Command
 
         $content = @file_get_contents($url);
         if ($content === false) {
-            $this->warn("  Download failed");
+            $this->warn('  Download failed');
 
             return null;
         }

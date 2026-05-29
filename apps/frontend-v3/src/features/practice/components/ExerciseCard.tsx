@@ -27,15 +27,7 @@ const LEVEL_COLORS: Record<string, string> = {
 	C2: "bg-skill-reading/15 text-skill-reading border-skill-reading/30",
 }
 
-export function ExerciseCard({
-	title,
-	description,
-	meta,
-	overlay,
-	progress,
-	level,
-	tag,
-}: Props) {
+export function ExerciseCard({ title, description, meta, overlay, progress, level, tag }: Props) {
 	const pct = progress ? Math.round((progress.score / progress.total) * 100) : 0
 	const hasBar = progress && progress.status !== "not_started" && progress.total > 0
 	const levelStyle = level

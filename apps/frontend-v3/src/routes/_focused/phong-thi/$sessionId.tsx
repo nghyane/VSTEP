@@ -652,7 +652,14 @@ function ActiveExamRoom({
 		return (
 			<div className="flex h-screen flex-col items-center justify-center gap-6 bg-background">
 				<div className="flex size-20 items-center justify-center rounded-full bg-warning/10">
-					<svg viewBox="0 0 24 24" className="size-10 text-warning" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+					<svg
+						viewBox="0 0 24 24"
+						className="size-10 text-warning"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						aria-hidden="true"
+					>
 						<circle cx="12" cy="12" r="10" />
 						<polyline points="12,6 12,12 16,14" />
 					</svg>

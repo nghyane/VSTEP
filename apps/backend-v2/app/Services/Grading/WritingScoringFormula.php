@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Grading;
 
-use App\DTOs\Grading\Params\GrammarParams;
-use App\DTOs\Grading\Params\OrganizationParams;
 use App\DTOs\Grading\Params\TaskFulfillmentParams;
-use App\DTOs\Grading\Params\VocabularyParams;
 use App\Models\GradingRubric;
 
 final class WritingScoringFormula

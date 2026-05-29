@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Ai\Contracts\WritingFeedbackGenerator;
 use App\Models\PracticeWritingSubmission;
+use App\Models\Profile;
 use App\Models\WritingGradingResult;
 
 /**
@@ -58,7 +59,7 @@ final class WritingFeedbackService
     /** @return array{current: string, target: string}|null */
     private function resolveBandContext(PracticeWritingSubmission $submission): ?array
     {
-        $profile = \App\Models\Profile::query()->find($submission->profile_id);
+        $profile = Profile::query()->find($submission->profile_id);
         if ($profile === null || $profile->entry_level === null) {
             return null;
         }

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import { useMemo } from "react"
-import { type GrammarTierGroup, findStarterPoint, groupByTier } from "#/features/grammar/catalog"
+import { findStarterPoint, type GrammarTierGroup, groupByTier } from "#/features/grammar/catalog"
 import type { GrammarPoint } from "#/features/grammar/types"
 import { ExerciseCard } from "#/features/practice/components/ExerciseCard"
 
