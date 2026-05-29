@@ -15,14 +15,16 @@ final class GradingJobController extends Controller
 {
     public function show(GradingJob $job): JsonResponse
     {
-        $status = $job->status?->value ?? GradingJobStatus::Pending->value;
+        // Octane reuses model instances across requests — the bound model
+        // may have stale attributes. fresh() forces a clean DB read.
+        $job = $job->fresh() ?? $job;
 
         $data = [
-            'status' => $status,
+            'status' => $job->status->value,
             'progress' => $job->progress ?? [],
         ];
 
-        if ($status === GradingJobStatus::Ready->value) {
+        if ($job->status === GradingJobStatus::Ready) {
             $result = $this->loadResult($job);
             if ($result !== null) {
                 $data['scores'] = $result;
@@ -30,7 +32,7 @@ final class GradingJobController extends Controller
             $data['feedback_ready'] = $this->isFeedbackReady($job);
         }
 
-        if ($status === GradingJobStatus::Failed->value) {
+        if ($job->status === GradingJobStatus::Failed) {
             $data['error'] = $job->last_error ?? 'Grading failed';
         }
 
