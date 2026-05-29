@@ -144,7 +144,7 @@ class CourseEnrollmentTest extends TestCase
 
         $slot = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
-            'starts_at' => now()->addDay(), 'status' => SlotStatus::Open,
+            'starts_at' => now()->addDay()->addHour(), 'status' => SlotStatus::Open,
         ]);
 
         // No full tests done → commitment pending → booking rejected
@@ -189,7 +189,7 @@ class CourseEnrollmentTest extends TestCase
 
         $slot = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
-            'starts_at' => now()->addDay(), 'status' => SlotStatus::Open,
+            'starts_at' => now()->addDay()->addHour(), 'status' => SlotStatus::Open,
         ]);
 
         // Booking trừ 50 xu — credit đủ trước khi book.
@@ -273,7 +273,7 @@ class CourseEnrollmentTest extends TestCase
 
         $slot = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
-            'starts_at' => now()->addDay(), 'status' => SlotStatus::Open,
+            'starts_at' => now()->addDay()->addHour(), 'status' => SlotStatus::Open,
         ]);
 
         // Drain onboarding bonus để wallet trống — phải bị reject 422 và slot vẫn open.
