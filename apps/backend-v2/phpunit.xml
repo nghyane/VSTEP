@@ -36,5 +36,6 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="GOOGLE_CLIENT_ID" value="test-client-id.apps.googleusercontent.com"/>
+        <ini name="memory_limit" value="256M"/>
     </php>
 </phpunit>
