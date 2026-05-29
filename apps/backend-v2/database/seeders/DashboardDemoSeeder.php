@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Models\CoinTransaction;
+use App\Models\Course;
+use App\Models\CourseEnrollment;
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
 use App\Models\GradingJob;
@@ -28,6 +31,13 @@ use Illuminate\Support\Str;
 class DashboardDemoSeeder extends Seeder
 {
     private const DEMO_EMAIL = 'learner@vstep.test';
+
+    /** Extra profiles with fixed weak bands for testing recommendation + risk flags. */
+    private const EXTRA_PROFILES = [
+        ['nickname' => 'weak_writer', 'target_level' => 'B2', 'entry_level' => 'B1', 'target_deadline_days' => 14, 'bands' => ['listening' => 7.0, 'reading' => 6.5, 'writing' => 3.5, 'speaking' => 6.0]],
+        ['nickname' => 'weak_speaker', 'target_level' => 'B2', 'entry_level' => 'B1', 'target_deadline_days' => 60, 'bands' => ['listening' => 7.5, 'reading' => 7.0, 'writing' => 6.0, 'speaking' => 3.0]],
+        ['nickname' => 'inactive_student', 'target_level' => 'B1', 'entry_level' => 'A2', 'target_deadline_days' => 30, 'bands' => ['listening' => 5.0, 'reading' => 4.5, 'writing' => 5.5, 'speaking' => 5.0]],
+    ];
 
     private const ACTIVITY_HISTORY_DAYS = 60;
 
@@ -77,7 +87,6 @@ class DashboardDemoSeeder extends Seeder
 
     public function run(): void
     {
-        // Chỉ seed demo cho user demo cố định — tránh đè data của user thật khi re-seed.
         $demoUser = User::query()->where('email', self::DEMO_EMAIL)->first();
         if (! $demoUser) {
             $this->command->warn('Demo learner not found. Run UserSeeder first.');
@@ -85,9 +94,9 @@ class DashboardDemoSeeder extends Seeder
             return;
         }
 
-        $profiles = Profile::query()->where('account_id', $demoUser->id)->get();
-        if ($profiles->isEmpty()) {
-            $this->command->warn('No profiles for demo learner. Run UserSeeder first.');
+        $profile = Profile::query()->where('account_id', $demoUser->id)->where('is_initial_profile', true)->first();
+        if (! $profile) {
+            $this->command->warn('No initial profile for demo learner. Run UserSeeder first.');
 
             return;
         }
@@ -99,11 +108,42 @@ class DashboardDemoSeeder extends Seeder
             return;
         }
 
-        foreach ($profiles as $profile) {
-            $activeDates = $this->seedActivity($profile);
-            $this->seedStreakFromActivity($profile, $activeDates);
-            $this->seedExamSessions($profile, $version);
+        // Seed main profile with realistic band pattern (strong L/R, moderate W/S — typical Vietnamese learner)
+        $activeDates = $this->seedActivity($profile);
+        $this->seedStreakFromActivity($profile, $activeDates);
+
+        $mainBands = ['listening' => 7.8, 'reading' => 7.2, 'writing' => 6.5, 'speaking' => 7.0];
+        $this->seedFixedBandSessions($profile, $version, $mainBands);
+
+        // Seed wallet: onboarding bonus done via event, add topup + exam spending
+        $this->seedWalletTransactions($profile);
+
+        // Create extra profiles with fixed weak bands for testing recommendations + risk
+        $extraProfiles = collect(self::EXTRA_PROFILES)->map(function (array $cfg) use ($demoUser) {
+            $p = Profile::query()->where('account_id', $demoUser->id)
+                ->where('nickname', $cfg['nickname'])
+                ->first();
+
+            if (! $p) {
+                $p = Profile::create([
+                    'account_id' => $demoUser->id,
+                    'nickname' => $cfg['nickname'],
+                    'target_level' => $cfg['target_level'],
+                    'target_deadline' => now()->addDays($cfg['target_deadline_days'])->toDateString(),
+                    'entry_level' => $cfg['entry_level'],
+                    'is_initial_profile' => false,
+                ]);
+            }
+
+            return ['profile' => $p, 'bands' => $cfg['bands']];
+        });
+
+        foreach ($extraProfiles as $extra) {
+            $this->seedFixedBandSessions($extra['profile'], $version, $extra['bands']);
         }
+
+        // Enroll extra profiles vào K101 để test risk students
+        $this->enrollExtraProfiles($demoUser, $extraProfiles->pluck('profile'));
 
         $this->command->info('Dashboard demo data seeded.');
     }
@@ -374,5 +414,235 @@ class DashboardDemoSeeder extends Seeder
         $scaled = rand((int) ($min * 10), (int) ($max * 10));
 
         return round($scaled / 10, 1);
+    }
+
+    /**
+     * Seed exam sessions with fixed band values for predictable testing.
+     *
+     * @param  array{listening: float, reading: float, writing: float, speaking: float}  $bands
+     */
+    private function seedFixedBandSessions(Profile $profile, ExamVersion $version, array $bands): void
+    {
+        $existing = ExamSession::query()
+            ->where('profile_id', $profile->id)
+            ->where('status', 'submitted')
+            ->count();
+
+        if ($existing >= self::MIN_SUBMITTED_SESSIONS_BEFORE_SKIP) {
+            return;
+        }
+
+        $writingTaskId = DB::table('exam_version_writing_tasks')
+            ->where('exam_version_id', $version->id)
+            ->value('id');
+
+        $speakingPartId = DB::table('exam_version_speaking_parts')
+            ->where('exam_version_id', $version->id)
+            ->value('id');
+
+        $listeningItemIds = DB::table('exam_version_listening_items')
+            ->join('exam_version_listening_sections', 'exam_version_listening_sections.id', '=', 'exam_version_listening_items.section_id')
+            ->where('exam_version_listening_sections.exam_version_id', $version->id)
+            ->pluck('exam_version_listening_items.id');
+
+        $readingItemIds = DB::table('exam_version_reading_items')
+            ->join('exam_version_reading_passages', 'exam_version_reading_passages.id', '=', 'exam_version_reading_items.passage_id')
+            ->where('exam_version_reading_passages.exam_version_id', $version->id)
+            ->pluck('exam_version_reading_items.id');
+
+        // Seed 6 sessions — enough for chart data (min 5)
+        for ($i = 0; $i < 6; $i++) {
+            $submittedAt = now()
+                ->subDays($i * 4 + 1)
+                ->subHours(rand(1, 12));
+
+            $session = ExamSession::create([
+                'profile_id' => $profile->id,
+                'exam_version_id' => $version->id,
+                'mode' => 'full',
+                'selected_skills' => ['listening', 'reading', 'writing', 'speaking'],
+                'is_full_test' => true,
+                'time_extension_factor' => 1.0,
+                'started_at' => $submittedAt->copy()->subMinutes(self::EXAM_DURATION_MINUTES),
+                'server_deadline_at' => $submittedAt->copy()->addMinutes(10),
+                'submitted_at' => $submittedAt,
+                'status' => 'submitted',
+                'coins_charged' => 0,
+            ]);
+
+            // MCQ answers with correctness matching the target band
+            $listeningProb = $bands['listening'] / 10;
+            $readingProb = $bands['reading'] / 10;
+            $this->seedMcqAnswers($session->id, 'exam_listening_item', $listeningItemIds, $submittedAt, $listeningProb);
+            $this->seedMcqAnswers($session->id, 'exam_reading_item', $readingItemIds, $submittedAt, $readingProb);
+
+            if ($writingTaskId) {
+                $this->seedFixedWritingResult($session->id, $profile->id, $writingTaskId, $submittedAt, $bands['writing']);
+            }
+
+            if ($speakingPartId) {
+                $this->seedFixedSpeakingResult($session->id, $profile->id, $speakingPartId, $submittedAt, $bands['speaking']);
+            }
+        }
+    }
+
+    private function seedFixedWritingResult(string $sessionId, string $profileId, string $taskId, CarbonInterface $submittedAt, float $band): void
+    {
+        $subId = Str::uuid7();
+        DB::table('exam_writing_submissions')->insert([
+            'id' => $subId,
+            'session_id' => $sessionId,
+            'profile_id' => $profileId,
+            'task_id' => $taskId,
+            'text' => 'Fixed-band writing submission.',
+            'word_count' => rand(120, 250),
+            'submitted_at' => $submittedAt,
+        ]);
+
+        $job = GradingJob::create([
+            'submission_type' => 'exam_writing',
+            'submission_id' => $subId,
+            'status' => 'ready',
+            'started_at' => $submittedAt,
+            'completed_at' => $submittedAt->copy()->addSeconds(rand(5, 30)),
+        ]);
+
+        WritingGradingResult::create([
+            'job_id' => $job->id,
+            'submission_type' => 'exam_writing',
+            'submission_id' => $subId,
+            'version' => 1,
+            'is_active' => true,
+            'rubric_scores' => [
+                'task_fulfillment' => $band,
+                'organization' => $band,
+                'vocabulary' => $band,
+                'grammar' => $band,
+            ],
+            'overall_band' => $band,
+            'strengths' => ['Fixed band seed'],
+            'improvements' => [],
+            'rewrites' => [],
+            'annotations' => [],
+            'paragraph_feedback' => [],
+        ]);
+    }
+
+    private function seedFixedSpeakingResult(string $sessionId, string $profileId, string $partId, CarbonInterface $submittedAt, float $band): void
+    {
+        $subId = Str::uuid7();
+        DB::table('exam_speaking_submissions')->insert([
+            'id' => $subId,
+            'session_id' => $sessionId,
+            'profile_id' => $profileId,
+            'part_id' => $partId,
+            'audio_url' => 'https://demo.vstep.test/audio/'.$subId.'.mp3',
+            'duration_seconds' => rand(60, 180),
+            'transcript' => 'Fixed-band speaking transcript.',
+            'submitted_at' => $submittedAt,
+        ]);
+
+        $job = GradingJob::create([
+            'submission_type' => 'exam_speaking',
+            'submission_id' => $subId,
+            'status' => 'ready',
+            'started_at' => $submittedAt,
+            'completed_at' => $submittedAt->copy()->addSeconds(rand(5, 30)),
+        ]);
+
+        SpeakingGradingResult::create([
+            'job_id' => $job->id,
+            'submission_type' => 'exam_speaking',
+            'submission_id' => $subId,
+            'version' => 1,
+            'is_active' => true,
+            'rubric_scores' => [
+                'grammar' => $band,
+                'vocabulary' => $band,
+                'pronunciation' => $band,
+                'fluency' => $band,
+                'discourse_management' => $band,
+            ],
+            'overall_band' => $band,
+            'strengths' => ['Fixed band seed'],
+            'improvements' => [],
+            'pronunciation_report' => ['accuracy_score' => 0.7],
+            'transcript' => 'Fixed-band speaking transcript.',
+        ]);
+    }
+
+    /**
+     * Seed wallet transactions: topup + exam spending for realistic payment history.
+     */
+    private function seedWalletTransactions(Profile $profile): void
+    {
+        $exists = CoinTransaction::query()
+            ->where('profile_id', $profile->id)
+            ->where('type', 'topup')
+            ->exists();
+
+        if ($exists) {
+            return;
+        }
+
+        $now = now();
+
+        // Topup 100k VND → 300 xu (gói cơ bản)
+        CoinTransaction::create([
+            'profile_id' => $profile->id,
+            'type' => 'topup',
+            'delta' => 300,
+            'balance_after' => 400,
+            'source_type' => 'wallet_topup_packages',
+            'source_id' => Str::orderedUuid()->toString(),
+            'metadata' => ['label' => 'Gói cơ bản', 'amount_vnd' => 100000],
+            'created_at' => $now->copy()->subDays(30),
+        ]);
+
+        // Exam deductions: 3 full tests × 25 xu
+        for ($i = 1; $i <= 3; $i++) {
+            CoinTransaction::create([
+                'profile_id' => $profile->id,
+                'type' => 'exam_full',
+                'delta' => -25,
+                'balance_after' => 400 - ($i * 25),
+                'source_type' => 'exam_sessions',
+                'source_id' => Str::orderedUuid()->toString(),
+                'metadata' => ['mode' => 'full'],
+                'created_at' => $now->copy()->subDays(20 - ($i * 3)),
+            ]);
+        }
+    }
+
+    /**
+     * Enroll extra profiles vào course K101 để test risk students.
+     *
+     * @param  Collection<int, Profile>  $profiles
+     */
+    private function enrollExtraProfiles(User $demoUser, Collection $profiles): void
+    {
+        $k101 = \App\Models\Course::query()->where('slug', 'b1-cap-toc-k101')->first();
+        if (! $k101) {
+            return;
+        }
+
+        foreach ($profiles as $profile) {
+            $exists = \App\Models\CourseEnrollment::query()
+                ->where('profile_id', $profile->id)
+                ->where('course_id', $k101->id)
+                ->exists();
+
+            if ($exists) {
+                continue;
+            }
+
+            \App\Models\CourseEnrollment::create([
+                'profile_id' => $profile->id,
+                'course_id' => $k101->id,
+                'enrolled_at' => now()->subDays(16),
+                'coins_paid' => 0,
+                'bonus_coins_received' => 0,
+            ]);
+        }
     }
 }
