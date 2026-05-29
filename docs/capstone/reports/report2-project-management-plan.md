@@ -43,7 +43,7 @@
 | 6.3 | Mobile mock test screens | Complex | 14 |
 | **7** | **FE-07: AI-supported Scoring Engine** | | **52** |
 | 7.1 | VSTEP rubric setup and scoring rules | Complex | 12 |
-| 7.2 | AI evidence extraction and feedback workflow with provider fallback | Complex | 14 |
+| 7.2 | AI evidence extraction and feedback workflow with retry and failure handling | Complex | 14 |
 | 7.3 | External language support tools integration | Complex | 10 |
 | 7.4 | Background processing for grading feedback | Complex | 10 |
 | 7.5 | Writing and Speaking evidence-based feedback generation | Medium | 6 |
@@ -52,9 +52,9 @@
 | 8.2 | Web dashboard and progress visualization | Complex | 10 |
 | 8.3 | Mobile dashboard and progress screens | Medium | 8 |
 | **9** | **FE-09: Learning Path** | | **20** |
-| 9.1 | Skill gap analysis and learning recommendations | Medium | 8 |
-| 9.2 | Web learning path screens | Medium | 6 |
-| 9.3 | Mobile learning path screens | Medium | 6 |
+| 9.1 | Skill gap analysis, learning recommendations, and vocabulary review scheduling | Medium | 8 |
+| 9.2 | Web learning path and vocabulary review screens | Medium | 6 |
+| 9.3 | Mobile learning path and vocabulary review screens | Medium | 6 |
 | **10** | **FE-10: Course Management** | | **42** |
 | 10.1 | Course, schedule, enrollment, and booking backend functions | Complex | 16 |
 | 10.2 | Web course enrollment and booking screens | Complex | 14 |
@@ -89,7 +89,7 @@
 
 ### 1.2 Project Objectives
 
-**Overall Objective:** Build an adaptive VSTEP preparation platform that combines 4-skill assessment, rubric-based scoring, AI-supported evidence extraction for productive skills, personalized learning path recommendations, and visual progress tracking to help Vietnamese learners prepare efficiently for the VSTEP examination.
+**Overall Objective:** Build an adaptive VSTEP preparation platform that combines 4-skill assessment, rubric-based scoring, AI-supported evidence extraction for productive skills, adaptive learning support through skill-gap recommendations and vocabulary spaced repetition, and visual progress tracking to help Vietnamese learners prepare efficiently for the VSTEP examination.
 
 **Quality Targets:**
 
@@ -119,14 +119,14 @@
 
 | # | Risk Description | Impact | Possibility | Response Plans |
 |---|-----------------|--------|-------------|----------------|
-| 1 | External AI service instability or rate limiting disrupts evidence extraction and feedback generation | High | Medium | Maintain fallback providers, retry failed requests with backoff, cache completed results, and provide a rule-based fallback for essential scoring |
-| 2 | Speech processing service rate limits or service downtime blocks Speaking practice feature | High | Medium | Process speech tasks asynchronously, retry temporary failures, show clear processing status to users, and validate uploaded audio before processing |
-| 3 | Limited team experience with AI evidence extraction and prompt design slows AI-supported scoring progress | Medium | High | Allocate research time early, use an abstraction layer for AI services, pair program on complex components, and study official provider documentation |
-| 4 | Scope creep — unplanned features or Phase 2 scope leaking into MVP timeline | High | Medium | Strict MVP scope enforcement; features LI-08 (adaptive difficulty), LI-09 (instructor assignment), LI-10 (ML predictive analytics) explicitly excluded per Report 1; weekly backlog grooming and scope review with supervisor |
-| 5 | Payment gateway integration complexity delays Wallet and Course enrollment features | Medium | Medium | Prioritize one primary payment flow for MVP, keep other payment options optional, and abstract gateway logic for future substitution |
-| 6 | Team members work across different technology stacks leading to inconsistent coding patterns across modules | Medium | Medium | Team lead reviews all Pull Requests for pattern consistency; shared coding conventions are documented; periodic refactoring aligns cross-module patterns; Design System guidance is maintained |
-| 7 | FPT University class schedule conflicts cause uneven workload distribution across team members | Medium | Medium | Daily async standups (Discord text); flexible pair programming when schedules align; buffer capacity in sprint planning; transparent task board (GitHub Projects) for visibility |
-| 8 | Database schema changes mid-development cause conflicts across team members | Low | Medium | All schema changes are reviewed, versioned, and tested with reproducible sample data before integration |
+| 1 | External AI service instability or rate limiting delays task-evidence extraction and feedback generation for Writing/Speaking | High | Medium | Keep scoring formulas separated from AI calls; use centralized retry and circuit-breaker handling for temporary failures; persist completed results; mark failed jobs with visible error messages when the service remains unavailable |
+| 2 | Speech-processing service errors or low-quality recordings affect Speaking transcription and pronunciation signals | High | Medium | Store speaking submissions as background grading jobs; validate submitted audio references; retry through the queue for temporary failures; show clear processing or failed status; require resubmission when transcription or pronunciation signals cannot be produced |
+| 3 | Limited team experience with rubric-based scoring, AI evidence extraction, and prompt design slows assessment feature development | Medium | High | Allocate early research time; validate scoring formulas with sample answers; pair program on assessment components; review outputs with supervisors; document scoring assumptions and limitations |
+| 4 | Scope creep causes Phase 2 or out-of-scope features to enter the current development timeline | High | Medium | Maintain the approved capstone scope; keep dynamic adaptive difficulty beyond current learning support, teacher-assigned modules, and machine-learning prediction outside the current scope; review backlog weekly with the supervisor before accepting new work |
+| 5 | Payment integration complexity delays Wallet, course enrollment, and booking-related flows | Medium | Medium | Prioritize the selected wallet top-up payment flow for the current capstone scope; keep course enrollment confirmation independent for testing; make payment confirmation idempotent; keep additional gateways outside current scope |
+| 6 | Different technology stacks across backend, web, admin, and mobile lead to inconsistent UI/API behavior or coding patterns | Medium | Medium | Use shared conventions for API contracts, naming, validation, and error handling; require Pull Request review; let the team lead review cross-module consistency; maintain design and workflow guidance |
+| 7 | FPT University class schedule conflicts cause uneven workload distribution across team members | Medium | Medium | Use async daily standups; keep tasks visible on the project board; assign backup supporters for critical tasks; include buffer in sprint planning; redistribute work during sprint review if needed |
+| 8 | Database schema changes during development cause integration conflicts or inconsistent test data | Medium | Medium | Review schema changes before implementation; version all schema changes; prepare reproducible seed/sample data; run migration and integration checks before merging; avoid changing shared data structures without team notice |
 
 ## 2. Management Approach
 
@@ -156,7 +156,7 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 | Sprint 3 | 5–6 (Feb) | FE-02/03 Listening/Reading + FE-07 Start | MCQ practice APIs, audio pipeline, VSTEP rubric seeding |
 | Sprint 4 | 7–8 (Feb) | FE-04 Writing + FE-07 Continue | Writing practice, scoring formulas, AI evidence extraction, feedback processing, Architecture & DDD docs |
 | Sprint 5 | 9–10 (Mar) | FE-05 Speaking + FE-06 Mock Test | Speech processing, exam session management, conversation practice |
-| Sprint 6 | 11–12 (Mar) | FE-08/09 Progress/Learning Path + FE-12 | Dashboard, spider chart, learning recommendations, notifications |
+| Sprint 6 | 11–12 (Mar) | FE-08/09 Progress/Learning Path + FE-12 | Dashboard, progress visualization, learning recommendations, vocabulary review support, notifications |
 | Sprint 7 | 13–14 (Apr) | FE-10 Courses + Wallet + FE-13 | Course enrollment, booking, payment, exercise feedback |
 | Sprint 8 | 15–16 (Apr) | FE-11 Content Mgmt + Admin Panel | Full admin CRUD, analytics, content workflow, testing & bug fixing |
 | Buffer | 17 (Apr) | Acceptance + Documentation | Final testing, supervisor review, user guide, deployment finalization |
@@ -196,7 +196,7 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 |--------------|-------------|----------------|-----------------|
 | Laravel + Eloquent ORM | All 4 members | Week 1, 3 days | Mandatory — backend foundation for all members |
 | React + TanStack | All 4 members | Week 1–2, 4 days | Mandatory — frontend framework for web + admin |
-| AI Evidence Extraction and Feedback | Nghĩa, Nhật Phát | Week 3–4, 3 days | Mandatory — core technology for Writing and Speaking assessment support |
+| AI Evidence Extraction, Feedback, and Recommendation Support | Nghĩa, Nhật Phát | Week 3–4, 3 days | Mandatory — core technology for Writing and Speaking assessment support and personalized learning support |
 | Docker + GitHub Actions CI/CD | Nghĩa, Khôi | Week 3–4, 2 days | Mandatory — infrastructure and deployment pipeline |
 | Speech-to-Text and Pronunciation Assessment | Nghĩa, Nhật Phát | Week 5, 2 days | Mandatory — core dependency for Speaking module |
 | Expo + React Native | Khôi, Tấn Phát | Week 2, 3 days | Mandatory — mobile application development |
