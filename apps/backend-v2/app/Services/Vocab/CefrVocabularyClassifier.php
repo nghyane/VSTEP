@@ -120,7 +120,7 @@ final class CefrVocabularyClassifier
     private function tokenize(string $text): array
     {
         $text = strtolower($text);
-        preg_match_all('/\b[a-z]+(?:[\'-][a-z]+)*\b/', $text, $matches);
+        preg_match_all('/\b[a-z]+(?:[\'-][a-z]+)*\b/u', $text, $matches);
 
         return $matches[0] ?? [];
     }

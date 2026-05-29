@@ -13,17 +13,19 @@ final class LlmWritingFeedbackGenerator implements WritingFeedbackGenerator
         private readonly AiClient $ai,
     ) {}
 
-    public function generate(string $text, string $promptText, array $metrics, array $grammarErrors, ?array $bandContext = null): array
+    public function generate(string $text, string $promptText, array $metrics, array $grammarErrors, ?array $bandContext = null, int $part = 2): array
     {
         $grammarErrors = array_slice($grammarErrors, 0, 10);
+        $wordCount = (int) ($metrics['word_count'] ?? 0);
 
         $prompt = view('ai.grading.writing-feedback', [
             'promptText' => $promptText,
             'text' => $text,
-            'wordCount' => str_word_count($text),
+            'wordCount' => $wordCount,
             'grammarErrors' => $grammarErrors,
             'metrics' => $metrics,
             'bandContext' => $bandContext,
+            'part' => $part,
         ])->render();
 
         $structured = $this->ai->toolCall(

@@ -1,7 +1,7 @@
 ---
 label: "Bài 6: Below B1 - short + errors"
 type: "Task 2 - Essay"
-expected_level: "Không đạt"
+expected_level: "B1"
 prompt: "Youth unemployment is a serious problem. Discuss effects and suggest solutions."
 requirements:
   - "Discuss effects"

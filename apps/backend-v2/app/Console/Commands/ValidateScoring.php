@@ -87,14 +87,12 @@ final class ValidateScoring extends Command
 
             $overallBand = $rubric->computeOverallBand($rubricScores);
 
-            // Sanity penalty — use rubric params (task-specific word minimums)
-            $tf = $rubric->taskFulfillmentParams();
-            $minimum = $essay['type'] === 'Task 1 - Letter'
-                ? $tf->wordMinimumTask1
-                : $tf->wordMinimumTask2;
-            $penalty = $wordCount > 0 ? min(1.0, $wordCount / $minimum) : 0.0;
-            $finalBand = round($overallBand * $penalty * 2) / 2;
-            $level = $this->bandToLevel($finalBand);
+            // TF ratio cap (shared with production grading pipeline)
+            $capped = $formula->applyTfCap($rubricScores, $rubric);
+            $rubricScores = $capped['rubricScores'];
+            $overallBand = $capped['overallBand'];
+
+            $level = $this->bandToLevel($overallBand);
 
             $results[] = [
                 'label' => $essay['label'],
@@ -110,8 +108,8 @@ final class ValidateScoring extends Command
                 'grammar' => $rubricScores['grammar'] ?? 0,
                 'vocabulary' => $rubricScores['vocabulary'] ?? 0,
                 'overall_raw' => $overallBand,
-                'penalty' => $penalty,
-                'overall_final' => $finalBand,
+                'penalty' => 1.0,
+                'overall_final' => $overallBand,
                 'expert_analysis' => $essay['expert_analysis'],
             ];
         }

@@ -15,7 +15,7 @@ final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
 
     public function assess(string $text, string $promptText, array $requirements, array $grammarErrors, array $ruleAnalysis, int $part = 2): array
     {
-        $wordCount = str_word_count($text);
+        $wordCount = (int) ($ruleAnalysis['metrics']['word_count'] ?? 0);
         $grammarErrors = array_slice($grammarErrors, 0, 10);
 
         $prompt = view('ai.grading.writing-evidence', [
@@ -30,58 +30,55 @@ final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
             'part' => $part,
         ])->render();
 
-        $reqKeys = $this->buildRequirementKeys($requirements);
-
-        // LLM: binary YES/NO per requirement (simplest possible output)
+        // LLM: ordered boolean array, one per requirement (no key matching)
         $structured = $this->ai->toolCall(
             service: 'grading',
             prompt: $prompt,
             toolName: 'check_requirements',
-            toolDescription: 'For each requirement, answer YES if the essay addresses it, NO if not.',
+            toolDescription: 'Return a boolean array — one entry per requirement in the same order as listed.',
             parametersSchema: [
-                'requirements' => ['type' => 'array', 'items' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'key' => ['type' => 'string'],
-                        'met' => ['type' => 'boolean'],
-                    ],
-                    'required' => ['key', 'met'],
-                    'additionalProperties' => false,
-                ]],
+                'requirements_met' => ['type' => 'array', 'items' => ['type' => 'boolean']],
             ],
-            instructions: 'You are grading a VSTEP essay against task requirements. '
-                .'Read the full essay carefully. For each requirement, answer YES or NO only. '
-                .'A requirement is met if the essay addresses the topic, even briefly.',
+            instructions: 'You are grading a VSTEP '.($part === 1 ? 'letter/email (Task 1)' : 'essay (Task 2)').' against task requirements. '
+                .'Read the full text carefully. For each requirement, output true (YES) if it is addressed even briefly, false (NO) if completely absent. '
+                .'Output one boolean per requirement, in order.',
         );
 
+        $requirementsMet = $structured['requirements_met'] ?? [];
+        $total = max(1, count($requirements) ?: 3);
         $metCount = 0;
-        $total = max(1, count($reqKeys));
-        foreach ($reqKeys as $key) {
-            $llmReqs = $structured['requirements'] ?? [];
-            $found = false;
-            foreach ($llmReqs as $r) {
-                if (($r['key'] ?? '') === $key && ($r['met'] ?? false)) {
-                    $found = true;
-                    break;
-                }
-            }
-            if ($found) {
+        for ($i = 0; $i < $total; $i++) {
+            if (! empty($requirementsMet[$i])) {
                 $metCount++;
             }
         }
 
         // Deterministic depth/examples/position (no LLM needed)
-        $depthFactor = $wordCount > 0 ? min(1.0, $wordCount / 250) : 0;
+        $depthTarget = $part === 1 ? 120 : 250;
+        $depthFactor = $wordCount > 0 ? min(1.0, $wordCount / $depthTarget) : 0;
         $lowerText = strtolower($text);
         $hasExamples = str_contains($lowerText, 'for example')
             || str_contains($lowerText, 'for instance')
             || str_contains($lowerText, 'such as');
-        $hasPosition = str_contains($lowerText, 'i believe')
-            || str_contains($lowerText, 'i think')
-            || str_contains($lowerText, 'in my opinion')
-            || str_contains($lowerText, 'i agree')
-            || str_contains($lowerText, 'i disagree')
-            || str_contains($lowerText, 'in conclusion');
+
+        if ($part === 1) {
+            // Letter: check for letter intent phrases (apology, invitation, request, etc.)
+            $hasPosition = str_contains($lowerText, 'i am writing')
+                || str_contains($lowerText, 'i would like')
+                || str_contains($lowerText, 'i hope')
+                || str_contains($lowerText, 'i apologize')
+                || str_contains($lowerText, 'i want to invite')
+                || str_contains($lowerText, 'i am sorry')
+                || str_contains($lowerText, 'i look forward');
+        } else {
+            // Essay: check for opinion/thesis signals
+            $hasPosition = str_contains($lowerText, 'i believe')
+                || str_contains($lowerText, 'i think')
+                || str_contains($lowerText, 'in my opinion')
+                || str_contains($lowerText, 'i agree')
+                || str_contains($lowerText, 'i disagree')
+                || str_contains($lowerText, 'in conclusion');
+        }
 
         return [
             'points_covered' => $metCount,
@@ -94,15 +91,6 @@ final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
     }
 
     /** @return list<string> */
-    private function buildRequirementKeys(array $requirements): array
-    {
-        if ($requirements === []) {
-            return ['requirement_1', 'requirement_2', 'requirement_3'];
-        }
-
-        return array_map(fn (int $i) => 'req_'.($i + 1), array_keys($requirements));
-    }
-
     /** @return list<string> */
     private function detectedLinkingWords(string $text): array
     {

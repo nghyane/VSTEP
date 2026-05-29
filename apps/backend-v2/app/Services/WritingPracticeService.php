@@ -50,10 +50,13 @@ final class WritingPracticeService
         return $this->sessionService->start($profile, 'writing', $prompt);
     }
 
+    /**
+     * @return array{submission: PracticeWritingSubmission, job_id: string}
+     */
     public function submit(
         PracticeSession $session,
         string $text,
-    ): PracticeWritingSubmission {
+    ): array {
         if ($session->module !== 'writing') {
             throw ValidationException::withMessages([
                 'session' => ['Session module is not writing.'],
@@ -91,9 +94,9 @@ final class WritingPracticeService
             $this->sessionService->complete($locked);
 
             // Enqueue inside transaction — defer dispatch to DB::afterCommit
-            $this->gradingService->enqueue('practice_writing', $submission->id);
+            $job = $this->gradingService->enqueue('practice_writing', $submission->id);
 
-            return $submission;
+            return ['submission' => $submission, 'job_id' => $job->id];
         });
 
         return $submission;

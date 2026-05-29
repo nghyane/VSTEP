@@ -11,6 +11,7 @@ use App\Ai\Contracts\ContentRelevanceAssessor;
 use App\Ai\Contracts\ConversationReviewer;
 use App\Ai\Contracts\ConversationTurnHandler;
 use App\Ai\Contracts\PronunciationAnalyzer;
+use App\Ai\Contracts\SpeakingFeedbackGenerator;
 use App\Ai\Contracts\TaskFulfillmentAssessor;
 use App\Ai\Contracts\WritingFeedbackGenerator;
 use App\Models\Profile;
@@ -24,6 +25,7 @@ use App\Services\Ai\LlmContentRelevanceAssessor;
 use App\Services\Ai\LlmConversationReviewer;
 use App\Services\Ai\LlmConversationTurnHandler;
 use App\Services\Ai\LlmPronunciationAnalyzer;
+use App\Services\Ai\LlmSpeakingFeedbackGenerator;
 use App\Services\Ai\LlmTaskFulfillmentAssessor;
 use App\Services\Ai\LlmWritingFeedbackGenerator;
 use App\Services\Contracts\LearningPathInterface;
@@ -74,6 +76,7 @@ class AppServiceProvider extends ServiceProvider
         // ── AI Contracts → Implementations
         $this->app->bind(TaskFulfillmentAssessor::class, LlmTaskFulfillmentAssessor::class);
         $this->app->bind(WritingFeedbackGenerator::class, LlmWritingFeedbackGenerator::class);
+        $this->app->bind(SpeakingFeedbackGenerator::class, LlmSpeakingFeedbackGenerator::class);
         $this->app->bind(ContentRelevanceAssessor::class, LlmContentRelevanceAssessor::class);
         $this->app->bind(ConversationTurnHandler::class, LlmConversationTurnHandler::class);
         $this->app->bind(ConversationReviewer::class, LlmConversationReviewer::class);

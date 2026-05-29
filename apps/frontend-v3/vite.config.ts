@@ -7,8 +7,6 @@ import svgr from "vite-plugin-svgr"
 
 export default defineConfig({
 	plugins: [TanStackRouterVite({ quoteStyle: "double" }), react(), tailwindcss(), svgr()],
-	resolve: {
-		alias: { "#": resolve(import.meta.dirname, "src") },
-	},
+	resolve: { alias: { "#": resolve(import.meta.dirname, "src") } },
 	server: { port: 5175, open: true },
 })
