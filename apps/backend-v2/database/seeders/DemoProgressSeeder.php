@@ -127,22 +127,38 @@ final class DemoProgressSeeder extends Seeder
             $date = $today->copy()->subDays($i);
             $dateLocal = $date->toDateString();
 
-            // Use the ACTIVITY_TYPES columns to ensure schema integrity
+            // Use the ACTIVITY_TYPES columns to ensure schema integrity.
+            // Separate path for INSERT vs UPDATE because COALESCE doesn't
+            // work in VALUES clause on PostgreSQL.
             $config = ProfileDailyActivity::ACTIVITY_TYPES[$type];
             $count = rand(1, 5);
             $duration = $type === 'exam_session' ? rand(60, 120) * 60 : rand(300, 1800);
+            $now = now();
 
-            ProfileDailyActivity::query()->updateOrInsert(
-                ['profile_id' => $profile->id, 'date_local' => $dateLocal],
-                array_merge(
-                    [
-                        $config['count'] => DB::raw("COALESCE({$config['count']}, 0) + {$count}"),
-                        'total_duration_seconds' => DB::raw("COALESCE(total_duration_seconds, 0) + {$duration}"),
-                        'updated_at' => now(),
-                    ],
-                    isset($config['duration']) ? [$config['duration'] => DB::raw("COALESCE({$config['duration']}, 0) + {$duration}")] : [],
-                ),
-            );
+            $existing = ProfileDailyActivity::query()
+                ->where('profile_id', $profile->id)
+                ->where('date_local', $dateLocal)
+                ->first();
+
+            if ($existing) {
+                // UPDATE: increment existing counters
+                $existing->increment($config['count'], $count);
+                $existing->increment('total_duration_seconds', $duration);
+                if (isset($config['duration'])) {
+                    $existing->increment($config['duration'], $duration);
+                }
+                $existing->update(['updated_at' => $now]);
+            } else {
+                // INSERT: fresh row with exact values
+                ProfileDailyActivity::query()->insert([
+                    'profile_id' => $profile->id,
+                    'date_local' => $dateLocal,
+                    $config['count'] => $count,
+                    'total_duration_seconds' => $duration,
+                    'updated_at' => $now,
+                    ...(isset($config['duration']) ? [$config['duration'] => $duration] : []),
+                ]);
+            }
 
             $activeDates->push($date);
         }
@@ -425,22 +441,35 @@ final class DemoProgressSeeder extends Seeder
         return (int) array_rand(array_values($options));
     }
 
-    private function recordActivityForDate(Profile $profile, string $skill, Carbon $date): void
+    private function recordActivityForDate(Profile $profile, string $skill, \DateTimeInterface $date): void
     {
         $config = ProfileDailyActivity::ACTIVITY_TYPES[$skill];
         $dateLocal = $date->toDateString();
+        $duration = rand(300, 1500);
+        $now = now();
 
-        ProfileDailyActivity::query()->updateOrInsert(
-            ['profile_id' => $profile->id, 'date_local' => $dateLocal],
-            array_merge(
-                [
-                    $config['count'] => DB::raw("COALESCE({$config['count']}, 0) + 1"),
-                    'total_duration_seconds' => DB::raw('COALESCE(total_duration_seconds, 0) + '.rand(300, 1500)),
-                    'updated_at' => now(),
-                ],
-                isset($config['duration']) ? [$config['duration'] => DB::raw("COALESCE({$config['duration']}, 0) + ".rand(300, 1500))] : [],
-            ),
-        );
+        $existing = ProfileDailyActivity::query()
+            ->where('profile_id', $profile->id)
+            ->where('date_local', $dateLocal)
+            ->first();
+
+        if ($existing) {
+            $existing->increment($config['count']);
+            $existing->increment('total_duration_seconds', $duration);
+            if (isset($config['duration'])) {
+                $existing->increment($config['duration'], $duration);
+            }
+            $existing->update(['updated_at' => $now]);
+        } else {
+            ProfileDailyActivity::query()->insert([
+                'profile_id' => $profile->id,
+                'date_local' => $dateLocal,
+                $config['count'] => 1,
+                'total_duration_seconds' => $duration,
+                'updated_at' => $now,
+                ...(isset($config['duration']) ? [$config['duration'] => $duration] : []),
+            ]);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════

@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class ExerciseFeedback extends BaseModel
 {
+    protected $table = 'exercise_feedbacks';
+
     protected function casts(): array
     {
         return [
