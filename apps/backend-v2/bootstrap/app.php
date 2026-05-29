@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Middleware\AcceptTokenFromQuery;
 use App\Http\Middleware\ActiveProfile;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\JsonUtf8;
@@ -23,7 +22,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => CheckRole::class,
             'active-profile' => ActiveProfile::class,
-            'token-from-query' => AcceptTokenFromQuery::class,
         ]);
 
         $middleware->append(JsonUtf8::class);

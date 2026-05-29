@@ -5,7 +5,7 @@ import { FeedbackSection, RewriteSection } from "#/features/grading/components/F
 import { InsightsSection } from "#/features/grading/components/InsightsSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
 import type { RubricCriteriaMeta } from "#/features/grading/types"
-import { useGradingSSE } from "#/features/grading/use-grading-sse"
+import { useGradingPoll } from "#/features/grading/use-grading-poll"
 import { requestWritingFeedback } from "#/features/practice/actions"
 import type { WritingPromptDetail } from "#/features/practice/types"
 import { round } from "#/lib/utils"
@@ -19,20 +19,20 @@ interface Props {
 }
 
 export function WritingGradingScreen({ prompt, submissionId, jobId }: Props) {
-	const sse = useGradingSSE(jobId, true)
+	const poll = useGradingPoll(jobId)
 	const feedbackMutation = useMutation({ mutationFn: () => requestWritingFeedback(submissionId) })
 
-	const loading = sse.status === "connecting" || sse.status === "streaming"
-	const failed = sse.status === "failed"
-	const scores = sse.scores
-	const hasFeedback = sse.feedback !== null
+	const loading = poll.status === "connecting" || poll.status === "streaming"
+	const failed = poll.status === "failed"
+	const scores = poll.scores
+	const hasFeedback = feedbackMutation.isSuccess || poll.feedbackReady
 
 	if (failed) {
 		return (
 			<div className="flex flex-col items-center justify-center h-screen gap-4 p-6 text-center">
 				<img src="/mascot/lac-sad.png" alt="" className="w-20 h-20 object-contain" />
 				<p className="font-bold text-lg text-foreground">Có lỗi khi chấm bài</p>
-				<p className="text-sm text-subtle">{sse.error ?? "Vui lòng thử lại sau."}</p>
+				<p className="text-sm text-subtle">{poll.error ?? "Vui lòng thử lại sau."}</p>
 				<Link to="/luyen-tap/viet" className="text-sm font-bold text-skill-writing">
 					Quay lại
 				</Link>
@@ -49,10 +49,10 @@ export function WritingGradingScreen({ prompt, submissionId, jobId }: Props) {
 						<img src="/mascot/lac-happy.png" alt="" className="w-24 h-24 mx-auto object-contain" />
 						<div>
 							<p className="font-bold text-lg text-foreground mb-1">
-								{sse.status === "connecting" ? "Đang kết nối..." : "AI đang chấm bài..."}
+								{poll.status === "connecting" ? "Đang kết nối..." : "AI đang chấm bài..."}
 							</p>
 							<p className="text-sm text-subtle">
-								{sse.progress.length > 0 ? "Đang phân tích ngữ pháp, từ vựng..." : "Thường mất 10–30 giây"}
+								{poll.progress.length > 0 ? "Đang phân tích ngữ pháp, từ vựng..." : "Thường mất 10–30 giây"}
 							</p>
 						</div>
 						<div className="w-48 h-1.5 bg-background rounded-full mx-auto overflow-hidden">

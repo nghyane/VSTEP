@@ -9,7 +9,7 @@ use App\Http\Controllers\Api\V1\CourseController;
 use App\Http\Controllers\Api\V1\ExamController;
 use App\Http\Controllers\Api\V1\FeedbackController;
 use App\Http\Controllers\Api\V1\GradingController;
-use App\Http\Controllers\Api\V1\GradingStreamController;
+use App\Http\Controllers\Api\V1\GradingJobController;
 use App\Http\Controllers\Api\V1\GrammarController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\LearningPathController;
@@ -110,7 +110,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/practice/writing/submissions/{submissionId}/feedback', [WritingFeedbackController::class, 'generate'])->whereUuid('submissionId');
 
         // Grading SSE stream — single connection for progress + scores + feedback
-        Route::get('/grading-jobs/{grading_job}/stream', [GradingStreamController::class, 'stream'])->whereUuid('grading_job');
+        Route::get('/grading-jobs/{grading_job}', [GradingJobController::class, 'show'])->whereUuid('grading_job');
 
         // Practice Speaking — drill + VSTEP.
         Route::get('/practice/speaking/drills', [SpeakingPracticeController::class, 'listDrills']);
