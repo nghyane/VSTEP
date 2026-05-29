@@ -40,6 +40,7 @@ final class CourseService
         private readonly WalletService $walletService,
         private readonly NotificationService $notificationService,
         private readonly AdminNotificationService $adminNotificationService,
+        private readonly ProgressService $progressService,
     ) {}
 
     /** @return Collection<int,Course> */
@@ -496,5 +497,89 @@ final class CourseService
             'booking_lead_time_hours' => self::BOOKING_LEAD_TIME_HOURS,
             'commitment' => $this->commitmentStatus($profile, $course),
         ];
+    }
+
+    /**
+     * Find enrolled members at risk of failing their target.
+     *
+     * Risk criteria (any one triggers flag):
+     * - Average band < 5.0
+     * - No exam activity in 7 days (streak = 0)
+     * - Deadline within 14 days and current band < target
+     *
+     * @return list<array{profile_id: string, nickname: string, band: float|null, streak: int, days_to_deadline: int|null, target_level: string, risk_reasons: list<string>}>
+     */
+    public function atRiskMembers(Course $course): array
+    {
+        $enrollments = $course->enrollments()->with('profile:id,nickname,target_level,target_deadline')->get();
+        $result = [];
+
+        foreach ($enrollments as $enrollment) {
+            $profile = $enrollment->profile;
+            $overview = $this->progressService->getOverview($profile);
+            $chart = $overview['chart'];
+            $stats = $overview['stats'];
+
+            $reasons = [];
+
+            // Check band
+            $avgBand = $this->avgBandFromChart($chart);
+            if ($avgBand !== null && $avgBand < 5.0) {
+                $reasons[] = 'Điểm trung bình thấp ('.number_format($avgBand, 1).')';
+            }
+
+            // Check streak
+            if ($stats['streak'] === 0) {
+                $reasons[] = 'Không luyện tập trong 7 ngày';
+            }
+
+            // Check deadline
+            $daysToDeadline = $overview['profile']['days_until_exam'];
+            if ($daysToDeadline !== null && $daysToDeadline <= 14 && $avgBand !== null) {
+                $targetBand = match ($profile->target_level) {
+                    'C1' => 8.5,
+                    'B2' => 6.0,
+                    default => 4.0,
+                };
+                if ($avgBand < $targetBand) {
+                    $reasons[] = "Còn {$daysToDeadline} ngày, chưa đạt mục tiêu {$profile->target_level}";
+                }
+            }
+
+            if ($reasons !== []) {
+                $result[] = [
+                    'profile_id' => $profile->id,
+                    'nickname' => $profile->nickname,
+                    'band' => $avgBand,
+                    'streak' => $stats['streak'],
+                    'days_to_deadline' => $daysToDeadline,
+                    'target_level' => $profile->target_level,
+                    'risk_reasons' => $reasons,
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /** @param  array<string, float|int|null>|null  $chart */
+    private function avgBandFromChart(?array $chart): ?float
+    {
+        if ($chart === null) {
+            return null;
+        }
+
+        $bands = array_filter([
+            $chart['listening'] ?? null,
+            $chart['reading'] ?? null,
+            $chart['writing'] ?? null,
+            $chart['speaking'] ?? null,
+        ], fn ($v) => $v !== null);
+
+        if ($bands === []) {
+            return null;
+        }
+
+        return round(array_sum($bands) / count($bands), 1);
     }
 }

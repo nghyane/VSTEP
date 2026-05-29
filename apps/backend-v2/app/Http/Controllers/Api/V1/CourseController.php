@@ -132,4 +132,11 @@ final class CourseController extends Controller
             'coins_charged' => (int) ($course->booking_coin_cost ?? CourseService::BOOKING_COIN_COST_FALLBACK),
         ]], 201);
     }
+
+    public function riskStudents(Request $request, Course $course): JsonResponse
+    {
+        return response()->json([
+            'data' => $this->courseService->atRiskMembers($course),
+        ]);
+    }
 }

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { Header } from "#/components/Header"
 import { FoundationSection } from "#/features/practice/components/FoundationSection"
+import { RecommendationSection } from "#/features/practice/components/RecommendationSection"
 import { SkillsSection } from "#/features/practice/components/SkillsSection"
 
 export const Route = createFileRoute("/_app/luyen-tap/")({
@@ -12,6 +13,7 @@ function PracticePage() {
 		<>
 			<Header title="Luyện tập" />
 			<div className="px-10 pb-12 space-y-10">
+				<RecommendationSection />
 				<FoundationSection />
 				<SkillsSection />
 			</div>

@@ -4,6 +4,7 @@ import type {
 	ConversationScenario,
 	ConversationSessionDetail,
 	ExerciseDetail,
+	LearningPathData,
 	ListeningExerciseSummary,
 	ReadingExercise,
 	ReadingExerciseDetail,
@@ -92,3 +93,8 @@ export const shadowingLessonDetailQuery = (id: string) =>
 		queryKey: ["practice", "speaking", "shadowing", "lessons", id],
 		queryFn: () => api.get(`practice/speaking/drills/${id}`).json<ApiResponse<ShadowingLessonDetail>>(),
 	})
+
+export const learningPathQuery = queryOptions({
+	queryKey: ["learning-path"],
+	queryFn: () => api.get("learning-path").json<ApiResponse<LearningPathData>>(),
+})
