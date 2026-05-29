@@ -10,14 +10,21 @@ use App\Models\GradingJob;
 use App\Models\SpeakingGradingResult;
 use App\Models\WritingGradingResult;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 final class GradingJobController extends Controller
 {
-    public function show(GradingJob $job): JsonResponse
+    public function show(Request $request): JsonResponse
     {
-        // Route-bound model may be stale under Octane.
-        // ::find() creates a new query instance — always hits the DB.
-        $job = GradingJob::find($job->id) ?? $job;
+        $id = $request->route('grading_job');
+
+        // Route model binding may return a stale instance under Octane.
+        // Bypass entirely — fetch a fresh model by raw UUID.
+        $job = GradingJob::find($id);
+
+        if ($job === null) {
+            return response()->json(['message' => 'Grading job not found.'], 404);
+        }
 
         $data = [
             'status' => $job->status->value,
