@@ -17,21 +17,21 @@ final class GradingJobController extends Controller
     public function show(Request $request): JsonResponse
     {
         $id = $request->route('grading_job');
-
-        // Route model binding may return a stale instance under Octane.
-        // Bypass entirely — fetch a fresh model by raw UUID.
-        $job = GradingJob::find($id);
+        $job = GradingJob::query()->find($id);
 
         if ($job === null) {
             return response()->json(['message' => 'Grading job not found.'], 404);
         }
 
+        // getRawOriginal bypasses enum casting — reliable under Octane
+        $status = $job->getRawOriginal('status', GradingJobStatus::Pending->value);
+
         $data = [
-            'status' => $job->status->value,
+            'status' => $status,
             'progress' => $job->progress ?? [],
         ];
 
-        if ($job->status === GradingJobStatus::Ready) {
+        if ($status === GradingJobStatus::Ready->value) {
             $result = $this->loadResult($job);
             if ($result !== null) {
                 $data['scores'] = $result;
@@ -39,7 +39,7 @@ final class GradingJobController extends Controller
             $data['feedback_ready'] = $this->isFeedbackReady($job);
         }
 
-        if ($job->status === GradingJobStatus::Failed) {
+        if ($status === GradingJobStatus::Failed->value) {
             $data['error'] = $job->last_error ?? 'Grading failed';
         }
 
