@@ -119,6 +119,5 @@ For university students who need to meet graduation requirements and working pro
 - LI-06: The system depends on external LLM and STT (Azure Speech) API providers for AI grading functionality.
 - LI-07: Reading exercises use 100% MCQ format (4 options, single correct answer), matching the official VSTEP Reading structure. Other question types (True/False/Not Given, Matching Headings, Gap Fill) are not part of the VSTEP format and are not implemented.
 - LI-08: Adaptive exercise difficulty adjustment and dynamic sequencing are not included. Exercises are served with static difficulty (filtered by skill part, not learner proficiency).
-- LI-09: Automated study reminders are implemented via scheduled daily push notifications to inactive learners. Motivational suggestion content is rule-based (not AI-generated).
-- LI-10: Instructor assignment of exercises or learning modules to individual learners is not included. Teachers monitor progress and manage 1-on-1 bookings only.
-- LI-11: Predictive analytics for learner outcomes uses rule-based risk detection (band, streak, deadline proximity, trend direction), not machine-learning models.
+- LI-09: Instructor assignment of exercises or learning modules to individual learners is not included. Teachers monitor progress and manage 1-on-1 bookings only.
+- LI-10: Predictive analytics for learner outcomes uses rule-based risk detection (band, streak, deadline proximity, trend direction), not machine-learning models.
