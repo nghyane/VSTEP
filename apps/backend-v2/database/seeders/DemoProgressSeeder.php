@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\CoinTransactionType;
 use App\Models\CoinTransaction;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
@@ -12,9 +13,7 @@ use App\Models\ExamVersion;
 use App\Models\ExerciseFeedback;
 use App\Models\GradingJob;
 use App\Models\PracticeListeningExercise;
-use App\Models\PracticeMcqAnswer;
 use App\Models\PracticeReadingExercise;
-use App\Models\PracticeSession;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
 use App\Models\ProfileStreakState;
@@ -22,6 +21,8 @@ use App\Models\ProfileVocabSrsState;
 use App\Models\SpeakingGradingResult;
 use App\Models\VocabWord;
 use App\Models\WritingGradingResult;
+use App\Services\McqSkillService;
+use App\Services\WalletService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -29,10 +30,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * All demo progress data: activity, streak, exam sessions, practice history,
- * vocab SRS states, wallet transactions, exercise feedback.
- *
- * Idempotent — skips if data already exists for each profile.
+ * All demo progress data. Uses real service/module methods where possible
+ * to catch bugs (activity, notifications, wallet, practice) and raw inserts
+ * only for components requiring external APIs (exam grading, SRS).
  */
 final class DemoProgressSeeder extends Seeder
 {
@@ -78,9 +78,9 @@ final class DemoProgressSeeder extends Seeder
         // ── Main Profile ──
         $this->seedActivityAndStreak($profile, self::ACTIVITY_DAYS, self::ACTIVITY_PROBABILITY);
         $this->seedExamSessions($profile, $version, self::MAIN_BANDS);
-        $this->seedPracticeHistory($profile);
+        $this->seedPracticeHistory($profile, app(McqSkillService::class));
         $this->seedVocabSrs($profile);
-        $this->seedWalletTransactions($profile);
+        $this->seedWalletTransactions($profile, app(WalletService::class));
         $this->seedExerciseFeedback($profile);
 
         // ── Extra Profiles ──
@@ -97,14 +97,13 @@ final class DemoProgressSeeder extends Seeder
             }
         }
 
-        // ── Enroll extra profiles into K101 ──
         $this->enrollExtraProfiles();
 
         $this->command?->info('Demo progress seeded.');
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // ACTIVITY + STREAK
+    // ACTIVITY + STREAK — uses ProfileDailyActivity ACTIVITY_TYPES
     // ═══════════════════════════════════════════════════════════════
 
     private function seedActivityAndStreak(Profile $profile, int $days, float $probability): void
@@ -115,20 +114,35 @@ final class DemoProgressSeeder extends Seeder
 
         $today = Carbon::today();
         $activeDates = collect();
+        $typePool = ['listening', 'reading', 'vocab_review', 'exam_session'];
 
         for ($i = 0; $i < $days; $i++) {
             if (mt_rand() / mt_getrandmax() > $probability) {
                 continue;
             }
 
-            $date = $today->copy()->subDays($i)->toDateString();
-            ProfileDailyActivity::create([
-                'profile_id' => $profile->id,
-                'date_local' => $date,
-                'drill_session_count' => rand(1, 5),
-                'drill_duration_seconds' => rand(300, 2400),
-            ]);
-            $activeDates->push(Carbon::parse($date));
+            $type = $typePool[array_rand($typePool)];
+            $date = $today->copy()->subDays($i);
+            $dateLocal = $date->toDateString();
+
+            // Use the ACTIVITY_TYPES columns to ensure schema integrity
+            $config = ProfileDailyActivity::ACTIVITY_TYPES[$type];
+            $count = rand(1, 5);
+            $duration = $type === 'exam_session' ? rand(60, 120) * 60 : rand(300, 1800);
+
+            ProfileDailyActivity::query()->updateOrInsert(
+                ['profile_id' => $profile->id, 'date_local' => $dateLocal],
+                array_merge(
+                    [
+                        $config['count'] => DB::raw("COALESCE({$config['count']}, 0) + {$count}"),
+                        'total_duration_seconds' => DB::raw("COALESCE(total_duration_seconds, 0) + {$duration}"),
+                        'updated_at' => now(),
+                    ],
+                    isset($config['duration']) ? [$config['duration'] => DB::raw("COALESCE({$config['duration']}, 0) + {$duration}")] : [],
+                ),
+            );
+
+            $activeDates->push($date);
         }
 
         if ($activeDates->isEmpty()) {
@@ -175,7 +189,7 @@ final class DemoProgressSeeder extends Seeder
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // EXAM SESSIONS + GRADING
+    // EXAM SESSIONS + GRADING — raw (requires external API)
     // ═══════════════════════════════════════════════════════════════
 
     /**
@@ -210,7 +224,6 @@ final class DemoProgressSeeder extends Seeder
             ->where('exam_version_reading_passages.exam_version_id', $version->id)
             ->pluck('exam_version_reading_items.id');
 
-        // Sessions spaced every 4 days, most recent = yesterday
         for ($i = 0; $i < self::EXAM_SESSION_COUNT; $i++) {
             $submittedAt = now()->subDays($i * self::EXAM_GAP_DAYS + 1)->subHours(rand(1, 12));
 
@@ -342,21 +355,20 @@ final class DemoProgressSeeder extends Seeder
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // PRACTICE SESSIONS
+    // PRACTICE SESSIONS — uses McqSkillService (real module)
     // ═══════════════════════════════════════════════════════════════
 
-    private function seedPracticeHistory(Profile $profile): void
+    private function seedPracticeHistory(Profile $profile, McqSkillService $mcqService): void
     {
-        if (PracticeSession::query()->where('profile_id', $profile->id)->exists()) {
+        if (DB::table('practice_sessions')->where('profile_id', $profile->id)->exists()) {
             return;
         }
 
-        // 4 listening drills + 3 reading drills over last 21 days
-        $this->seedMcqPracticeSessions($profile, 'listening', PracticeListeningExercise::class, 4);
-        $this->seedMcqPracticeSessions($profile, 'reading', PracticeReadingExercise::class, 3);
+        $this->seedMcqPractice($profile, $mcqService, 'listening', PracticeListeningExercise::class, 4);
+        $this->seedMcqPractice($profile, $mcqService, 'reading', PracticeReadingExercise::class, 3);
     }
 
-    private function seedMcqPracticeSessions(Profile $profile, string $skill, string $exerciseClass, int $count): void
+    private function seedMcqPractice(Profile $profile, McqSkillService $mcqService, string $skill, string $exerciseClass, int $count): void
     {
         $exercises = $exerciseClass::query()
             ->where('is_published', true)
@@ -369,43 +381,40 @@ final class DemoProgressSeeder extends Seeder
         }
 
         foreach ($exercises as $i => $exercise) {
+            // Use real McqSkillService — validates skill type, exercise existence, answer format
+            $session = $mcqService->startSession($profile, $skill, $exercise->id);
+
+            // Set session timestamps to a past date
             $daysAgo = rand($i * 3 + 1, $i * 3 + 3);
             $startedAt = now()->subDays($daysAgo)->subHours(rand(1, 4));
-            $endedAt = $startedAt->copy()->addMinutes(rand(10, 25));
+            $session->update(['started_at' => $startedAt]);
 
             $questions = $exercise->questions()->orderBy('display_order')->get();
             if ($questions->isEmpty()) {
                 continue;
             }
 
-            $correct = 0;
-            $total = $questions->count();
             $correctProb = $skill === 'listening' ? 0.75 : 0.65;
-
-            $session = PracticeSession::create([
-                'profile_id' => $profile->id,
-                'module' => $skill,
-                'content_ref_type' => $skill === 'listening' ? 'practice_listening_exercise' : 'practice_reading_exercise',
-                'content_ref_id' => $exercise->id,
-                'started_at' => $startedAt,
-                'ended_at' => $endedAt,
-                'score' => 0,
-            ]);
-
+            $answers = [];
             foreach ($questions as $q) {
                 $isCorrect = mt_rand() / mt_getrandmax() < $correctProb;
-                if ($isCorrect) {
-                    $correct++;
-                }
-                PracticeMcqAnswer::create([
-                    'session_id' => $session->id,
+                $answers[] = [
                     'question_id' => $q->id,
                     'selected_index' => $isCorrect ? $q->correct_index : $this->wrongIndex($q->correct_index),
-                    'is_correct' => $isCorrect,
-                ]);
+                ];
             }
 
-            $session->update(['score' => $total > 0 ? round(($correct / $total) * 10, 1) : 0]);
+            // Submit qua service — validates session state, question mapping, score calc
+            $result = $mcqService->submitSession($session, $skill, $answers);
+
+            // Backdate completion time
+            $session->update([
+                'started_at' => $startedAt,
+                'ended_at' => $startedAt->copy()->addMinutes(rand(10, 25)),
+            ]);
+
+            // Activity record for this practice
+            $this->recordActivityForDate($profile, $skill, $startedAt);
         }
     }
 
@@ -417,8 +426,26 @@ final class DemoProgressSeeder extends Seeder
         return (int) array_rand(array_values($options));
     }
 
+    private function recordActivityForDate(Profile $profile, string $skill, Carbon $date): void
+    {
+        $config = ProfileDailyActivity::ACTIVITY_TYPES[$skill];
+        $dateLocal = $date->toDateString();
+
+        ProfileDailyActivity::query()->updateOrInsert(
+            ['profile_id' => $profile->id, 'date_local' => $dateLocal],
+            array_merge(
+                [
+                    $config['count'] => DB::raw("COALESCE({$config['count']}, 0) + 1"),
+                    'total_duration_seconds' => DB::raw('COALESCE(total_duration_seconds, 0) + '.rand(300, 1500)),
+                    'updated_at' => now(),
+                ],
+                isset($config['duration']) ? [$config['duration'] => DB::raw("COALESCE({$config['duration']}, 0) + ".rand(300, 1500))] : [],
+            ),
+        );
+    }
+
     // ═══════════════════════════════════════════════════════════════
-    // VOCAB SRS STATES
+    // VOCAB SRS — raw (FSRS scheduler is complex, tested separately)
     // ═══════════════════════════════════════════════════════════════
 
     private function seedVocabSrs(Profile $profile): void
@@ -436,7 +463,6 @@ final class DemoProgressSeeder extends Seeder
 
         foreach ($words as $i => $word) {
             if ($i < 20) {
-                // New — chưa review lần nào
                 ProfileVocabSrsState::create([
                     'profile_id' => $profile->id,
                     'word_id' => $word->id,
@@ -449,7 +475,6 @@ final class DemoProgressSeeder extends Seeder
                     'last_review_at' => null,
                 ]);
             } elseif ($i < 40) {
-                // Learning — đang trong giai đoạn học
                 ProfileVocabSrsState::create([
                     'profile_id' => $profile->id,
                     'word_id' => $word->id,
@@ -462,7 +487,6 @@ final class DemoProgressSeeder extends Seeder
                     'last_review_at' => $now->copy()->subHours(rand(4, 24)),
                 ]);
             } else {
-                // Review — đã thuộc, due trong tương lai
                 ProfileVocabSrsState::create([
                     'profile_id' => $profile->id,
                     'word_id' => $word->id,
@@ -479,34 +503,27 @@ final class DemoProgressSeeder extends Seeder
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // WALLET TRANSACTIONS
+    // WALLET — uses WalletService (real module)
     // ═══════════════════════════════════════════════════════════════
 
-    private function seedWalletTransactions(Profile $profile): void
+    private function seedWalletTransactions(Profile $profile, WalletService $walletService): void
     {
         if (CoinTransaction::query()->where('profile_id', $profile->id)->exists()) {
             return;
         }
 
+        // Topup qua service — validates profile existence, balance update
+        $walletService->credit($profile, 300, CoinTransactionType::AdminGrant);
+
+        // Exam deductions (raw — normally through ExamSessionService which charges coins)
         $now = now();
-
-        CoinTransaction::create([
-            'profile_id' => $profile->id,
-            'type' => 'topup',
-            'delta' => 300,
-            'balance_after' => 400,
-            'source_type' => 'wallet_topup_packages',
-            'source_id' => Str::orderedUuid()->toString(),
-            'metadata' => ['label' => 'Gói cơ bản', 'amount_vnd' => 100000],
-            'created_at' => $now->copy()->subDays(30),
-        ]);
-
+        $balance = 400; // 100 onboarding + 300 topup
         for ($i = 1; $i <= 3; $i++) {
             CoinTransaction::create([
                 'profile_id' => $profile->id,
                 'type' => 'exam_full',
                 'delta' => -25,
-                'balance_after' => 400 - ($i * 25),
+                'balance_after' => $balance - ($i * 25),
                 'source_type' => 'exam_sessions',
                 'source_id' => Str::orderedUuid()->toString(),
                 'metadata' => ['mode' => 'full'],
@@ -516,7 +533,7 @@ final class DemoProgressSeeder extends Seeder
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // EXERCISE FEEDBACK
+    // EXERCISE FEEDBACK — uses Eloquent model
     // ═══════════════════════════════════════════════════════════════
 
     private function seedExerciseFeedback(Profile $profile): void
@@ -529,17 +546,15 @@ final class DemoProgressSeeder extends Seeder
             ->where('is_published', true)
             ->first();
 
-        if (! $exercise) {
-            return;
+        if ($exercise) {
+            ExerciseFeedback::create([
+                'profile_id' => $profile->id,
+                'content_type' => 'practice_reading_exercise',
+                'content_id' => $exercise->id,
+                'rating' => 5,
+                'comment' => 'Bài đọc rất sát với đề thi VSTEP thật. Phần giải thích rõ ràng, dễ hiểu!',
+            ]);
         }
-
-        ExerciseFeedback::create([
-            'profile_id' => $profile->id,
-            'content_type' => 'practice_reading_exercise',
-            'content_id' => $exercise->id,
-            'rating' => 5,
-            'comment' => 'Bài đọc rất sát với đề thi VSTEP thật. Phần giải thích rõ ràng, dễ hiểu!',
-        ]);
 
         $exercise2 = PracticeListeningExercise::query()
             ->where('is_published', true)
@@ -556,6 +571,7 @@ final class DemoProgressSeeder extends Seeder
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════
     // ═══════════════════════════════════════════════════════════════
     // ENROLL EXTRA PROFILES
     // ═══════════════════════════════════════════════════════════════
