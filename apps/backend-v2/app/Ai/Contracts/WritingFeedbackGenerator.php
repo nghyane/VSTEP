@@ -14,5 +14,5 @@ interface WritingFeedbackGenerator
      * @param  array{current: string, target: string}|null  $bandContext
      * @return array{strengths: list<string>, improvements: list<string>, rewrites: list<string>}
      */
-    public function generate(string $text, string $promptText, array $metrics, array $grammarErrors, ?array $bandContext = null): array;
+    public function generate(string $text, string $promptText, array $metrics, array $grammarErrors, ?array $bandContext = null, int $part = 2): array;
 }

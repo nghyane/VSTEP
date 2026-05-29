@@ -1,7 +1,7 @@
 ---
 label: "Bài 19: Quá ngắn + lỗi nặng"
 type: "Task 2 - Essay"
-expected_level: "Không đạt"
+expected_level: "B1"
 prompt: "Tourism can have both positive and negative effects on a country. Discuss these effects and give your opinion."
 requirements:
   - "Discuss positive effects"

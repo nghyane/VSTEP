@@ -1,7 +1,7 @@
 ---
 label: "Bài 9: B1 — good but simple"
 type: "Task 2 - Essay"
-expected_level: "B1"
+expected_level: "B2"
 prompt: "Air pollution: who is responsible — government or individuals?"
 requirements:
   - "State opinion"

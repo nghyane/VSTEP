@@ -8,7 +8,7 @@ use App\Ai\Contracts\WritingFeedbackGenerator;
 
 final class FakeWritingFeedbackGenerator implements WritingFeedbackGenerator
 {
-    public function generate(string $text, string $promptText, array $metrics, array $grammarErrors, ?array $bandContext = null): array
+    public function generate(string $text, string $promptText, array $metrics, array $grammarErrors, ?array $bandContext = null, int $part = 2): array
     {
         return [
             'strengths' => ['Tra loi dung yeu cau de bai'],

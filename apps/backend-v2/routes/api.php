@@ -9,7 +9,7 @@ use App\Http\Controllers\Api\V1\CourseController;
 use App\Http\Controllers\Api\V1\ExamController;
 use App\Http\Controllers\Api\V1\FeedbackController;
 use App\Http\Controllers\Api\V1\GradingController;
-use App\Http\Controllers\Api\V1\GradingStreamController;
+use App\Http\Controllers\Api\V1\GradingJobController;
 use App\Http\Controllers\Api\V1\GrammarController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\LearningPathController;
@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\V1\PaymentCallbackController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ShadowingProgressController;
 use App\Http\Controllers\Api\V1\SpeakingConversationController;
+use App\Http\Controllers\Api\V1\SpeakingFeedbackController;
 use App\Http\Controllers\Api\V1\SpeakingPracticeController;
 use App\Http\Controllers\Api\V1\VocabController;
 use App\Http\Controllers\Api\V1\WalletController;
@@ -106,10 +107,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/practice/writing/history', [WritingPracticeController::class, 'history']);
         Route::post('/practice/writing/sessions', [WritingPracticeController::class, 'startSession']);
         Route::post('/practice/writing/sessions/{practice_session}/submit', [WritingPracticeController::class, 'submit']);
-        Route::post('/practice/writing/submissions/{practice_writing_submission}/feedback', [WritingFeedbackController::class, 'generate']);
+        Route::post('/practice/writing/submissions/{submissionId}/feedback', [WritingFeedbackController::class, 'generate'])->whereUuid('submissionId');
 
         // Grading SSE stream — single connection for progress + scores + feedback
-        Route::get('/grading-jobs/{grading_job}/stream', [GradingStreamController::class, 'stream'])->whereUuid('grading_job');
+        Route::get('/grading-jobs/{grading_job}', [GradingJobController::class, 'show'])->whereUuid('grading_job');
 
         // Practice Speaking — drill + VSTEP.
         Route::get('/practice/speaking/drills', [SpeakingPracticeController::class, 'listDrills']);
@@ -122,6 +123,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/practice/speaking/vstep-sessions', [SpeakingPracticeController::class, 'startVstepSession']);
         Route::post('/practice/speaking/drill-sessions/{practice_session}/attempt', [SpeakingPracticeController::class, 'drillAttempt']);
         Route::post('/practice/speaking/vstep-sessions/{practice_session}/submit', [SpeakingPracticeController::class, 'submitVstep']);
+        Route::post('/practice/speaking/submissions/{practice_speaking_submission}/feedback', [SpeakingFeedbackController::class, 'generate']);
 
         // Practice Speaking — conversation roleplay.
         Route::get('/practice/speaking/scenarios', [SpeakingConversationController::class, 'listScenarios']);

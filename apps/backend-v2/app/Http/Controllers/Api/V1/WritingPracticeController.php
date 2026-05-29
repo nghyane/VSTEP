@@ -67,14 +67,15 @@ final class WritingPracticeController extends Controller
     {
         Gate::authorize('submit', $practiceSession);
 
-        $submission = $this->writingService->submit(
+        $result = $this->writingService->submit(
             $practiceSession, $request->validated('text'),
         );
 
         return response()->json(['data' => [
-            'submission_id' => $submission->id,
-            'word_count' => $submission->word_count,
-            'submitted_at' => $submission->submitted_at,
+            'submission_id' => $result['submission']->id,
+            'job_id' => $result['job_id'],
+            'word_count' => $result['submission']->word_count,
+            'submitted_at' => $result['submission']->submitted_at,
             'grading_status' => GradingJobStatus::Pending->value,
         ]]);
     }

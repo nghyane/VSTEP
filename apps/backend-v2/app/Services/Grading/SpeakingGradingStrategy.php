@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Grading;
 
 use App\Ai\Contracts\ContentRelevanceAssessor;
+use App\Ai\Contracts\SpeakingFeedbackGenerator;
 use App\DTOs\Grading\GradingResultData;
 use App\DTOs\Grading\SpeakingGradingData;
 use App\Enums\GradingJobStatus;
@@ -19,6 +20,7 @@ use App\Services\SpeechToText;
 use App\Services\SyntaxAnalyzer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 final class SpeakingGradingStrategy implements GradingStrategy
 {
@@ -29,6 +31,7 @@ final class SpeakingGradingStrategy implements GradingStrategy
         private readonly RuleBasedScoringService $metrics,
         private readonly SpeakingScoringFormula $formula,
         private readonly ContentRelevanceAssessor $relevance,
+        private readonly SpeakingFeedbackGenerator $feedbackGenerator,
         private readonly RubricResolver $rubricResolver,
     ) {}
 
@@ -93,13 +96,49 @@ final class SpeakingGradingStrategy implements GradingStrategy
             'pronunciation' => $this->formula->pronunciation($pronunciationScore),
         ];
 
+        // Deterministic insights: always computed, shown with scores
+        $insights = $this->formula->insights(
+            syntax: $syntaxAnalysis,
+            metrics: $metrics,
+            speakingRate: $speakingRate,
+            pauseCount: $pauseCount,
+            sttWordCount: $sttWordCount,
+            sentenceVariety: (float) ($metrics['sentence_variety'] ?? 0),
+            contentFactor: $contentFactor,
+            azureScore: $pronunciationScore,
+        );
+
+        // Exam: AI feedback enhancement (cost covered by exam fee)
+        $strengths = [];
+        if ($submission instanceof ExamSpeakingSubmission) {
+            $t = microtime(true);
+            $promptText = $this->buildPromptFromContent($submission->part?->content);
+            $bandContext = $this->resolveBandContext($submission);
+
+            try {
+                $aiFeedback = $this->feedbackGenerator->generate($transcript, $promptText, $scores, $metrics, $bandContext);
+                $strengths = $aiFeedback['strengths'];
+            } catch (\Throwable $e) {
+                Log::warning('Speaking exam LLM feedback failed, using insights fallback.', [
+                    'submission_id' => $submission->id,
+                    'error' => $e->getMessage(),
+                ]);
+                $strengths = array_map(fn (array $i) => "{$i['label']}: {$i['detail']}", $insights);
+            }
+
+            $job->addProgress('llm_feedback', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
+        }
+
         return new SpeakingGradingData(
             rubricScores: $scores,
             overallBand: $rubric->computeOverallBand($scores),
-            strengths: [],
+            strengths: $strengths,
             improvements: $this->sttQualityNote($sttConfidence),
             transcript: $transcript,
-            pronunciationReport: ['accuracy_score' => round($pronunciationScore, 1)],
+            pronunciationReport: [
+                'accuracy_score' => round($pronunciationScore, 1),
+                'insights' => $insights,
+            ],
             rubricId: $rubric->id,
         );
     }
@@ -187,6 +226,20 @@ final class SpeakingGradingStrategy implements GradingStrategy
         }
 
         return implode('. ', $parts);
+    }
+
+    /** @return array{current: string, target: string}|null */
+    private function resolveBandContext(Model $submission): ?array
+    {
+        $profile = $submission->profile;
+        if ($profile === null || $profile->entry_level === null) {
+            return null;
+        }
+
+        return [
+            'current' => $profile->entry_level,
+            'target' => $profile->target_level ?? $profile->entry_level,
+        ];
     }
 
     /** @return array{text: string, confidence: float, speaking_rate: float, pause_count: int, word_count: int, pronunciation: ?array} */

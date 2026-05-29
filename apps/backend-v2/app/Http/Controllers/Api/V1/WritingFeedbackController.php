@@ -15,11 +15,16 @@ use Illuminate\Http\JsonResponse;
  */
 final class WritingFeedbackController extends Controller
 {
-    public function generate(PracticeWritingSubmission $submission): JsonResponse
+    public function generate(string $submissionId): JsonResponse
     {
+        $submission = PracticeWritingSubmission::query()->find($submissionId);
+        if ($submission === null) {
+            return response()->json(['message' => 'Submission not found.'], 404);
+        }
+
         $result = WritingGradingResult::query()
             ->where('submission_type', 'practice_writing')
-            ->where('submission_id', $submission->id)
+            ->where('submission_id', $submissionId)
             ->where('is_active', true)
             ->first();
 
@@ -27,13 +32,13 @@ final class WritingFeedbackController extends Controller
             return response()->json(['message' => 'Submission not graded yet.'], 422);
         }
 
-        FeedbackJob::dispatch($submission->id);
+        FeedbackJob::dispatch($submissionId);
 
         return response()->json([
             'data' => [
-                'submission_id' => $submission->id,
+                'submission_id' => $submissionId,
                 'status' => 'processing',
-                'channel' => "feedback.{$submission->id}",
+                'channel' => "feedback.{$submissionId}",
                 'event' => 'feedback.completed',
             ],
         ], 202);

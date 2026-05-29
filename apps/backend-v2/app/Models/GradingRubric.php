@@ -76,12 +76,25 @@ class GradingRubric extends BaseModel
     /** @param  array<string,float>  $scores */
     public function computeOverallBand(array $scores): float
     {
-        $maxPossible = array_sum(array_column($this->criteria, 'max_score'));
-        if ($maxPossible <= 0) {
+        $weightedSum = 0.0;
+        $totalWeight = 0.0;
+
+        foreach ($this->criteria as $criterion) {
+            $key = $criterion['key'] ?? '';
+            $weight = (float) ($criterion['weight'] ?? 1.0);
+
+            if (isset($scores[$key])) {
+                $normalized = $scores[$key] / 10; // scale to 0–1
+                $weightedSum += $normalized * $weight;
+                $totalWeight += $weight;
+            }
+        }
+
+        if ($totalWeight <= 0) {
             return 5.0;
         }
 
-        $raw = (array_sum($scores) / $maxPossible) * 10;
+        $raw = ($weightedSum / $totalWeight) * 10;
 
         return round($raw * 2) / 2;
     }
@@ -133,5 +146,17 @@ class GradingRubric extends BaseModel
         }
 
         return [];
+    }
+
+    /**
+     * Get sub-signal params for a criterion (e.g., spelling under vocabulary).
+     *
+     * @return array<string,mixed>
+     */
+    public function subSignalParams(string $criterionKey, string $signalKey): array
+    {
+        $params = $this->criterionParams($criterionKey);
+
+        return $params['sub_signals'][$signalKey] ?? [];
     }
 }
