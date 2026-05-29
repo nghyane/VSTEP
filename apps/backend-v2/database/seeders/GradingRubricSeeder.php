@@ -26,7 +26,7 @@ class GradingRubricSeeder extends Seeder
 
     private function seedWritingRubric(): void
     {
-        if (GradingRubric::where('skill', 'writing')->where('version', 10)->exists()) {
+        if (GradingRubric::where('skill', 'writing')->where('version', 11)->exists()) {
             return;
         }
 
@@ -34,11 +34,11 @@ class GradingRubricSeeder extends Seeder
 
         GradingRubric::create([
             'skill' => 'writing',
-            'version' => 10,
-            'name' => 'VSTEP Writing Rubric v10',
+            'version' => 11,
+            'name' => 'VSTEP Writing Rubric v11',
             'source_reference' => 'Thông tư 23/2017/TT-BGDĐT, Phụ lục III. '
-                .'v10: weighted scoring + sub-signals (spelling, punctuation, tone). Full DB-configurable.',
-            'criteria' => $this->writingCriteriaV5(),
+                .'v11: recalibrated thresholds per VSTEP band descriptors — grammar floor 4.0, vocab cap 8, TF multiplier 7.',
+            'criteria' => $this->writingCriteriaV6(),
             'scoring_formula' => 'weighted_mean_rounded_half',
             'is_active' => true,
             'effective_from' => '2017-09-01',
@@ -315,6 +315,61 @@ class GradingRubricSeeder extends Seeder
                         ],
                     ],
                 ],
+                default => null,
+            };
+        }
+        unset($criterion, $params);
+
+        return $criteria;
+    }
+
+    /** @return list<array<string,mixed>> */
+    private function writingCriteriaV6(): array
+    {
+        $criteria = $this->writingCriteriaV5();
+
+        foreach ($criteria as &$criterion) {
+            $params = &$criterion['params'];
+
+            match ($criterion['key']) {
+                'task_fulfillment' => $params = array_merge($params, [
+                    'coverage_multiplier' => 7,    // was 8: tighter range per VSTEP TF=50%
+                    'task1_multiplier' => 5,        // was 6
+                    'position_bonus' => 0.5,        // was 1: less weight on signals
+                ]),
+                'grammar' => $params = array_merge($params, [
+                    'band_thresholds' => [0 => 4, 1 => 5, 3 => 7, 5 => 8, 7 => 9, 9 => 10],
+                    'max_accuracy' => ['0-1' => 5, '2-3' => 7, '4-5' => 9, '6+' => 10],
+                    // 0 types + 0 errors → (4+5)/2 = 4.5 (was 6.0 v10, 4.0 v11 draft)
+                    // 1 type  + 0 errors → (5+5)/2 = 5.0
+                ]),
+                'vocabulary' => $params = array_merge($params, [
+                    'base' => 2,                    // was 3
+                    'cap' => 8,                     // was 9
+                    'unique_thresholds' => [         // stricter
+                        ['threshold' => 0.50, 'bonus' => 1],
+                        ['threshold' => 0.60, 'bonus' => 2],
+                        ['threshold' => 0.70, 'bonus' => 3],
+                    ],
+                    'length_thresholds' => [         // stricter
+                        ['threshold' => 5.0, 'bonus' => 1],
+                        ['threshold' => 6.0, 'bonus' => 2],
+                    ],
+                    'readability_thresholds' => [    // stricter
+                        ['threshold' => 10, 'bonus' => 1],
+                        ['threshold' => 12, 'bonus' => 2],
+                    ],
+                    'cefr_thresholds' => [           // remove 2.0 level
+                        ['threshold' => 2.5, 'bonus' => 1],
+                        ['threshold' => 3.0, 'bonus' => 2],
+                        ['threshold' => 3.5, 'bonus' => 3],
+                        ['threshold' => 4.0, 'bonus' => 4],
+                    ],
+                    'advanced_thresholds' => [       // stricter
+                        ['threshold' => 0.20, 'bonus' => 1],
+                        ['threshold' => 0.35, 'bonus' => 2],
+                    ],
+                ]),
                 default => null,
             };
         }

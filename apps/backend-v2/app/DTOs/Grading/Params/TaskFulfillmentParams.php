@@ -18,7 +18,7 @@ final readonly class TaskFulfillmentParams
     public function __construct(
         public float $coverageMultiplier,
         public float $task1Multiplier,
-        public int $positionBonus,
+        public float $positionBonus,
         public int $irrelevantPenalty,
         public int $defaultPointsRequired,
         public int $wordMinimumTask1,
@@ -35,7 +35,7 @@ final readonly class TaskFulfillmentParams
         return new self(
             coverageMultiplier: (float) $data['coverage_multiplier'],
             task1Multiplier: (float) ($data['task1_multiplier'] ?? 6),
-            positionBonus: (int) $data['position_bonus'],
+            positionBonus: (float) $data['position_bonus'],
             irrelevantPenalty: (int) $data['irrelevant_penalty'],
             defaultPointsRequired: (int) $data['default_points_required'],
             wordMinimumTask1: (int) $data['word_minimum_task1'],

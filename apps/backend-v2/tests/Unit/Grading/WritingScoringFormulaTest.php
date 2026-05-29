@@ -19,25 +19,25 @@ final class WritingScoringFormulaTest extends TestCase
 
     /* ─── Grammar ───
      * G = clampRound((structureBand + accuracy) / 2)
-     * structureBand: 0→5, 1→6, 3→7, 5→8, 6→9, 7→10
+     * structureBand: 0→4, 1→5, 3→7, 5→8, 7→9, 9→10
      * accuracy = min(maxAcc, max(0, 10 - errors/sentences × 5))
-     * maxAcc: 0-2 types→7, 3-4→9, 5+→10
+     * maxAcc: 0-1 types→5, 2-3→7, 4-5→9, 6+→10
      */
 
-    /** 0 kiểu cấu trúc → band=5, không lỗi → accuracy max=7. (5+7)/2 = 6.0. */
+    /** 0 kiểu cấu trúc → band=4, không lỗi → accuracy max=5. (4+5)/2 = 4.5. */
     public function test_grammar_no_structures_no_errors(): void
     {
         $syntax = ['count' => 0, 'types' => [], 'details' => []];
         $score = $this->formula->grammar($syntax, 0, 10);
-        $this->assertSame(6.0, $score);
+        $this->assertSame(4.5, $score);
     }
 
-    /** 2 kiểu cấu trúc → band=6, không lỗi → accuracy=7. (6+7)/2 = 6.5. */
+    /** 2 kiểu cấu trúc → band=5, không lỗi → accuracy=7. (5+7)/2 = 6.0. */
     public function test_grammar_two_types_no_errors(): void
     {
         $syntax = ['count' => 2, 'types' => ['conditional', 'relative_clause'], 'details' => []];
         $score = $this->formula->grammar($syntax, 0, 10);
-        $this->assertSame(6.5, $score);
+        $this->assertSame(6.0, $score);
     }
 
     /** 5 kiểu → band=8, 2 lỗi/10 câu ×5 = 1.0 penalty → accuracy=9. (8+9)/2 = 8.5. */
@@ -48,7 +48,7 @@ final class WritingScoringFormulaTest extends TestCase
         $this->assertSame(8.5, $score);
     }
 
-    /** 0 kiểu, 50 lỗi/5 câu = 10 lỗi/câu ×5 = 50 → accuracy=0. (5+0)/2=2.5, clamp ≥1. */
+    /** 0 kiểu, 50 lỗi/5 câu = 10 lỗi/câu ×5 = 50 → accuracy=0. (4+0)/2=2.0. */
     public function test_grammar_clamps_to_min(): void
     {
         $syntax = ['count' => 0, 'types' => [], 'details' => []];
@@ -59,34 +59,33 @@ final class WritingScoringFormulaTest extends TestCase
 
     /* ─── Vocabulary ───
      * V = min(cap, clampRound(base + B_u + B_l + B_r + B_c))
-     * B_u: unique_ratio >0.45→1, >0.55→2, >0.65→3
-     * B_l: avg_word_len >4.5→1, >5.5→2
-     * B_r: readability >8→1, >10→2
-     * B_c: complex_vocab >2→1, >5→2
-     * cap = 8
+     * base=2, cap=8 (v11 recalibrated)
+     * B_u: unique_ratio >0.50→1, >0.60→2, >0.70→3
+     * B_l: avg_word_len >5.0→1, >6.0→2
+     * B_r: readability >10→1, >12→2
      */
 
-    /** unique_ratio=0.3 → B_u=0, word_len=4.0 → B_l=0. base=3 → 3.0. */
+    /** unique_ratio=0.3 → B_u=0, word_len=4.0 → B_l=0. base=2 → 2.0. */
     public function test_vocabulary_low_unique(): void
     {
         $score = $this->formula->vocabulary([
             'unique_ratio' => 0.3,
             'avg_word_length' => 4.0,
         ]);
-        $this->assertSame(3.0, $score);
+        $this->assertSame(2.0, $score);
     }
 
-    /** unique_ratio=0.7 → B_u=3, word_len=5.8 → B_l=2. base=3+3+2=8, bị cap ở 8. */
+    /** unique_ratio=0.7 → B_u=3, word_len=5.8 → B_l=1. base=2+3+1=6. */
     public function test_vocabulary_high_unique_long_words(): void
     {
         $score = $this->formula->vocabulary([
             'unique_ratio' => 0.7,
             'avg_word_length' => 5.8,
         ]);
-        $this->assertSame(8.0, $score);
+        $this->assertSame(6.0, $score);
     }
 
-    /** unique_ratio=0.9 → B_u=3, word_len=6.5 → B_l=2. 3+3+2=8 → cap 8. */
+    /** unique_ratio=0.9 → B_u=3, word_len=6.5 → B_l=2, readability=13 → B_r=2. 2+3+2+2=9 → cap 8. */
     public function test_vocabulary_capped_at_8(): void
     {
         $score = $this->formula->vocabulary([
@@ -101,7 +100,7 @@ final class WritingScoringFormulaTest extends TestCase
      * M = 6 (Task 1) or 8 (Task 2)
      */
 
-    /** 3/3, depth=0.8, examples, position → (3/3)×8=8+2.4+1+1=12.4→10. */
+    /** 3/3, depth=0.8, examples, position → (3/3)×7=7+2.4+0.5+0.5=10.4→10. */
     public function test_task_fulfillment_all_met(): void
     {
         $score = $this->formula->taskFulfillment([
@@ -115,7 +114,7 @@ final class WritingScoringFormulaTest extends TestCase
         $this->assertSame(10.0, $score);
     }
 
-    /** 2/4, depth=0.3, no extras → (2/4)×8=4+0.9=4.9→5.0. */
+    /** 2/4, depth=0.3, no extras → (2/4)×7=3.5+0.9=4.4→4.5. */
     public function test_task_fulfillment_half_met_no_position(): void
     {
         $score = $this->formula->taskFulfillment([
@@ -126,10 +125,10 @@ final class WritingScoringFormulaTest extends TestCase
             'has_clear_position' => false,
             'has_irrelevant_content' => false,
         ], 2);
-        $this->assertSame(5.0, $score);
+        $this->assertSame(4.5, $score);
     }
 
-    /** 3/3, depth=0.5, position, irrelevant → 8+1.5+0+1-2=8.5. */
+    /** 3/3, depth=0.5, position, irrelevant → 7+1.5+0.5+0-2=7.0. */
     public function test_task_fulfillment_irrelevant_penalty(): void
     {
         $score = $this->formula->taskFulfillment([
@@ -140,10 +139,10 @@ final class WritingScoringFormulaTest extends TestCase
             'has_clear_position' => true,
             'has_irrelevant_content' => true,
         ], 2);
-        $this->assertSame(8.5, $score);
+        $this->assertSame(7.0, $score);
     }
 
-    /** Task 1 letter: 3/3, depth=0.5, position → (3/3)×6=6+1.5+0+1=8.5. */
+    /** Task 1 letter: 3/3, depth=0.5, position → (3/3)×5=5+1.5+0.5=7.0. */
     public function test_task_fulfillment_task1_letter(): void
     {
         $score = $this->formula->taskFulfillment([
@@ -154,7 +153,7 @@ final class WritingScoringFormulaTest extends TestCase
             'has_clear_position' => true,
             'has_irrelevant_content' => false,
         ], 1);
-        $this->assertSame(8.5, $score);
+        $this->assertSame(7.0, $score);
     }
 
     /* ─── Organization ───
@@ -233,20 +232,20 @@ final class WritingScoringFormulaTest extends TestCase
 
     /* ─── Vocabulary — edge cases ─── */
 
-    /** Metrics rỗng → tất cả bonus = 0, điểm về base=3. */
+    /** Metrics rỗng → tất cả bonus = 0, điểm về base=2. */
     public function test_vocabulary_empty_metrics(): void
     {
         $score = $this->formula->vocabulary([]);
-        $this->assertSame(3.0, $score);
+        $this->assertSame(2.0, $score);
     }
 
     /* ─── Grammar — edge cases ─── */
 
-    /** sentenceCount=0 → guard chia 0, errorPenalty = 0. Vẫn tính được structureBand. */
+    /** sentenceCount=0 → guard chia 0, errorPenalty = 0. (4+5)/2 = 4.5. */
     public function test_grammar_zero_sentences(): void
     {
         $syntax = ['count' => 0, 'types' => [], 'details' => []];
         $score = $this->formula->grammar($syntax, 5, 0);
-        $this->assertSame(6.0, $score);
+        $this->assertSame(4.5, $score);
     }
 }
