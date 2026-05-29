@@ -508,27 +508,15 @@ final class DemoProgressSeeder extends Seeder
 
     private function seedWalletTransactions(Profile $profile, WalletService $walletService): void
     {
-        if (CoinTransaction::query()->where('profile_id', $profile->id)->exists()) {
-            return;
-        }
+        // Only seed if no topup transaction exists yet (onboarding + course
+        // bonuses are already credited by GrantOnboardingBonus + DemoCourseSeeder).
+        $hasTopup = CoinTransaction::query()
+            ->where('profile_id', $profile->id)
+            ->where('type', 'topup')
+            ->exists();
 
-        // Topup qua service — validates profile existence, balance update
-        $walletService->credit($profile, 300, CoinTransactionType::AdminGrant);
-
-        // Exam deductions (raw — normally through ExamSessionService which charges coins)
-        $now = now();
-        $balance = 400; // 100 onboarding + 300 topup
-        for ($i = 1; $i <= 3; $i++) {
-            CoinTransaction::create([
-                'profile_id' => $profile->id,
-                'type' => 'exam_full',
-                'delta' => -25,
-                'balance_after' => $balance - ($i * 25),
-                'source_type' => 'exam_sessions',
-                'source_id' => Str::orderedUuid()->toString(),
-                'metadata' => ['mode' => 'full'],
-                'created_at' => $now->copy()->subDays(20 - ($i * 3)),
-            ]);
+        if (! $hasTopup) {
+            $walletService->credit($profile, 300, CoinTransactionType::AdminGrant);
         }
     }
 
