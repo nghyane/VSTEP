@@ -3,9 +3,9 @@
 | Date | A/M/D | In charge | Change Description |
 |------|-------|-----------|-------------------|
 | 10/03/2026 | A | Hoàng Văn Anh Nghĩa | Initial version — WBS, project objectives, risk register, management approach |
-| 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Updated WBS to match actual 13-feature scope from Report 1; balanced responsibility assignments across team; added risk for cross-stack coding pattern consistency |
-| 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Updated tools & infrastructure to reflect actual stack: Laravel 13, React 19/TanStack, Expo, PostgreSQL, Redis, Docker |
-| 30/05/2026 | M | Hoàng Văn Anh Nghĩa | Corrected backend metrics verified against codebase: 58 test files (was 59), 45 feature tests (was 44), 81 service classes (was 54), 8 fake services (was 6); Admin stack: Tailwind→Ant Design v6; Admin components: ~70+64 routes (was ~130+); PHP constraint ^8.3 noted |
+| 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Updated project scope, responsibility assignments, and risk management plan |
+| 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Updated tools, infrastructure, and configuration management sections |
+| 30/05/2026 | M | Hoàng Văn Anh Nghĩa | Revised report content to align with Report 2 project management template |
 
 *A - Added   M - Modified   D - Deleted
 
@@ -18,67 +18,67 @@
 | # | WBS Item | Complexity | Est. Effort (man-days) |
 |---|----------|------------|------------------------|
 | **1** | **FE-01: User Authentication** | | **24** |
-| 1.1 | Backend: JWT Auth + Google OAuth + Multi-role + Multi-profile | Medium | 9 |
-| 1.2 | Frontend-v3: Login, Register, Onboarding UI | Medium | 8 |
-| 1.3 | Mobile-v2: Auth screens | Medium | 7 |
+| 1.1 | Backend authentication and user profile management | Medium | 9 |
+| 1.2 | Web login, registration, and onboarding screens | Medium | 8 |
+| 1.3 | Mobile authentication screens | Medium | 7 |
 | **2** | **FE-02: Practice — Listening** | | **22** |
-| 2.1 | Backend: MCQ practice API, audio presigned URLs (R2) | Medium | 7 |
-| 2.2 | Frontend-v3: Listening exercise UI + audio player | Medium | 8 |
-| 2.3 | Mobile-v2: Listening screens | Medium | 7 |
+| 2.1 | Listening practice backend functions | Medium | 7 |
+| 2.2 | Web listening practice screens | Medium | 8 |
+| 2.3 | Mobile listening practice screens | Medium | 7 |
 | **3** | **FE-03: Practice — Reading** | | **22** |
-| 3.1 | Backend: MCQ practice API | Medium | 7 |
-| 3.2 | Frontend-v3: Reading UI + passage highlighting + translation | Medium | 8 |
-| 3.3 | Mobile-v2: Reading screens | Medium | 7 |
+| 3.1 | Reading practice backend functions | Medium | 7 |
+| 3.2 | Web reading practice screens | Medium | 8 |
+| 3.3 | Mobile reading practice screens | Medium | 7 |
 | **4** | **FE-04: Practice — Writing** | | **38** |
-| 4.1 | Backend: Writing practice API + SSE streaming for real-time feedback | Complex | 14 |
-| 4.2 | Frontend-v3: Writing editor + AI grading result display | Complex | 12 |
-| 4.3 | Mobile-v2: Writing screens + grading result | Complex | 12 |
+| 4.1 | Writing practice backend functions, rubric-based scoring, and feedback processing | Complex | 14 |
+| 4.2 | Web writing editor and grading result display | Complex | 12 |
+| 4.3 | Mobile writing practice screens | Complex | 12 |
 | **5** | **FE-05: Practice — Speaking** | | **46** |
-| 5.1 | Backend: Speaking API + Azure Speech-to-Text + Conversation + Shadowing | Complex | 18 |
-| 5.2 | Frontend-v3: Drill, VSTEP Task, AI Conversation, Shadowing UIs | Complex | 14 |
-| 5.3 | Mobile-v2: Speaking screens | Complex | 14 |
+| 5.1 | Speaking practice backend functions, speech processing, and rubric-based scoring | Complex | 18 |
+| 5.2 | Web speaking practice screens | Complex | 14 |
+| 5.3 | Mobile speaking practice screens | Complex | 14 |
 | **6** | **FE-06: Mock Test Mode** | | **48** |
-| 6.1 | Backend: Exam session engine + auto-save + composite scoring | Complex | 18 |
-| 6.2 | Frontend-v3: Exam Room (4-skill panels, countdown timer, device check) | Complex | 16 |
-| 6.3 | Mobile-v2: Exam screens | Complex | 14 |
-| **7** | **FE-07: AI Grading Engine** | | **52** |
-| 7.1 | VSTEP rubric seeding + deterministic scoring formulas (Writing + Speaking) | Complex | 12 |
-| 7.2 | LLM Agent framework (4 AI providers, 6 models, tool calling via laravel/ai SDK) | Complex | 14 |
-| 7.3 | External tool integration: LanguageTool (grammar) + SyntaxAnalyzer + CEFR vocabulary | Complex | 10 |
-| 7.4 | Queue Jobs + SSE streaming for real-time grading feedback | Complex | 10 |
-| 7.5 | Writing/Speaking feedback generation (7 Bladed prompt templates) | Medium | 6 |
+| 6.1 | Mock test session management and 4-skill scoring, including rubric-based formulas for Writing and Speaking | Complex | 18 |
+| 6.2 | Web mock test room screens | Complex | 16 |
+| 6.3 | Mobile mock test screens | Complex | 14 |
+| **7** | **FE-07: AI-supported Scoring Engine** | | **52** |
+| 7.1 | VSTEP rubric setup and scoring rules | Complex | 12 |
+| 7.2 | AI evidence extraction and feedback workflow with provider fallback | Complex | 14 |
+| 7.3 | External language support tools integration | Complex | 10 |
+| 7.4 | Background processing for grading feedback | Complex | 10 |
+| 7.5 | Writing and Speaking evidence-based feedback generation | Medium | 6 |
 | **8** | **FE-08: Progress Tracking** | | **30** |
-| 8.1 | Backend: Statistics, streak, milestones, activity heatmap, level projection | Complex | 12 |
-| 8.2 | Frontend-v3: Dashboard (spider chart, score trend, heatmap, streak dialog) | Complex | 10 |
-| 8.3 | Mobile-v2: Dashboard + progress screens | Medium | 8 |
+| 8.1 | Learner statistics and progress analysis | Complex | 12 |
+| 8.2 | Web dashboard and progress visualization | Complex | 10 |
+| 8.3 | Mobile dashboard and progress screens | Medium | 8 |
 | **9** | **FE-09: Learning Path** | | **20** |
-| 9.1 | Backend: Skill gap analysis + threshold-based recommendations (band < 5.0) | Medium | 8 |
-| 9.2 | Frontend-v3: Learning path UI | Medium | 6 |
-| 9.3 | Mobile-v2: Learning path integration | Medium | 6 |
+| 9.1 | Skill gap analysis and learning recommendations | Medium | 8 |
+| 9.2 | Web learning path screens | Medium | 6 |
+| 9.3 | Mobile learning path screens | Medium | 6 |
 | **10** | **FE-10: Course Management** | | **42** |
-| 10.1 | Backend: Course CRUD + schedule + enrollment + 1-on-1 session booking | Complex | 16 |
-| 10.2 | Frontend-v3: Course listing, enrollment dialog, booking UI | Complex | 14 |
-| 10.3 | Mobile-v2: Course + booking screens | Complex | 12 |
+| 10.1 | Course, schedule, enrollment, and booking backend functions | Complex | 16 |
+| 10.2 | Web course enrollment and booking screens | Complex | 14 |
+| 10.3 | Mobile course and booking screens | Complex | 12 |
 | **11** | **FE-11: Content Management** | | **46** |
-| 11.1 | Admin Backend: CRUD APIs for exams, vocabulary, grammar, all 4 skills | Complex | 16 |
-| 11.2 | Admin Frontend: Dashboard, analytics, content editors (~70 components + 64 route pages) | Complex | 18 |
-| 11.3 | Exam import + blueprint validation (ExamVersionValidator) | Complex | 8 |
-| 11.4 | Publish/unpublish workflow + content versioning | Medium | 4 |
+| 11.1 | Admin backend functions for learning content | Complex | 16 |
+| 11.2 | Admin dashboard, analytics, and content management screens | Complex | 18 |
+| 11.3 | Exam import and validation workflow | Complex | 8 |
+| 11.4 | Content publishing and version management | Medium | 4 |
 | **12** | **FE-12: Notification System** | | **20** |
-| 12.1 | Backend: In-app notifications + scheduled daily study reminders (vstep:study-reminder) | Medium | 8 |
-| 12.2 | Frontend-v3: Notification bell + list integration | Medium | 6 |
-| 12.3 | Mobile-v2: Notification screens | Medium | 6 |
+| 12.1 | Notification backend functions and study reminders | Medium | 8 |
+| 12.2 | Web notification screens | Medium | 6 |
+| 12.3 | Mobile notification screens | Medium | 6 |
 | **13** | **FE-13: Exercise Feedback** | | **12** |
-| 13.1 | Backend: Rating + comment API | Simple | 4 |
-| 13.2 | Frontend-v3: Feedback UI | Simple | 4 |
-| 13.3 | Mobile-v2: Feedback UI | Simple | 4 |
+| 13.1 | Feedback backend functions | Simple | 4 |
+| 13.2 | Web feedback screens | Simple | 4 |
+| 13.3 | Mobile feedback screens | Simple | 4 |
 | **14** | **Infrastructure & DevOps** | | **28** |
-| 14.1 | Docker Compose (8 services: PostgreSQL, Redis, Backend, Frontend, Admin, Horizon, LanguageTool, Traefik) | Medium | 8 |
-| 14.2 | CI/CD pipelines (GitHub Actions: deploy, build-images, opencode review) | Medium | 8 |
-| 14.3 | Payment gateway integration (PayOS live + VNPay stub) | Complex | 8 |
-| 14.4 | Wallet system (top-up, promo codes, transaction history) | Medium | 4 |
+| 14.1 | Deployment environment setup | Medium | 8 |
+| 14.2 | CI/CD pipeline setup | Medium | 8 |
+| 14.3 | Payment gateway integration | Complex | 8 |
+| 14.4 | Wallet and transaction management | Medium | 4 |
 | **15** | **Documentation & Testing** | | **42** |
-| 15.1 | Unit tests + Feature tests + Test fakes for external services | Complex | 16 |
+| 15.1 | Unit tests, integration tests, and external service test isolation | Complex | 16 |
 | 15.2 | URS + SRS documents | Medium | 8 |
 | 15.3 | Architecture & Design documents (UML: use case, sequence, class, component) | Medium | 8 |
 | 15.4 | Testing report + test cases | Medium | 6 |
@@ -89,15 +89,15 @@
 
 ### 1.2 Project Objectives
 
-**Overall Objective:** Build an adaptive VSTEP preparation platform that combines AI-powered 4-skill assessment (Listening, Reading, Writing, Speaking), personalized learning path recommendations, and visual progress tracking to help Vietnamese learners prepare efficiently for the VSTEP examination.
+**Overall Objective:** Build an adaptive VSTEP preparation platform that combines 4-skill assessment, rubric-based scoring, AI-supported evidence extraction for productive skills, personalized learning path recommendations, and visual progress tracking to help Vietnamese learners prepare efficiently for the VSTEP examination.
 
 **Quality Targets:**
 
 | # | Testing Stage | Test Coverage | Est. Defects | % of Defect | Notes |
 |---|--------------|---------------|-------------|-------------|-------|
-| 1 | Reviewing | 100% code reviewed via Pull Request | ~15 | 10% | Biome (TypeScript) + Laravel Pint (PHP) auto-enforced |
-| 2 | Unit Test | ≥ 70% on critical services (AI grading, FSRS, scoring) | ~30 | 21% | PHPUnit, 58 test files; Fakes isolate external APIs |
-| 3 | Integration Test | All API endpoints (45 feature tests) | ~45 | 31% | Auth, Wallet, Practice, Exams, Learning Path, Admin |
+| 1 | Reviewing | 100% code reviewed via Pull Request | ~15 | 10% | Automated style checks are enforced |
+| 2 | Unit Test | ≥ 70% on critical services (scoring formulas, AI evidence extraction, learning scheduler) | ~30 | 21% | PHPUnit; external services isolated by test doubles |
+| 3 | Integration Test | Main API endpoints and cross-module flows | ~45 | 31% | Auth, Wallet, Practice, Exams, Learning Path, Admin |
 | 4 | System Test | All 13 features (FE-01 through FE-13) | ~35 | 24% | Full VSTEP exam flow; cross-skill scenarios |
 | 5 | Acceptance Test | Verified against SRS and URS by academic supervisor | ~20 | 14% | Lâm Hữu Khánh Phương + Trần Trọng Huỳnh sign-off |
 
@@ -119,14 +119,14 @@
 
 | # | Risk Description | Impact | Possibility | Response Plans |
 |---|-----------------|--------|-------------|----------------|
-| 1 | External LLM API instability or rate limiting (Packy, Groq, OpenRouter) disrupts AI grading pipeline | High | Medium | Multi-provider fallback with automatic routing; rule-based scoring fallback (LanguageTool + SyntaxAnalyzer); exponential backoff retry; cache grading results |
-| 2 | Azure Speech API rate limits or service downtime blocks Speaking practice feature | High | Medium | Queue-based processing with retry; user-facing "Đang xử lý..." status; WebM→WAV conversion in-browser before upload to ensure format compatibility |
-| 3 | Limited team experience with AI/LLM integration and prompt engineering slows AI Grading Engine progress | Medium | High | Dedicated research spike in Weeks 3-4; use laravel/ai SDK abstraction layer; pair programming with team lead on AI components; study official LLM provider documentation |
+| 1 | External AI service instability or rate limiting disrupts evidence extraction and feedback generation | High | Medium | Maintain fallback providers, retry failed requests with backoff, cache completed results, and provide a rule-based fallback for essential scoring |
+| 2 | Speech processing service rate limits or service downtime blocks Speaking practice feature | High | Medium | Process speech tasks asynchronously, retry temporary failures, show clear processing status to users, and validate uploaded audio before processing |
+| 3 | Limited team experience with AI evidence extraction and prompt design slows AI-supported scoring progress | Medium | High | Allocate research time early, use an abstraction layer for AI services, pair program on complex components, and study official provider documentation |
 | 4 | Scope creep — unplanned features or Phase 2 scope leaking into MVP timeline | High | Medium | Strict MVP scope enforcement; features LI-08 (adaptive difficulty), LI-09 (instructor assignment), LI-10 (ML predictive analytics) explicitly excluded per Report 1; weekly backlog grooming and scope review with supervisor |
-| 5 | Payment gateway integration complexity (PayOS, VNPay) delays Wallet and Course enrollment features | Medium | Medium | Implement PayOS live integration first; VNPay as stub only (LI-04 in Report 1); abstract both behind PaymentGatewayRegistry for future substitution |
-| 6 | Team members work across different technology stacks (PHP/Laravel, React/TanStack, Expo/React Native) leading to inconsistent coding patterns across modules | Medium | Medium | Team lead reviews all Pull Requests for pattern consistency; shared coding conventions documented in AGENTS.md; periodic refactoring sprints to align cross-module patterns; Design System documented in `apps/mockup/` |
+| 5 | Payment gateway integration complexity delays Wallet and Course enrollment features | Medium | Medium | Prioritize one primary payment flow for MVP, keep other payment options optional, and abstract gateway logic for future substitution |
+| 6 | Team members work across different technology stacks leading to inconsistent coding patterns across modules | Medium | Medium | Team lead reviews all Pull Requests for pattern consistency; shared coding conventions are documented; periodic refactoring aligns cross-module patterns; Design System guidance is maintained |
 | 7 | FPT University class schedule conflicts cause uneven workload distribution across team members | Medium | Medium | Daily async standups (Discord text); flexible pair programming when schedules align; buffer capacity in sprint planning; transparent task board (GitHub Projects) for visibility |
-| 8 | Database schema changes mid-development cause migration conflicts across team members | Low | Medium | All schema changes through Laravel migrations only; seeders provide reproducible test data; CI pipeline runs migrations on each push; database schema reviewed before implementation |
+| 8 | Database schema changes mid-development cause conflicts across team members | Low | Medium | All schema changes are reviewed, versioned, and tested with reproducible sample data before integration |
 
 ## 2. Management Approach
 
@@ -152,10 +152,10 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 | Sprint | Weeks | Focus Area | Key Deliverables |
 |--------|-------|-----------|-----------------|
 | Sprint 1 | 1–2 (Jan) | Training + Foundation | Docker infrastructure, DB schema, tech stack training, URS draft |
-| Sprint 2 | 3–4 (Jan) | FE-01 Auth + FE-11 Base | JWT auth, Google OAuth, multi-profile, content management skeleton, SRS draft |
+| Sprint 2 | 3–4 (Jan) | FE-01 Auth + FE-11 Base | Authentication, user profile management, content management foundation, SRS draft |
 | Sprint 3 | 5–6 (Feb) | FE-02/03 Listening/Reading + FE-07 Start | MCQ practice APIs, audio pipeline, VSTEP rubric seeding |
-| Sprint 4 | 7–8 (Feb) | FE-04 Writing + FE-07 Continue | Writing practice API, AI grading agents, SSE streaming, Architecture & DDD docs |
-| Sprint 5 | 9–10 (Mar) | FE-05 Speaking + FE-06 Mock Test | Azure STT integration, exam session engine, conversation AI |
+| Sprint 4 | 7–8 (Feb) | FE-04 Writing + FE-07 Continue | Writing practice, scoring formulas, AI evidence extraction, feedback processing, Architecture & DDD docs |
+| Sprint 5 | 9–10 (Mar) | FE-05 Speaking + FE-06 Mock Test | Speech processing, exam session management, conversation practice |
 | Sprint 6 | 11–12 (Mar) | FE-08/09 Progress/Learning Path + FE-12 | Dashboard, spider chart, learning recommendations, notifications |
 | Sprint 7 | 13–14 (Apr) | FE-10 Courses + Wallet + FE-13 | Course enrollment, booking, payment, exercise feedback |
 | Sprint 8 | 15–16 (Apr) | FE-11 Content Mgmt + Admin Panel | Full admin CRUD, analytics, content workflow, testing & bug fixing |
@@ -165,10 +165,10 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 
 **Defect Prevention:**
 
-- **Coding standards enforced automatically:** Laravel Pint (PHP) ensures zero style violations in backend; Biome (TypeScript) enforces consistent formatting and catches unused variables, missing dependencies, and type issues in frontend.
-- **Type safety:** All PHP files use `declare(strict_types=1)`. All fixed values are represented as Enums (18 enum classes: Role, VstepLevel, ExamSessionStatus, GradingJobStatus, etc.). Frontend TypeScript uses strict mode with zero `any` types in the main web app.
-- **Input validation:** All API endpoints validate input at the boundary using Laravel Form Requests; Zod schemas ensure data integrity at the application layer.
-- **Architecture patterns:** Thin controllers (average < 150 lines), business logic in Service layer (81 service classes), Strategy pattern for grading (WritingGradingStrategy, SpeakingGradingStrategy), Contract/Interface pattern for AI components (7 AI contracts).
+- **Coding standards:** Automated formatting and linting are applied across backend and frontend code to keep style consistent and prevent common mistakes.
+- **Type safety:** Backend and frontend code use typed language features and strict data structures to reduce runtime errors.
+- **Input validation:** User input and API requests are validated at system boundaries before business logic is executed.
+- **Architecture patterns:** The team follows a layered design with clear separation between controllers, services, models, and external integrations.
 
 **Code Review:**
 
@@ -176,58 +176,49 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 - At least one reviewer approves before merge to `main` branch.
 - Reviewer checklist: coding standards compliance, correct error handling, business logic accuracy, security considerations, test coverage.
 - Team lead reviews all Pull Requests to ensure pattern consistency across backend, frontend, and mobile modules.
-- AI-assisted review via GitHub Actions (opencode workflow) for critical paths.
+- Automated review is used for critical paths when applicable.
 
 **Testing Strategy:**
 
 | # | Testing Stage | Scope | Tools | Responsibility |
 |---|--------------|-------|-------|---------------|
-| 1 | Code Review | All Pull Requests | GitHub PR + Biome/Pint | All team members |
-| 2 | Unit Test | Scoring formulas, FSRS scheduler, enums, AI wire formats, auth logic | PHPUnit (58 test files, 4,472 runtime assertions) | Backend developers |
-| 3 | Integration Test | All API endpoints (45 feature tests): Auth, Wallet, Practice, Exams, Progress, Admin | PHPUnit + Fakes (8 fake services) | Backend + QA |
+| 1 | Code Review | All Pull Requests | GitHub Pull Request review + automated linting | All team members |
+| 2 | Unit Test | Core business logic such as scoring formulas, scheduling, authentication, and evidence extraction support logic | PHPUnit | Backend developers |
+| 3 | Integration Test | API flows across authentication, practice, exams, payment, progress, and administration modules | PHPUnit + test doubles for external services | Backend + QA |
 | 4 | System Test | Full VSTEP exam flow: Listening→Reading→Writing→Speaking; payment→enrollment→booking | Manual + automated scripts | All team members |
 | 5 | Acceptance Test | Verify against SRS functional requirements and URS user stories | Manual verification | Academic supervisor |
 
-**Fakes for Test Isolation:** The following external services are replaced with in-memory fakes during testing to ensure reproducibility and speed:
-
-- `FakeAiClient` — replaces Packy/Groq/OpenRouter LLM calls
-- `FakeSpeechToText` — replaces Azure Speech API
-- `FakeWritingFeedbackGenerator` — replaces writing feedback generation
-- `FakeTaskFulfillmentAssessor` — replaces task fulfillment assessment
-- `FakeContentRelevanceAssessor` — replaces content relevance assessment
-- `FakePronunciationAnalyzer` — replaces pronunciation analysis
-- `FakeConversationReviewer` — replaces AI conversation review
-- `FakeConversationTurnHandler` — replaces AI conversation turn generation
+**Test Isolation:** External services are replaced with controlled test doubles during automated testing so test results remain reproducible and do not depend on third-party availability.
 
 ### 2.3 Training Plan
 
 | Training Area | Participants | When, Duration | Waiver Criteria |
 |--------------|-------------|----------------|-----------------|
-| PHP 8.4 + Laravel 13 + Eloquent ORM | All 4 members | Week 1, 3 days | Mandatory — backend foundation for all members |
-| React 19 + TanStack Router + TanStack Query v5 + Tailwind v4 | All 4 members | Week 1–2, 4 days | Mandatory — frontend framework for web + admin |
-| AI/LLM Integration (laravel/ai SDK, tool calling, prompt engineering) | Nghĩa, Nhật Phát | Week 3–4, 3 days | Mandatory — core technology for AI grading engine |
+| Laravel + Eloquent ORM | All 4 members | Week 1, 3 days | Mandatory — backend foundation for all members |
+| React + TanStack | All 4 members | Week 1–2, 4 days | Mandatory — frontend framework for web + admin |
+| AI Evidence Extraction and Feedback | Nghĩa, Nhật Phát | Week 3–4, 3 days | Mandatory — core technology for Writing and Speaking assessment support |
 | Docker + GitHub Actions CI/CD | Nghĩa, Khôi | Week 3–4, 2 days | Mandatory — infrastructure and deployment pipeline |
-| Azure Speech API — STT + Pronunciation Assessment | Nghĩa, Nhật Phát | Week 5, 2 days | Mandatory — core dependency for Speaking module |
-| Expo + React Native (Mobile-v2) | Khôi, Tấn Phát | Week 2, 3 days | Mandatory — mobile application development |
+| Speech-to-Text and Pronunciation Assessment | Nghĩa, Nhật Phát | Week 5, 2 days | Mandatory — core dependency for Speaking module |
+| Expo + React Native | Khôi, Tấn Phát | Week 2, 3 days | Mandatory — mobile application development |
 | Git Workflow + Code Review Practice | All 4 members | Week 1, 1 day | Mandatory — team collaboration foundation |
 
 ## 3. Project Deliverables
 
-| # | Deliverable | Due Date | Owner | Notes |
-|---|------------|----------|-------|-------|
-| 1 | User Requirement Specification (URS) | 15/01/2026 | Khôi | Functional + non-functional requirements; use case diagrams |
-| 2 | Software Requirement Specification (SRS) | 31/01/2026 | Khôi | Detailed system specification; API contracts; data schemas |
-| 3 | System Architecture & Design Document | 15/02/2026 | Nghĩa | UML diagrams: use case, sequence, class, component, deployment |
-| 4 | Detailed Design Document (DDD) | 28/02/2026 | Nghĩa | Database schema (105 migrations, 82 models), component design, API route design |
-| 5 | Backend API v1 (MVP Core) | 15/03/2026 | Nghĩa | Auth, Practice APIs (4 skills), Exam engine, AI grading pipeline |
-| 6 | Frontend-v3 Web Application (MVP) | 31/03/2026 | Tấn Phát, Nhật Phát | All learner-facing features: auth, practice, mock test, dashboard |
-| 7 | Mobile-v2 Application (MVP) | 31/03/2026 | Khôi | All learner-facing features: practice, mock test, vocab, courses |
-| 8 | Admin Panel (MVP) | 07/04/2026 | Nghĩa | Content management, user management, analytics, course management |
-| 9 | AI Grading Engine | 07/04/2026 | Nghĩa | Writing (4 criteria) + Speaking (5 criteria) grading against VSTEP rubric |
-| 10 | Testing Report + Test Cases | 15/04/2026 | Nhật Phát | Unit + integration + system test results; defect tracking |
-| 11 | Installation Guide + Deployment Package | 22/04/2026 | Khôi | Docker Compose deployment; CI/CD configuration; environment setup |
-| 12 | User Guide / Tutorial | 25/04/2026 | Tấn Phát | Learner manual; instructor manual; admin guide |
-| 13 | Final Implementation Report + Source Code | 30/04/2026 | All members | Complete submission package; demo presentation |
+| # | Deliverable | Due Date | Notes |
+|---|------------|----------|-------|
+| 1 | User Requirement Specification (URS) | 15/01/2026 | User needs, functional requirements, non-functional requirements, and use case diagrams |
+| 2 | Software Requirement Specification (SRS) | 31/01/2026 | Detailed system requirements and acceptance criteria |
+| 3 | System Architecture & Design Document | 15/02/2026 | Overall architecture and main UML diagrams |
+| 4 | Detailed Design Document (DDD) | 28/02/2026 | Database design, component design, and interface design |
+| 5 | Backend Application | 15/03/2026 | Core server-side functions for authentication, practice, tests, grading, and management |
+| 6 | Web Application | 31/03/2026 | Learner-facing web functions for practice, mock tests, dashboard, and courses |
+| 7 | Mobile Application | 31/03/2026 | Learner-facing mobile functions for practice, mock tests, and learning support |
+| 8 | Admin Application | 07/04/2026 | Administration functions for content, users, analytics, and courses |
+| 9 | AI-supported Scoring Module | 07/04/2026 | Writing and Speaking assessment using rubric-based formulas with AI-extracted evidence and feedback support |
+| 10 | Testing Report and Test Cases | 15/04/2026 | Test plan, test cases, test results, and defect summary |
+| 11 | Installation Guide and Deployment Package | 22/04/2026 | Environment setup, deployment instruction, and release package |
+| 12 | User Guide / Tutorial | 25/04/2026 | Instructions for learners, instructors, and administrators |
+| 13 | Final Implementation Report and Source Code | 30/04/2026 | Final submission package and demo preparation |
 
 ## 4. Responsibility Assignments
 
@@ -249,7 +240,7 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 | Practice APIs — Listening/Reading (FE-02,03) | R | I | D | S |
 | Practice APIs — Writing/Speaking (FE-04,05) | D | I | R | S |
 | Mock Test Engine + Scoring (FE-06) | D | I | S | R |
-| AI Grading Engine (FE-07) | D | I | S | I |
+| AI-supported Scoring Engine (FE-07) | D | I | S | I |
 | Progress + Learning Path (FE-08,09) | D | S | R | S |
 | Course + Booking + Wallet (FE-10) | R | S | S | D |
 | Notifications + Feedback (FE-12,13) | S | S | R | D |
@@ -301,37 +292,29 @@ All project documents are stored in the monorepo under `docs/capstone/`, organiz
 - `specs/` — Technical specifications and RFCs
 - `diagrams/` — UML diagrams (Draw.io source files + rendered PNG/SVG)
 
-Documents use semantic versioning via Git commit history. Naming convention: `[Report#]-[Name]-v[X].[Y].pdf`. Final submission versions are exported as PDF from Markdown source. Google Drive is used for collaborative editing of reports before finalizing in the repository.
+Documents are versioned by date and revision number. Draft documents are edited collaboratively on Google Drive, then finalized in the repository and exported to PDF for submission. Major changes are recorded in the Record of Changes table.
 
 ### 6.2 Source Code Management
 
-- **Repository:** Monorepo at `github.com/nghyane/VSTEP`, containing all applications: `apps/backend-v2/`, `apps/frontend-v3/`, `apps/admin/`, `apps/mobile-v2/`, `apps/mockup/`.
-- **Branch strategy:** `main` (production-ready), feature/fix/docs branches created from `main`. Branch naming: `feat/<feature-name>`, `fix/<bug-description>`, `docs/<topic>`, `refactor/<scope>`.
-- **Merge policy:** All changes require a Pull Request with at least one approving review before merge to `main`.
-- **Commit convention:** [Conventional Commits](https://www.conventionalcommits.org/) with scope — `feat(auth):`, `fix(grading):`, `refactor(backend):`, `docs(srs):`, `test(exam):`, `chore(ci):`.
-- **Code style enforcement:** Laravel Pint (PHP) and Biome (TypeScript) run automatically; all code must pass lint before merge.
-- **Policies:** No rebase of shared branches. No force push to `main`. Secrets managed via `.env` files (git-ignored), validated at application startup.
+- **Repository:** Source code is managed in a private GitHub repository.
+- **Branch strategy:** The main branch stores stable code. New features and fixes are developed in separate branches and merged after review.
+- **Merge policy:** All changes must be submitted through Pull Requests and approved by at least one reviewer before merging.
+- **Commit convention:** Commit messages follow a consistent format so changes can be tracked clearly.
+- **Code quality:** Formatting, linting, and automated tests are checked before merge.
+- **Security policy:** Sensitive configuration is stored outside source control and managed through environment files or deployment secrets.
 
 ### 6.3 Tools & Infrastructures
 
 | Category | Tools / Infrastructure |
 |----------|----------------------|
-| Technology — Backend | PHP 8.4 (constraint ^8.3), Laravel 13, Laravel Octane (FrankenPHP), Laravel AI SDK |
-| Technology — Frontend Web | React 19, Vite 8, TanStack Router + Query v5, Tailwind v4, Biome, ky, Recharts |
-| Technology — Frontend Admin | React 19, Vite, TanStack Router, Ant Design v6, Biome |
-| Technology — Mobile | Expo SDK, React Native, TypeScript |
-| Database | PostgreSQL 17 (primary), Redis 7 (cache + queue) |
-| Queue & Jobs | Laravel Horizon (Redis-backed queue manager for AI grading jobs) |
+| Technology | Laravel, React, TanStack, Expo, React Native |
+| Database | PostgreSQL, Redis |
 | IDEs / Editors | Visual Studio Code, Cursor |
-| Diagramming | Draw.io (primary), StarUML (UML 2.0), Mermaid (Markdown-embedded) |
-| Documentation | Microsoft Office (DOCX export), Google Docs/Sheets/Slides (collaboration), Markdown (source) |
-| Version Control | GitHub — monorepo (Source Code), Google Drive (Document drafts) |
-| CI/CD | GitHub Actions (3 workflows: deploy backend, build + push Docker images, AI code review) |
-| Deployment | Docker Compose (8 services), Traefik v2.11 (reverse proxy + Let's Encrypt TLS), VPS (Ubuntu) |
-| AI / LLM Providers | Packy API (DeepSeek V4, Claude Haiku, Qwen), Groq (Qwen 32B), OpenRouter, Ollama (local dev) |
-| External APIs | Azure Speech Services (STT + Pronunciation Assessment), LanguageTool (self-hosted Docker), PayOS (payment), Google OAuth (login) |
-| File Storage | Cloudflare R2 (audio files, presigned URL upload/download) |
-| Testing | PHPUnit (Backend), Biome lint (Frontend), Fakes for external service isolation |
-| Project Management | GitHub Issues (task tracking), GitHub Projects (Kanban board) |
-| Communication | Discord (daily chat, async standup), Google Meet (sprint ceremonies), FPT Email (supervisor) |
-| API Documentation | REST API (JSON:API-inspired), route definitions in `routes/api.php` |
+| Diagramming | Draw.io, StarUML, Mermaid |
+| Documentation | Microsoft Office, Google Docs/Sheets/Slides, Markdown |
+| Version Control | GitHub for source code, Google Drive for document drafts |
+| Deployment server | Docker, Traefik, Linux VPS |
+| External Services | AI services, speech services, payment gateway, third-party login, object storage |
+| Testing | PHPUnit, automated linting, manual testing |
+| Project Management | GitHub Issues, GitHub Projects |
+| Communication | Discord, Google Meet, FPT Email |
