@@ -19,6 +19,40 @@ final class WritingScoringFormula
         return $this->rubric->taskFulfillmentParams();
     }
 
+    /**
+     * Apply TF ratio cap to prevent task fulfillment from dominating
+     * when the other criteria are significantly lower.
+     *
+     * TF ≤ avg(grammar, vocabulary, organization) × tf_cap_ratio
+     *
+     * @param  array<string,float>  $rubricScores
+     * @return array{overallBand: float, rubricScores: array<string,float>}
+     */
+    public function applyTfCap(array $rubricScores, GradingRubric $rubric): array
+    {
+        $tfParams = $rubric->taskFulfillmentParams();
+        $ratio = $tfParams->tfCapRatio;
+
+        if ($ratio <= 0) {
+            return [
+                'overallBand' => $rubric->computeOverallBand($rubricScores),
+                'rubricScores' => $rubricScores,
+            ];
+        }
+
+        $avgOther = ($rubricScores['grammar'] + $rubricScores['vocabulary'] + $rubricScores['organization']) / 3;
+        $capped = $avgOther * $ratio;
+
+        if ($rubricScores['task_fulfillment'] > $capped) {
+            $rubricScores['task_fulfillment'] = round($capped * 2) / 2;
+        }
+
+        return [
+            'overallBand' => $rubric->computeOverallBand($rubricScores),
+            'rubricScores' => $rubricScores,
+        ];
+    }
+
     public function grammar(array $syntax, int $grammarErrorCount, int $sentenceCount, int $punctuationErrorCount = 0): float
     {
         $p = $this->rubric->grammarParams();
@@ -161,13 +195,13 @@ final class WritingScoringFormula
         return $this->clampRound($p->base + $paraBonus + $linkingBonus + $varietyBonus - $compactPenalty);
     }
 
-    private function resolveBand(int $value, array $thresholds): int
+    private function resolveBand(int $value, array $thresholds): float
     {
         ksort($thresholds);
-        $band = 5;
+        $band = 5.0;
         foreach ($thresholds as $threshold => $b) {
             if ($value >= (int) $threshold) {
-                $band = (int) $b;
+                $band = (float) $b;
             }
         }
 

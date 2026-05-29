@@ -30,42 +30,25 @@ final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
             'part' => $part,
         ])->render();
 
-        $reqKeys = $this->buildRequirementKeys($requirements);
-
-        // LLM: binary YES/NO per requirement (simplest possible output)
+        // LLM: ordered boolean array, one per requirement (no key matching)
         $structured = $this->ai->toolCall(
             service: 'grading',
             prompt: $prompt,
             toolName: 'check_requirements',
-            toolDescription: 'For each requirement, answer YES if the text addresses it, NO if not.',
+            toolDescription: 'Return a boolean array — one entry per requirement in the same order as listed.',
             parametersSchema: [
-                'requirements' => ['type' => 'array', 'items' => [
-                    'type' => 'object',
-                    'properties' => [
-                        'key' => ['type' => 'string'],
-                        'met' => ['type' => 'boolean'],
-                    ],
-                    'required' => ['key', 'met'],
-                    'additionalProperties' => false,
-                ]],
+                'requirements_met' => ['type' => 'array', 'items' => ['type' => 'boolean']],
             ],
             instructions: 'You are grading a VSTEP '.($part === 1 ? 'letter/email (Task 1)' : 'essay (Task 2)').' against task requirements. '
-                .'Read the full text carefully. For each requirement, answer YES or NO only. '
-                .'A requirement is met if the text addresses the topic, even briefly.',
+                .'Read the full text carefully. For each requirement, output true (YES) if it is addressed even briefly, false (NO) if completely absent. '
+                .'Output one boolean per requirement, in order.',
         );
 
+        $requirementsMet = $structured['requirements_met'] ?? [];
+        $total = max(1, count($requirements) ?: 3);
         $metCount = 0;
-        $total = max(1, count($reqKeys));
-        foreach ($reqKeys as $key) {
-            $llmReqs = $structured['requirements'] ?? [];
-            $found = false;
-            foreach ($llmReqs as $r) {
-                if (($r['key'] ?? '') === $key && ($r['met'] ?? false)) {
-                    $found = true;
-                    break;
-                }
-            }
-            if ($found) {
+        for ($i = 0; $i < $total; $i++) {
+            if (! empty($requirementsMet[$i])) {
                 $metCount++;
             }
         }
@@ -108,15 +91,6 @@ final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
     }
 
     /** @return list<string> */
-    private function buildRequirementKeys(array $requirements): array
-    {
-        if ($requirements === []) {
-            return ['requirement_1', 'requirement_2', 'requirement_3'];
-        }
-
-        return array_map(fn (int $i) => 'req_'.($i + 1), array_keys($requirements));
-    }
-
     /** @return list<string> */
     private function detectedLinkingWords(string $text): array
     {

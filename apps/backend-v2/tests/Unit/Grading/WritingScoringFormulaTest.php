@@ -19,9 +19,9 @@ final class WritingScoringFormulaTest extends TestCase
 
     /* ─── Grammar ───
      * G = clampRound((structureBand + accuracy) / 2)
-     * structureBand: 0→4, 1→5, 3→7, 5→8, 7→9, 9→10
+     * structureBand: 0→4, 1→5, 2→5.5, 3→6, 4→7, 5→7.5, 7→9, 9→10
      * accuracy = min(maxAcc, max(0, 10 - errors/sentences × 5))
-     * maxAcc: 0-1 types→5, 2-3→7, 4-5→9, 6+→10
+     * maxAcc: 0-1 types→5, 2-3→6, 4-5→7, 6+→9
      */
 
     /** 0 kiểu cấu trúc → band=4, không lỗi → accuracy max=5. (4+5)/2 = 4.5. */
@@ -32,7 +32,7 @@ final class WritingScoringFormulaTest extends TestCase
         $this->assertSame(4.5, $score);
     }
 
-    /** 2 kiểu cấu trúc → band=5, không lỗi → accuracy=7. (5+7)/2 = 6.0. */
+    /** 2 kiểu cấu trúc → band=5.5, không lỗi → accuracy=6. (5.5+6)/2 = 5.75 → 6.0. */
     public function test_grammar_two_types_no_errors(): void
     {
         $syntax = ['count' => 2, 'types' => ['conditional', 'relative_clause'], 'details' => []];
@@ -40,12 +40,12 @@ final class WritingScoringFormulaTest extends TestCase
         $this->assertSame(6.0, $score);
     }
 
-    /** 5 kiểu → band=8, 2 lỗi/10 câu ×5 = 1.0 penalty → accuracy=9. (8+9)/2 = 8.5. */
+    /** 5 kiểu → band=7.5, 2 lỗi/10 câu ×5 = 1.0 penalty → accuracy=9 cap=8. (7.5+8)/2 = 7.75 → 8.0. */
     public function test_grammar_five_types_with_errors(): void
     {
         $syntax = ['count' => 5, 'types' => ['conditional', 'relative_clause', 'passive_voice', 'complex_conjunction', 'subjunctive'], 'details' => []];
         $score = $this->formula->grammar($syntax, 2, 10);
-        $this->assertSame(8.5, $score);
+        $this->assertSame(8.0, $score);
     }
 
     /** 0 kiểu, 50 lỗi/5 câu = 10 lỗi/câu ×5 = 50 → accuracy=0. (4+0)/2=2.0. */

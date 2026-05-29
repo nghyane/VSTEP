@@ -334,14 +334,16 @@ class GradingRubricSeeder extends Seeder
             match ($criterion['key']) {
                 'task_fulfillment' => $params = array_merge($params, [
                     'coverage_multiplier' => 7,    // was 8: tighter range per VSTEP TF=50%
-                    'task1_multiplier' => 5,        // was 6
+                    'task1_multiplier' => 5,        // was 6: letters get lower ceiling
                     'position_bonus' => 0.5,        // was 1: less weight on signals
+                    'tf_cap_ratio' => 1.3,          // TF ≤ avg(gram, vocab, org) × 1.3 — prevents TF from dominating weaker criteria
                 ]),
                 'grammar' => $params = array_merge($params, [
-                    'band_thresholds' => [0 => 4, 1 => 5, 3 => 7, 5 => 8, 7 => 9, 9 => 10],
-                    'max_accuracy' => ['0-1' => 5, '2-3' => 7, '4-5' => 9, '6+' => 10],
-                    // 0 types + 0 errors → (4+5)/2 = 4.5 (was 6.0 v10, 4.0 v11 draft)
-                    // 1 type  + 0 errors → (5+5)/2 = 5.0
+                    'band_thresholds' => [0 => 4, 1 => 5, 2 => 5.5, 3 => 6, 4 => 7, 5 => 7.5, 7 => 9, 9 => 10],
+                    'max_accuracy' => ['0-1' => 5, '2-3' => 6, '4-5' => 8, '6+' => 10],
+                    // B1: 0-2 types, some errors → (4+5)/2=4.5 to (5.5+6)/2=5.75
+                    // B2: 3-5 types, few errors → (6+6)/2=6.0 to (7.5+8)/2=7.75
+                    // C1: 6+ types, rare errors → (7.5+10)/2=8.75 to (10+10)/2=10.0
                 ]),
                 'vocabulary' => $params = array_merge($params, [
                     'base' => 2,                    // was 3

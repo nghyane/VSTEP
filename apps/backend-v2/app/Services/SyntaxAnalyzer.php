@@ -32,21 +32,21 @@ final class SyntaxAnalyzer
         ~ix',
 
         // ── Relative Clause ─────────────────────────────────────────
-        // who/which + auxiliary verb → relative clause intro
-        // Excludes: this, always, plus, its (common false positives)
+        // who/which/that + verb → relative clause
+        // Excludes: this, always, plus, its, question words
         'relative_clause' => '~
-            \bwho\s+(?:is|are|was|were|has|have|had|will|would|can|could|may|might|must|should|shall)\b
-            |\bwhich\s+(?:is|are|was|were|has|have|had|will|would|can|could|may|might|must|should|shall)\b
+            \b(?:who|which|that)\s+(?:is|are|was|were|has|have|had|will|would|can|could|may|might|must|should|shall)\b
             |\bwhom\b
             |\bwhose\b
         ~ix',
 
         // ── Passive Voice ───────────────────────────────────────────
         // be/get + (not) + (adverb) + past_participle
+        // Includes: can be done, will be solved, has been taken
         // Matches: -ed, -en, and common irregular participles
         // Excludes participial adjectives (state, not action)
         'passive_voice' => '~
-            \b(?:am|is|are|was|were|been|being|got|get)\s+
+            \b(?:am|is|are|was|were|be|been|being|got|get)\s+
             (?:not\s+)?(?:also\s+|often\s+|usually\s+|always\s+|never\s+|frequently\s+|sometimes\s+)?
             (?!tired|excited|interested|bored|worried|surprised|confused|disappointed
                |satisfied|relaxed|scared|frightened|pleased|annoyed|embarrassed|frustrated
@@ -127,6 +127,24 @@ final class SyntaxAnalyzer
                |taken|sent|bought|sold|created|changed|cut|set|baked)\b
             |\b(?:make|let|help)\s+(?:me|him|her|us|them|you|it)\s+(?:feel|understand|see|know|do|go|get|learn|relax|believe|realize|stay|become)\b
         ~ix',
+
+        // ── Noun Clause (reported speech / opinion) ────────────────
+        // "I believe that...", "It shows that...", "He said that..."
+        // B1 expected: indirect speech; B2: opinion/argument clauses
+        'noun_clause' => '~
+            \b(?:say|says|said|believe|believes|think|thinks|argue|argues|claim|claims
+               |suggest|suggests|explain|explains|show|shows|find|finds|know|knows
+               |realize|realizes|conclude|concludes|agree|agrees|disagree|discovers
+               |reveal|reveals|state|states|mention|mentions|note|notes)\s+that\b
+        ~ix',
+
+        // ── Gerund as Subject ──────────────────────────────────────
+        // "Reading is important", "Studying abroad helps..."
+        // B1 expected: gerund as subject for expressing abstract ideas
+        'gerund_subject' => '~
+            ^\s*(?:[A-Z][a-z]+(?:ing|tion|ment|ence|ance|ity|ness|ism|ship|ure|age|al))\s+
+            (?:is|are|was|were|has|have|can|may|will|could|might|should|plays|helps|provides|offers|gives|makes|creates|allows|enables|leads|becomes|remains|seems|appears)
+        ~mx',
     ];
 
     /**

@@ -11,7 +11,7 @@ final readonly class TaskFulfillmentParams
     private const REQUIRED = [
         'coverage_multiplier', 'task1_multiplier', 'position_bonus', 'irrelevant_penalty',
         'default_points_required', 'word_minimum_task1', 'word_minimum_task2',
-        'depth_minimum', 'short_essay_caps',
+        'depth_minimum', 'short_essay_caps', 'tf_cap_ratio',
     ];
 
     /** @param list<array{max_words: int, cap: float}> $shortEssayCaps */
@@ -25,6 +25,7 @@ final readonly class TaskFulfillmentParams
         public int $wordMinimumTask2,
         public float $depthMinimum,
         public array $shortEssayCaps,
+        public float $tfCapRatio,
     ) {}
 
     /** @param array<string,mixed> $data */
@@ -42,6 +43,7 @@ final readonly class TaskFulfillmentParams
             wordMinimumTask2: (int) $data['word_minimum_task2'],
             depthMinimum: (float) ($data['depth_minimum'] ?? 0.25),
             shortEssayCaps: (array) ($data['short_essay_caps'] ?? []),
+            tfCapRatio: (float) $data['tf_cap_ratio'],
         );
     }
 

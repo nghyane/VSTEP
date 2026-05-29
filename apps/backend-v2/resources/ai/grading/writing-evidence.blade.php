@@ -34,7 +34,7 @@ VSTEP Task 2 — Essay (target: ~250 words). Format: introduction → body parag
 == REQUIREMENTS ==
 @if(count($requirements) > 0)
 @foreach($requirements as $i => $req)
-{{ $i + 1 }}. [req_{{ $i + 1 }}] {{ $req }}
+{{ $i + 1 }}. {{ $req }}
 @endforeach
 @else
 Infer 3-5 key requirements from the task.
@@ -42,3 +42,4 @@ Infer 3-5 key requirements from the task.
 
 TASK: Read the full {{ ($part ?? 2) === 1 ? 'letter' : 'essay' }} above. For each requirement, answer ONLY YES or NO.
 YES = the {{ ($part ?? 2) === 1 ? 'letter' : 'essay' }} addresses this topic, even briefly. NO = the topic is completely absent.
+Output a JSON array of booleans in the same order as the requirements above (true for YES, false for NO).

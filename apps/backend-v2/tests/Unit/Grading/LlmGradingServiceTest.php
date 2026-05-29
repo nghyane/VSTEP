@@ -122,8 +122,7 @@ final class LlmGradingServiceTest extends TestCase
             public function toolCall(string $service, string $prompt, string $toolName, string $toolDescription, array $parametersSchema, ?string $instructions = null): array
             {
                 return [
-                    'requirements_met' => 2,
-                    'requirements_total' => 3,
+                    'requirements_met' => [true, true, false],
                     'has_clear_position' => true,
                     'has_irrelevant_content' => false,
                     'strengths' => ['Tot'],

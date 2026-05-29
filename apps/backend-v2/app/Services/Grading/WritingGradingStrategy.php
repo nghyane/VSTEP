@@ -155,7 +155,12 @@ final class WritingGradingStrategy implements GradingStrategy
             ),
         ];
         $overallBand = $rubric->computeOverallBand($rubricScores);
-        $overallBand = $this->applySanityCap($wordCount, $overallBand, $part);
+
+        // TF ratio cap (prevents TF from dominating when other criteria are weak)
+        $capped = $this->formula->applyTfCap($rubricScores, $rubric);
+        $rubricScores = $capped['rubricScores'];
+        $overallBand = $capped['overallBand'];
+
         $job->addProgress('scores', [
             'duration_ms' => (int) ((microtime(true) - $t) * 1000),
             'rubric_scores' => $rubricScores,
@@ -220,30 +225,6 @@ final class WritingGradingStrategy implements GradingStrategy
             'current' => $profile->entry_level,
             'target' => $profile->target_level ?? $profile->entry_level,
         ];
-    }
-
-    /**
-     * Apply word-count penalty per VSTEP task minimum (from rubric DB params).
-     *
-     * Task 1: word_minimum_task1 (default 120 per Thông tư 23/2017).
-     * Task 2: word_minimum_task2 (default 250 per Thông tư 23/2017).
-     *
-     * Formula: W' = W × min(1, w / θ)
-     * Result rounded to nearest 0.5 per VSTEP convention.
-     *
-     * @param  int  $wordCount  from RuleBasedScoringService (whitespace-split, Unicode-safe)
-     */
-    private function applySanityCap(int $wordCount, float $band, int $part = 2): float
-    {
-        if ($wordCount === 0) {
-            return 0.0;
-        }
-
-        $tf = $this->formula->taskFulfillmentParams();
-        $minimum = $part === 1 ? $tf->wordMinimumTask1 : $tf->wordMinimumTask2;
-        $penalty = min(1.0, $wordCount / $minimum);
-
-        return round($band * $penalty * 2) / 2;
     }
 
     /**
