@@ -41,7 +41,7 @@
 | 6.1 | Mock test session management and 4-skill scoring, including rubric-based formulas for Writing and Speaking | Complex | 18 |
 | 6.2 | Web mock test room screens | Complex | 16 |
 | 6.3 | Mobile mock test screens | Complex | 14 |
-| **7** | **FE-07: AI Grading Engine** | | **52** |
+| **7** | **FE-07: AI-supported Scoring Engine** | | **52** |
 | 7.1 | VSTEP rubric setup and scoring rules | Complex | 12 |
 | 7.2 | AI evidence extraction and feedback workflow with provider fallback | Complex | 14 |
 | 7.3 | External language support tools integration | Complex | 10 |
@@ -89,14 +89,14 @@
 
 ### 1.2 Project Objectives
 
-**Overall Objective:** Build an adaptive VSTEP preparation platform that combines AI-powered 4-skill assessment (Listening, Reading, Writing, Speaking), personalized learning path recommendations, and visual progress tracking to help Vietnamese learners prepare efficiently for the VSTEP examination.
+**Overall Objective:** Build an adaptive VSTEP preparation platform that combines 4-skill assessment, rubric-based scoring, AI-supported evidence extraction for productive skills, personalized learning path recommendations, and visual progress tracking to help Vietnamese learners prepare efficiently for the VSTEP examination.
 
 **Quality Targets:**
 
 | # | Testing Stage | Test Coverage | Est. Defects | % of Defect | Notes |
 |---|--------------|---------------|-------------|-------------|-------|
 | 1 | Reviewing | 100% code reviewed via Pull Request | ~15 | 10% | Automated style checks are enforced |
-| 2 | Unit Test | ≥ 70% on critical services (scoring formulas, AI evidence extraction, FSRS) | ~30 | 21% | PHPUnit; external services isolated by test doubles |
+| 2 | Unit Test | ≥ 70% on critical services (scoring formulas, AI evidence extraction, learning scheduler) | ~30 | 21% | PHPUnit; external services isolated by test doubles |
 | 3 | Integration Test | Main API endpoints and cross-module flows | ~45 | 31% | Auth, Wallet, Practice, Exams, Learning Path, Admin |
 | 4 | System Test | All 13 features (FE-01 through FE-13) | ~35 | 24% | Full VSTEP exam flow; cross-skill scenarios |
 | 5 | Acceptance Test | Verified against SRS and URS by academic supervisor | ~20 | 14% | Lâm Hữu Khánh Phương + Trần Trọng Huỳnh sign-off |
@@ -121,7 +121,7 @@
 |---|-----------------|--------|-------------|----------------|
 | 1 | External AI service instability or rate limiting disrupts evidence extraction and feedback generation | High | Medium | Maintain fallback providers, retry failed requests with backoff, cache completed results, and provide a rule-based fallback for essential scoring |
 | 2 | Speech processing service rate limits or service downtime blocks Speaking practice feature | High | Medium | Process speech tasks asynchronously, retry temporary failures, show clear processing status to users, and validate uploaded audio before processing |
-| 3 | Limited team experience with AI evidence extraction and prompt design slows AI Grading Engine progress | Medium | High | Allocate research time early, use an abstraction layer for AI services, pair program on complex components, and study official provider documentation |
+| 3 | Limited team experience with AI evidence extraction and prompt design slows AI-supported scoring progress | Medium | High | Allocate research time early, use an abstraction layer for AI services, pair program on complex components, and study official provider documentation |
 | 4 | Scope creep — unplanned features or Phase 2 scope leaking into MVP timeline | High | Medium | Strict MVP scope enforcement; features LI-08 (adaptive difficulty), LI-09 (instructor assignment), LI-10 (ML predictive analytics) explicitly excluded per Report 1; weekly backlog grooming and scope review with supervisor |
 | 5 | Payment gateway integration complexity delays Wallet and Course enrollment features | Medium | Medium | Prioritize one primary payment flow for MVP, keep other payment options optional, and abstract gateway logic for future substitution |
 | 6 | Team members work across different technology stacks leading to inconsistent coding patterns across modules | Medium | Medium | Team lead reviews all Pull Requests for pattern consistency; shared coding conventions are documented; periodic refactoring aligns cross-module patterns; Design System guidance is maintained |
@@ -240,7 +240,7 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 | Practice APIs — Listening/Reading (FE-02,03) | R | I | D | S |
 | Practice APIs — Writing/Speaking (FE-04,05) | D | I | R | S |
 | Mock Test Engine + Scoring (FE-06) | D | I | S | R |
-| AI Grading Engine (FE-07) | D | I | S | I |
+| AI-supported Scoring Engine (FE-07) | D | I | S | I |
 | Progress + Learning Path (FE-08,09) | D | S | R | S |
 | Course + Booking + Wallet (FE-10) | R | S | S | D |
 | Notifications + Feedback (FE-12,13) | S | S | R | D |

@@ -65,7 +65,7 @@ These apps provide interactive, gamified learning experiences at low cost.
 Vietnamese platforms such as luyenthivstep.vn and vstepmaster.edu.vn offer large question banks with computer-based test simulation.
 
 - Pros: Interface simulates computer-based testing; instant results for Listening and Reading; large question banks.
-- Cons: No AI-powered assessment for Writing and Speaking; no personalized learning paths; scores displayed without detailed analysis.
+- Cons: No automated rubric-based assessment for Writing and Speaking; no personalized learning paths; scores displayed without detailed analysis.
 
 ### 3.4 AI Writing and Speaking Tools (Grammarly, Write & Improve)
 
@@ -103,7 +103,7 @@ For university students who need to meet graduation requirements and working pro
 - FE-04: Practice Mode — Writing — Writing exercises scored by rubric-based formulas, with AI used to extract task evidence and support feedback.
 - FE-05: Practice Mode — Speaking — Speaking exercises scored by rubric-based formulas using transcript, fluency, pronunciation, and content-relevance signals.
 - FE-06: Mock Test Mode — Full simulated VSTEP exam across all 4 skills with session saving, timer, auto-grading for objective skills, and rubric-based scoring for Writing and Speaking.
-- FE-07: AI Grading Engine — Automated support for Writing and Speaking assessment using scoring formulas, rubric parameters, language metrics, and AI-extracted evidence.
+- FE-07: AI-supported Scoring Engine — Automated support for Writing and Speaking assessment using scoring formulas, rubric parameters, language metrics, and AI-extracted evidence.
 - FE-08: Progress Tracking — Dashboard for skill performance, learning activity, score trends, and level progress.
 - FE-09: Learning Path — Skill gap analysis from mock exam results with personalized practice recommendations.
 - FE-10: Course Management — Course creation, teacher assignment, schedule management, and session booking between learners and teachers.
