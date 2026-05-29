@@ -520,8 +520,8 @@ final class CourseService
         foreach ($enrollments as $enrollment) {
             $profile = $enrollment->profile;
             $overview = $this->progressService->getOverview($profile);
-            $chart = $overview['chart'];
-            $stats = $overview['stats'];
+            $chart = $overview['scores']['spider'];
+            $streak = $overview['streak']['current'];
 
             $reasons = [];
 
@@ -536,7 +536,7 @@ final class CourseService
             }
 
             // Check streak
-            if ($stats['streak'] === 0) {
+            if ($streak === 0) {
                 $reasons[] = 'Không luyện tập trong 7 ngày';
             }
 
@@ -559,7 +559,7 @@ final class CourseService
                     'nickname' => $profile->nickname,
                     'band' => $avgBand,
                     'trend' => $trend,
-                    'streak' => $stats['streak'],
+                    'streak' => $streak,
                     'days_to_deadline' => $daysToDeadline,
                     'target_level' => $profile->target_level,
                     'risk_reasons' => $reasons,

@@ -23,7 +23,7 @@ class ProgressStreakTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_record_practice_creates_daily_activity_but_not_streak(): void
+    public function test_record_practice_creates_daily_activity(): void
     {
         $user = User::factory()->create();
         $profile = Profile::factory()->initial()->forAccount($user)->create();
@@ -39,15 +39,16 @@ class ProgressStreakTest extends TestCase
 
         $this->assertSame(1, ProfileDailyActivity::query()
             ->where('profile_id', $profile->id)->count());
-        // Drill KHÔNG drive streak — RFC 0019.
-        $this->assertSame(0, ProfileStreakState::query()
-            ->where('profile_id', $profile->id)->value('current_streak') ?? 0);
     }
 
     public function test_streak_increments_on_consecutive_full_tests(): void
     {
         [$profile, $version] = $this->seedExamVersion();
         $service = $this->app->make(ProgressService::class);
+
+        // Also need daily activity rows so streak compute sees active days
+        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now()->subDay()->toDateString(), 'listening_exercise_count' => 1]);
+        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now()->toDateString(), 'reading_exercise_count' => 1]);
 
         $service->recordExamCompletion($this->createFullTestSession($profile, $version, now()->subDay()));
         $service->recordExamCompletion($this->createFullTestSession($profile, $version, now()));
@@ -64,6 +65,9 @@ class ProgressStreakTest extends TestCase
         [$profile, $version] = $this->seedExamVersion();
         $service = $this->app->make(ProgressService::class);
 
+        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now()->subDays(3)->toDateString(), 'listening_exercise_count' => 1]);
+        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now()->toDateString(), 'reading_exercise_count' => 1]);
+
         $service->recordExamCompletion($this->createFullTestSession($profile, $version, now()->subDays(3)));
         $service->recordExamCompletion($this->createFullTestSession($profile, $version, now()));
 
@@ -72,7 +76,7 @@ class ProgressStreakTest extends TestCase
         $this->assertSame(1, $state->longest_streak);
     }
 
-    public function test_custom_exam_does_not_increment_streak(): void
+    public function test_any_exam_records_activity(): void
     {
         [$profile, $version] = $this->seedExamVersion();
         $service = $this->app->make(ProgressService::class);
@@ -93,14 +97,15 @@ class ProgressStreakTest extends TestCase
 
         $service->recordExamCompletion($session);
 
-        $this->assertNull(ProfileStreakState::query()->find($profile->id));
+        // Custom exam records activity (new behavior: streak = any activity)
+        $this->assertSame(1, ProfileDailyActivity::query()
+            ->where('profile_id', $profile->id)->count());
     }
 
-    public function test_streak_endpoint_returns_today_full_test_count(): void
+    public function test_streak_endpoint_returns_computed_streak(): void
     {
         [$profile, $version] = $this->seedExamVersion();
-        $this->createFullTestSession($profile, $version, now());
-        $this->createFullTestSession($profile, $version, now()->subMinutes(30));
+        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now()->toDateString(), 'listening_exercise_count' => 1]);
 
         $token = $this->postJson('/api/v1/auth/login', [
             'email' => $profile->account->email, 'password' => 'password',
@@ -109,8 +114,8 @@ class ProgressStreakTest extends TestCase
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/v1/streak')
             ->assertOk()
-            ->assertJsonPath('data.daily_goal', 1)
-            ->assertJsonPath('data.today_sessions', 2);
+            ->assertJsonPath('data.current', 1)
+            ->assertJsonPath('data.daily_goal', 1);
     }
 
     public function test_overview_endpoint(): void
@@ -128,15 +133,12 @@ class ProgressStreakTest extends TestCase
         $response->assertOk();
         $response->assertJsonStructure(['data' => [
             'profile' => ['nickname', 'target_level', 'target_deadline', 'entry_level', 'predicted_level'],
-            'stats' => ['total_tests', 'total_study_minutes', 'streak'],
-            'chart',
+            'streak' => ['current', 'longest', 'today_active'],
+            'heatmap' => ['weeks', 'days'],
+            'scores' => ['spider', 'timeline', 'growth'],
+            'stats' => ['total_tests', 'total_study_minutes'],
         ]]);
-        $response->assertJsonPath('data.chart', null); // < min_tests
-        // chart=null → predicted_level fallback = entry_level (RFC 0019 amendment 2026-04-25)
-        $response->assertJsonPath(
-            'data.profile.predicted_level',
-            $response->json('data.profile.entry_level'),
-        );
+        $response->assertJsonPath('data.scores.spider', null);
     }
 
     /**

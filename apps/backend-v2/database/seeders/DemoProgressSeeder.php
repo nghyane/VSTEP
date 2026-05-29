@@ -19,12 +19,12 @@ use App\Models\PracticeListeningExercise;
 use App\Models\PracticeReadingExercise;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
-use App\Models\ProfileStreakState;
 use App\Models\ProfileVocabSrsState;
 use App\Models\SpeakingGradingResult;
 use App\Models\VocabWord;
 use App\Models\WritingGradingResult;
 use App\Services\McqSkillService;
+use App\Services\ProgressService;
 use App\Services\WalletService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
@@ -61,7 +61,7 @@ final class DemoProgressSeeder extends Seeder
         'inactive_student' => ['listening' => 5.0, 'reading' => 4.5, 'writing' => 5.5, 'speaking' => 5.0],
     ];
 
-    public function run(McqSkillService $mcqService, WalletService $walletService): void
+    public function run(McqSkillService $mcqService, WalletService $walletService, ProgressService $progressService): void
     {
         $profile = Profile::query()->where('nickname', self::MAIN_NICKNAME)->first();
         if (! $profile) {
@@ -135,28 +135,8 @@ final class DemoProgressSeeder extends Seeder
             $activeDates->push($date);
         }
 
-        // ── Streak state ──
-        $sorted = $activeDates->sort()->values();
-
-        // Longest streak: scan all active dates for max consecutive run
-        $longest = $streakDays;
-        $run = 1;
-        for ($i = 1; $i < $sorted->count(); $i++) {
-            $diff = $sorted[$i - 1]->diffInDays($sorted[$i]);
-            $run = $diff === 1 ? $run + 1 : 1;
-            $longest = max($longest, $run);
-        }
-
-        // Current streak = $streakDays (guaranteed consecutive, ends today)
-        ProfileStreakState::query()->updateOrInsert(
-            ['profile_id' => $profile->id],
-            [
-                'current_streak' => $streakDays,
-                'longest_streak' => max($longest, $streakDays),
-                'last_active_date_local' => $today->toDateString(),
-                'updated_at' => now(),
-            ],
-        );
+        // Streak is derived from activity data by ProgressService::computeStreak().
+        // No hardcoded ProfileStreakState — computed from ProfileDailyActivity at read time.
     }
 
     private function insertActivity(Profile $profile, \DateTimeInterface $date, string $type): void

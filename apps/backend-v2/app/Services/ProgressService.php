@@ -26,13 +26,13 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Progress context: streak, study time, chart data.
+ * Progress tracking: 3 pillars from single source of truth.
  *
- * Streak = consecutive days với ≥ daily_goal **full-test exam sessions**
- *   (is_full_test=true, status submitted|auto_submitted).
- *   Drill practice KHÔNG tính streak — chỉ tính study time.
- * Heatmap = số exam session (full + custom) hoàn thành mỗi ngày.
- * Chart = derive from exam_sessions (custom+full) with grading results.
+ *  STREAK  = consecutive days of ANY activity → discipline proxy
+ *  HEATMAP = per-skill daily breakdown → coverage detection
+ *  SCORES  = per-session band timeline → improvement measurement
+ *
+ * All derived from ProfileDailyActivity (activity) + GradingResult (scores).
  */
 class ProgressService
 {
@@ -40,17 +40,15 @@ class ProgressService
         private readonly StreakMilestoneService $streakMilestoneService,
     ) {}
 
+    // ═══════════════════════════════════════════════════════════════
+    // ACTIVITY RECORDING
+    // ═══════════════════════════════════════════════════════════════
+
     /**
-     * Record completed practice session → chỉ update study time + heatmap drill,
-     * KHÔNG còn driver streak.
-     */
-    /**
-     * Record completed practice session → update daily activity by skill module.
-     * Uses ACTIVITY_TYPES columns for correct heatmap per-skill breakdown.
+     * Record completed practice session → activity by skill module.
      */
     public function recordPracticeCompletion(PracticeSession $session): void
     {
-        // Map session module to activity type
         $activityType = match ($session->module) {
             'listening' => 'listening',
             'reading' => 'reading',
@@ -68,15 +66,17 @@ class ProgressService
     }
 
     /**
-     * Record completed exam session → update streak nếu là full test.
-     * Gọi sau khi `status` chuyển sang submitted hoặc auto_submitted.
-     * Caller phải defer ra ngoài transaction (DB::afterCommit) — RFC 0017.
+     * Record completed exam session → activity + streak.
+     * Caller must defer outside transaction (DB::afterCommit).
      */
     public function recordExamCompletion(ExamSession $session): void
     {
-        if (! $session->is_full_test) {
-            return; // streak chỉ tính full test
-        }
+        ProfileDailyActivity::addActivity(
+            profileId: $session->profile_id,
+            activityType: 'exam_session',
+            count: 1,
+            durationSeconds: 7200, // exam session ≈ 2 hours
+        );
 
         $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
         $submittedAt = $session->submitted_at ?? now();
@@ -85,88 +85,377 @@ class ProgressService
         $this->updateStreak($session->profile_id, $dateLocal);
     }
 
-    /**
-     * Overview data cho dashboard.
-     *
-     * @return array<string,mixed>
-     */
-    /**
-     * Effective streak = giá trị DB nếu last_active_date là hôm nay hoặc hôm qua;
-     * ngược lại 0 (streak đã đứt do không hoạt động).
-     */
-    private function effectiveStreak(?ProfileStreakState $state): int
-    {
-        if (! $state) {
-            return 0;
-        }
-        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
-        $today = Carbon::now($tz)->toDateString();
-        $yesterday = Carbon::now($tz)->subDay()->toDateString();
-        $last = $state->last_active_date_local?->toDateString();
-
-        return ($last === $today || $last === $yesterday) ? (int) $state->current_streak : 0;
-    }
-
-    /**
-     * Raw chart data for a profile, no minimum-test gate.
-     * Returns null if no exam sessions with grading exist.
-     *
-     * @return array<string,float|int|null>|null
-     */
-    public function chart(Profile $profile): ?array
-    {
-        return $this->computeChart($profile, 10);
-    }
+    // ═══════════════════════════════════════════════════════════════
+    // OVERVIEW — 3 pillars
+    // ═══════════════════════════════════════════════════════════════
 
     public function getOverview(Profile $profile): array
     {
-        $streak = ProfileStreakState::query()->find($profile->id);
-        $totalStudySeconds = (int) ProfileDailyActivity::query()
-            ->where('profile_id', $profile->id)
-            ->sum('drill_duration_seconds');
-
-        $minTests = (int) (SystemConfig::get('chart.min_tests') ?? 5);
-        $windowSize = (int) (SystemConfig::get('chart.sliding_window_size') ?? 10);
-
-        $examCount = ExamSession::query()
-            ->where('profile_id', $profile->id)
-            ->whereIn('mode', ['custom', 'full'])
-            ->whereIn('status', ExamSessionStatus::terminalValues())
-            ->count();
-
-        $chartData = null;
-        if ($examCount >= $minTests) {
-            $chartData = $this->computeChart($profile, $windowSize);
-        }
-
-        $predictedLevel = $this->predictLevel($chartData, $profile->entry_level);
+        $chart = $this->computeChart($profile, 10);
+        $predictedLevel = $this->predictLevel($chart, $profile->entry_level);
 
         return [
             'profile' => [
                 'nickname' => $profile->nickname,
+                'entry_level' => $profile->entry_level,
                 'target_level' => $profile->target_level,
                 'target_deadline' => $profile->target_deadline?->toDateString(),
                 'days_until_exam' => $profile->target_deadline
                     ? (int) max(0, now()->diffInDays($profile->target_deadline, false))
                     : null,
-                'entry_level' => $profile->entry_level,
                 'predicted_level' => $predictedLevel,
             ],
-            'stats' => [
-                'total_tests' => $examCount,
-                'min_tests_required' => $minTests,
-                'total_study_minutes' => (int) round($totalStudySeconds / 60),
-                'streak' => $this->effectiveStreak($streak),
-                'longest_streak' => $streak?->longest_streak ?? 0,
+            'streak' => $this->computeStreak($profile),
+            'heatmap' => $this->computeHeatmap($profile),
+            'scores' => [
+                'spider' => $chart,
+                'timeline' => $this->computeScoreTimeline($profile),
+                'growth' => $this->computeGrowth($profile),
             ],
-            'chart' => $chartData,
+            'stats' => [
+                'total_study_minutes' => (int) round(ProfileDailyActivity::query()
+                    ->where('profile_id', $profile->id)
+                    ->sum('total_duration_seconds') / 60),
+                'total_tests' => ExamSession::query()
+                    ->where('profile_id', $profile->id)
+                    ->whereIn('mode', ['custom', 'full'])
+                    ->whereIn('status', ExamSessionStatus::terminalValues())
+                    ->count(),
+            ],
         ];
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // TRỤ 1: STREAK — consecutive days from activity
+    // ═══════════════════════════════════════════════════════════════
+
+    private function computeStreak(Profile $profile): array
+    {
+        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
+        $today = Carbon::now($tz)->toDateString();
+        $yesterday = Carbon::now($tz)->subDay()->toDateString();
+
+        // Get all active dates sorted DESC
+        $dates = ProfileDailyActivity::query()
+            ->where('profile_id', $profile->id)
+            ->orderByDesc('date_local')
+            ->pluck('date_local')
+            ->map(fn ($d) => $d instanceof \DateTimeInterface ? $d->format('Y-m-d') : $d)
+            ->toArray();
+
+        if ($dates === []) {
+            return [
+                'current' => 0,
+                'longest' => 0,
+                'last_active_date' => null,
+                'today_active' => false,
+            ];
+        }
+
+        // Current streak: count consecutive days from latest backwards
+        $current = 0;
+        $cursor = null;
+        foreach ($dates as $date) {
+            if ($cursor === null) {
+                $cursor = $date;
+                $current = 1;
+
+                continue;
+            }
+            if ($this->isConsecutiveDay($cursor, $date)) {
+                $current++;
+                $cursor = $date;
+            } else {
+                break;
+            }
+        }
+
+        // Today active = latest date is today
+        $todayActive = $dates[0] === $today;
+
+        // If latest date is older than yesterday → streak broken
+        if ($dates[0] !== $today && $dates[0] !== $yesterday) {
+            $current = 0;
+        }
+
+        // Longest streak: scan consecutive runs
+        $longest = $current;
+        $run = 1;
+        for ($i = 1; $i < count($dates); $i++) {
+            if ($this->isConsecutiveDay($dates[$i - 1], $dates[$i])) {
+                $run++;
+            } else {
+                $run = 1;
+            }
+            $longest = max($longest, $run);
+        }
+
+        return [
+            'current' => $current,
+            'longest' => $longest,
+            'last_active_date' => $dates[0],
+            'today_active' => $todayActive,
+        ];
+    }
+
+    private function isConsecutiveDay(string $newer, string $older): bool
+    {
+        return Carbon::parse($newer)->subDay()->toDateString() === $older;
+    }
+
+    private function updateStreak(string $profileId, string $dateLocal): void
+    {
+        DB::transaction(function () use ($profileId, $dateLocal) {
+            ProfileStreakLog::query()->updateOrInsert(
+                ['profile_id' => $profileId, 'date_local' => $dateLocal],
+                ['active' => true, 'created_at' => now()],
+            );
+
+            $state = ProfileStreakState::query()->lockForUpdate()->find($profileId);
+            $lastDate = $state?->last_active_date_local?->toDateString();
+            $yesterday = Carbon::parse($dateLocal)->subDay()->toDateString();
+
+            if ($lastDate === $dateLocal) {
+                return;
+            }
+
+            $newStreak = ($lastDate === $yesterday)
+                ? ($state?->current_streak ?? 0) + 1
+                : 1;
+
+            ProfileStreakState::query()->updateOrInsert(
+                ['profile_id' => $profileId],
+                [
+                    'current_streak' => $newStreak,
+                    'longest_streak' => max($newStreak, $state?->longest_streak ?? 0),
+                    'last_active_date_local' => $dateLocal,
+                    'updated_at' => now(),
+                ],
+            );
+        });
+    }
+
+    public function getStreak(Profile $profile): array
+    {
+        return [
+            ...$this->computeStreak($profile),
+            'daily_goal' => (int) (SystemConfig::get('streak.daily_goal') ?? 1),
+            'milestones' => $this->streakMilestoneService->listForProfile($profile),
+        ];
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // TRỤ 2: HEATMAP — per-skill daily breakdown
+    // ═══════════════════════════════════════════════════════════════
+
+    public function getActivityHeatmap(Profile $profile, int $weeks = 12): array
+    {
+        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
+        $endDate = Carbon::now($tz)->toDateString();
+        $startDate = Carbon::now($tz)->subWeeks($weeks)->startOfWeek(Carbon::MONDAY)->toDateString();
+
+        $rows = ProfileDailyActivity::query()
+            ->where('profile_id', $profile->id)
+            ->whereBetween('date_local', [$startDate, $endDate])
+            ->orderBy('date_local')
+            ->get();
+
+        return $rows->map(fn (ProfileDailyActivity $row) => [
+            'date' => $row->date_local->toDateString(),
+            'listening' => (int) $row->listening_exercise_count,
+            'reading' => (int) $row->reading_exercise_count,
+            'writing' => (int) $row->writing_submission_count,
+            'speaking' => (int) $row->speaking_submission_count,
+            'vocab' => (int) $row->vocab_review_count,
+            'exam' => (int) $row->exam_session_count,
+        ])->values()->toArray();
+    }
+
+    private function computeHeatmap(Profile $profile): array
+    {
+        return [
+            'weeks' => 12,
+            'days' => $this->getActivityHeatmap($profile),
+        ];
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // TRỤ 3: SCORES — per-session timeline + growth
+    // ═══════════════════════════════════════════════════════════════
+
     /**
-     * Compact progress summary for the practice hub page.
-     * Returns practiced/total counts per section.
+     * Per-session band progression, sorted by date ASC.
+     *
+     * @return list<array{date: string, listening: float|null, reading: float|null, writing: float|null, speaking: float|null}>
      */
+    private function computeScoreTimeline(Profile $profile): array
+    {
+        $sessions = ExamSession::query()
+            ->where('profile_id', $profile->id)
+            ->whereIn('mode', ['custom', 'full'])
+            ->whereIn('status', ExamSessionStatus::terminalValues())
+            ->orderBy('submitted_at')
+            ->limit(20)
+            ->get();
+
+        if ($sessions->isEmpty()) {
+            return [];
+        }
+
+        $timeline = [];
+        foreach ($sessions as $session) {
+            $timeline[] = [
+                'date' => $session->submitted_at->toDateString(),
+                'listening' => $this->sessionListeningBand($session->id),
+                'reading' => $this->sessionReadingBand($session->id),
+                'writing' => $this->sessionWritingBand($session->id),
+                'speaking' => $this->sessionSpeakingBand($session->id),
+            ];
+        }
+
+        return $timeline;
+    }
+
+    /**
+     * First vs latest band per skill with delta.
+     *
+     * @return array<string, array{first: float|null, latest: float|null, change: float|null, trend: string}>
+     */
+    private function computeGrowth(Profile $profile): array
+    {
+        $timeline = $this->computeScoreTimeline($profile);
+        if (count($timeline) < 2) {
+            return $this->emptyGrowth();
+        }
+
+        $first = $timeline[0];
+        $last = $timeline[count($timeline) - 1];
+        $trends = $this->perSkillTrend($timeline);
+
+        $skills = ['listening', 'reading', 'writing', 'speaking'];
+        $growth = [];
+        foreach ($skills as $skill) {
+            $f = $first[$skill];
+            $l = $last[$skill];
+            $growth[$skill] = [
+                'first' => $f,
+                'latest' => $l,
+                'change' => ($f !== null && $l !== null) ? round($l - $f, 1) : null,
+                'trend' => $trends[$skill] ?? 'insufficient_data',
+            ];
+        }
+
+        return $growth;
+    }
+
+    /** @return array<string, string> */
+    private function perSkillTrend(array $timeline): array
+    {
+        if (count($timeline) < 3) {
+            return [];
+        }
+
+        $skills = ['listening', 'reading', 'writing', 'speaking'];
+        $trends = [];
+        foreach ($skills as $skill) {
+            $recent = array_slice($timeline, -3);
+            $values = array_filter(array_column($recent, $skill), fn ($v) => $v !== null);
+            if (count($values) < 2) {
+                $trends[$skill] = 'insufficient_data';
+
+                continue;
+            }
+            $latest = end($values);
+            $prevAvg = (array_sum(array_slice($values, 0, -1)) / (count($values) - 1));
+
+            if ($latest > $prevAvg + 0.3) {
+                $trends[$skill] = 'improving';
+            } elseif ($latest < $prevAvg - 0.3) {
+                $trends[$skill] = 'declining';
+            } else {
+                $trends[$skill] = 'stable';
+            }
+        }
+
+        return $trends;
+    }
+
+    /** @return array<string, array{first: null, latest: null, change: null, trend: string}> */
+    private function emptyGrowth(): array
+    {
+        $empty = ['first' => null, 'latest' => null, 'change' => null, 'trend' => 'insufficient_data'];
+
+        return [
+            'listening' => $empty,
+            'reading' => $empty,
+            'writing' => $empty,
+            'speaking' => $empty,
+        ];
+    }
+
+    private function sessionListeningBand(string $sessionId): ?float
+    {
+        return $this->mcqBand($sessionId, 'exam_listening_item');
+    }
+
+    private function sessionReadingBand(string $sessionId): ?float
+    {
+        return $this->mcqBand($sessionId, 'exam_reading_item');
+    }
+
+    private function mcqBand(string $sessionId, string $itemRefType): ?float
+    {
+        $row = DB::table('exam_mcq_answers')
+            ->where('session_id', $sessionId)
+            ->where('item_ref_type', $itemRefType)
+            ->selectRaw('count(*) as total, sum(case when is_correct then 1 else 0 end) as correct')
+            ->first();
+
+        if (! $row || $row->total === 0) {
+            return null;
+        }
+
+        return round(((int) $row->correct / (int) $row->total) * 10, 1);
+    }
+
+    private function sessionWritingBand(string $sessionId): ?float
+    {
+        $subId = DB::table('exam_writing_submissions')
+            ->where('session_id', $sessionId)
+            ->value('id');
+
+        if (! $subId) {
+            return null;
+        }
+
+        return WritingGradingResult::query()
+            ->where('submission_type', 'exam_writing')
+            ->where('submission_id', $subId)
+            ->where('is_active', true)
+            ->value('overall_band');
+    }
+
+    private function sessionSpeakingBand(string $sessionId): ?float
+    {
+        $subId = DB::table('exam_speaking_submissions')
+            ->where('session_id', $sessionId)
+            ->value('id');
+
+        if (! $subId) {
+            return null;
+        }
+
+        return SpeakingGradingResult::query()
+            ->where('submission_type', 'exam_speaking')
+            ->where('submission_id', $subId)
+            ->where('is_active', true)
+            ->value('overall_band');
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // PRACTICE SUMMARY
+    // ═══════════════════════════════════════════════════════════════
+
     public function getPracticeSummary(Profile $profile): array
     {
         $grammarPracticed = ProfileGrammarMastery::query()
@@ -227,131 +516,17 @@ class ProgressService
         ];
     }
 
-    public function getStreak(Profile $profile): array
+    // ═══════════════════════════════════════════════════════════════
+    // CHART (spider) + LEVEL PREDICTION
+    // ═══════════════════════════════════════════════════════════════
+
+    public function chart(Profile $profile): ?array
     {
-        $streak = ProfileStreakState::query()->find($profile->id);
-        $dailyGoal = (int) (SystemConfig::get('streak.daily_goal') ?? 1);
-        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
-        [$startUtc, $endUtc] = $this->localDayBoundsUtc(Carbon::now($tz)->toDateString(), $tz);
-
-        $todayCount = ExamSession::query()
-            ->where('profile_id', $profile->id)
-            ->where('is_full_test', true)
-            ->whereIn('status', ExamSessionStatus::terminalValues())
-            ->whereBetween('submitted_at', [$startUtc, $endUtc])
-            ->count();
-
-        return [
-            'current_streak' => $this->effectiveStreak($streak),
-            'longest_streak' => $streak?->longest_streak ?? 0,
-            'today_sessions' => $todayCount,
-            'daily_goal' => $dailyGoal,
-            'last_active_date' => $streak?->last_active_date_local?->toDateString(),
-            'milestones' => $this->streakMilestoneService->listForProfile($profile),
-        ];
+        return $this->computeChart($profile, 10);
     }
 
-    /**
-     * Activity heatmap — số bài exam (full + custom) hoàn thành mỗi ngày.
-     *
-     * @return array<int, array{date: string, count: int}>
-     */
-    public function getActivityHeatmap(Profile $profile, int $weeks = 12): array
-    {
-        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
-        $endDate = Carbon::now($tz)->toDateString();
-        $startDate = Carbon::now($tz)->subWeeks($weeks)->startOfWeek(Carbon::MONDAY)->toDateString();
-        [$startUtc] = $this->localDayBoundsUtc($startDate, $tz);
-        [, $endUtc] = $this->localDayBoundsUtc($endDate, $tz);
-
-        $rows = ExamSession::query()
-            ->where('profile_id', $profile->id)
-            ->whereIn('status', ExamSessionStatus::terminalValues())
-            ->whereBetween('submitted_at', [$startUtc, $endUtc])
-            ->orderBy('submitted_at')
-            ->get(['submitted_at']);
-
-        $byDay = [];
-        foreach ($rows as $row) {
-            $date = Carbon::parse($row->submitted_at, 'UTC')->setTimezone($tz)->toDateString();
-            $byDay[$date] = ($byDay[$date] ?? 0) + 1;
-        }
-
-        $out = [];
-        foreach ($byDay as $date => $count) {
-            $out[] = ['date' => $date, 'count' => $count];
-        }
-        usort($out, fn ($a, $b) => strcmp($a['date'], $b['date']));
-
-        return $out;
-    }
-
-    /**
-     * @return array{0: Carbon, 1: Carbon}
-     */
-    private function localDayBoundsUtc(string $dateLocal, string $tz): array
-    {
-        return [
-            Carbon::parse($dateLocal, $tz)->startOfDay()->utc(),
-            Carbon::parse($dateLocal, $tz)->endOfDay()->utc(),
-        ];
-    }
-
-    private function updateStreak(string $profileId, string $dateLocal): void
-    {
-        $dailyGoal = (int) (SystemConfig::get('streak.daily_goal') ?? 1);
-        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
-        [$startUtc, $endUtc] = $this->localDayBoundsUtc($dateLocal, $tz);
-
-        // Đếm full test đã hoàn thành trong ngày local (theo submitted_at).
-        $todayCount = ExamSession::query()
-            ->where('profile_id', $profileId)
-            ->where('is_full_test', true)
-            ->whereIn('status', ExamSessionStatus::terminalValues())
-            ->whereBetween('submitted_at', [$startUtc, $endUtc])
-            ->count();
-
-        if ($todayCount < $dailyGoal) {
-            return;
-        }
-
-        DB::transaction(function () use ($profileId, $dateLocal) {
-            // Streak log entry (RFC 0019 §3 — append-only daily log cho contribution graph).
-            ProfileStreakLog::query()->updateOrInsert(
-                ['profile_id' => $profileId, 'date_local' => $dateLocal],
-                ['active' => true, 'created_at' => now()],
-            );
-
-            $state = ProfileStreakState::query()->lockForUpdate()->find($profileId);
-            $lastDate = $state?->last_active_date_local?->toDateString();
-            $yesterday = Carbon::parse($dateLocal)->subDay()->toDateString();
-
-            if ($lastDate === $dateLocal) {
-                return; // already counted today
-            }
-
-            $newStreak = ($lastDate === $yesterday)
-                ? ($state?->current_streak ?? 0) + 1
-                : 1;
-
-            $longest = max($newStreak, $state?->longest_streak ?? 0);
-
-            ProfileStreakState::query()->updateOrInsert(
-                ['profile_id' => $profileId],
-                [
-                    'current_streak' => $newStreak,
-                    'longest_streak' => $longest,
-                    'last_active_date_local' => $dateLocal,
-                    'updated_at' => now(),
-                ],
-            );
-        });
-    }
-
-    /**
-     * @return array<string,float|null>
-     */
-    private function computeChart(Profile $profile, int $windowSize): array
+    /** @return array<string,float|int|null>|null */
+    private function computeChart(Profile $profile, int $windowSize): ?array
     {
         $sessions = ExamSession::query()
             ->where('profile_id', $profile->id)
@@ -360,6 +535,10 @@ class ProgressService
             ->orderByDesc('submitted_at')
             ->limit($windowSize)
             ->pluck('id');
+
+        if ($sessions->isEmpty()) {
+            return null;
+        }
 
         $writingSubIds = DB::table('exam_writing_submissions')
             ->whereIn('session_id', $sessions)
@@ -393,12 +572,6 @@ class ProgressService
         ];
     }
 
-    /**
-     * Suy đoán band hiện tại → VSTEP level. Khi chưa đủ data (chart=null),
-     * fallback về entry_level user tự đánh giá lúc onboarding.
-     *
-     * @param  array<string, float|int|null>|null  $chart
-     */
     public function predictLevel(?array $chart, ?string $entryLevel): ?string
     {
         if ($chart === null) {
@@ -412,7 +585,7 @@ class ProgressService
             $chart['speaking'] ?? null,
         ], fn ($v) => $v !== null);
 
-        if (empty($bands)) {
+        if ($bands === []) {
             return $entryLevel;
         }
 
