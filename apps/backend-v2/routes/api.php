@@ -66,7 +66,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // Learner routes requiring active profile context.
-    Route::middleware(['auth:api', 'active-profile'])->group(function () {
+    Route::middleware(['token-from-query', 'auth:api', 'active-profile'])->group(function () {
         Route::patch('/me/avatar', [AccountController::class, 'updateAvatar']);
         Route::post('/me/avatar', [AccountController::class, 'uploadAvatar']);
 
@@ -110,7 +110,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/practice/writing/submissions/{submissionId}/feedback', [WritingFeedbackController::class, 'generate'])->whereUuid('submissionId');
 
         // Grading SSE stream — single connection for progress + scores + feedback
-        Route::get('/grading-jobs/{grading_job}/stream', [GradingStreamController::class, 'stream'])->whereUuid('grading_job')->middleware('token-from-query');
+        Route::get('/grading-jobs/{grading_job}/stream', [GradingStreamController::class, 'stream'])->whereUuid('grading_job');
 
         // Practice Speaking — drill + VSTEP.
         Route::get('/practice/speaking/drills', [SpeakingPracticeController::class, 'listDrills']);
