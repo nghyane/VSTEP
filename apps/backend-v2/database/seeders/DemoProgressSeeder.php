@@ -8,8 +8,11 @@ use App\Enums\CoinTransactionType;
 use App\Models\CoinTransaction;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
+use App\Models\ExamSpeakingSubmission;
 use App\Models\ExamVersion;
+use App\Models\ExamWritingSubmission;
 use App\Models\ExerciseFeedback;
 use App\Models\GradingJob;
 use App\Models\PracticeListeningExercise;
@@ -27,7 +30,6 @@ use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * All demo progress data. Uses real service/module methods where possible
@@ -59,7 +61,7 @@ final class DemoProgressSeeder extends Seeder
         'inactive_student' => ['listening' => 5.0, 'reading' => 4.5, 'writing' => 5.5, 'speaking' => 5.0],
     ];
 
-    public function run(): void
+    public function run(McqSkillService $mcqService, WalletService $walletService): void
     {
         $profile = Profile::query()->where('nickname', self::MAIN_NICKNAME)->first();
         if (! $profile) {
@@ -78,9 +80,9 @@ final class DemoProgressSeeder extends Seeder
         // ── Main Profile ──
         $this->seedActivityAndStreak($profile, self::ACTIVITY_DAYS, self::ACTIVITY_PROBABILITY);
         $this->seedExamSessions($profile, $version, self::MAIN_BANDS);
-        $this->seedPracticeHistory($profile, app(McqSkillService::class));
+        $this->seedPracticeHistory($profile, $mcqService);
         $this->seedVocabSrs($profile);
-        $this->seedWalletTransactions($profile, app(WalletService::class));
+        $this->seedWalletTransactions($profile, $walletService);
         $this->seedExerciseFeedback($profile);
 
         // ── Extra Profiles ──
@@ -258,7 +260,7 @@ final class DemoProgressSeeder extends Seeder
     private function seedMcqAnswers(string $sessionId, string $itemType, Collection $itemIds, \DateTimeInterface $answeredAt, float $correctProb): void
     {
         foreach ($itemIds as $itemId) {
-            DB::table('exam_mcq_answers')->insert([
+            ExamMcqAnswer::create([
                 'session_id' => $sessionId,
                 'item_ref_type' => $itemType,
                 'item_ref_id' => $itemId,
@@ -271,9 +273,7 @@ final class DemoProgressSeeder extends Seeder
 
     private function seedWritingResult(string $sessionId, string $profileId, string $taskId, \DateTimeInterface $submittedAt, float $band): void
     {
-        $subId = Str::uuid7();
-        DB::table('exam_writing_submissions')->insert([
-            'id' => $subId,
+        $submission = ExamWritingSubmission::create([
             'session_id' => $sessionId,
             'profile_id' => $profileId,
             'task_id' => $taskId,
@@ -284,7 +284,7 @@ final class DemoProgressSeeder extends Seeder
 
         $job = GradingJob::create([
             'submission_type' => 'exam_writing',
-            'submission_id' => $subId,
+            'submission_id' => $submission->id,
             'status' => 'ready',
             'started_at' => $submittedAt,
             'completed_at' => $submittedAt->copy()->addSeconds(rand(5, 30)),
@@ -293,7 +293,7 @@ final class DemoProgressSeeder extends Seeder
         WritingGradingResult::create([
             'job_id' => $job->id,
             'submission_type' => 'exam_writing',
-            'submission_id' => $subId,
+            'submission_id' => $submission->id,
             'version' => 1,
             'is_active' => true,
             'rubric_scores' => [
@@ -313,21 +313,20 @@ final class DemoProgressSeeder extends Seeder
 
     private function seedSpeakingResult(string $sessionId, string $profileId, string $partId, \DateTimeInterface $submittedAt, float $band): void
     {
-        $subId = Str::uuid7();
-        DB::table('exam_speaking_submissions')->insert([
-            'id' => $subId,
+        $submission = ExamSpeakingSubmission::create([
             'session_id' => $sessionId,
             'profile_id' => $profileId,
             'part_id' => $partId,
-            'audio_url' => 'https://demo.vstep.test/audio/'.$subId.'.mp3',
+            'audio_url' => '',
             'duration_seconds' => rand(60, 180),
             'transcript' => 'Seed speaking transcript.',
             'submitted_at' => $submittedAt,
         ]);
+        $submission->update(['audio_url' => 'https://demo.vstep.test/audio/'.$submission->id.'.mp3']);
 
         $job = GradingJob::create([
             'submission_type' => 'exam_speaking',
-            'submission_id' => $subId,
+            'submission_id' => $submission->id,
             'status' => 'ready',
             'started_at' => $submittedAt,
             'completed_at' => $submittedAt->copy()->addSeconds(rand(5, 30)),
@@ -336,7 +335,7 @@ final class DemoProgressSeeder extends Seeder
         SpeakingGradingResult::create([
             'job_id' => $job->id,
             'submission_type' => 'exam_speaking',
-            'submission_id' => $subId,
+            'submission_id' => $submission->id,
             'version' => 1,
             'is_active' => true,
             'rubric_scores' => [

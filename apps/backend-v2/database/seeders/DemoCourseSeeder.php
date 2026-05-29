@@ -7,15 +7,14 @@ namespace Database\Seeders;
 use App\Enums\CoinTransactionType;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Models\CourseScheduleItem;
 use App\Models\User;
 use App\Services\WalletService;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
-class DemoCourseSeeder extends Seeder
+final class DemoCourseSeeder extends Seeder
 {
-    public function run(): void
+    public function run(WalletService $wallet): void
     {
         $teacher = User::query()->where('role', 'teacher')->first();
         if (! $teacher) {
@@ -169,13 +168,12 @@ class DemoCourseSeeder extends Seeder
             );
 
             if (in_array($c['slug'], $dynamicScheduleSlugs, true)) {
-                DB::table('course_schedule_items')->where('course_id', $course->id)->delete();
+                CourseScheduleItem::query()->where('course_id', $course->id)->delete();
             }
 
             if ($course->scheduleItems()->count() === 0) {
                 foreach ($schedule as $i => $s) {
-                    DB::table('course_schedule_items')->insert([
-                        'id' => Str::orderedUuid()->toString(),
+                    CourseScheduleItem::create([
                         'course_id' => $course->id,
                         'session_number' => $i + 1,
                         'date' => $s['date'],
@@ -197,7 +195,6 @@ class DemoCourseSeeder extends Seeder
         ];
 
         if ($profile) {
-            $wallet = app(WalletService::class);
             foreach ($enrollMap as $slug => $opts) {
                 $course = Course::query()->where('slug', $slug)->first();
                 if (! $course) {
