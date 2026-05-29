@@ -20,7 +20,7 @@ import { DepthCard } from "@/components/DepthCard";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useConversationSession } from "@/hooks/use-conversation-session";
 import { useSpeakingConversationReview } from "@/hooks/use-practice";
-import { useSpeechToText, type MicState } from "@/hooks/useSpeechToText";
+import { useSpeechToText } from "@/hooks/useSpeechToText";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 const MAX_RECORD_SECONDS = 30;
@@ -36,7 +36,6 @@ export default function SpeakingConversationScreen() {
   const conv = useConversationSession(scenarioId ?? "");
   const review = useSpeakingConversationReview(conv.session?.sessionId ?? "", !!conv.summary);
 
-  const [micState, setMicState] = useState<MicState>("idle");
   const [speakingTurnId, setSpeakingTurnId] = useState<string | null>(null);
 
   // Auto-end active session when navigating away (mirror FE v3 confirmExit).
@@ -57,12 +56,9 @@ export default function SpeakingConversationScreen() {
     maxSeconds: MAX_RECORD_SECONDS,
     language: "en-US",
     onResult: (transcript) => {
-      setMicState("idle");
       // Auto-submit transcript directly (mirror FE v3 doSubmit).
       conv.submitVoice(transcript);
     },
-    onEnd: () => setMicState("idle"),
-    onError: () => setMicState("idle"),
   });
 
   // Mic pulse animation (listening + AI speaking states)
@@ -93,15 +89,13 @@ export default function SpeakingConversationScreen() {
     return `${userTurns}/${conv.session.scenario.expectedTurns}`;
   }, [conv.session, conv.turns]);
 
-  const handleMicPress = () => {
-    if (micState === "listening") {
-      // onResult/onEnd/onError callbacks will update micState
+  const handleMicPress = async () => {
+    if (speechToText.state === "listening") {
       speechToText.stop();
       return;
     }
-    if (micState === "idle") {
-      speechToText.start();
-      setMicState("listening");
+    if (speechToText.state === "idle") {
+      await speechToText.start();
     }
   };
 
