@@ -1,6 +1,13 @@
 == WRITING TASK ==
 {{ $promptText }}
 
+== TASK TYPE ==
+@if(($part ?? 2) === 1)
+VSTEP Task 1 — Letter/Email (target: ~120 words). Semi-formal/informal register acceptable.
+@else
+VSTEP Task 2 — Essay (target: ~250 words). Formal academic register expected.
+@endif
+
 == STUDENT RESPONSE ({{ $wordCount }} words) ==
 {{ $text }}
 

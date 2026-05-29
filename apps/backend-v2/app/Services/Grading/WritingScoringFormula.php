@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Grading;
 
+use App\DTOs\Grading\Params\OrganizationParams;
 use App\DTOs\Grading\Params\TaskFulfillmentParams;
 use App\Models\GradingRubric;
 
@@ -18,17 +19,25 @@ final class WritingScoringFormula
         return $this->rubric->taskFulfillmentParams();
     }
 
-    public function grammar(array $syntax, int $languageToolErrors, int $sentenceCount): float
+    public function grammar(array $syntax, int $grammarErrorCount, int $sentenceCount, int $punctuationErrorCount = 0): float
     {
         $p = $this->rubric->grammarParams();
         $typeCount = $syntax['count'] ?? 0;
         $gRange = $this->resolveBand($typeCount, $p->bandThresholds);
 
-        $errorPenalty = $sentenceCount > 0 ? min(10.0, ($languageToolErrors / $sentenceCount) * $p->accuracyFactor) : 0;
+        $errorPenalty = $sentenceCount > 0 ? min(10.0, ($grammarErrorCount / $sentenceCount) * $p->accuracyFactor) : 0;
         $maxAcc = $this->resolveMaxAccuracy($typeCount, $p->maxAccuracy);
         $gAccuracy = min($maxAcc, max(0.0, 10.0 - $errorPenalty));
 
-        return $this->clampRound(($gRange + $gAccuracy) / 2);
+        $score = $this->clampRound(($gRange + $gAccuracy) / 2);
+
+        // Punctuation sub-signal (from rubric DB)
+        $punct = $this->rubric->subSignalParams('grammar', 'punctuation');
+        if ($punct !== [] && $score > 0) {
+            $score = $this->blendSubSignal($score, $punctuationErrorCount, $punct);
+        }
+
+        return $score;
     }
 
     public function vocabulary(array $metrics): float
@@ -51,7 +60,16 @@ final class WritingScoringFormula
 
         $vocabDepth = max($cefrBonus + $advancedBonus, $complexBonus);
 
-        return min($p->cap, $this->clampRound($p->base + $uniqueBonus + $lengthBonus + $readabilityBonus + $vocabDepth));
+        $score = min($p->cap, $this->clampRound($p->base + $uniqueBonus + $lengthBonus + $readabilityBonus + $vocabDepth));
+
+        // Spelling sub-signal (from rubric DB)
+        $spelling = $this->rubric->subSignalParams('vocabulary', 'spelling');
+        if ($spelling !== [] && $score > 0) {
+            $spellingCount = (int) ($metrics['spelling_error_count'] ?? 0);
+            $score = $this->blendSubSignal($score, $spellingCount, $spelling);
+        }
+
+        return $score;
     }
 
     public function taskFulfillment(array $evidence, int $part = 2): float
@@ -79,18 +97,60 @@ final class WritingScoringFormula
             $depthFactor = $p->depthMinimum;
         }
 
-        return $this->clampRound(
+        $score = $this->clampRound(
             ($covered / $required) * $multiplier
             + $depthFactor * 3
             + ($hasExamples ? $p->positionBonus : 0)
             + ($hasPosition ? $p->positionBonus : 0)
             - ($irrelevant ? $p->irrelevantPenalty : 0)
         );
+
+        // Tone/register sub-signal (from rubric DB)
+        $tone = $this->rubric->subSignalParams('task_fulfillment', 'tone_register');
+        if ($tone !== [] && $score > 0) {
+            $informalCount = (int) ($evidence['tone_informal_count'] ?? 0);
+            // Part 2: penalize informal signals in academic essay
+            if ($part === 2) {
+                $score = $this->blendSubSignal($score, $informalCount, $tone['part2'] ?? $tone);
+            }
+        }
+
+        return $score;
     }
 
-    public function organization(int $paragraphCount, int $linkingWordCount, int $sentenceCount, float $sentenceVariety = 0): float
+    public function organization(int $paragraphCount, int $linkingWordCount, int $sentenceCount, float $sentenceVariety = 0, int $part = 2, bool $hasSalutation = false, bool $hasClosing = false): float
     {
         $p = $this->rubric->organizationParams();
+
+        if ($part === 1) {
+            return $this->organizationLetter($paragraphCount, $linkingWordCount, $sentenceCount, $sentenceVariety, $hasSalutation, $hasClosing, $p);
+        }
+
+        return $this->organizationEssay($paragraphCount, $linkingWordCount, $sentenceCount, $sentenceVariety, $p);
+    }
+
+    private function organizationLetter(int $paragraphCount, int $linkingWordCount, int $sentenceCount, float $sentenceVariety, bool $hasSalutation, bool $hasClosing, OrganizationParams $p): float
+    {
+        $paraBonus = match (true) {
+            $paragraphCount >= 2 => 3,
+            $paragraphCount === 1 => 2,
+            default => (int) ($p->paraBonus[1] ?? 1),
+        };
+
+        $linkingDensity = $sentenceCount > 0 ? $linkingWordCount / $sentenceCount : 0;
+        $letterLinkingCap = min($p->linkingCap, 2);
+        $linkingBonus = min($letterLinkingCap, $linkingDensity * $p->linkingDensityFactor);
+        $varietyBonus = $this->resolveThreshold($sentenceVariety, $p->varietyThresholds);
+
+        // Letter format bonus: salutation + closing
+        $formatBonus = ($hasSalutation ? 1 : 0) + ($hasClosing ? 1 : 0);
+
+        // No compact penalty for letters
+        return $this->clampRound($p->base + $paraBonus + $linkingBonus + $varietyBonus + $formatBonus);
+    }
+
+    private function organizationEssay(int $paragraphCount, int $linkingWordCount, int $sentenceCount, float $sentenceVariety, OrganizationParams $p): float
+    {
         $paraBonus = (int) ($p->paraBonus[$paragraphCount] ?? $p->paraBonus[1]);
 
         $linkingDensity = $sentenceCount > 0 ? $linkingWordCount / $sentenceCount : 0;
@@ -141,6 +201,34 @@ final class WritingScoringFormula
         return $typeCount >= 5 ? 10.0 : ($typeCount >= 3 ? 9.0 : 7.0);
     }
 
+    /**
+     * Apply sub-signal penalty from rubric config.
+     *
+     * Config must have: weight, max_penalty, thresholds (from seeder — no fallbacks).
+     *
+     * @param  array{weight: float, max_penalty: float, thresholds: list<array{max_errors: int, penalty: float}>}  $config
+     */
+    private function blendSubSignal(float $mainScore, int $errorCount, array $config): float
+    {
+        if ($errorCount === 0 || $config === []) {
+            return $mainScore;
+        }
+
+        $weight = (float) $config['weight'];
+        $maxPenalty = (float) $config['max_penalty'];
+        $thresholds = $config['thresholds'];
+
+        $penalty = 0.0;
+        foreach ($thresholds as $t) {
+            if ($errorCount > (int) $t['max_errors']) {
+                $penalty = (float) $t['penalty'];
+            }
+        }
+        $penalty = min($maxPenalty, $penalty);
+
+        return $this->clampRound($mainScore - $penalty * $weight);
+    }
+
     private function clampRound(float $value): float
     {
         return round(max(1.0, min(10.0, $value)) * 2) / 2;
@@ -182,7 +270,12 @@ final class WritingScoringFormula
             ],
             'organization' => [
                 'label' => 'Tổ chức bài viết',
-                'detail' => "$paragraphCount đoạn, $linkingCount từ nối, $sentenceCount câu.",
+                'detail' => "$paragraphCount đoạn, $linkingCount từ nối, $sentenceCount câu"
+                    .($part === 1
+                        ? (($metrics['has_salutation'] ?? false ? '; có lời chào' : '; thiếu lời chào')
+                           .($metrics['has_closing'] ?? false ? ', có lời kết' : ', thiếu lời kết'))
+                        : '')
+                    .'.',
             ],
         ];
     }

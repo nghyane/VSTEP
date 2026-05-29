@@ -15,6 +15,7 @@ use App\Models\GradingJob;
 use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
 use App\Models\WritingGradingResult;
+use App\Services\LanguageDetector;
 use App\Services\LanguageToolService;
 use App\Services\RuleBasedScoringService;
 use App\Services\SyntaxAnalyzer;
@@ -25,6 +26,7 @@ use Illuminate\Support\Facades\DB;
 final class WritingGradingStrategy implements GradingStrategy
 {
     public function __construct(
+        private readonly LanguageDetector $languageDetector,
         private readonly LanguageToolService $languageTool,
         private readonly RuleBasedScoringService $ruleScoring,
         private readonly SyntaxAnalyzer $syntax,
@@ -56,6 +58,16 @@ final class WritingGradingStrategy implements GradingStrategy
             throw new GradingFailedException('Writing submission has no text');
         }
 
+        // Language detection: reject non-English submissions before pipeline
+        $lang = $this->languageDetector->detect($text);
+        if (! $lang['is_english']) {
+            throw new GradingFailedException(
+                'Writing submission is not in English. '
+                .'confidence='.$lang['confidence']
+                .' non_ascii_letter_ratio='.$lang['non_ascii_letter_ratio'],
+            );
+        }
+
         $rubric = $this->rubricResolver->active('writing');
 
         $promptText = match (true) {
@@ -84,6 +96,9 @@ final class WritingGradingStrategy implements GradingStrategy
 
         $job->addProgress('metrics', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
 
+        // Safety net: if all English-specific signals are zero, refuse to grade
+        $this->guardEnglishSignals($syntaxAnalysis, $ruleAnalysis['metrics'], $cefr);
+
         $part = $this->extractPart($submission);
 
         // Phase 3: LLM check — requirement YES/NO (both modes, <1s)
@@ -100,7 +115,7 @@ final class WritingGradingStrategy implements GradingStrategy
         if ($submission instanceof ExamWritingSubmission) {
             $t = microtime(true);
             $bandContext = null;
-            $feedback = $this->feedbackGenerator->generate($text, $promptText, $ruleAnalysis['metrics'], $ltMatches, $bandContext);
+            $feedback = $this->feedbackGenerator->generate($text, $promptText, $ruleAnalysis['metrics'], $ltMatches, $bandContext, $part);
             $job->addProgress('llm_feedback', ['duration_ms' => (int) ((microtime(true) - $t) * 1000)]);
 
             $strengths = $feedback['strengths'];
@@ -116,8 +131,17 @@ final class WritingGradingStrategy implements GradingStrategy
 
         $tfScore = $this->formula->taskFulfillment($evidence, $part);
 
+        // Inject tone signals into evidence for sub-signal scoring
+        $toneSignals = $ruleAnalysis['metrics']['tone_signals'] ?? [];
+        $evidence['tone_informal_count'] = $toneSignals['informal_count'] ?? 0;
+
         $rubricScores = [
-            'grammar' => $this->formula->grammar($syntaxAnalysis, $ruleAnalysis['metrics']['grammar_error_count'], $sentenceCount),
+            'grammar' => $this->formula->grammar(
+                $syntaxAnalysis,
+                $ruleAnalysis['metrics']['grammar_error_count'],
+                $sentenceCount,
+                (int) ($ruleAnalysis['metrics']['punctuation_error_count'] ?? 0),
+            ),
             'vocabulary' => $this->formula->vocabulary($ruleAnalysis['metrics']),
             'task_fulfillment' => $tfScore,
             'organization' => $this->formula->organization(
@@ -125,10 +149,13 @@ final class WritingGradingStrategy implements GradingStrategy
                 $ruleAnalysis['metrics']['linking_word_count'],
                 $sentenceCount,
                 (float) ($ruleAnalysis['metrics']['sentence_variety'] ?? 0),
+                $part,
+                (bool) ($ruleAnalysis['metrics']['has_salutation'] ?? false),
+                (bool) ($ruleAnalysis['metrics']['has_closing'] ?? false),
             ),
         ];
         $overallBand = $rubric->computeOverallBand($rubricScores);
-        $overallBand = $this->applySanityCap($text, $overallBand, $part);
+        $overallBand = $this->applySanityCap($wordCount, $overallBand, $part);
         $job->addProgress('scores', [
             'duration_ms' => (int) ((microtime(true) - $t) * 1000),
             'rubric_scores' => $rubricScores,
@@ -203,11 +230,11 @@ final class WritingGradingStrategy implements GradingStrategy
      *
      * Formula: W' = W × min(1, w / θ)
      * Result rounded to nearest 0.5 per VSTEP convention.
+     *
+     * @param  int  $wordCount  from RuleBasedScoringService (whitespace-split, Unicode-safe)
      */
-    private function applySanityCap(string $text, float $band, int $part = 2): float
+    private function applySanityCap(int $wordCount, float $band, int $part = 2): float
     {
-        $wordCount = str_word_count(trim($text));
-
         if ($wordCount === 0) {
             return 0.0;
         }
@@ -217,6 +244,38 @@ final class WritingGradingStrategy implements GradingStrategy
         $penalty = min(1.0, $wordCount / $minimum);
 
         return round($band * $penalty * 2) / 2;
+    }
+
+    /**
+     * Guard: if all English-specific linguistic signals are zero,
+     * the text is either not English or too short to grade.
+     *
+     * Skip for very short texts (< 30 words) — legitimate short
+     * submissions may not trigger any signal.
+     *
+     * @param  array{count: int}  $syntax
+     * @param  array<string,mixed>  $metrics
+     * @param  array{cefr_vocab_count: int}  $cefr
+     */
+    private function guardEnglishSignals(array $syntax, array $metrics, array $cefr): void
+    {
+        $wordCount = (int) ($metrics['word_count'] ?? 0);
+        if ($wordCount < 30) {
+            return;
+        }
+
+        $structureCount = $syntax['count'] ?? -1;
+        $linkingCount = (int) ($metrics['linking_word_count'] ?? 0);
+        $complexVocab = (int) ($metrics['complex_vocab_count'] ?? 0);
+        $cefrVocab = (int) ($cefr['cefr_vocab_count'] ?? 0);
+
+        if ($structureCount === 0 && $linkingCount === 0 && $complexVocab === 0 && $cefrVocab === 0) {
+            throw new GradingFailedException(
+                'No English linguistic features detected: '
+                ."syntax_types={$structureCount} linking_words={$linkingCount} "
+                ."complex_vocab={$complexVocab} cefr_vocab={$cefrVocab}",
+            );
+        }
     }
 
     /** @param  list<string>  $items
