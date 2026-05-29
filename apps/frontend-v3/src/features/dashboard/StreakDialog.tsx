@@ -11,8 +11,6 @@ import { useCoinGain } from "#/lib/coin-gain"
 import { useToast } from "#/lib/toast"
 import { cn } from "#/lib/utils"
 
-// Mốc có coins lớn nhất → "chest" (icon rương + popup lớn).
-// Tiebreak: chọn mốc có days lớn nhất. Trả null nếu list rỗng.
 function pickChestDays(milestones: StreakMilestone[]): number | null {
 	if (milestones.length === 0) return null
 	return milestones.reduce((best, m) =>
@@ -64,12 +62,8 @@ export function StreakDialog({ open, onClose, streak }: Props) {
 
 	if (typeof document === "undefined" || !open) return null
 
-	const currentStreak = streak.current_streak
-	const goal = streak.daily_goal
-	const done = Math.min(goal, streak.today_sessions)
-	const todayPct = goal > 0 ? Math.round((done / goal) * 100) : 0
-	const remaining = Math.max(0, goal - done)
-	const goalReached = remaining === 0
+	const currentStreak = streak.current
+	const isActiveToday = streak.today_active
 
 	return createPortal(
 		<div
@@ -112,23 +106,26 @@ export function StreakDialog({ open, onClose, streak }: Props) {
 
 						<div className="card p-4 space-y-2">
 							<div className="flex items-center justify-between text-xs">
-								<span className="font-bold uppercase tracking-wide text-subtle">Tiến độ hôm nay</span>
+								<span className="font-bold uppercase tracking-wide text-subtle">Hôm nay</span>
 								<span
-									className={cn("font-extrabold tabular-nums", goalReached ? "text-primary" : "text-warning")}
+									className={cn(
+										"font-extrabold tabular-nums",
+										isActiveToday ? "text-success" : "text-warning",
+									)}
 								>
-									{done}/{goal} bài thi
+									{isActiveToday ? "✓ Đã luyện tập" : "Chưa luyện tập"}
 								</span>
 							</div>
 							<DuoProgressBar
-								value={todayPct}
-								tone={goalReached ? "primary" : "warning"}
+								value={isActiveToday ? 100 : 0}
+								tone={isActiveToday ? "primary" : "warning"}
 								heightPx={16}
-								label="Tiến độ giữ streak hôm nay"
+								label="Streak hôm nay"
 							/>
 							<p className="text-xs text-muted">
-								{goalReached
+								{isActiveToday
 									? "Hoàn thành! Streak được giữ hôm nay."
-									: `Còn ${remaining} bài thi nữa để giữ streak`}
+									: "Luyện tập bất kỳ kỹ năng nào để giữ streak"}
 							</p>
 						</div>
 
@@ -156,7 +153,7 @@ export function StreakDialog({ open, onClose, streak }: Props) {
 							<p className="text-xs font-bold uppercase tracking-wider text-subtle">Cách tham gia</p>
 							<ol className="space-y-1.5 text-xs text-foreground">
 								{[
-									`Hoàn thành ít nhất ${goal} bài thi mỗi ngày`,
+									"Luyện tập bất kỳ kỹ năng nào mỗi ngày",
 									"Không bỏ ngày nào để giữ streak",
 									...streak.milestones.map((m) => `Đạt mốc ${m.days} ngày → nhận ${m.coins} xu`),
 								].map((note, i) => (
@@ -229,7 +226,7 @@ function MilestoneRow({
 									aria-hidden
 									className="pointer-events-none absolute left-1/2 top-1/2"
 									style={{
-										animation: `coinBurst 800ms ease-out forwards`,
+										animation: "coinBurst 800ms ease-out forwards",
 										animationDelay: `${i * 30}ms`,
 										// @ts-expect-error -- CSS custom property
 										"--angle": `${(i / 8) * 360}deg`,

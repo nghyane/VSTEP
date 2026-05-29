@@ -1,5 +1,10 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { ActivityDay, ExamSessionResult, OverviewData, StreakData } from "#/features/dashboard/types"
+import type {
+	OverviewData,
+	ScoreTimelinePoint,
+	SkillActivityDay,
+	StreakData,
+} from "#/features/dashboard/types"
 import { type ApiResponse, api } from "#/lib/api"
 import { skills } from "#/lib/skills"
 import { getTargetBand } from "#/lib/vstep"
@@ -16,12 +21,24 @@ export const streakQuery = queryOptions({
 
 export const activityHeatmapQuery = queryOptions({
 	queryKey: ["activity-heatmap"],
-	queryFn: () => api.get("activity-heatmap").json<ApiResponse<ActivityDay[]>>(),
+	queryFn: () => api.get("activity-heatmap").json<ApiResponse<SkillActivityDay[]>>(),
 })
 
 export const examSessionsQuery = queryOptions({
 	queryKey: ["exam-sessions"],
-	queryFn: () => api.get("exam-sessions").json<ApiResponse<ExamSessionResult[]>>(),
+	queryFn: () =>
+		api.get("exam-sessions").json<
+			ApiResponse<
+				{
+					id: string
+					mode: string
+					is_full_test: boolean
+					status: string
+					submitted_at: string | null
+					scores: Record<string, number | null> | null
+				}[]
+			>
+		>(),
 	select: (raw) => raw.data,
 })
 
@@ -32,12 +49,21 @@ export function selectProfile(raw: ApiResponse<OverviewData>) {
 }
 
 export function selectSpider(raw: ApiResponse<OverviewData>) {
+	const { scores, profile } = raw.data
 	return {
-		chart: raw.data.chart,
-		targetBand: getTargetBand(raw.data.profile.target_level),
-		minTests: raw.data.stats.min_tests_required,
+		chart: scores.spider,
+		targetBand: getTargetBand(profile.target_level),
+		minTests: 5,
 		totalTests: raw.data.stats.total_tests,
 	}
+}
+
+export function selectScoreTimeline(raw: ApiResponse<OverviewData>): ScoreTimelinePoint[] {
+	return raw.data.scores.timeline
+}
+
+export function selectGrowth(raw: ApiResponse<OverviewData>) {
+	return raw.data.scores.growth
 }
 
 export function selectTargetBand(raw: ApiResponse<OverviewData>) {
@@ -45,15 +71,16 @@ export function selectTargetBand(raw: ApiResponse<OverviewData>) {
 }
 
 export function selectNextAction(raw: ApiResponse<OverviewData>) {
-	const { stats, chart, profile } = raw.data
+	const { streak, scores, profile } = raw.data
 	const targetBand = getTargetBand(profile.target_level)
 
 	let weakest = skills[0]
+	const chart = scores.spider
 	if (chart) {
 		let minGap = Number.POSITIVE_INFINITY
 		for (const s of skills) {
-			const score = chart[s.key] ?? 0
-			const gap = score - targetBand
+			const score = (chart as Record<string, number | null>)[s.key] ?? 0
+			const gap = (score ?? 0) - targetBand
 			if (gap < minGap) {
 				minGap = gap
 				weakest = s
@@ -61,15 +88,18 @@ export function selectNextAction(raw: ApiResponse<OverviewData>) {
 		}
 	}
 
-	return { streak: stats.streak, skill: weakest }
+	return { streak: streak.current, skill: weakest }
 }
 
 export function selectStats(raw: ApiResponse<OverviewData>) {
-	const { stats, chart, profile } = raw.data
-	const scores = chart
+	const { scores, stats, profile } = raw.data
+	const chart = scores.spider
+	const scoreValues = chart
 		? [chart.listening, chart.reading, chart.writing, chart.speaking].filter((v): v is number => v !== null)
 		: []
 	const avgBand =
-		scores.length > 0 ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10 : null
+		scoreValues.length > 0
+			? Math.round((scoreValues.reduce((a, b) => a + b, 0) / scoreValues.length) * 10) / 10
+			: null
 	return { ...stats, avgBand, targetLevel: profile.target_level }
 }
