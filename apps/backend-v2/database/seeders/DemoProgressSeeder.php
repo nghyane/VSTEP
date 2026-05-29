@@ -1,0 +1,593 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders;
+
+use App\Models\CoinTransaction;
+use App\Models\Course;
+use App\Models\CourseEnrollment;
+use App\Models\ExamSession;
+use App\Models\ExamVersion;
+use App\Models\ExerciseFeedback;
+use App\Models\GradingJob;
+use App\Models\PracticeListeningExercise;
+use App\Models\PracticeMcqAnswer;
+use App\Models\PracticeReadingExercise;
+use App\Models\PracticeSession;
+use App\Models\Profile;
+use App\Models\ProfileDailyActivity;
+use App\Models\ProfileStreakState;
+use App\Models\ProfileVocabSrsState;
+use App\Models\SpeakingGradingResult;
+use App\Models\VocabWord;
+use App\Models\WritingGradingResult;
+use Carbon\Carbon;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+/**
+ * All demo progress data: activity, streak, exam sessions, practice history,
+ * vocab SRS states, wallet transactions, exercise feedback.
+ *
+ * Idempotent — skips if data already exists for each profile.
+ */
+final class DemoProgressSeeder extends Seeder
+{
+    private const MAIN_NICKNAME = 'Minh';
+
+    private const EXAM_SESSION_COUNT = 6;
+
+    private const EXAM_GAP_DAYS = 4;
+
+    private const EXAM_DURATION_MINUTES = 120;
+
+    private const MCQ_OPTION_COUNT = 4;
+
+    private const ACTIVITY_DAYS = 60;
+
+    private const ACTIVITY_PROBABILITY = 0.7;
+
+    /** @var array{listening: float, reading: float, writing: float, speaking: float} */
+    private const MAIN_BANDS = ['listening' => 7.8, 'reading' => 7.2, 'writing' => 6.5, 'speaking' => 7.0];
+
+    private const EXTRA_BANDS = [
+        'weak_writer' => ['listening' => 7.0, 'reading' => 6.5, 'writing' => 3.5, 'speaking' => 6.0],
+        'weak_speaker' => ['listening' => 7.5, 'reading' => 7.0, 'writing' => 6.0, 'speaking' => 3.0],
+        'inactive_student' => ['listening' => 5.0, 'reading' => 4.5, 'writing' => 5.5, 'speaking' => 5.0],
+    ];
+
+    public function run(): void
+    {
+        $profile = Profile::query()->where('nickname', self::MAIN_NICKNAME)->first();
+        if (! $profile) {
+            $this->command?->warn('Demo learner "Minh" not found. Run DemoAccountSeeder first.');
+
+            return;
+        }
+
+        $version = ExamVersion::query()->first();
+        if (! $version) {
+            $this->command?->warn('No exam version found. Run ContentSeeder first.');
+
+            return;
+        }
+
+        // ── Main Profile ──
+        $this->seedActivityAndStreak($profile, self::ACTIVITY_DAYS, self::ACTIVITY_PROBABILITY);
+        $this->seedExamSessions($profile, $version, self::MAIN_BANDS);
+        $this->seedPracticeHistory($profile);
+        $this->seedVocabSrs($profile);
+        $this->seedWalletTransactions($profile);
+        $this->seedExerciseFeedback($profile);
+
+        // ── Extra Profiles ──
+        foreach (self::EXTRA_BANDS as $nickname => $bands) {
+            $extra = Profile::query()->where('nickname', $nickname)->first();
+            if (! $extra) {
+                continue;
+            }
+
+            $this->seedExamSessions($extra, $version, $bands);
+
+            if ($nickname !== 'inactive_student') {
+                $this->seedActivityAndStreak($extra, 14, 0.5);
+            }
+        }
+
+        // ── Enroll extra profiles into K101 ──
+        $this->enrollExtraProfiles();
+
+        $this->command?->info('Demo progress seeded.');
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ACTIVITY + STREAK
+    // ═══════════════════════════════════════════════════════════════
+
+    private function seedActivityAndStreak(Profile $profile, int $days, float $probability): void
+    {
+        if (ProfileDailyActivity::query()->where('profile_id', $profile->id)->exists()) {
+            return;
+        }
+
+        $today = Carbon::today();
+        $activeDates = collect();
+
+        for ($i = 0; $i < $days; $i++) {
+            if (mt_rand() / mt_getrandmax() > $probability) {
+                continue;
+            }
+
+            $date = $today->copy()->subDays($i)->toDateString();
+            ProfileDailyActivity::create([
+                'profile_id' => $profile->id,
+                'date_local' => $date,
+                'drill_session_count' => rand(1, 5),
+                'drill_duration_seconds' => rand(300, 2400),
+            ]);
+            $activeDates->push(Carbon::parse($date));
+        }
+
+        if ($activeDates->isEmpty()) {
+            ProfileStreakState::query()->where('profile_id', $profile->id)->delete();
+
+            return;
+        }
+
+        $sorted = $activeDates->sort()->values();
+        $latest = $sorted->last();
+        $current = 0;
+        $todayCarbon = Carbon::today();
+
+        if ($latest->equalTo($todayCarbon) || $latest->equalTo($todayCarbon->copy()->subDay())) {
+            $current = 1;
+            $cursor = $latest->copy();
+            for ($i = $sorted->count() - 2; $i >= 0; $i--) {
+                if ($sorted[$i]->equalTo($cursor->copy()->subDay())) {
+                    $current++;
+                    $cursor = $sorted[$i];
+                } else {
+                    break;
+                }
+            }
+        }
+
+        $longest = max(1, $current);
+        $run = 1;
+        for ($i = 1; $i < $sorted->count(); $i++) {
+            $diff = $sorted[$i - 1]->diffInDays($sorted[$i]);
+            $run = $diff === 1 ? $run + 1 : 1;
+            $longest = max($longest, $run);
+        }
+
+        ProfileStreakState::query()->updateOrInsert(
+            ['profile_id' => $profile->id],
+            [
+                'current_streak' => $current,
+                'longest_streak' => max($longest, $current),
+                'last_active_date_local' => $latest->toDateString(),
+                'updated_at' => now(),
+            ],
+        );
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // EXAM SESSIONS + GRADING
+    // ═══════════════════════════════════════════════════════════════
+
+    /**
+     * @param  array{listening: float, reading: float, writing: float, speaking: float}  $bands
+     */
+    private function seedExamSessions(Profile $profile, ExamVersion $version, array $bands): void
+    {
+        $existing = ExamSession::query()
+            ->where('profile_id', $profile->id)
+            ->where('status', 'submitted')
+            ->count();
+
+        if ($existing >= 6) {
+            return;
+        }
+
+        $writingTaskId = DB::table('exam_version_writing_tasks')
+            ->where('exam_version_id', $version->id)
+            ->value('id');
+
+        $speakingPartId = DB::table('exam_version_speaking_parts')
+            ->where('exam_version_id', $version->id)
+            ->value('id');
+
+        $listeningItems = DB::table('exam_version_listening_items')
+            ->join('exam_version_listening_sections', 'exam_version_listening_sections.id', '=', 'exam_version_listening_items.section_id')
+            ->where('exam_version_listening_sections.exam_version_id', $version->id)
+            ->pluck('exam_version_listening_items.id');
+
+        $readingItems = DB::table('exam_version_reading_items')
+            ->join('exam_version_reading_passages', 'exam_version_reading_passages.id', '=', 'exam_version_reading_items.passage_id')
+            ->where('exam_version_reading_passages.exam_version_id', $version->id)
+            ->pluck('exam_version_reading_items.id');
+
+        // Sessions spaced every 4 days, most recent = yesterday
+        for ($i = 0; $i < self::EXAM_SESSION_COUNT; $i++) {
+            $submittedAt = now()->subDays($i * self::EXAM_GAP_DAYS + 1)->subHours(rand(1, 12));
+
+            $session = ExamSession::create([
+                'profile_id' => $profile->id,
+                'exam_version_id' => $version->id,
+                'mode' => 'full',
+                'selected_skills' => ['listening', 'reading', 'writing', 'speaking'],
+                'is_full_test' => true,
+                'time_extension_factor' => 1.0,
+                'started_at' => $submittedAt->copy()->subMinutes(self::EXAM_DURATION_MINUTES),
+                'server_deadline_at' => $submittedAt->copy()->addMinutes(10),
+                'submitted_at' => $submittedAt,
+                'status' => 'submitted',
+                'coins_charged' => 0,
+            ]);
+
+            $listeningProb = $bands['listening'] / 10;
+            $readingProb = $bands['reading'] / 10;
+            $this->seedMcqAnswers($session->id, 'exam_listening_item', $listeningItems, $submittedAt, $listeningProb);
+            $this->seedMcqAnswers($session->id, 'exam_reading_item', $readingItems, $submittedAt, $readingProb);
+
+            if ($writingTaskId) {
+                $this->seedWritingResult($session->id, $profile->id, $writingTaskId, $submittedAt, $bands['writing']);
+            }
+            if ($speakingPartId) {
+                $this->seedSpeakingResult($session->id, $profile->id, $speakingPartId, $submittedAt, $bands['speaking']);
+            }
+        }
+    }
+
+    private function seedMcqAnswers(string $sessionId, string $itemType, Collection $itemIds, \DateTimeInterface $answeredAt, float $correctProb): void
+    {
+        foreach ($itemIds as $itemId) {
+            DB::table('exam_mcq_answers')->insert([
+                'session_id' => $sessionId,
+                'item_ref_type' => $itemType,
+                'item_ref_id' => $itemId,
+                'selected_index' => rand(0, self::MCQ_OPTION_COUNT - 1),
+                'is_correct' => mt_rand() / mt_getrandmax() < $correctProb,
+                'answered_at' => $answeredAt,
+            ]);
+        }
+    }
+
+    private function seedWritingResult(string $sessionId, string $profileId, string $taskId, \DateTimeInterface $submittedAt, float $band): void
+    {
+        $subId = Str::uuid7();
+        DB::table('exam_writing_submissions')->insert([
+            'id' => $subId,
+            'session_id' => $sessionId,
+            'profile_id' => $profileId,
+            'task_id' => $taskId,
+            'text' => 'Seed writing submission.',
+            'word_count' => rand(120, 250),
+            'submitted_at' => $submittedAt,
+        ]);
+
+        $job = GradingJob::create([
+            'submission_type' => 'exam_writing',
+            'submission_id' => $subId,
+            'status' => 'ready',
+            'started_at' => $submittedAt,
+            'completed_at' => $submittedAt->copy()->addSeconds(rand(5, 30)),
+        ]);
+
+        WritingGradingResult::create([
+            'job_id' => $job->id,
+            'submission_type' => 'exam_writing',
+            'submission_id' => $subId,
+            'version' => 1,
+            'is_active' => true,
+            'rubric_scores' => [
+                'task_fulfillment' => $band,
+                'organization' => $band,
+                'vocabulary' => $band,
+                'grammar' => $band,
+            ],
+            'overall_band' => $band,
+            'strengths' => ['Demo seed data'],
+            'improvements' => [],
+            'rewrites' => [],
+            'annotations' => [],
+            'paragraph_feedback' => [],
+        ]);
+    }
+
+    private function seedSpeakingResult(string $sessionId, string $profileId, string $partId, \DateTimeInterface $submittedAt, float $band): void
+    {
+        $subId = Str::uuid7();
+        DB::table('exam_speaking_submissions')->insert([
+            'id' => $subId,
+            'session_id' => $sessionId,
+            'profile_id' => $profileId,
+            'part_id' => $partId,
+            'audio_url' => 'https://demo.vstep.test/audio/'.$subId.'.mp3',
+            'duration_seconds' => rand(60, 180),
+            'transcript' => 'Seed speaking transcript.',
+            'submitted_at' => $submittedAt,
+        ]);
+
+        $job = GradingJob::create([
+            'submission_type' => 'exam_speaking',
+            'submission_id' => $subId,
+            'status' => 'ready',
+            'started_at' => $submittedAt,
+            'completed_at' => $submittedAt->copy()->addSeconds(rand(5, 30)),
+        ]);
+
+        SpeakingGradingResult::create([
+            'job_id' => $job->id,
+            'submission_type' => 'exam_speaking',
+            'submission_id' => $subId,
+            'version' => 1,
+            'is_active' => true,
+            'rubric_scores' => [
+                'grammar' => $band,
+                'vocabulary' => $band,
+                'pronunciation' => $band,
+                'fluency' => $band,
+                'discourse_management' => $band,
+            ],
+            'overall_band' => $band,
+            'strengths' => ['Demo seed data'],
+            'improvements' => [],
+            'pronunciation_report' => ['accuracy_score' => 0.7],
+            'transcript' => 'Seed speaking transcript.',
+        ]);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // PRACTICE SESSIONS
+    // ═══════════════════════════════════════════════════════════════
+
+    private function seedPracticeHistory(Profile $profile): void
+    {
+        if (PracticeSession::query()->where('profile_id', $profile->id)->exists()) {
+            return;
+        }
+
+        // 4 listening drills + 3 reading drills over last 21 days
+        $this->seedMcqPracticeSessions($profile, 'listening', PracticeListeningExercise::class, 4);
+        $this->seedMcqPracticeSessions($profile, 'reading', PracticeReadingExercise::class, 3);
+    }
+
+    private function seedMcqPracticeSessions(Profile $profile, string $skill, string $exerciseClass, int $count): void
+    {
+        $exercises = $exerciseClass::query()
+            ->where('is_published', true)
+            ->orderBy('created_at')
+            ->take($count)
+            ->get();
+
+        if ($exercises->isEmpty()) {
+            return;
+        }
+
+        foreach ($exercises as $i => $exercise) {
+            $daysAgo = rand($i * 3 + 1, $i * 3 + 3);
+            $startedAt = now()->subDays($daysAgo)->subHours(rand(1, 4));
+            $endedAt = $startedAt->copy()->addMinutes(rand(10, 25));
+
+            $questions = $exercise->questions()->orderBy('display_order')->get();
+            if ($questions->isEmpty()) {
+                continue;
+            }
+
+            $correct = 0;
+            $total = $questions->count();
+            $correctProb = $skill === 'listening' ? 0.75 : 0.65;
+
+            $session = PracticeSession::create([
+                'profile_id' => $profile->id,
+                'module' => $skill,
+                'content_ref_type' => $skill === 'listening' ? 'practice_listening_exercise' : 'practice_reading_exercise',
+                'content_ref_id' => $exercise->id,
+                'started_at' => $startedAt,
+                'ended_at' => $endedAt,
+                'score' => 0,
+            ]);
+
+            foreach ($questions as $q) {
+                $isCorrect = mt_rand() / mt_getrandmax() < $correctProb;
+                if ($isCorrect) {
+                    $correct++;
+                }
+                PracticeMcqAnswer::create([
+                    'session_id' => $session->id,
+                    'question_id' => $q->id,
+                    'selected_index' => $isCorrect ? $q->correct_index : $this->wrongIndex($q->correct_index),
+                    'is_correct' => $isCorrect,
+                ]);
+            }
+
+            $session->update(['score' => $total > 0 ? round(($correct / $total) * 10, 1) : 0]);
+        }
+    }
+
+    private function wrongIndex(int $correctIndex): int
+    {
+        $options = [0, 1, 2, 3];
+        unset($options[$correctIndex]);
+
+        return (int) array_rand(array_values($options));
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // VOCAB SRS STATES
+    // ═══════════════════════════════════════════════════════════════
+
+    private function seedVocabSrs(Profile $profile): void
+    {
+        if (ProfileVocabSrsState::query()->where('profile_id', $profile->id)->exists()) {
+            return;
+        }
+
+        $words = VocabWord::query()->orderBy('id')->limit(60)->get();
+        if ($words->isEmpty()) {
+            return;
+        }
+
+        $now = now();
+
+        foreach ($words as $i => $word) {
+            if ($i < 20) {
+                // New — chưa review lần nào
+                ProfileVocabSrsState::create([
+                    'profile_id' => $profile->id,
+                    'word_id' => $word->id,
+                    'state_kind' => 'new',
+                    'difficulty' => 0.3,
+                    'stability' => 0,
+                    'lapses' => 0,
+                    'remaining_steps' => 1,
+                    'due_at' => $now,
+                    'last_review_at' => null,
+                ]);
+            } elseif ($i < 40) {
+                // Learning — đang trong giai đoạn học
+                ProfileVocabSrsState::create([
+                    'profile_id' => $profile->id,
+                    'word_id' => $word->id,
+                    'state_kind' => 'learning',
+                    'difficulty' => 0.5,
+                    'stability' => 2.0,
+                    'lapses' => 1,
+                    'remaining_steps' => 0,
+                    'due_at' => $now->copy()->subMinutes(rand(1, 60)),
+                    'last_review_at' => $now->copy()->subHours(rand(4, 24)),
+                ]);
+            } else {
+                // Review — đã thuộc, due trong tương lai
+                ProfileVocabSrsState::create([
+                    'profile_id' => $profile->id,
+                    'word_id' => $word->id,
+                    'state_kind' => 'review',
+                    'difficulty' => 0.7,
+                    'stability' => 15.0,
+                    'lapses' => 0,
+                    'remaining_steps' => 0,
+                    'due_at' => $now->copy()->addDays(rand(1, 14)),
+                    'last_review_at' => $now->copy()->subDays(rand(1, 10)),
+                ]);
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // WALLET TRANSACTIONS
+    // ═══════════════════════════════════════════════════════════════
+
+    private function seedWalletTransactions(Profile $profile): void
+    {
+        if (CoinTransaction::query()->where('profile_id', $profile->id)->exists()) {
+            return;
+        }
+
+        $now = now();
+
+        CoinTransaction::create([
+            'profile_id' => $profile->id,
+            'type' => 'topup',
+            'delta' => 300,
+            'balance_after' => 400,
+            'source_type' => 'wallet_topup_packages',
+            'source_id' => Str::orderedUuid()->toString(),
+            'metadata' => ['label' => 'Gói cơ bản', 'amount_vnd' => 100000],
+            'created_at' => $now->copy()->subDays(30),
+        ]);
+
+        for ($i = 1; $i <= 3; $i++) {
+            CoinTransaction::create([
+                'profile_id' => $profile->id,
+                'type' => 'exam_full',
+                'delta' => -25,
+                'balance_after' => 400 - ($i * 25),
+                'source_type' => 'exam_sessions',
+                'source_id' => Str::orderedUuid()->toString(),
+                'metadata' => ['mode' => 'full'],
+                'created_at' => $now->copy()->subDays(20 - ($i * 3)),
+            ]);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // EXERCISE FEEDBACK
+    // ═══════════════════════════════════════════════════════════════
+
+    private function seedExerciseFeedback(Profile $profile): void
+    {
+        if (ExerciseFeedback::query()->where('profile_id', $profile->id)->exists()) {
+            return;
+        }
+
+        $exercise = PracticeReadingExercise::query()
+            ->where('is_published', true)
+            ->first();
+
+        if (! $exercise) {
+            return;
+        }
+
+        ExerciseFeedback::create([
+            'profile_id' => $profile->id,
+            'content_type' => 'practice_reading_exercise',
+            'content_id' => $exercise->id,
+            'rating' => 5,
+            'comment' => 'Bài đọc rất sát với đề thi VSTEP thật. Phần giải thích rõ ràng, dễ hiểu!',
+        ]);
+
+        $exercise2 = PracticeListeningExercise::query()
+            ->where('is_published', true)
+            ->first();
+
+        if ($exercise2) {
+            ExerciseFeedback::create([
+                'profile_id' => $profile->id,
+                'content_type' => 'practice_listening_exercise',
+                'content_id' => $exercise2->id,
+                'rating' => 4,
+                'comment' => 'Audio chất lượng tốt, nhưng tốc độ hơi nhanh. Nên có thêm phần tua lại.',
+            ]);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ENROLL EXTRA PROFILES
+    // ═══════════════════════════════════════════════════════════════
+
+    private function enrollExtraProfiles(): void
+    {
+        $k101 = Course::query()->where('slug', 'b1-cap-toc-k101')->first();
+        if (! $k101) {
+            return;
+        }
+
+        $extraNicknames = ['weak_writer', 'weak_speaker', 'inactive_student'];
+        foreach ($extraNicknames as $nickname) {
+            $profile = Profile::query()->where('nickname', $nickname)->first();
+            if (! $profile) {
+                continue;
+            }
+
+            $exists = CourseEnrollment::query()
+                ->where('profile_id', $profile->id)
+                ->where('course_id', $k101->id)
+                ->exists();
+
+            if (! $exists) {
+                CourseEnrollment::create([
+                    'profile_id' => $profile->id,
+                    'course_id' => $k101->id,
+                    'enrolled_at' => now()->subDays(16),
+                    'coins_paid' => 0,
+                    'bonus_coins_received' => 0,
+                ]);
+            }
+        }
+    }
+}

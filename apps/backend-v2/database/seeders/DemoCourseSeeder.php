@@ -13,7 +13,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-class CourseSeeder extends Seeder
+class DemoCourseSeeder extends Seeder
 {
     public function run(): void
     {
@@ -187,7 +187,7 @@ class CourseSeeder extends Seeder
             }
         }
 
-        // Enroll learner into the second course (K83) + the in-progress demo course (K101).
+        // Enroll main learner into K83 + K101.
         $learner = User::query()->where('email', 'learner@vstep.test')->first();
         $profile = $learner?->initialProfile();
 

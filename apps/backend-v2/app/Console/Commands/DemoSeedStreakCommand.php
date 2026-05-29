@@ -8,19 +8,21 @@ use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
 use App\Models\User;
 use Carbon\Carbon;
-use Database\Seeders\DashboardDemoSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Dev-only command: tạo N ngày activity liên tiếp + derive streak = N cho 1 user
- * để test UI streak (mốc 7/14/30, claim flow). Reuse drill ranges từ
- * DashboardDemoSeeder để tránh duplicate config demo data.
+ * Dev-only command: tạo N ngày activity liên tiếp + derive streak = N
+ * để test UI streak (mốc 7/14/30, claim flow).
  *
  * Usage: php artisan demo:streak learner@vstep.test 30
  */
 class DemoSeedStreakCommand extends Command
 {
+    private const DRILL_SESSIONS_RANGE = [1, 5];
+
+    private const DRILL_DURATION_RANGE_SECONDS = [300, 2400];
+
     protected $signature = 'demo:streak {email} {days : Số ngày liên tiếp cần seed}';
 
     protected $description = 'Seed N ngày activity liên tiếp cho user để test UI streak';
@@ -60,8 +62,8 @@ class DemoSeedStreakCommand extends Command
                 ProfileDailyActivity::create([
                     'profile_id' => $profile->id,
                     'date_local' => $today->copy()->subDays($i)->toDateString(),
-                    'drill_session_count' => rand(...DashboardDemoSeeder::DRILL_SESSIONS_RANGE),
-                    'drill_duration_seconds' => rand(...DashboardDemoSeeder::DRILL_DURATION_RANGE_SECONDS),
+                    'drill_session_count' => rand(...self::DRILL_SESSIONS_RANGE),
+                    'drill_duration_seconds' => rand(...self::DRILL_DURATION_RANGE_SECONDS),
                 ]);
             }
 

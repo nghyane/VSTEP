@@ -6,11 +6,12 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
-class DatabaseSeeder extends Seeder
+final class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
         $this->call([
+            // Infrastructure (idempotent, run once)
             SystemConfigSeeder::class,
             WalletSeeder::class,
             GradingRubricSeeder::class,
@@ -19,10 +20,12 @@ class DatabaseSeeder extends Seeder
             LegacyCurriculumContentSeeder::class,
             VocabCurriculumSeeder::class,
             GrammarCurriculumSeeder::class,
-            UserSeeder::class,
-            CourseSeeder::class,
-            DashboardDemoSeeder::class,
-            NotificationSeeder::class,
+
+            // Demo data (predictable, re-runnable)
+            DemoAccountSeeder::class,
+            DemoCourseSeeder::class,
+            DemoProgressSeeder::class,
+            DemoNotificationSeeder::class,
         ]);
     }
 }
