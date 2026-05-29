@@ -3,7 +3,7 @@
 | Date | A/M/D | In charge | Change Description |
 |------|-------|-----------|-------------------|
 | 10/03/2026 | A | Hoàng Văn Anh Nghĩa | Initial version |
-| 28/05/2026 | M | Hoàng Văn Anh Nghĩa | Updated to match registration form and actual implementation |
+| 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Corrected factual discrepancies between report and implementation; added limitations reflecting registration form scope gaps |
 
 *A - Added   M - Modified   D - Deleted
 
@@ -18,7 +18,7 @@
 - Project code: SP26SE145
 - Group name: GSP26SE63
 - Software type: Web Application + Mobile App
-- Duration: 01/01/2026 - 30/04/2026
+- Duration: 01/01/2026 – 30/04/2026
 - Academic Supervisor: Lâm Hữu Khánh Phương
 - Industry Supervisor: Trần Trọng Huỳnh
 
@@ -63,7 +63,7 @@ These apps provide interactive, gamified learning experiences at low cost.
 Vietnamese platforms such as luyenthivstep.vn and vstepmaster.edu.vn offer large question banks with computer-based test simulation.
 
 - Pros: Interface simulates computer-based testing; instant results for Listening and Reading; large question banks.
-- Cons: No AI-powered assessment for Writing and Speaking; no adaptive learning paths; scores displayed without detailed analysis.
+- Cons: No AI-powered assessment for Writing and Speaking; no personalized learning paths; scores displayed without detailed analysis.
 
 ### 3.4 AI Writing and Speaking Tools (Grammarly, Write & Improve)
 
@@ -95,24 +95,30 @@ For university students who need to meet graduation requirements and working pro
 
 ### 6.1 Major Features
 
-- FE-01: User Authentication -- Register, login, and profile management with Learner, Instructor, and Admin roles.
-- FE-02: Practice Mode -- Listening -- Listening exercises with audio playback, transcript support, and instant auto-grading.
-- FE-03: Practice Mode -- Reading -- Reading exercises with various question types (MCQ, True/False/Not Given, Matching Headings, Gap Fill) and instant auto-grading.
-- FE-04: Practice Mode -- Writing -- Writing exercises (Task 1: Letter/Email, Task 2: Essay) with AI grading against 4 VSTEP criteria and real-time progress via SSE streaming.
-- FE-05: Practice Mode -- Speaking -- Speaking exercises (Parts 1-3) with speech-to-text transcription and AI grading against 4 VSTEP criteria.
-- FE-06: Mock Test Mode -- Full simulated VSTEP exam across all 4 skills with auto-save, countdown timer, and composite scoring (Task 1 x 1/3 + Task 2 x 2/3).
-- FE-07: AI Grading Engine -- Deterministic scoring formulas based on the official VSTEP rubric (version 8), CEFR vocabulary classification, and LanguageTool grammar checking.
-- FE-08: Progress Tracking -- Spider chart showing 4-skill competency, sliding window trend analysis, streak tracking, activity heatmap, and ETA prediction.
-- FE-09: Learning Path -- Skill gap analysis from mock exam results and personalized practice recommendations prioritizing weak skills.
-- FE-10: Course Management -- Course creation with instructor assignment, schedule management, and 1-on-1 session booking between learners and teachers.
-- FE-11: Content Management -- Admin tools for question bank CRUD, exam creation with blueprint validation, and system configuration.
-- FE-12: Notification System -- In-app notifications for grading completion, course enrollment, and booking events.
+- FE-01: User Authentication — Register, login, and profile management with Learner, Teacher, Staff, and Admin roles.
+- FE-02: Practice Mode — Listening — Listening exercises with audio playback, transcript support, and instant auto-grading.
+- FE-03: Practice Mode — Reading — Reading exercises with MCQ format and instant auto-grading.
+- FE-04: Practice Mode — Writing — Writing exercises (Task 1: Letter/Email, Task 2: Essay) with AI grading against 4 VSTEP criteria (Grammar, Vocabulary, Organization, Task Fulfillment) and real-time progress via SSE streaming.
+- FE-05: Practice Mode — Speaking — Speaking exercises (Parts 1-3) with Azure Speech-to-Text transcription and AI grading against 4 VSTEP criteria (Grammar, Vocabulary, Fluency, Pronunciation).
+- FE-06: Mock Test Mode — Full simulated VSTEP exam across all 4 skills with auto-save, countdown timer, and composite scoring (Task 1 × ⅓ + Task 2 × ⅔).
+- FE-07: AI Grading Engine — Deterministic scoring formulas based on the VSTEP Writing rubric v8 and Speaking rubric v4, using CEFR vocabulary classification, LanguageTool grammar checking, and SyntaxAnalyzer for structural complexity.
+- FE-08: Progress Tracking — Spider chart showing 4-skill competency, sliding window trend analysis, streak tracking, activity heatmap, and predicted CEFR level projection.
+- FE-09: Learning Path — Skill gap analysis from mock exam results with personalized practice recommendations prioritizing weak skills (threshold-based, band < 5.0).
+- FE-10: Course Management — Course creation with teacher assignment, schedule management, and 1-on-1 session booking between learners and teachers.
+- FE-11: Content Management — Admin tools for question bank CRUD, exam creation with blueprint validation (ExamVersionValidator), grammar curriculum, vocabulary topics, speaking drills/scenarios, and system configuration.
+- FE-12: Notification System — In-app notifications for grading completion, course enrollment, booking events, top-up completion, and coin rewards.
 
 ### 6.2 Limitations and Exclusions
 
-- LI-01: The system only supports the VSTEP format (B1-C1 levels). Other exams such as IELTS, TOEFL, and TOEIC are not supported.
+- LI-01: The system only supports the VSTEP format (B1–C1 levels). Other exams such as IELTS, TOEFL, and TOEIC are not supported.
 - LI-02: AI grading for Writing and Speaking is a supplementary practice tool. Official scores require instructor verification.
 - LI-03: The MVP version supports only Vietnamese as the interface language.
-- LI-04: Online payment integration is not included in the project scope (mock VNPay/PayOS simulation only).
-- LI-05: Development timeline: 4 months (14 weeks), team of 4 members.
-- LI-06: The system depends on external LLM and STT API providers for AI grading functionality.
+- LI-04: VNPay payment gateway is not yet implemented (stub only). PayOS live integration is available for wallet top-up in the current increment.
+- LI-05: Development timeline: 17 weeks (4 months), team of 4 members.
+- LI-06: The system depends on external LLM and STT (Azure Speech) API providers for AI grading functionality.
+- LI-07: Reading exercises support MCQ format only. True/False/Not Given, Matching Headings, and Gap Fill question types are not implemented in the current increment.
+- LI-08: Adaptive exercise difficulty adjustment and dynamic sequencing are not included. Exercises are served with static difficulty (filtered by skill part, not learner proficiency).
+- LI-09: Automated study reminders and motivational notifications are not included in the current increment.
+- LI-10: Instructor assignment of exercises or learning modules to individual learners is not included. Teachers monitor progress and manage 1-on-1 bookings only.
+- LI-11: Learner feedback submission on exercises and materials is not included in the current increment.
+- LI-12: Predictive analytics for learner outcomes uses rule-based risk detection (band, streak, deadline proximity), not machine-learning models.
