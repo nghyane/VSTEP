@@ -1,7 +1,7 @@
 ---
 label: "Bài 1: Yêu thích Chủ nhật"
 type: "Task 1 - Letter"
-expected_level: "B2"
+expected_level: "B1"
 prompt: "Write a letter to your friend telling about your favorite day of the week. Describe what you do from morning to evening."
 requirements:
   - "Mention which day is their favorite"
