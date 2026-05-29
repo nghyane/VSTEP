@@ -157,7 +157,9 @@ export function useGradingSSE(jobId: string | null, waitForFeedback = false) {
 		}
 
 		const url = `${API_URL}/grading-jobs/${jobId}/stream?feedback=${waitForFeedback ? "1" : "0"}`
-		streamSSE(url, token, handleEvent, handleError, controller.signal)
+		streamSSE(url, token, handleEvent, handleError, controller.signal).catch(() => {
+			// AbortError on close() — expected, noop
+		})
 
 		return close
 	}, [jobId, close, waitForFeedback])
