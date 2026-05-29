@@ -133,10 +133,15 @@ final class CourseController extends Controller
         ]], 201);
     }
 
+    /**
+     * Predictive risk analysis: rule-based model identifying learners at risk
+     * of missing their target level. Uses band threshold, streak momentum,
+     * deadline proximity, and band trend direction.
+     */
     public function riskStudents(Request $request, Course $course): JsonResponse
     {
         return response()->json([
-            'data' => $this->courseService->atRiskMembers($course),
+            'data' => $this->courseService->predictAtRiskLearners($course),
         ]);
     }
 }

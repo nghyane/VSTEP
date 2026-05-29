@@ -106,7 +106,8 @@ For university students who need to meet graduation requirements and working pro
 - FE-09: Learning Path — Skill gap analysis from mock exam results with personalized practice recommendations prioritizing weak skills (threshold-based, band < 5.0).
 - FE-10: Course Management — Course creation with teacher assignment, schedule management, and 1-on-1 session booking between learners and teachers.
 - FE-11: Content Management — Admin tools for question bank CRUD, exam creation with blueprint validation (ExamVersionValidator), grammar curriculum, vocabulary topics, speaking drills/scenarios, and system configuration.
-- FE-12: Notification System — In-app notifications for grading completion, course enrollment, booking events, top-up completion, and coin rewards.
+- FE-12: Notification System — In-app notifications for grading completion, course enrollment, booking events, top-up completion, coin rewards, and scheduled daily study reminders via vstep:study-reminder.
+- FE-13: Exercise Feedback — Learners can submit ratings and comments on exercises and practice materials.
 
 ### 6.2 Limitations and Exclusions
 
@@ -116,9 +117,8 @@ For university students who need to meet graduation requirements and working pro
 - LI-04: VNPay payment gateway is not yet implemented (stub only). PayOS live integration is available for wallet top-up in the current increment.
 - LI-05: Development timeline: 17 weeks (4 months), team of 4 members.
 - LI-06: The system depends on external LLM and STT (Azure Speech) API providers for AI grading functionality.
-- LI-07: Reading exercises support MCQ format only. True/False/Not Given, Matching Headings, and Gap Fill question types are not implemented in the current increment.
+- LI-07: Reading exercises use 100% MCQ format (4 options, single correct answer), matching the official VSTEP Reading structure. Other question types (True/False/Not Given, Matching Headings, Gap Fill) are not part of the VSTEP format and are not implemented.
 - LI-08: Adaptive exercise difficulty adjustment and dynamic sequencing are not included. Exercises are served with static difficulty (filtered by skill part, not learner proficiency).
-- LI-09: Automated study reminders and motivational notifications are not included in the current increment.
+- LI-09: Automated study reminders are implemented via scheduled daily push notifications to inactive learners. Motivational suggestion content is rule-based (not AI-generated).
 - LI-10: Instructor assignment of exercises or learning modules to individual learners is not included. Teachers monitor progress and manage 1-on-1 bookings only.
-- LI-11: Learner feedback submission on exercises and materials is not included in the current increment.
-- LI-12: Predictive analytics for learner outcomes uses rule-based risk detection (band, streak, deadline proximity), not machine-learning models.
+- LI-11: Predictive analytics for learner outcomes uses rule-based risk detection (band, streak, deadline proximity, trend direction), not machine-learning models.

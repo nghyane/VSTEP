@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\CourseController;
 use App\Http\Controllers\Api\V1\ExamController;
+use App\Http\Controllers\Api\V1\FeedbackController;
 use App\Http\Controllers\Api\V1\GradingController;
 use App\Http\Controllers\Api\V1\GradingStreamController;
 use App\Http\Controllers\Api\V1\GrammarController;
@@ -179,6 +180,10 @@ Route::prefix('v1')->group(function () {
         Route::post('/streak/milestones/{days}/claim', [OverviewController::class, 'claimStreakMilestone'])
             ->whereNumber('days');
         Route::get('/activity-heatmap', [OverviewController::class, 'activityHeatmap']);
+
+        // Feedback.
+        Route::get('/feedback', [FeedbackController::class, 'index']);
+        Route::post('/feedback', [FeedbackController::class, 'store']);
 
         // Courses.
         Route::get('/courses', [CourseController::class, 'index']);

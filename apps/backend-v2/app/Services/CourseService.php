@@ -500,16 +500,19 @@ final class CourseService
     }
 
     /**
-     * Find enrolled members at risk of failing their target.
+     * Predictive rule-based model: identify enrolled learners at risk of failing their target.
      *
      * Risk criteria (any one triggers flag):
      * - Average band < 5.0
      * - No exam activity in 7 days (streak = 0)
      * - Deadline within 14 days and current band < target
      *
-     * @return list<array{profile_id: string, nickname: string, band: float|null, streak: int, days_to_deadline: int|null, target_level: string, risk_reasons: list<string>}>
+     * Trend direction is derived from comparing the latest exam session band
+     * against the previous sessions' average.
+     *
+     * @return list<array{profile_id: string, nickname: string, band: float|null, trend: string, streak: int, days_to_deadline: int|null, target_level: string, risk_reasons: list<string>}>
      */
-    public function atRiskMembers(Course $course): array
+    public function predictAtRiskLearners(Course $course): array
     {
         $enrollments = $course->enrollments()->with('profile:id,nickname,target_level,target_deadline')->get();
         $result = [];
@@ -524,6 +527,10 @@ final class CourseService
 
             // Check band
             $avgBand = $this->avgBandFromChart($chart);
+
+            // Trend direction: latest session band vs previous average
+            $trend = $this->trendDirection($profile);
+
             if ($avgBand !== null && $avgBand < 5.0) {
                 $reasons[] = 'Điểm trung bình thấp ('.number_format($avgBand, 1).')';
             }
@@ -551,6 +558,7 @@ final class CourseService
                     'profile_id' => $profile->id,
                     'nickname' => $profile->nickname,
                     'band' => $avgBand,
+                    'trend' => $trend,
                     'streak' => $stats['streak'],
                     'days_to_deadline' => $daysToDeadline,
                     'target_level' => $profile->target_level,
@@ -575,6 +583,115 @@ final class CourseService
             $chart['writing'] ?? null,
             $chart['speaking'] ?? null,
         ], fn ($v) => $v !== null);
+
+        if ($bands === []) {
+            return null;
+        }
+
+        return round(array_sum($bands) / count($bands), 1);
+    }
+
+    /**
+     * Compare the latest exam session's overall band against the previous
+     * sessions' average to determine direction.
+     *
+     * @return string 'improving' | 'declining' | 'stable' | 'insufficient_data'
+     */
+    private function trendDirection(Profile $profile): string
+    {
+        $sessions = ExamSession::query()
+            ->where('profile_id', $profile->id)
+            ->whereIn('mode', ['custom', 'full'])
+            ->whereIn('status', ExamSessionStatus::terminalValues())
+            ->orderByDesc('submitted_at')
+            ->limit(3)
+            ->pluck('id');
+
+        if ($sessions->count() < 2) {
+            return 'insufficient_data';
+        }
+
+        $bandPerSession = [];
+        foreach ($sessions as $sid) {
+            $band = $this->sessionAvgBand($sid);
+            if ($band !== null) {
+                $bandPerSession[] = $band;
+            }
+        }
+
+        if (count($bandPerSession) < 2) {
+            return 'insufficient_data';
+        }
+
+        $latest = $bandPerSession[0];
+        $prevAvg = array_sum(array_slice($bandPerSession, 1)) / count(array_slice($bandPerSession, 1));
+
+        if ($latest > $prevAvg + 0.3) {
+            return 'improving';
+        }
+        if ($latest < $prevAvg - 0.3) {
+            return 'declining';
+        }
+
+        return 'stable';
+    }
+
+    /**
+     * Compute a rough overall band for a single exam session.
+     */
+    private function sessionAvgBand(string $sessionId): ?float
+    {
+        $bands = [];
+
+        // Writing
+        $writingSub = DB::table('exam_writing_submissions')
+            ->where('session_id', $sessionId)
+            ->pluck('id');
+        $writingBand = (float) DB::table('writing_grading_results')
+            ->where('submission_type', 'exam_writing')
+            ->whereIn('submission_id', $writingSub)
+            ->where('is_active', true)
+            ->avg('overall_band');
+        if ($writingBand > 0) {
+            $bands[] = $writingBand;
+        }
+
+        // Speaking
+        $speakingSub = DB::table('exam_speaking_submissions')
+            ->where('session_id', $sessionId)
+            ->pluck('id');
+        $speakingBand = (float) DB::table('speaking_grading_results')
+            ->where('submission_type', 'exam_speaking')
+            ->whereIn('submission_id', $speakingSub)
+            ->where('is_active', true)
+            ->avg('overall_band');
+        if ($speakingBand > 0) {
+            $bands[] = $speakingBand;
+        }
+
+        // Listening
+        $listeningAnswers = DB::table('exam_mcq_answers')
+            ->join('exam_listening_items', 'exam_mcq_answers.content_ref_id', '=', 'exam_listening_items.id')
+            ->where('exam_mcq_answers.session_id', $sessionId)
+            ->where('exam_mcq_answers.content_ref_type', 'exam_listening_item')
+            ->whereNotNull('exam_mcq_answers.selected_index')
+            ->selectRaw('exam_mcq_answers.selected_index = exam_listening_items.correct_index as correct')
+            ->pluck('correct');
+        if ($listeningAnswers->isNotEmpty()) {
+            $bands[] = ($listeningAnswers->filter(fn ($c) => $c)->count() / $listeningAnswers->count()) * 10;
+        }
+
+        // Reading
+        $readingAnswers = DB::table('exam_mcq_answers')
+            ->join('exam_reading_items', 'exam_mcq_answers.content_ref_id', '=', 'exam_reading_items.id')
+            ->where('exam_mcq_answers.session_id', $sessionId)
+            ->where('exam_mcq_answers.content_ref_type', 'exam_reading_item')
+            ->whereNotNull('exam_mcq_answers.selected_index')
+            ->selectRaw('exam_mcq_answers.selected_index = exam_reading_items.correct_index as correct')
+            ->pluck('correct');
+        if ($readingAnswers->isNotEmpty()) {
+            $bands[] = ($readingAnswers->filter(fn ($c) => $c)->count() / $readingAnswers->count()) * 10;
+        }
 
         if ($bands === []) {
             return null;

@@ -19,4 +19,5 @@ enum NotificationType: string
     case BookingCreated = 'booking_created';
     case BookingCancelled = 'booking_cancelled';
     case BookingMeetUrlUpdated = 'booking_meet_url_updated';
+    case StudyReminder = 'study_reminder';
 }
