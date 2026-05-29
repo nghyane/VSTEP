@@ -51,7 +51,7 @@ final class AuthController extends Controller
             'refresh_token' => $result['refresh_token'],
             'expires_in' => $result['expires_in'],
             'onboarding_bonus' => $this->onboardingBonusPayload(),
-        ]], 201)->cookie('vstep_token', $result['access_token'], 60 * 24, '/', null, true, true, false, 'Lax');
+        ]], 201);
     }
 
     public function login(LoginRequest $request): JsonResponse
@@ -68,7 +68,7 @@ final class AuthController extends Controller
             'access_token' => $result['access_token'],
             'refresh_token' => $result['refresh_token'],
             'expires_in' => $result['expires_in'],
-        ]])->cookie('vstep_token', $result['access_token'], 60 * 24, '/', null, true, true, false, 'Lax');
+        ]]);
     }
 
     public function googleLogin(GoogleLoginRequest $request): JsonResponse

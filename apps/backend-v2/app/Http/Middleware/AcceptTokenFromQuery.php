@@ -8,14 +8,10 @@ use Closure;
 use Illuminate\Http\Request;
 
 /**
- * Allow SSE connections to authenticate without an Authorization header.
+ * Accept Bearer token from cookie or query parameter.
  *
- * EventSource doesn't support custom headers. This middleware checks for:
- * 1. A cookie named "vstep_token" (preferred, secure)
- * 2. A query parameter "token" (fallback for dev/CORS-restricted environments)
- *
- * If found and no Authorization header is present, sets the header so
- * the downstream auth:api middleware can process it normally.
+ * Same-origin (production / Vite proxy): browser sends vstep_token cookie automatically.
+ * Cross-origin (direct API calls): fallback to ?token= query parameter.
  */
 final class AcceptTokenFromQuery
 {

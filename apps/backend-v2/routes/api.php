@@ -66,7 +66,7 @@ Route::prefix('v1')->group(function () {
     });
 
     // Learner routes requiring active profile context.
-    Route::middleware(['token-from-query', 'auth:api', 'active-profile'])->group(function () {
+    Route::middleware(['auth:api', 'active-profile'])->group(function () {
         Route::patch('/me/avatar', [AccountController::class, 'updateAvatar']);
         Route::post('/me/avatar', [AccountController::class, 'uploadAvatar']);
 
