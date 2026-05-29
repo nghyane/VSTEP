@@ -108,7 +108,7 @@ interface RecordScreenProps {
     part: number;
     taskType: string;
     speakingSeconds: number;
-    content: { topics: SpeakingTopic[] };
+    content: { topics?: SpeakingTopic[] } | null;
   };
   sessionId: string;
   onBack: () => void;
@@ -210,10 +210,10 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
     },
     onSuccess: (res) => {
       setSubmitted(res.submissionId);
-      const allSentences = detail.content.topics.reduce(
+      const allSentences = detail.content?.topics?.reduce(
         (acc, t) => acc + t.questions.length,
         0,
-      );
+      ) ?? 0;
       setTotalSentences(allSentences);
       setScore(0);
     },
@@ -262,7 +262,7 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
           <View style={[s.taskTypeBadge, { backgroundColor: COLOR + "25" }]}>
             <Text style={[s.taskTypeText, { color: COLOR_TEXT }]}>Part {detail.part} · {detail.taskType}</Text>
           </View>
-          {detail.content.topics.map((topic) => (
+          {detail.content?.topics?.map((topic) => (
             <View key={topic.name} style={s.topicBlock}>
               <Text style={[s.topicName, { color: c.foreground }]}>{topic.name}</Text>
               {topic.questions.map((q) => (
