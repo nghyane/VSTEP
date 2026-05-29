@@ -21,7 +21,6 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
     'started_at',
     'ended_at',
     'duration_seconds',
-    'support_levels_used',
 ])]
 class PracticeSession extends BaseModel
 {
@@ -32,7 +31,6 @@ class PracticeSession extends BaseModel
         return [
             'started_at' => 'datetime',
             'ended_at' => 'datetime',
-            'support_levels_used' => 'array',
         ];
     }
 

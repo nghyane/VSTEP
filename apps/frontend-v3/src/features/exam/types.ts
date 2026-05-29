@@ -10,9 +10,6 @@ export interface AppConfig {
 			custom_per_skill_coins: number
 			max_cost_coins: number
 		}
-		practice: {
-			support_level_costs: Record<string, number>
-		}
 	}
 }
 

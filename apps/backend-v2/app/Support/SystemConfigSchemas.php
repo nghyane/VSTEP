@@ -50,8 +50,6 @@ final class SystemConfigSchemas
             'exam.full_test_cost_coins' => ['type' => 'number', 'min' => 0, 'max' => 10000, 'integer' => true],
             'exam.custom_per_skill_coins' => ['type' => 'number', 'min' => 0, 'max' => 10000, 'integer' => true],
 
-            'support.level_costs' => ['type' => 'level_costs'],
-
             'onboarding.initial_coins' => ['type' => 'number', 'min' => 0, 'max' => 100000, 'integer' => true],
         ];
     }

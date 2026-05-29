@@ -32,7 +32,7 @@ class ProgressStreakTest extends TestCase
             'profile_id' => $profile->id, 'module' => 'listening',
             'content_ref_type' => 'test', 'content_ref_id' => $profile->id,
             'started_at' => now()->subMinutes(10), 'ended_at' => now(),
-            'duration_seconds' => 600, 'support_levels_used' => [],
+            'duration_seconds' => 600,
         ]);
 
         $this->app->make(ProgressService::class)->recordPracticeCompletion($session);

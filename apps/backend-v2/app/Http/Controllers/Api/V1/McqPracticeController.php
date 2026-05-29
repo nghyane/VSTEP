@@ -7,7 +7,6 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Practice\StartSessionRequest;
 use App\Http\Requests\Practice\SubmitMcqSessionRequest;
-use App\Http\Requests\Practice\UseSupportLevelRequest;
 use App\Http\Resources\PracticeListeningExerciseResource;
 use App\Http\Resources\PracticeListeningExerciseSummaryResource;
 use App\Http\Resources\PracticeMcqQuestionResource;
@@ -78,18 +77,6 @@ final class McqPracticeController extends Controller
         return response()->json([
             'data' => new PracticeSessionResource($session),
         ], 201);
-    }
-
-    public function useSupport(UseSupportLevelRequest $request, string $skill, PracticeSession $practiceSession): JsonResponse
-    {
-        $this->assertSkill($skill);
-        Gate::authorize('update', $practiceSession);
-
-        return response()->json(['data' => $this->sessionService->useSupportLevel(
-            $practiceSession,
-            $request->profile(),
-            (int) $request->validated('level'),
-        )]);
     }
 
     public function submit(SubmitMcqSessionRequest $request, string $skill, PracticeSession $practiceSession): JsonResponse

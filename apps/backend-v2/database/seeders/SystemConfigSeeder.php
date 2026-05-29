@@ -36,12 +36,6 @@ class SystemConfigSeeder extends Seeder
             'exam.full_test_cost_coins' => [25, 'Xu/lần thi Full VSTEP (4 kỹ năng).'],
             'exam.custom_per_skill_coins' => [8, 'Xu/kỹ năng khi thi Custom VSTEP.'],
 
-            // Support level costs (xu).
-            'support.level_costs' => [
-                ['1' => 1, '2' => 2],
-                'Xu trừ mỗi lần bật support level trong drill.',
-            ],
-
             // Onboarding bonus.
             'onboarding.initial_coins' => [100, 'Xu tặng khi tạo profile đầu tiên của account.'],
         ];

@@ -11,7 +11,7 @@ namespace App\Enums;
  * - Topup, OnboardingBonus, PromoRedeem, AdminGrant
  *
  * Negative types (delta < 0):
- * - SupportLevelUse, ExamCustom, ExamFull, CoursePurchase, TeacherBooking
+ * - ExamCustom, ExamFull, CoursePurchase, TeacherBooking
  */
 enum CoinTransactionType: string
 {
@@ -22,7 +22,6 @@ enum CoinTransactionType: string
     case AdminGrant = 'admin_grant';
     case StreakMilestone = 'streak_milestone';
     case Refund = 'refund';
-    case SupportLevelUse = 'support_level_use';
     case ExamCustom = 'exam_custom';
     case ExamFull = 'exam_full';
     case CoursePurchase = 'course_purchase';

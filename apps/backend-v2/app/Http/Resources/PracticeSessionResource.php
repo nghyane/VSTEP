@@ -24,7 +24,6 @@ final class PracticeSessionResource extends JsonResource
             'started_at' => $this->resource->started_at,
             'ended_at' => $this->resource->ended_at,
             'duration_seconds' => $this->resource->duration_seconds,
-            'support_levels_used' => $this->resource->support_levels_used ?? [],
         ];
     }
 }

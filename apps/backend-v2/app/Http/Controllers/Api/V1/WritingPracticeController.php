@@ -8,7 +8,6 @@ use App\Enums\GradingJobStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Practice\StartSessionRequest;
 use App\Http\Requests\Practice\SubmitWritingPracticeRequest;
-use App\Http\Requests\Practice\UseSupportLevelRequest;
 use App\Http\Resources\WritingPromptDetailResource;
 use App\Http\Resources\WritingPromptSummaryResource;
 use App\Http\Resources\WritingSubmissionHistoryResource;
@@ -62,15 +61,6 @@ final class WritingPracticeController extends Controller
         return response()->json(['data' => [
             'session_id' => $session->id, 'started_at' => $session->started_at,
         ]], 201);
-    }
-
-    public function useSupport(UseSupportLevelRequest $request, PracticeSession $practiceSession): JsonResponse
-    {
-        Gate::authorize('update', $practiceSession);
-
-        return response()->json(['data' => $this->sessionService->useSupportLevel(
-            $practiceSession, $request->profile(), (int) $request->validated('level'),
-        )]);
     }
 
     public function submit(SubmitWritingPracticeRequest $request, PracticeSession $practiceSession): JsonResponse

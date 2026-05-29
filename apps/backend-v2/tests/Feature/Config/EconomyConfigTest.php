@@ -20,7 +20,5 @@ class EconomyConfigTest extends TestCase
         $response->assertJsonPath('data.pricing.exam.full_test_cost_coins', 25);
         $response->assertJsonPath('data.pricing.exam.custom_per_skill_coins', 8);
         $response->assertJsonPath('data.pricing.exam.max_cost_coins', 25);
-        $response->assertJsonPath('data.pricing.practice.support_level_costs.1', 1);
-        $response->assertJsonPath('data.pricing.practice.support_level_costs.2', 2);
     }
 }

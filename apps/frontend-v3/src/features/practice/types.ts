@@ -66,11 +66,6 @@ export interface ReadingExerciseDetail {
 	questions: McqQuestion[]
 }
 
-export interface SupportResult {
-	coins_spent: number
-	balance_after: number
-}
-
 export interface WritingPrompt {
 	id: string
 	slug: string
@@ -168,6 +163,25 @@ export interface WritingHistoryItem {
 	submitted_at: string
 	word_count: number
 	prompt: { id: string; slug: string; title: string; part: number } | null
+}
+
+/* ───── Learning Path ───── */
+
+export interface LearningPathSkill {
+	skill: string
+	level: string
+	band: number | null
+	coverage_pct: number | null
+	total_items: number | null
+	completed_items: number | null
+	suggestion: string | null
+}
+
+export interface LearningPathData {
+	current_level: string
+	target_level: string
+	days_remaining: number | null
+	skills: LearningPathSkill[]
 }
 
 /* ───── Speaking Conversation (AI roleplay) ─────

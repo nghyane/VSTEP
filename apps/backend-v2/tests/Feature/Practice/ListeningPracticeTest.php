@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Practice;
 
-use App\Enums\CoinTransactionType;
-use App\Models\CoinTransaction;
 use App\Models\PracticeListeningExercise;
 use App\Models\PracticeListeningQuestion;
 use App\Models\Profile;
 use App\Models\User;
-use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -52,7 +49,7 @@ class ListeningPracticeTest extends TestCase
         $this->assertStringStartsWith('audio/listening/', $response->json('data.exercise.audio_url'));
     }
 
-    public function test_full_mcq_flow_start_support_submit(): void
+    public function test_full_mcq_flow_start_submit(): void
     {
         $user = User::factory()->create();
         $profile = Profile::factory()->initial()->forAccount($user)->create();
@@ -78,26 +75,6 @@ class ListeningPracticeTest extends TestCase
         $start->assertCreated();
         $sessionId = $start->json('data.id');
 
-        $wallet = $this->app->make(WalletService::class);
-        $balanceBefore = $wallet->getBalance($profile); // 100 onboarding
-
-        // Turn on support level 1 (cost 1 xu per config)
-        $support = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/practice/listening/sessions/{$sessionId}/support", [
-                'level' => 1,
-            ]);
-        $support->assertOk();
-        $support->assertJsonPath('data.coins_spent', 1);
-        $this->assertSame($balanceBefore - 1, $wallet->getBalance($profile));
-
-        // Same level again → idempotent, no extra charge
-        $supportAgain = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/practice/listening/sessions/{$sessionId}/support", [
-                'level' => 1,
-            ]);
-        $supportAgain->assertOk();
-        $supportAgain->assertJsonPath('data.coins_spent', 0);
-
         // Submit: 1 correct, 1 wrong
         $submit = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson("/api/v1/practice/listening/sessions/{$sessionId}/submit", [
@@ -114,13 +91,6 @@ class ListeningPracticeTest extends TestCase
 
         // Session ended_at set
         $submit->assertJsonPath('data.session.module', 'listening');
-
-        // Charge logged in ledger
-        $charges = CoinTransaction::query()
-            ->where('profile_id', $profile->id)
-            ->where('type', CoinTransactionType::SupportLevelUse)
-            ->count();
-        $this->assertSame(1, $charges);
     }
 
     public function test_submit_rejects_already_submitted(): void
@@ -171,34 +141,6 @@ class ListeningPracticeTest extends TestCase
             ->postJson("/api/v1/practice/listening/sessions/{$sessionId}/submit", [
                 'answers' => [['question_id' => $question->id, 'selected_index' => 0]],
             ])->assertStatus(403);
-    }
-
-    public function test_support_level_insufficient_balance_fails(): void
-    {
-        $user = User::factory()->create();
-        $profile = Profile::factory()->initial()->forAccount($user)->create();
-        $exercise = PracticeListeningExercise::factory()->create();
-        PracticeListeningQuestion::factory()->create(['exercise_id' => $exercise->id]);
-
-        // Drain wallet
-        $wallet = $this->app->make(WalletService::class);
-        $wallet->spend(
-            $profile,
-            100,
-            CoinTransactionType::ExamCustom,
-        );
-        $this->assertSame(0, $wallet->getBalance($profile));
-
-        $token = $this->tokenFor($user);
-        $sessionId = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson('/api/v1/practice/listening/sessions', ['exercise_id' => $exercise->id])
-            ->json('data.id');
-
-        $response = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/practice/listening/sessions/{$sessionId}/support", [
-                'level' => 2,
-            ]);
-        $response->assertStatus(422);
     }
 
     private function loginLearner(): string

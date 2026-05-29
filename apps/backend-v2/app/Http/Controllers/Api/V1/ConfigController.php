@@ -14,8 +14,6 @@ final class ConfigController extends Controller
     {
         $fullTestCost = (int) (SystemConfig::get('exam.full_test_cost_coins') ?? 25);
         $customPerSkillCost = (int) (SystemConfig::get('exam.custom_per_skill_coins') ?? 8);
-        $supportLevelCosts = SystemConfig::get('support.level_costs') ?? [];
-        $supportLevelCosts = is_array($supportLevelCosts) ? $supportLevelCosts : [];
 
         return response()->json([
             'data' => [
@@ -27,9 +25,6 @@ final class ConfigController extends Controller
                         'full_test_cost_coins' => $fullTestCost,
                         'custom_per_skill_coins' => $customPerSkillCost,
                         'max_cost_coins' => $fullTestCost,
-                    ],
-                    'practice' => [
-                        'support_level_costs' => $supportLevelCosts,
                     ],
                 ],
             ],
