@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { API_URL } from "#/lib/api"
-import { tokens } from "#/lib/tokens"
 
 export interface GradingProgress {
 	phase: string
@@ -49,8 +48,7 @@ export function useGradingSSE(jobId: string | null, waitForFeedback = false) {
 	useEffect(() => {
 		if (!jobId) return
 
-		const token = tokens.getAccess()
-		const url = `${API_URL}/grading-jobs/${jobId}/stream?feedback=${waitForFeedback ? "1" : "0"}${token ? `&token=${encodeURIComponent(token)}` : ""}`
+		const url = `${API_URL}/grading-jobs/${jobId}/stream?feedback=${waitForFeedback ? "1" : "0"}`
 		const es = new EventSource(url)
 		eventSourceRef.current = es
 
