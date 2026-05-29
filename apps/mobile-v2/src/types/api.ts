@@ -60,6 +60,15 @@ export interface AuthResponse {
   refreshToken: string;
   expiresIn: number;
 }
+export interface GoogleLoginResponse {
+  user: AuthUser;
+  profile: Profile | null;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  needsOnboarding: boolean;
+  suggestedNickname: string | null;
+}
 
 // ============================================================
 // Exams

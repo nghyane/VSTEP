@@ -46,7 +46,7 @@ export default function OnboardingScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { user, profile, signIn } = useAuth();
+  const { user, profile, signIn, suggestedNickname, setSuggestedNickname } = useAuth();
   const [finishing, setFinishing] = useState(false);
   const [step, setStep] = useState(0);
   const [target, setTarget] = useState<Level>("B2");
@@ -81,12 +81,14 @@ export default function OnboardingScreen() {
       try {
         const refreshToken = await getRefreshToken();
         if (!refreshToken) throw new Error("Missing refresh token");
-        const res = await completeOnboardingApi(defaultNickname(user), target, deadlineToDate(deadline));
+        const nickname = suggestedNickname?.trim() || defaultNickname(user);
+        const res = await completeOnboardingApi(nickname, target, deadlineToDate(deadline));
         await saveTokens(res.accessToken, refreshToken, user, res.profile);
         await signIn(res.accessToken, refreshToken, user, res.profile);
         if (res.onboardingBonus?.granted) {
           showWelcomeGift(res.onboardingBonus.amount);
         }
+        setSuggestedNickname(null);
         router.replace("/(app)/(tabs)");
       } catch {
         setFinishing(false);

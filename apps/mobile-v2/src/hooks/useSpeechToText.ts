@@ -56,10 +56,13 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startMsRef = useRef<number | null>(null);
   const isListeningRef = useRef(false);
+  const submittedRef = useRef(false);
+  const endedRef = useRef(false);
   // Ref copy of transcript so onSpeechEnd handler can read latest without stale closure.
   const transcriptRef = useRef("");
   // Ref for stop so the auto-stop timer always calls the latest stop (avoids stale closure).
   const stopRef = useRef<() => void>(() => {});
+  const fallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Check Voice availability on mount.
   useEffect(() => {
@@ -83,6 +86,13 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
     startMsRef.current = null;
   }, []);
 
+  const clearFallback = useCallback(() => {
+    if (fallbackRef.current) {
+      clearTimeout(fallbackRef.current);
+      fallbackRef.current = null;
+    }
+  }, []);
+
   // Detach Voice listeners to prevent stale closures across starts.
   const removeVoiceListeners = useCallback(() => {
     // Voice.destroy() handles native cleanup, but the singleton retains JS callback
@@ -90,10 +100,60 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
     // after we register new ones.
     const NOOP = () => {};
     Voice.onSpeechResults = NOOP;
+    Voice.onSpeechPartialResults = NOOP;
     Voice.onSpeechError = NOOP;
     Voice.onSpeechEnd = NOOP;
     Voice.onSpeechStart = NOOP;
+    Voice.onSpeechRecognized = NOOP;
+    Voice.onSpeechVolumeChanged = NOOP;
   }, []);
+
+  const callOnEndOnce = useCallback(() => {
+    if (endedRef.current) return;
+    endedRef.current = true;
+    onEnd?.();
+  }, [onEnd]);
+
+  const updateTranscript = useCallback((e: SpeechResultsEvent) => {
+    const results = e.value ?? [];
+    const text = results[0] ?? "";
+    if (!text) return;
+    setTranscript(text);
+    transcriptRef.current = text;
+  }, []);
+
+  const submitTranscriptIfReady = useCallback(() => {
+    if (submittedRef.current) return true;
+    const finalTranscript = transcriptRef.current.trim();
+    if (!finalTranscript) return false;
+    submittedRef.current = true;
+    setTranscript(finalTranscript);
+    setError(null);
+    onResult?.(finalTranscript);
+    return true;
+  }, [onResult]);
+
+  const finishRecognition = useCallback(() => {
+    clearFallback();
+    cleanup();
+    isListeningRef.current = false;
+    setState("idle");
+    callOnEndOnce();
+    Voice.destroy().catch(() => undefined);
+    removeVoiceListeners();
+  }, [callOnEndOnce, cleanup, clearFallback, removeVoiceListeners]);
+
+  const scheduleFinalFallback = useCallback(() => {
+    clearFallback();
+    fallbackRef.current = setTimeout(() => {
+      fallbackRef.current = null;
+      const submitted = submitTranscriptIfReady();
+      if (!submitted) {
+        setError("Không nghe rõ. Vui lòng thử lại.");
+      }
+      finishRecognition();
+    }, 700);
+  }, [clearFallback, finishRecognition, submitTranscriptIfReady]);
 
   // Start listening.
   const start = useCallback(async () => {
@@ -105,6 +165,9 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
     setError(null);
     setTranscript("");
     transcriptRef.current = "";
+    submittedRef.current = false;
+    endedRef.current = false;
+    clearFallback();
     setElapsed(0);
 
     // Check Voice availability and block early when the service is unavailable.
@@ -132,11 +195,15 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
     // Clean any stale listeners left from a previous session.
     removeVoiceListeners();
 
+    Voice.onSpeechPartialResults = updateTranscript;
+
     Voice.onSpeechResults = (e: SpeechResultsEvent) => {
-      const results = e.value ?? [];
-      if (results.length > 0) {
-        setTranscript(results[0]);
-        transcriptRef.current = results[0];
+      updateTranscript(e);
+      if (submitTranscriptIfReady()) {
+        finishRecognition();
+      } else {
+        setError("Không nghe rõ. Vui lòng thử lại.");
+        finishRecognition();
       }
     };
 
@@ -146,21 +213,20 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
       onError?.(msg);
       setState("idle");
       isListeningRef.current = false;
+      clearFallback();
       cleanup();
+      Voice.destroy().catch(() => undefined);
+      removeVoiceListeners();
     };
 
     Voice.onSpeechEnd = () => {
       if (!isListeningRef.current) return;
-      isListeningRef.current = false;
       cleanup();
       setState("idle");
-      onEnd?.();
-
-      // Auto-submit transcript if we captured one (mirror FE v3 onend -> doSubmit).
-      const finalTranscript = transcriptRef.current.trim();
-      if (finalTranscript) {
-        onResult?.(finalTranscript);
-      }
+      callOnEndOnce();
+      // Android emits onSpeechEnd before final onSpeechResults. Wait briefly for
+      // final results, then fall back to the latest partial transcript if needed.
+      scheduleFinalFallback();
     };
 
     try {
@@ -183,28 +249,20 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
       onError?.(msg);
       setState("idle");
       isListeningRef.current = false;
+      Voice.destroy().catch(() => undefined);
+      removeVoiceListeners();
       cleanup();
     }
-  }, [language, maxSeconds, onEnd, onError, onResult, cleanup, isAvailable, removeVoiceListeners]);
+  }, [language, maxSeconds, onError, cleanup, clearFallback, isAvailable, removeVoiceListeners, updateTranscript, submitTranscriptIfReady, finishRecognition, callOnEndOnce, scheduleFinalFallback]);
 
   // Stop listening after the user taps the mic again.
   const stop = useCallback(() => {
     if (!isListeningRef.current) return;
-    isListeningRef.current = false;
     cleanup();
     setState("stopped");
-
-    const finalTranscript = transcriptRef.current.trim();
-    if (finalTranscript) {
-      onResult?.(finalTranscript);
-    } else {
-      setError("Không nghe rõ. Vui lòng thử lại.");
-    }
-
+    scheduleFinalFallback();
     Voice.stop().catch(() => undefined);
-    Voice.destroy().catch(() => undefined);
-    removeVoiceListeners();
-  }, [onResult, cleanup, removeVoiceListeners]);
+  }, [cleanup, scheduleFinalFallback]);
 
   // Keep stopRef in sync so the auto-stop timer always calls the latest stop.
   stopRef.current = stop;
@@ -214,23 +272,27 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
     Voice.stop().catch(() => undefined);
     Voice.destroy().catch(() => undefined);
     removeVoiceListeners();
+    clearFallback();
     cleanup();
     setState("idle");
     setTranscript("");
     transcriptRef.current = "";
+    submittedRef.current = false;
+    endedRef.current = false;
     setElapsed(0);
     setError(null);
     isListeningRef.current = false;
-  }, [cleanup, removeVoiceListeners]);
+  }, [cleanup, clearFallback, removeVoiceListeners]);
 
   // Cleanup on unmount.
   useEffect(() => {
     return () => {
       Voice.destroy().catch(() => undefined);
       removeVoiceListeners();
+      clearFallback();
       cleanup();
     };
-  }, [cleanup, removeVoiceListeners]);
+  }, [cleanup, clearFallback, removeVoiceListeners]);
 
   return {
     state,

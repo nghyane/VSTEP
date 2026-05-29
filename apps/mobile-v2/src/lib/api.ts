@@ -231,6 +231,11 @@ export async function registerApi(
   }>(unwrapData(json));
 }
 
+
+export async function googleLoginApi(idToken: string) {
+  return api.post<import("@/types/api").GoogleLoginResponse>("/api/v1/auth/google", { idToken });
+}
+
 export async function completeOnboardingApi(nickname: string, targetLevel: string, targetDeadline: string) {
   return api.post<{
     accessToken: string;

@@ -17,30 +17,44 @@ import { useAuth } from "@/hooks/use-auth";
 import { Logo } from "@/components/Logo";
 import { DepthButton } from "@/components/DepthButton";
 import { Mascot } from "@/components/Mascot";
-import { loginApi } from "@/lib/api";
-import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { HapticTouchable } from "@/components/HapticTouchable";
+import { loginApi, googleLoginApi, ApiError } from "@/lib/api";
+import { hasGoogleAuthConfig, signInWithGoogle } from "@/lib/google-auth";
+import { useThemeColors, spacing, radius, fontSize, fontFamily, depthNeutral } from "@/theme";
+
+const LEARNER_ROLE = "learner";
+
+function errorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    const body = err.body as { message?: string } | null;
+    return body?.message ?? "Da xay ra loi. Thu lai.";
+  }
+  return err instanceof Error ? err.message : "Da xay ra loi. Thu lai.";
+}
 
 export default function LoginScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, signOut, setSuggestedNickname } = useAuth();
+  const googleReady = hasGoogleAuthConfig();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
 
   const validate = useCallback(() => {
     const e: typeof errors = {};
     const trimmed = email.trim();
     if (!trimmed) {
-      e.email = "Vui lòng nhập email";
+      e.email = "Vui long nhap email";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      e.email = "Email không hợp lệ";
+      e.email = "Email khong hop le";
     }
-    if (!password) e.password = "Vui lòng nhập mật khẩu";
+    if (!password) e.password = "Vui long nhap mat khau";
     setErrors(e);
     return Object.keys(e).length === 0;
   }, [email, password]);
@@ -51,16 +65,65 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const res = await loginApi(email.trim(), password);
+      if (res.user.role !== LEARNER_ROLE) {
+        await signOut();
+        setErrors({ general: "Ung dung mobile hien chi ho tro tai khoan learner." });
+        return;
+      }
       await signIn(res.accessToken, res.refreshToken, res.user, res.profile);
+      setSuggestedNickname(null);
       if (!res.profile) {
         router.replace("/(app)/onboarding");
       } else {
         router.replace("/(app)/(tabs)");
       }
     } catch (err) {
-      setErrors({ general: err instanceof Error ? err.message : "Đã xảy ra lỗi. Thử lại." });
+      setErrors({ general: errorMessage(err) });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleGoogleLogin() {
+    setErrors({});
+    setGoogleLoading(true);
+    try {
+      const auth = await signInWithGoogle();
+      if (auth.status === "cancel") return;
+      if (auth.status === "error") {
+        setErrors({ general: auth.message });
+        return;
+      }
+
+      const res = await googleLoginApi(auth.idToken);
+      if (res.user.role !== LEARNER_ROLE) {
+        await signOut();
+        setErrors({ general: "Ung dung mobile hien chi ho tro tai khoan learner." });
+        return;
+      }
+
+      await signIn(res.accessToken, res.refreshToken, res.user, res.profile);
+      if (res.needsOnboarding || !res.profile) {
+        setSuggestedNickname(res.suggestedNickname);
+        router.replace("/(app)/onboarding");
+        return;
+      }
+
+      setSuggestedNickname(null);
+      router.replace("/(app)/(tabs)");
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        const body = err.body as { message?: string } | null;
+        setErrors({
+          general:
+            body?.message ??
+            "Email nay da duoc dang ky. Vui long dang nhap bang mat khau.",
+        });
+      } else {
+        setErrors({ general: errorMessage(err) });
+      }
+    } finally {
+      setGoogleLoading(false);
     }
   }
 
@@ -76,23 +139,18 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Logo */}
         <View style={s.logoRow}>
           <Logo size="lg" />
         </View>
 
-        {/* Mascot — wave, tĩnh, size vừa */}
         <View style={s.mascotWrap}>
           <Mascot name="wave" size={110} animation="none" />
         </View>
 
-        <Text style={[s.headline, { color: c.foreground }]}>Chào mừng trở lại!</Text>
-        <Text style={[s.sub, { color: c.mutedForeground }]}>
-          Đăng nhập để tiếp tục hành trình VSTEP của bạn.
-        </Text>
+        <Text style={[s.headline, { color: c.foreground }]}>Chao mung tro lai!</Text>
+        <Text style={[s.sub, { color: c.mutedForeground }]}>Dang nhap de tiep tuc hanh trinh VSTEP cua ban.</Text>
 
-        {/* Form */}
-        <View style={[s.card, { backgroundColor: c.surface }]}>
+        <View style={[s.card, depthNeutral, { backgroundColor: c.surface }]}>
           {errors.general && (
             <View style={[s.errorBanner, { backgroundColor: c.destructiveTint }]}>
               <Ionicons name="alert-circle-outline" size={16} color={c.destructive} />
@@ -100,12 +158,52 @@ export default function LoginScreen() {
             </View>
           )}
 
+          <HapticTouchable
+            onPress={handleGoogleLogin}
+            disabled={googleLoading || loading || !googleReady}
+            style={[
+              s.googleButton,
+              {
+                backgroundColor: googleReady ? c.surface : c.muted,
+                borderColor: googleReady ? c.border : c.borderLight,
+                borderBottomColor: googleReady ? c.mutedForeground : c.border,
+                opacity: googleLoading || loading ? 0.75 : 1,
+              },
+            ]}
+          >
+            {googleLoading ? (
+              <ActivityIndicator color={c.foreground} size="small" />
+            ) : (
+              <>
+                <View style={[s.googleIconWrap, { backgroundColor: c.background }]}>
+                  <Text style={[s.googleIconText, { color: c.foreground }]}>G</Text>
+                </View>
+                <Text style={[s.googleButtonText, { color: googleReady ? c.foreground : c.subtle }]}>Tiep tuc voi Google</Text>
+              </>
+            )}
+          </HapticTouchable>
+
+          {!googleReady ? (
+            <Text style={[s.fieldHint, { color: c.warning }]}>Thieu EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID trong .env. Google Login native cung yeu cau development build hoac EAS build, khong chay trong Expo Go.</Text>
+          ) : (
+            <Text style={[s.fieldHint, { color: c.mutedForeground }]}>Google Login native yeu cau development build hoac EAS build. Neu vua doi cau hinh Google Cloud hoac package app, hay rebuild Android hoac iOS truoc khi thu lai.</Text>
+          )}
+
+          <View style={s.dividerRow}>
+            <View style={[s.divider, { backgroundColor: c.border }]} />
+            <Text style={[s.dividerText, { color: c.subtle }]}>hoac</Text>
+            <View style={[s.divider, { backgroundColor: c.border }]} />
+          </View>
+
           <View style={s.fieldGroup}>
             <Text style={[s.label, { color: c.foreground }]}>Email</Text>
             <View
               style={[
                 s.inputWrap,
-                { borderColor: errors.email ? c.destructive : email ? c.borderFocus : c.border },
+                {
+                  borderColor: errors.email ? c.destructive : email ? c.borderFocus : c.border,
+                  backgroundColor: c.background,
+                },
               ]}
             >
               <Ionicons name="mail-outline" size={18} color={c.mutedForeground} />
@@ -124,17 +222,20 @@ export default function LoginScreen() {
           </View>
 
           <View style={s.fieldGroup}>
-            <Text style={[s.label, { color: c.foreground }]}>Mật khẩu</Text>
+            <Text style={[s.label, { color: c.foreground }]}>Mat khau</Text>
             <View
               style={[
                 s.inputWrap,
-                { borderColor: errors.password ? c.destructive : password ? c.borderFocus : c.border },
+                {
+                  borderColor: errors.password ? c.destructive : password ? c.borderFocus : c.border,
+                  backgroundColor: c.background,
+                },
               ]}
             >
               <Ionicons name="lock-closed-outline" size={18} color={c.mutedForeground} />
               <TextInput
                 style={[s.input, { color: c.foreground }]}
-                placeholder="Nhập mật khẩu..."
+                placeholder="Nhap mat khau..."
                 placeholderTextColor={c.placeholder}
                 value={password}
                 onChangeText={setPassword}
@@ -154,16 +255,16 @@ export default function LoginScreen() {
             )}
           </View>
 
-          <DepthButton onPress={handleLogin} fullWidth disabled={loading}>
-            {loading ? <ActivityIndicator color="#FFF" size="small" /> : "Đăng nhập"}
+          <DepthButton onPress={handleLogin} fullWidth disabled={loading || googleLoading}>
+            {loading ? <ActivityIndicator color={c.primaryForeground} size="small" /> : "Dang nhap"}
           </DepthButton>
         </View>
 
         <View style={s.footer}>
-          <Text style={[s.footerText, { color: c.mutedForeground }]}>Chưa có tài khoản? </Text>
+          <Text style={[s.footerText, { color: c.mutedForeground }]}>Chua co tai khoan? </Text>
           <Link href="/(auth)/register" asChild>
             <TouchableOpacity>
-              <Text style={[s.footerLink, { color: c.primary }]}>Đăng ký</Text>
+              <Text style={[s.footerLink, { color: c.primary }]}>Dang ky</Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -187,11 +288,7 @@ const s = StyleSheet.create({
   headline: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold, textAlign: "center", marginBottom: spacing.xs },
   sub: { fontSize: fontSize.sm, textAlign: "center", lineHeight: 20, marginBottom: spacing.xl },
   card: {
-    borderWidth: 2,
-    borderBottomWidth: 4,
     borderRadius: radius["2xl"],
-    borderColor: "#E5E5E5",
-    borderBottomColor: "#CACACA",
     padding: spacing.xl,
     gap: spacing.base,
     marginBottom: spacing.lg,
@@ -204,6 +301,35 @@ const s = StyleSheet.create({
     borderRadius: radius.md,
   },
   errorBannerText: { fontSize: fontSize.sm, flex: 1 },
+  googleButton: {
+    minHeight: 54,
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.base,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+  },
+  googleIconWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  googleIconText: {
+    fontSize: fontSize.base,
+    fontFamily: fontFamily.extraBold,
+  },
+  googleButtonText: {
+    fontSize: fontSize.base,
+    fontFamily: fontFamily.bold,
+  },
+  dividerRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  divider: { flex: 1, height: 1 },
+  dividerText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   fieldGroup: { gap: spacing.xs },
   label: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   inputWrap: {
@@ -214,10 +340,10 @@ const s = StyleSheet.create({
     borderRadius: radius.lg,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    backgroundColor: "#FAFAFA",
   },
   input: { flex: 1, fontSize: fontSize.base, fontFamily: fontFamily.regular, minHeight: 28 },
   fieldError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
+  fieldHint: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, textAlign: "center", lineHeight: 18 },
   footer: { flexDirection: "row", justifyContent: "center", alignItems: "center" },
   footerText: { fontSize: fontSize.sm },
   footerLink: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
