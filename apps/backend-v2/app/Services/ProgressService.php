@@ -14,8 +14,6 @@ use App\Models\PracticeWritingPrompt;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
 use App\Models\ProfileGrammarMastery;
-use App\Models\ProfileStreakLog;
-use App\Models\ProfileStreakState;
 use App\Models\ProfileVocabSrsState;
 use App\Models\SpeakingGradingResult;
 use App\Models\SystemConfig;
@@ -77,12 +75,6 @@ class ProgressService
             count: 1,
             durationSeconds: 7200, // exam session ≈ 2 hours
         );
-
-        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
-        $submittedAt = $session->submitted_at ?? now();
-        $dateLocal = Carbon::parse($submittedAt, 'UTC')->setTimezone($tz)->toDateString();
-
-        $this->updateStreak($session->profile_id, $dateLocal);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -201,38 +193,6 @@ class ProgressService
     private function isConsecutiveDay(string $newer, string $older): bool
     {
         return Carbon::parse($newer)->subDay()->toDateString() === $older;
-    }
-
-    private function updateStreak(string $profileId, string $dateLocal): void
-    {
-        DB::transaction(function () use ($profileId, $dateLocal) {
-            ProfileStreakLog::query()->updateOrInsert(
-                ['profile_id' => $profileId, 'date_local' => $dateLocal],
-                ['active' => true, 'created_at' => now()],
-            );
-
-            $state = ProfileStreakState::query()->lockForUpdate()->find($profileId);
-            $lastDate = $state?->last_active_date_local?->toDateString();
-            $yesterday = Carbon::parse($dateLocal)->subDay()->toDateString();
-
-            if ($lastDate === $dateLocal) {
-                return;
-            }
-
-            $newStreak = ($lastDate === $yesterday)
-                ? ($state?->current_streak ?? 0) + 1
-                : 1;
-
-            ProfileStreakState::query()->updateOrInsert(
-                ['profile_id' => $profileId],
-                [
-                    'current_streak' => $newStreak,
-                    'longest_streak' => max($newStreak, $state?->longest_streak ?? 0),
-                    'last_active_date_local' => $dateLocal,
-                    'updated_at' => now(),
-                ],
-            );
-        });
     }
 
     public function getStreak(Profile $profile): array

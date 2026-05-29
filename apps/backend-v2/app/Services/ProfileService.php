@@ -14,9 +14,9 @@ use App\Models\ProfileDailyActivity;
 use App\Models\ProfileGrammarMastery;
 use App\Models\ProfileOnboardingResponse;
 use App\Models\ProfileResetEvent;
-use App\Models\ProfileStreakState;
 use App\Models\ProfileVocabSrsState;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -32,6 +32,8 @@ use Illuminate\Validation\ValidationException;
  */
 final class ProfileService
 {
+    public const MAX_PROFILES_PER_USER = 5;
+
     /**
      * @param  array{nickname:string,target_level:string,target_deadline:string,entry_level?:string|null}  $data
      */
@@ -62,6 +64,21 @@ final class ProfileService
     public function update(Profile $profile, array $data): Profile
     {
         $this->assertNicknameUnique($profile->account_id, $data['nickname'] ?? null, exceptId: $profile->id);
+
+        if (isset($data['target_level']) && $data['target_level'] !== $profile->target_level) {
+            throw ValidationException::withMessages([
+                'target_level' => ['Target level is immutable. Create a new profile to change target.'],
+            ]);
+        }
+
+        if (isset($data['target_deadline']) && $profile->target_deadline !== null) {
+            $newDeadline = Carbon::parse($data['target_deadline']);
+            if ($newDeadline->lt($profile->target_deadline)) {
+                throw ValidationException::withMessages([
+                    'target_deadline' => ['Deadline can only be extended, not shortened.'],
+                ]);
+            }
+        }
 
         $profile->fill($data);
         $profile->save();
@@ -139,7 +156,6 @@ final class ProfileService
             PracticeGrammarAttempt::query()->where('profile_id', $profile->id)->delete();
             PracticeSession::query()->where('profile_id', $profile->id)->delete();
             ProfileDailyActivity::query()->where('profile_id', $profile->id)->delete();
-            ProfileStreakState::query()->where('profile_id', $profile->id)->delete();
 
             return ProfileResetEvent::create([
                 'profile_id' => $profile->id,
@@ -172,6 +188,7 @@ final class ProfileService
     private function createProfile(User $user, array $data, bool $isInitial): Profile
     {
         $this->assertNicknameUnique($user->id, $data['nickname']);
+        $this->assertProfileLimit($user->id);
 
         // Only one initial profile per account (app-level guard).
         if ($isInitial && $user->profiles()->where('is_initial_profile', true)->exists()) {
@@ -188,6 +205,17 @@ final class ProfileService
         ]), function (Profile $profile): void {
             ProfileCreated::dispatch($profile);
         });
+    }
+
+    private function assertProfileLimit(string $accountId): void
+    {
+        $count = Profile::query()->where('account_id', $accountId)->count();
+
+        if ($count >= self::MAX_PROFILES_PER_USER) {
+            throw ValidationException::withMessages([
+                'profile' => ['Maximum of '.self::MAX_PROFILES_PER_USER.' profiles per account.'],
+            ]);
+        }
     }
 
     private function assertNicknameUnique(string $accountId, ?string $nickname, ?string $exceptId = null): void

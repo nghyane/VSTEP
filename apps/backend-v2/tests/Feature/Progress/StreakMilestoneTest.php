@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Progress;
 
 use App\Models\Profile;
-use App\Models\ProfileStreakState;
+use App\Models\ProfileDailyActivity;
 use App\Models\SystemConfig;
 use App\Models\User;
 use App\Services\StreakMilestoneService;
@@ -75,13 +75,11 @@ class StreakMilestoneTest extends TestCase
 
     private function seedStreakState(int $streak): void
     {
-        ProfileStreakState::query()->updateOrInsert(
-            ['profile_id' => $this->profile->id],
-            [
-                'current_streak' => $streak,
-                'longest_streak' => $streak,
-                'last_active_date_local' => now()->toDateString(),
-            ],
-        );
+        for ($i = $streak - 1; $i >= 0; $i--) {
+            ProfileDailyActivity::query()->insert([
+                'profile_id' => $this->profile->id,
+                'date_local' => now()->subDays($i)->toDateString(),
+            ]);
+        }
     }
 }

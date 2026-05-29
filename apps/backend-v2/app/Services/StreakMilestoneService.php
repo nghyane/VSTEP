@@ -6,9 +6,10 @@ namespace App\Services;
 
 use App\Enums\CoinTransactionType;
 use App\Models\Profile;
+use App\Models\ProfileDailyActivity;
 use App\Models\ProfileStreakClaim;
-use App\Models\ProfileStreakState;
 use App\Models\SystemConfig;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -88,13 +89,7 @@ final class StreakMilestoneService
         }
 
         return DB::transaction(function () use ($profile, $milestone) {
-            // Lock streak state để tránh race với updateStreak.
-            $state = ProfileStreakState::query()
-                ->whereKey($profile->id)
-                ->lockForUpdate()
-                ->first();
-
-            $currentStreak = (int) ($state?->current_streak ?? 0);
+            $currentStreak = $this->computeCurrentStreak($profile);
             if ($currentStreak < $milestone['days']) {
                 throw ValidationException::withMessages([
                     'milestone_days' => ["Cần đạt {$milestone['days']} ngày streak (hiện {$currentStreak})."],
@@ -138,5 +133,50 @@ final class StreakMilestoneService
                 'claimed_at' => $claim->claimed_at->toIso8601String(),
             ];
         });
+    }
+
+    /**
+     * Compute current streak from profile_daily_activity — consistent with ProgressService::computeStreak().
+     */
+    private function computeCurrentStreak(Profile $profile): int
+    {
+        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
+        $today = Carbon::now($tz)->toDateString();
+        $yesterday = Carbon::now($tz)->subDay()->toDateString();
+
+        $dates = ProfileDailyActivity::query()
+            ->where('profile_id', $profile->id)
+            ->orderByDesc('date_local')
+            ->pluck('date_local')
+            ->map(fn ($d) => $d instanceof \DateTimeInterface ? $d->format('Y-m-d') : $d)
+            ->toArray();
+
+        if ($dates === []) {
+            return 0;
+        }
+
+        $latestDate = $dates[0];
+        if ($latestDate !== $today && $latestDate !== $yesterday) {
+            return 0;
+        }
+
+        $current = 0;
+        $cursor = null;
+        foreach ($dates as $date) {
+            if ($cursor === null) {
+                $cursor = $date;
+                $current = 1;
+
+                continue;
+            }
+            if (Carbon::parse($cursor)->subDay()->toDateString() === $date) {
+                $current++;
+                $cursor = $date;
+            } else {
+                break;
+            }
+        }
+
+        return $current;
     }
 }

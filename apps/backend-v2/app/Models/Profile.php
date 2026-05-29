@@ -58,18 +58,6 @@ class Profile extends BaseModel
 
     // ── Progress & Activity ──
 
-    public function streakState(): HasOne
-    {
-        return $this->hasOne(ProfileStreakState::class);
-    }
-
-    public function streakLogs(): HasMany
-    {
-        return $this->hasMany(ProfileStreakLog::class);
-    }
-
-    // ── Teachers ──
-
     public function dailyActivities(): HasMany
     {
         return $this->hasMany(ProfileDailyActivity::class);

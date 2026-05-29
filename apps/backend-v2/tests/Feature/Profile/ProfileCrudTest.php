@@ -151,6 +151,115 @@ class ProfileCrudTest extends TestCase
         $this->assertSame('Jordan', $secondProfile->refresh()->avatar_key);
     }
 
+    // ═══════════════════════════════════════════════════════
+    // Profile limit: max 5 profiles per user
+    // ═══════════════════════════════════════════════════════
+
+    public function test_cannot_create_more_than_five_profiles(): void
+    {
+        $user = User::factory()->create();
+        Profile::factory()->initial()->forAccount($user)->create();
+
+        // Create 4 more (total = 5)
+        for ($i = 2; $i <= 5; $i++) {
+            Profile::factory()->forAccount($user)->create(['nickname' => "profile-{$i}"]);
+        }
+
+        $login = $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+        $token = $login->json('data.access_token');
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/profiles', [
+                'nickname' => 'profile-6',
+                'target_level' => 'B2',
+                'target_deadline' => now()->addYear()->toDateString(),
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['profile']);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Target level immutable
+    // ═══════════════════════════════════════════════════════
+
+    public function test_cannot_change_target_level_after_create(): void
+    {
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create(['target_level' => 'B1']);
+
+        $login = $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+        $token = $login->json('data.access_token');
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->patchJson("/api/v1/profiles/{$profile->id}", [
+                'target_level' => 'C1',
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['target_level']);
+        $this->assertSame('B1', $profile->fresh()->target_level);
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // Deadline: chỉ dời xa hơn
+    // ═══════════════════════════════════════════════════════
+
+    public function test_can_extend_deadline(): void
+    {
+        $user = User::factory()->create();
+        $originalDeadline = now()->addMonths(3)->toDateString();
+        $profile = Profile::factory()->initial()->forAccount($user)->create([
+            'target_deadline' => $originalDeadline,
+        ]);
+
+        $login = $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+        $token = $login->json('data.access_token');
+
+        $newDeadline = now()->addYear()->toDateString();
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->patchJson("/api/v1/profiles/{$profile->id}", [
+                'target_deadline' => $newDeadline,
+            ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('data.target_deadline', $newDeadline);
+    }
+
+    public function test_cannot_shorten_deadline(): void
+    {
+        $user = User::factory()->create();
+        $originalDeadline = now()->addYear()->toDateString();
+        $profile = Profile::factory()->initial()->forAccount($user)->create([
+            'target_deadline' => $originalDeadline,
+        ]);
+
+        $login = $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+        $token = $login->json('data.access_token');
+
+        $shorterDeadline = now()->addMonths(3)->toDateString();
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->patchJson("/api/v1/profiles/{$profile->id}", [
+                'target_deadline' => $shorterDeadline,
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['target_deadline']);
+        $this->assertSame($originalDeadline, $profile->fresh()->target_deadline->toDateString());
+    }
+
     public function test_avatar_update_keeps_uploaded_file_used_by_sibling_profile(): void
     {
         Storage::fake('public');

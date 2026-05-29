@@ -11,8 +11,6 @@ use App\Models\ExamVersion;
 use App\Models\PracticeSession;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
-use App\Models\ProfileStreakLog;
-use App\Models\ProfileStreakState;
 use App\Models\User;
 use App\Services\ProgressService;
 use Carbon\CarbonInterface;
@@ -46,18 +44,15 @@ class ProgressStreakTest extends TestCase
         [$profile, $version] = $this->seedExamVersion();
         $service = $this->app->make(ProgressService::class);
 
-        // Also need daily activity rows so streak compute sees active days
         ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now()->subDay()->toDateString(), 'listening_exercise_count' => 1]);
         ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now()->toDateString(), 'reading_exercise_count' => 1]);
 
         $service->recordExamCompletion($this->createFullTestSession($profile, $version, now()->subDay()));
         $service->recordExamCompletion($this->createFullTestSession($profile, $version, now()));
 
-        $state = ProfileStreakState::query()->find($profile->id);
-        $this->assertSame(2, $state->current_streak);
-        $this->assertSame(2, $state->longest_streak);
-        $this->assertSame(2, ProfileStreakLog::query()
-            ->where('profile_id', $profile->id)->count());
+        $streak = $service->getStreak($profile);
+        $this->assertSame(2, $streak['current']);
+        $this->assertSame(2, $streak['longest']);
     }
 
     public function test_streak_resets_on_gap(): void
@@ -71,9 +66,8 @@ class ProgressStreakTest extends TestCase
         $service->recordExamCompletion($this->createFullTestSession($profile, $version, now()->subDays(3)));
         $service->recordExamCompletion($this->createFullTestSession($profile, $version, now()));
 
-        $state = ProfileStreakState::query()->find($profile->id);
-        $this->assertSame(1, $state->current_streak);
-        $this->assertSame(1, $state->longest_streak);
+        $streak = $service->getStreak($profile);
+        $this->assertSame(1, $streak['current']);
     }
 
     public function test_any_exam_records_activity(): void

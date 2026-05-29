@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2026-05-29T00:00:00Z",
+  "commitHash": "cefe980458ffb8cedd757264769b1d4bd1175070",
+  "branch": "main",
+  "pageCount": 5,
+  "topLevelSections": ["overview", "primitives", "reference"],
+  "pageOrder": [
+    "overview/index.md",
+    "primitives/index.md",
+    "primitives/profile.md",
+    "reference/index.md",
+    "reference/data-models.md"
+  ]
+}
