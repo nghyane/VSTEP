@@ -13,6 +13,7 @@ export type NotificationType =
   | "grading_complete"
   | "goal_achieved"
   | "streak_milestone"
+  | "study_reminder"
   | "session_abandoned"
   | "feedback"
   | "system";
@@ -207,33 +208,93 @@ export interface OverviewData {
     entryLevel: string | null;
     predictedLevel: string | null;
   };
+  streak: {
+    current: number;
+    longest: number;
+    lastActiveDate: string | null;
+    todayActive: boolean;
+  };
+  heatmap: {
+    weeks: number;
+    days: SkillActivityDay[];
+  };
+  scores: {
+    spider: ScoreSpider | null;
+    timeline: ScoreTimelinePoint[];
+    growth: Record<Skill, ScoreGrowth>;
+  };
   stats: {
     totalTests: number;
-    minTestsRequired: number;
     totalStudyMinutes: number;
-    streak: number;
-    longestStreak: number;
   };
-  chart: {
-    listening: number | null;
-    reading: number | null;
-    writing: number | null;
-    speaking: number | null;
-    sampleSize: number;
-  } | null;
 }
 
-export interface HeatmapEntry {
-  date: string;
-  minutes: number;
+export interface ScoreSpider {
+  listening: number | null;
+  reading: number | null;
+  writing: number | null;
+  speaking: number | null;
+  sampleSize: number;
 }
+
+export interface ScoreTimelinePoint {
+  date: string;
+  listening: number | null;
+  reading: number | null;
+  writing: number | null;
+  speaking: number | null;
+}
+
+export interface ScoreGrowth {
+  first: number | null;
+  latest: number | null;
+  change: number | null;
+  trend: string;
+}
+
+export interface SkillActivityDay {
+  date: string;
+  listening: number;
+  reading: number;
+  writing: number;
+  speaking: number;
+  vocab: number;
+  exam: number;
+}
+
+export type HeatmapEntry = SkillActivityDay;
 
 export interface StreakData {
-  currentStreak: number;
-  longestStreak: number;
-  todaySessions: number;
+  current: number;
+  longest: number;
+  todayActive: boolean;
   dailyGoal: number;
   lastActiveDate: string | null;
+  milestones: StreakMilestone[];
+}
+
+export interface StreakMilestone {
+  days: number;
+  coins: number;
+  claimed: boolean;
+  claimedAt: string | null;
+}
+
+export interface LearningPathSkill {
+  skill: Skill | "vocabulary" | "grammar";
+  level: string;
+  band: number | null;
+  coveragePct: number | null;
+  totalItems: number | null;
+  completedItems: number | null;
+  suggestion: string | null;
+}
+
+export interface LearningPathData {
+  currentLevel: string;
+  targetLevel: string;
+  daysRemaining: number | null;
+  skills: LearningPathSkill[];
 }
 
 // ============================================================

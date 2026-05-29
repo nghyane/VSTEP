@@ -44,7 +44,7 @@ final class WritingFeedbackService
         $feedback = $this->generate(
             text: (string) ($submission->text ?? ''),
             promptText: $promptText,
-            metrics: [], // No metrics in storage — regenerate or use result
+            metrics: (new RuleBasedScoringService)->analyze($submission->text ?? '')['metrics'] ?? [],
             grammarErrors: [],
             bandContext: $bandContext,
         );

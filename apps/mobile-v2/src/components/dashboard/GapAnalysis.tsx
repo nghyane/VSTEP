@@ -46,12 +46,13 @@ function getStatusText(status: GapStatus, gap: number | null): string {
 export function GapAnalysis() {
   const c = useThemeColors();
   const { data } = useOverview();
+  const chart = data?.scores.spider;
 
-  if (!data?.chart) return null;
+  if (!data || !chart) return null;
 
   const targetBand = getTargetBand(data.profile.targetLevel);
   const gaps = SKILLS.map((skill) => {
-    const current = data.chart?.[skill] ?? null;
+    const current = chart[skill] ?? null;
     const gap = current !== null ? Math.round((current - targetBand) * 10) / 10 : null;
     const status = getStatus(current, targetBand);
     return { skill, current, gap, status };

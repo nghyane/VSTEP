@@ -1,4 +1,4 @@
-// Streak store — backend-backed full-test streak + milestone rewards
+// Streak store — backend-backed learner activity streak + milestone rewards
 import { useSyncExternalStore } from "react";
 import { api } from "@/lib/api";
 import { syncCoins } from "@/features/coin/coin-store";
@@ -17,7 +17,9 @@ interface StreakState {
 }
 
 interface StreakResponse {
-  todaySessions: number;
+  current: number;
+  longest: number;
+  todayActive: boolean;
   dailyGoal: number;
   milestones?: StreakMilestone[];
 }
@@ -65,7 +67,7 @@ export async function loadStreakData() {
   try {
     const res = await api.get<StreakResponse>("/api/v1/streak");
     setState({
-      todayProgress: res.todaySessions,
+      todayProgress: res.todayActive ? res.dailyGoal : 0,
       dailyGoal: res.dailyGoal,
       milestones: res.milestones ?? DEFAULT_MILESTONES,
     });

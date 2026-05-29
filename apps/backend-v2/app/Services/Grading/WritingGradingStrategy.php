@@ -135,6 +135,10 @@ final class WritingGradingStrategy implements GradingStrategy
             'overall_band' => $overallBand,
         ]);
 
+        // Deterministic insights: always available, zero-cost
+        $insights = $this->formula->insights($syntaxAnalysis, $ruleAnalysis['metrics'], $evidence, $paragraphCount, $part);
+        $annotations['_insights'] = $insights;
+
         return new WritingGradingData(
             rubricScores: $rubricScores,
             overallBand: $overallBand,

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
+import { API_URL } from "#/lib/api"
+import { tokens } from "#/lib/tokens"
 
 export interface GradingProgress {
 	phase: string
@@ -9,23 +11,29 @@ export interface GradingProgress {
 export interface GradingScores {
 	overall_band: number
 	rubric_scores: Record<string, number>
-	strengths?: string[]
-	improvements?: { message: string; explanation: string }[]
-	rewrites?: string[]
+	annotations?: Record<string, unknown>
+	pronunciation_report?: Record<string, unknown>
+	transcript?: string
+}
+
+export interface GradingFeedback {
+	status: "ready"
 }
 
 interface SSEState {
 	status: "connecting" | "streaming" | "completed" | "failed"
 	progress: GradingProgress[]
 	scores: GradingScores | null
+	feedback: GradingFeedback | null
 	error: string | null
 }
 
-export function useGradingSSE(jobId: string | null) {
+export function useGradingSSE(jobId: string | null, waitForFeedback = false) {
 	const [state, setState] = useState<SSEState>({
 		status: "connecting",
 		progress: [],
 		scores: null,
+		feedback: null,
 		error: null,
 	})
 
@@ -41,7 +49,9 @@ export function useGradingSSE(jobId: string | null) {
 	useEffect(() => {
 		if (!jobId) return
 
-		const es = new EventSource(`/api/v1/grading-jobs/${jobId}/stream`)
+		const token = tokens.getAccess()
+		const url = `${API_URL}/grading-jobs/${jobId}/stream?feedback=${waitForFeedback ? "1" : "0"}${token ? `&token=${encodeURIComponent(token)}` : ""}`
+		const es = new EventSource(url)
 		eventSourceRef.current = es
 
 		es.addEventListener("progress", (e: MessageEvent) => {
@@ -70,6 +80,17 @@ export function useGradingSSE(jobId: string | null) {
 				progress: progressRef.current,
 				scores: scoresRef.current,
 			}))
+			if (!waitForFeedback) {
+				close()
+			}
+		})
+
+		es.addEventListener("feedback", (e: MessageEvent) => {
+			const data = JSON.parse(e.data) as GradingFeedback
+			setState((s) => ({
+				...s,
+				feedback: data,
+			}))
 			close()
 		})
 
@@ -84,6 +105,7 @@ export function useGradingSSE(jobId: string | null) {
 		})
 
 		es.onerror = () => {
+			if (scoresRef.current) return // Already got scores, connection close is expected
 			setState((s) => ({
 				...s,
 				status: "failed",
@@ -93,7 +115,7 @@ export function useGradingSSE(jobId: string | null) {
 		}
 
 		return close
-	}, [jobId, close])
+	}, [jobId, close, waitForFeedback])
 
-	return state
+	return { ...state, close }
 }

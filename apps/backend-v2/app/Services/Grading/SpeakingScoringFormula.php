@@ -128,4 +128,51 @@ final class SpeakingScoringFormula
     {
         return round(max(1.0, min(10.0, $value)) * 2) / 2;
     }
+
+    /**
+     * Generate deterministic insights explaining how each score was derived.
+     * Used for fallback feedback and score transparency.
+     *
+     * @return array<string, array{label: string, detail: string}>
+     */
+    public function insights(
+        array $syntax,
+        array $metrics,
+        float $speakingRate,
+        int $pauseCount,
+        int $sttWordCount,
+        float $sentenceVariety,
+        float $contentFactor,
+        float $azureScore,
+    ): array {
+        $typeCount = $syntax['count'] ?? 0;
+        $pausesPer100 = $sttWordCount > 0 ? round(($pauseCount / $sttWordCount) * 100, 1) : 0;
+        $linkingCount = (int) ($metrics['linking_word_count'] ?? 0);
+
+        return [
+            'grammar' => [
+                'label' => 'Ngữ pháp',
+                'detail' => "Sử dụng $typeCount kiểu cấu trúc ngữ pháp khác nhau.",
+            ],
+            'vocabulary' => [
+                'label' => 'Từ vựng',
+                'detail' => 'Độ đa dạng từ: '.round((float) ($metrics['unique_ratio'] ?? 0) * 100).'%, '
+                    .'độ dài từ trung bình: '.round((float) ($metrics['avg_word_length'] ?? 0), 1).' ký tự.',
+            ],
+            'fluency' => [
+                'label' => 'Độ trôi chảy',
+                'detail' => 'Tốc độ nói: '.round($speakingRate).' từ/phút, '
+                    ."ngập ngừng: $pauseCount lần ($pausesPer100 lần/100 từ).",
+            ],
+            'discourse_management' => [
+                'label' => 'Tổ chức ý',
+                'detail' => "Từ nối: $linkingCount, độ đa dạng câu: ".round($sentenceVariety, 2)
+                    .($contentFactor < 1.0 ? ' (nội dung chưa bám sát yêu cầu đề)' : ''),
+            ],
+            'pronunciation' => [
+                'label' => 'Phát âm',
+                'detail' => 'Điểm phát âm Azure: '.round($azureScore, 1).'/10.',
+            ],
+        ];
+    }
 }

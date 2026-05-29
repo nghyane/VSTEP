@@ -9,6 +9,11 @@ export interface Rewrite {
 	reason: string
 }
 
+export interface InsightsEntry {
+	label: string
+	detail: string
+}
+
 export interface WritingGradingResult {
 	id: string
 	rubric_scores: Record<string, number>
@@ -16,7 +21,7 @@ export interface WritingGradingResult {
 	strengths: string[]
 	improvements: Improvement[]
 	rewrites: Rewrite[]
-	annotations: unknown[]
+	annotations: { _insights?: Record<string, InsightsEntry> } | null
 	created_at: string
 }
 
@@ -32,7 +37,7 @@ export interface SpeakingGradingResult {
 	overall_band: number
 	strengths: string[]
 	improvements: Improvement[]
-	pronunciation_report: { accuracy_score: number } | null
+	pronunciation_report: { accuracy_score: number; insights?: Record<string, InsightsEntry> } | null
 	transcript: string | null
 	created_at: string
 }

@@ -145,4 +145,45 @@ final class WritingScoringFormula
     {
         return round(max(1.0, min(10.0, $value)) * 2) / 2;
     }
+
+    /**
+     * Deterministic insights showing how each score was derived.
+     */
+    public function insights(
+        array $syntax,
+        array $metrics,
+        array $evidence,
+        int $paragraphCount,
+        int $part = 2,
+    ): array {
+        $typeCount = $syntax['count'] ?? 0;
+        $wordCount = (int) ($metrics['word_count'] ?? 0);
+        $sentenceCount = (int) ($metrics['sentence_count'] ?? 0);
+        $linkingCount = (int) ($metrics['linking_word_count'] ?? 0);
+        $uniqueRatio = round((float) ($metrics['unique_ratio'] ?? 0) * 100);
+        $avgWordLen = round((float) ($metrics['avg_word_length'] ?? 0), 1);
+        $covered = (int) ($evidence['points_covered'] ?? 0);
+        $required = (int) ($evidence['points_required'] ?? 1);
+
+        return [
+            'grammar' => [
+                'label' => 'Ngữ pháp',
+                'detail' => "Sử dụng $typeCount kiểu cấu trúc, $sentenceCount câu, lỗi: {$metrics['grammar_error_count']} lỗi.",
+            ],
+            'vocabulary' => [
+                'label' => 'Từ vựng',
+                'detail' => "Độ đa dạng: $uniqueRatio%, độ dài từ TB: $avgWordLen ký tự, từ phức: {$metrics['complex_vocab_count']} từ.",
+            ],
+            'task_fulfillment' => [
+                'label' => 'Hoàn thành yêu cầu',
+                'detail' => "Đáp ứng $covered/$required yêu cầu đề bài"
+                    .($part === 1 ? ' (Task 1: thư/email)' : ' (Task 2: bài luận)')
+                    .'.',
+            ],
+            'organization' => [
+                'label' => 'Tổ chức bài viết',
+                'detail' => "$paragraphCount đoạn, $linkingCount từ nối, $sentenceCount câu.",
+            ],
+        ];
+    }
 }
