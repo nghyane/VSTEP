@@ -46,7 +46,10 @@ use Carbon\CarbonImmutable;
 use Google\Client as GoogleClient;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Queue\Events\JobFailed;
+use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -126,6 +129,19 @@ class AppServiceProvider extends ServiceProvider
             }
 
             return $profile;
+        });
+
+        // Flush scoped instances after each queue job to prevent cached
+        // data (e.g. RubricResolver) from leaking between jobs in long-
+        // running Horizon workers. Without this, a migrate/reseed of
+        // grading_rubrics after a job loads the rubric causes stale FK
+        // references in subsequent jobs.
+        Queue::after(function (JobProcessed $event): void {
+            $this->app->forgetScopedInstances();
+        });
+
+        Queue::failing(function (JobFailed $event): void {
+            $this->app->forgetScopedInstances();
         });
     }
 }
