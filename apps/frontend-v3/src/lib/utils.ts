@@ -105,6 +105,20 @@ export function normalizeVi(s: string): string {
 		.toLowerCase()
 }
 
+export function isEdgeOnMac(userAgent: string): boolean {
+	return /Edg\//.test(userAgent) && /Macintosh|Mac OS X/.test(userAgent)
+}
+
+export function speechRecognitionNetworkMessage(userAgent: string, online: boolean): string {
+	if (!online) return "Thiết bị đang offline nên không dùng được nhận dạng giọng nói."
+	if (/Edg\//.test(userAgent)) {
+		return isEdgeOnMac(userAgent)
+			? "Edge trên Mac không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome."
+			: "Microsoft Edge không kết nối được dịch vụ nhận dạng giọng nói trên thiết bị này. Vui lòng dùng Chrome."
+	}
+	return "Dịch vụ nhận dạng giọng nói của trình duyệt đang không phản hồi. Vui lòng thử lại bằng Chrome."
+}
+
 /** Speak text via Web Speech API. */
 
 let cachedVoices: SpeechSynthesisVoice[] | null = null
@@ -169,6 +183,89 @@ interface SpeakOptions {
 	skipCancel?: boolean
 }
 
+function wordStartIndexes(text: string): number[] {
+	const indexes: number[] = []
+	const regex = /\S+/g
+	let match = regex.exec(text)
+	while (match) {
+		indexes.push(match.index)
+		match = regex.exec(text)
+	}
+	return indexes
+}
+
+function boundaryFallbackMs(rate: number): number {
+	return Math.max(180, Math.round(400 / rate))
+}
+
+function attachBoundaryTracking(
+	u: SpeechSynthesisUtterance,
+	text: string,
+	filler: string,
+	onBoundary: ((charIndex: number) => void) | undefined,
+): () => void {
+	if (!onBoundary) return () => {}
+	const starts = wordStartIndexes(text)
+	let fallbackTimer = 0
+	let lastCharIndex = -1
+	const cleanup = () => {
+		if (!fallbackTimer) return
+		clearInterval(fallbackTimer)
+		fallbackTimer = 0
+	}
+	const emit = (charIndex: number) => {
+		if (charIndex < lastCharIndex) return
+		lastCharIndex = charIndex
+		onBoundary(charIndex)
+	}
+	if (starts.length > 0) {
+		let wordIndex = 0
+		emit(starts[0])
+		fallbackTimer = window.setInterval(() => {
+			wordIndex += 1
+			if (wordIndex >= starts.length) {
+				cleanup()
+				return
+			}
+			emit(starts[wordIndex])
+		}, boundaryFallbackMs(u.rate))
+	}
+	u.onboundary = (e) => {
+		if (e.name !== "word" || e.charIndex < filler.length) return
+		cleanup()
+		emit(e.charIndex - filler.length)
+	}
+	return cleanup
+}
+
+function attachSpeechCleanup(
+	u: SpeechSynthesisUtterance,
+	synth: SpeechSynthesis,
+	onBoundaryCleanup: () => void,
+	onEnd: (() => void) | undefined,
+) {
+	const keepAlive = setInterval(() => {
+		if (!synth.speaking) {
+			clearInterval(keepAlive)
+			return
+		}
+		synth.pause()
+		synth.resume()
+	}, 10000)
+	const cleanup = () => {
+		clearInterval(keepAlive)
+		onBoundaryCleanup()
+	}
+	u.onend = () => {
+		cleanup()
+		onEnd?.()
+	}
+	u.onerror = () => {
+		cleanup()
+		onEnd?.()
+	}
+}
+
 /**
  * Warm up Chrome TTS engine with a real word at zero volume.
  * Must be called from a user gesture (click handler).
@@ -197,47 +294,14 @@ export function speak(text: string, opts: SpeakOptions = {}) {
 
 	const doSpeak = () => {
 		const v = opts.voice ?? pickEnglishVoice()
-
-		// Prepend filler "..." — Chrome clips the start of cold utterances.
-		// The filler gets clipped instead of the actual first word.
-		// Single utterance avoids queue timing issues.
 		const filler = "... "
-		const paddedText = filler + text
-
-		const u = new SpeechSynthesisUtterance(paddedText)
+		const u = new SpeechSynthesisUtterance(filler + text)
 		u.lang = "en-US"
 		u.rate = opts.rate ?? 1
 		if (v) u.voice = v
-		u.onend = () => opts.onEnd?.()
-		u.onerror = () => opts.onEnd?.()
-		if (opts.onBoundary) {
-			u.onboundary = (e) => {
-				if (e.name === "word" && e.charIndex >= filler.length) {
-					opts.onBoundary?.(e.charIndex - filler.length)
-				}
-			}
-		}
+		const boundaryCleanup = attachBoundaryTracking(u, text, filler, opts.onBoundary)
+		attachSpeechCleanup(u, synth, boundaryCleanup, opts.onEnd)
 		synth.speak(u)
-
-		// Chrome stops speech after ~15s. Workaround: pause/resume periodically.
-		const keepAlive = setInterval(() => {
-			if (!synth.speaking) {
-				clearInterval(keepAlive)
-				return
-			}
-			synth.pause()
-			synth.resume()
-		}, 10000)
-		const origOnEnd = u.onend
-		u.onend = (ev) => {
-			clearInterval(keepAlive)
-			origOnEnd?.call(u, ev)
-		}
-		const origOnError = u.onerror
-		u.onerror = (ev) => {
-			clearInterval(keepAlive)
-			origOnError?.call(u, ev)
-		}
 	}
 
 	if (synth.getVoices().length === 0) {

@@ -53,7 +53,7 @@ Google voices ("Google US English", "Google UK English Female") là **remote/clo
 
 Microsoft voices (online và desktop) fire `onboundary` đúng. macOS native voices cũng fire.
 
-**Workaround cho word-level highlight**: dùng dual-mode — start timer ước lượng (~400ms/word / rate), nếu `onboundary` fire thì clear timer và dùng exact position. Xem `use-tts-player.ts`.
+**Workaround cho word-level highlight**: dùng dual-mode — start timer ước lượng (~400ms/word / rate), nếu `onboundary` fire thì clear timer và dùng exact position. `speak()` trong `lib/utils.ts` đã có fallback này cho Conversation AI + Shadowing; `use-tts-player.ts` cũng dùng pattern tương tự cho listening TTS.
 
 ## Chrome 15s speech timeout
 
@@ -63,7 +63,19 @@ Chrome tự dừng `speechSynthesis` sau ~15 giây (bug từ 2018, chưa fix). W
 
 `speak()` prepend `"... "` trước text thật. Chrome clip filler thay vì clip từ đầu tiên. `onBoundary` charIndex được offset lại: `charIndex - filler.length`.
 
-`skipCancel` option: đã xóa. Trước đây `warmupTTS()` có `if (!opts.skipCancel)` nhưng `opts` không phải parameter của `warmupTTS` → runtime crash "opts is not defined" khi vào speaking practice. `speak()` cũng không bao giờ check `skipCancel`. Option đã dead code từ đầu.
+## SpeechRecognition reliability
+
+Conversation AI và Shadowing hiện dùng browser-native `SpeechRecognition` / `webkitSpeechRecognition` ở frontend. Không có backend STT fallback.
+
+Rủi ro còn lại:
+
+- Edge/Chrome có thể trả `network` dù microphone permission vẫn OK. Đây là lỗi dịch vụ nhận dạng giọng nói của browser, không nhất thiết là lỗi mạng app/backend.
+- Không dùng `getUserMedia()` precheck trước `SpeechRecognition.start()` trong conversation/shadowing. Precheck từng làm Edge dễ lỗi hơn vì mở/đóng audio capture trước khi Web Speech lấy mic.
+- Khi cần độ ổn định production, thêm fallback STT riêng: upload audio blob hoặc stream audio lên backend rồi gọi provider STT (OpenAI/Azure/Google). Frontend nên detect `SpeechRecognition` error `network`/unsupported và chuyển sang fallback flow.
+
+## `skipCancel` debt
+
+`SpeakOptions` hiện vẫn còn `skipCancel?: boolean`, nhưng `speak()` luôn gọi `synth.cancel()` và không đọc option này. Đây là option chết, không nên dựa vào cho sequential TTS. Nếu cần queue/sequential utterances chuẩn, refactor `speak()` thành explicit mode (`cancelPrevious: boolean`) hoặc tạo helper riêng thay vì dùng `skipCancel`.
 
 ---
 See also: [[anti-patterns]]
