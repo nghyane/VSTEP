@@ -108,7 +108,11 @@ export default function GrammarExerciseScreen() {
       >
         {/* Question */}
         <DepthCard style={styles.questionCard}>
-          <QuestionPrompt exercise={ex} />
+          <QuestionPrompt
+            exercise={ex}
+            topic={detail.point.vietnameseName ?? detail.point.name}
+            summary={detail.point.summary}
+          />
         </DepthCard>
 
         {/* Input */}
@@ -230,12 +234,45 @@ export default function GrammarExerciseScreen() {
   );
 }
 
-function QuestionPrompt({ exercise }: { exercise: ReturnType<typeof useGrammarExerciseSession>["current"] }) {
+function QuestionPrompt({
+  exercise,
+  topic,
+  summary,
+}: {
+  exercise: ReturnType<typeof useGrammarExerciseSession>["current"];
+  topic: string;
+  summary: string | null;
+}) {
   const c = useThemeColors();
   if (!exercise) return null;
+  const context = (
+    <View style={styles.questionContext}>
+      <Text style={[styles.topicText, { color: c.primary }]}>{topic}</Text>
+      {summary ? <Text style={[styles.ruleText, { color: c.mutedForeground }]}>{summary}</Text> : null}
+    </View>
+  );
+
   switch (exercise.kind) {
-    case "mcq":
-      return <Text style={[styles.questionText, { color: c.foreground }]}>{exercise.payload.prompt}</Text>;
+    case "mcq": {
+      const stem = firstText(exercise.payload.stem, exercise.payload.question, exercise.payload.sentence);
+      const prompt = firstText(exercise.payload.prompt);
+      return (
+        <>
+          {context}
+          {stem ? (
+            <View style={styles.stemBlock}>
+              <Text style={[styles.questionLabel, { color: c.subtle }]}>Đề bài</Text>
+              <Text style={[styles.questionText, { color: c.foreground }]}>{stem}</Text>
+            </View>
+          ) : null}
+          {prompt ? (
+            <Text style={[stem ? styles.questionInstruction : styles.questionText, { color: stem ? c.mutedForeground : c.foreground }]}>
+              {prompt}
+            </Text>
+          ) : null}
+        </>
+      );
+    }
     case "error_correction":
       return (
         <>
@@ -260,6 +297,14 @@ function QuestionPrompt({ exercise }: { exercise: ReturnType<typeof useGrammarEx
   }
 }
 
+function firstText(...values: (string | null | undefined)[]): string | null {
+  for (const value of values) {
+    const text = typeof value === "string" ? value.trim() : "";
+    if (text.length > 0) return text;
+  }
+  return null;
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   fullCenter: { flex: 1, alignItems: "center", justifyContent: "center" },
@@ -280,7 +325,13 @@ const styles = StyleSheet.create({
   scroll: { padding: spacing.xl, gap: spacing.lg },
   // Question
   questionCard: { gap: spacing.sm },
+  questionContext: { gap: 4 },
+  stemBlock: { gap: 4 },
+  questionLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  topicText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  ruleText: { fontSize: fontSize.xs, lineHeight: 18 },
   questionHint: { fontSize: fontSize.sm },
+  questionInstruction: { fontSize: fontSize.sm, lineHeight: 20 },
   questionText: { fontSize: fontSize.lg, fontFamily: fontFamily.bold, lineHeight: 28 },
   // MCQ options
   optionsWrap: { gap: spacing.sm },

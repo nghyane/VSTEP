@@ -19,7 +19,7 @@ import { DepthButton } from "@/components/DepthButton";
 import { Mascot } from "@/components/Mascot";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { loginApi, googleLoginApi, ApiError } from "@/lib/api";
-import { hasGoogleAuthConfig, signInWithGoogle } from "@/lib/google-auth";
+import { getGoogleAuthUnavailableReason, signInWithGoogle } from "@/lib/google-auth";
 import { useThemeColors, spacing, radius, fontSize, fontFamily, depthNeutral } from "@/theme";
 
 const LEARNER_ROLE = "learner";
@@ -37,7 +37,8 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { signIn, signOut, setSuggestedNickname } = useAuth();
-  const googleReady = hasGoogleAuthConfig();
+  const googleUnavailableReason = getGoogleAuthUnavailableReason();
+  const googleReady = !googleUnavailableReason;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -183,8 +184,8 @@ export default function LoginScreen() {
             )}
           </HapticTouchable>
 
-          {!googleReady ? (
-            <Text style={[s.fieldHint, { color: c.warning }]}>Thiếu cấu hình Google OAuth cho mobile.</Text>
+          {googleUnavailableReason ? (
+            <Text style={[s.fieldHint, { color: c.warning }]}>{googleUnavailableReason}</Text>
           ) : null}
 
           <View style={s.dividerRow}>
