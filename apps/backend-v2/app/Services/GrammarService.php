@@ -30,7 +30,7 @@ final class GrammarService
         return GrammarPoint::query()
             ->where('is_published', true)
             ->orderBy('display_order')
-            ->with(['levels', 'functions'])
+            ->with(['levels', 'tasks', 'functions'])
             ->get();
     }
 

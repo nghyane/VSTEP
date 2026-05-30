@@ -1,18 +1,22 @@
+import { useState } from "react";
 import { ScrollView, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
-import { useWalletBalance, useTopupPackages } from "@/features/wallet/queries";
-import { useThemeColors, spacing, fontSize, fontFamily, radius } from "@/theme";
+import { TopUpSheet } from "@/features/wallet/TopUpSheet";
+import { TopUpSuccessPopup } from "@/features/wallet/TopUpSuccessPopup";
+import { useWalletBalance } from "@/features/wallet/queries";
+import { useThemeColors, spacing, fontSize, fontFamily } from "@/theme";
 
 export default function TopUpScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { data: balanceData } = useWalletBalance();
-  const { data: packages, isLoading } = useTopupPackages();
+  const [topUpVisible, setTopUpVisible] = useState(true);
+  const [success, setSuccess] = useState<{ coins: number; balance: number } | null>(null);
 
   const balance = balanceData?.balance ?? 0;
 
@@ -35,57 +39,35 @@ export default function TopUpScreen() {
         </Text>
       </DepthCard>
 
-      <Text style={[styles.sectionTitle, { color: c.foreground }]}>Gói nạp</Text>
+      <DepthButton variant="coin" fullWidth onPress={() => setTopUpVisible(true)}>
+        Chọn gói nạp
+      </DepthButton>
 
-      {isLoading ? (
-        <Text style={[styles.loading, { color: c.subtle }]}>Đang tải...</Text>
-      ) : (
-        packages?.map((pkg) => (
-          <DepthCard key={pkg.id} style={styles.packageCard}>
-            <View style={styles.pkgRow}>
-              <View>
-                <Text style={[styles.pkgLabel, { color: c.foreground }]}>{pkg.label}</Text>
-                <Text style={[styles.pkgAmount, { color: c.subtle }]}>
-                  {pkg.coinsBase.toLocaleString("vi-VN")} xu
-                </Text>
-                {pkg.bonusCoins > 0 && (
-                  <View style={[styles.bonusBadge, { backgroundColor: c.coinTint }]}>
-                    <Text style={[styles.bonusText, { color: c.coinDark }]}>
-                      Thưởng +{pkg.bonusCoins.toLocaleString("vi-VN")} xu
-                    </Text>
-                  </View>
-                )}
-              </View>
-              <DepthButton size="sm" onPress={() => {}}>
-                {formatVnd(pkg.amountVnd)}
-              </DepthButton>
-            </View>
-          </DepthCard>
-        )) ?? <Text style={[styles.loading, { color: c.subtle }]}>Không có gói nạp nào</Text>
-      )}
+      <Text style={[styles.helperText, { color: c.subtle }]}>Thanh toán mở bằng cổng PayOS. Sau khi hoàn tất, quay lại app để ví tự đồng bộ.</Text>
+
+      <TopUpSheet
+        visible={topUpVisible}
+        onClose={() => setTopUpVisible(false)}
+        onSuccess={(coins, bal) => setSuccess({ coins, balance: bal })}
+      />
+      <TopUpSuccessPopup
+        visible={success !== null}
+        coinsAdded={success?.coins ?? 0}
+        newBalance={success?.balance ?? 0}
+        onClose={() => setSuccess(null)}
+      />
     </ScrollView>
   );
 }
 
-function formatVnd(amount: number): string {
-  return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
-}
-
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  content: { paddingHorizontal: spacing.xl },
+  content: { paddingHorizontal: spacing.xl, gap: spacing.base },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.base },
   title: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
   balanceCard: { padding: spacing["2xl"], alignItems: "center", marginBottom: spacing.base },
   balanceLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
   balanceValue: { fontSize: fontSize["3xl"], fontFamily: fontFamily.extraBold, marginTop: spacing.xs },
-  sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, marginBottom: spacing.sm },
-  loading: { fontSize: fontSize.sm, textAlign: "center", paddingVertical: spacing["3xl"] },
-  packageCard: { padding: spacing.base, marginBottom: spacing.sm },
-  pkgRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  pkgLabel: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
-  pkgAmount: { fontSize: fontSize.sm, marginTop: 2 },
-  bonusBadge: { marginTop: spacing.xs, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.md, alignSelf: "flex-start" },
-  bonusText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  helperText: { fontSize: fontSize.sm, lineHeight: 20, textAlign: "center" },
   backText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
 });

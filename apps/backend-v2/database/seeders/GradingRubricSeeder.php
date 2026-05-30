@@ -26,7 +26,7 @@ class GradingRubricSeeder extends Seeder
 
     private function seedWritingRubric(): void
     {
-        if (GradingRubric::where('skill', 'writing')->where('version', 8)->exists()) {
+        if (GradingRubric::where('skill', 'writing')->where('version', 11)->exists()) {
             return;
         }
 
@@ -34,12 +34,12 @@ class GradingRubricSeeder extends Seeder
 
         GradingRubric::create([
             'skill' => 'writing',
-            'version' => 8,
-            'name' => 'VSTEP Writing Rubric v8',
+            'version' => 11,
+            'name' => 'VSTEP Writing Rubric v11',
             'source_reference' => 'Thông tư 23/2017/TT-BGDĐT, Phụ lục III. '
-                .'v4: band descriptors + quantitative params for deterministic formula.',
-            'criteria' => $this->writingCriteriaV4(),
-            'scoring_formula' => 'mean_rounded_half',
+                .'v11: recalibrated thresholds per VSTEP band descriptors — grammar floor 4.0, vocab cap 8, TF multiplier 7.',
+            'criteria' => $this->writingCriteriaV6(),
+            'scoring_formula' => 'weighted_mean_rounded_half',
             'is_active' => true,
             'effective_from' => '2017-09-01',
         ]);
@@ -172,7 +172,7 @@ class GradingRubricSeeder extends Seeder
                     'irrelevant_penalty' => '2 bands for off-topic content. Band 0-3 describes completely off-topic/memorized scripts. Strong penalty reflects rubric severity.',
                     'default_points_required' => '3: typical VSTEP Task 2 has 3 requirements (opinion, reasons, examples). Used as fallback when not configured by admin.',
                 ],
-            ]),
+            ], 0.50),
             $this->criterionV4('organization', 'Organization', 'Bố cục bài viết', [
                 '10' => 'Sử dụng công cụ liên kết mượt mà. Chia đoạn khéo léo.',
                 '0' => 'Không viết bài.',
@@ -197,7 +197,7 @@ class GradingRubricSeeder extends Seeder
                     'compact_threshold' => '8 sentences in 1 paragraph = "wall of text". VSTEP Band 5: "các thông tin không viết dưới dạng đoạn văn". Penalty reflects lost organization points.',
                     'compact_penalty' => '1: moderate penalty. Does not zero out the score — content may still be organized within the single paragraph.',
                 ],
-            ]),
+            ], 0.10),
             $this->criterionV4('grammar', 'Grammar', 'Ngữ pháp', [
                 '10' => 'Sử dụng lượng lớn cấu trúc (6+ kiểu) tự nhiên, chính xác.',
                 '9' => 'Sử dụng lượng lớn cấu trúc (5+ kiểu). Hầu hết không mắc lỗi.',
@@ -217,7 +217,7 @@ class GradingRubricSeeder extends Seeder
                     'accuracy_factor' => '5: penalty multiplier for grammar errors. (errors/sentences) × 5. Calibrated: 1 error per 5 sentences → penalty=1 (minor). 1 error per sentence → penalty=5 (severe). Descriptor Band 7: "hầu hết không mắc lỗi", Band 5: "thường xuyên mắc lỗi".',
                     'max_accuracy' => '0-2 types→7, 3-4→9, 5+→10. Accuracy without range is meaningless. Band 5 with 0 errors ≠ Band 9. Derived from VSTEP: "chỉ cấu trúc đơn giản + không lỗi" is Band 5-6, not Band 9-10. VSTEP explicitly weights RANGE over accuracy.',
                 ],
-            ]),
+            ], 0.25),
             $this->criterionV4('vocabulary', 'Vocabulary', 'Từ vựng', [
                 '10' => 'Sử dụng lượng từ vựng lớn, collocations, idioms.',
                 '0' => 'Không viết bài.',
@@ -258,19 +258,137 @@ class GradingRubricSeeder extends Seeder
                     'unique_thresholds' => '0.45→1, 0.55→2, 0.65→3. Unique word ratio indicates lexical diversity. VSTEP: "lượng từ vựng hạn chế" (repetitive) vs "lượng từ vựng lớn". Ratio 0.45 typical for 120-word B1 essay, 0.55 for 200-word B2 essay, 0.65 for rich vocabulary. Calibrated from validation essays.',
                     'length_thresholds' => '4.5→1, 5.5→2. Average word length correlates with vocabulary sophistication (longer words = more academic/specific vocabulary). Length 4.5 typical for B1 (common words), 5.5 for B2 (topic-specific vocabulary).',
                 ],
-            ]),
+            ], 0.15),
         ];
     }
 
+    /** @return list<array<string,mixed>> */
+    private function writingCriteriaV5(): array
+    {
+        $criteria = $this->writingCriteriaV4();
+
+        // Add sub_signals to each criterion (DB-configurable)
+        foreach ($criteria as &$criterion) {
+            $params = &$criterion['params'];
+
+            match ($criterion['key']) {
+                'task_fulfillment' => $params['sub_signals'] = [
+                    'tone_register' => [
+                        'enabled' => true,
+                        'weight' => 1.0,
+                        'max_penalty' => 2.0,
+                        'part2' => [
+                            'weight' => 1.0,
+                            'max_penalty' => 2.0,
+                            'thresholds' => [
+                                ['max_errors' => 0, 'penalty' => 0],
+                                ['max_errors' => 1, 'penalty' => 0.5],
+                                ['max_errors' => 3, 'penalty' => 1.0],
+                                ['max_errors' => 6, 'penalty' => 2.0],
+                            ],
+                        ],
+                    ],
+                ],
+                'grammar' => $params['sub_signals'] = [
+                    'punctuation' => [
+                        'enabled' => true,
+                        'weight' => 1.0,
+                        'max_penalty' => 1.5,
+                        'thresholds' => [
+                            ['max_errors' => 0, 'penalty' => 0],
+                            ['max_errors' => 2, 'penalty' => 0.5],
+                            ['max_errors' => 5, 'penalty' => 1.0],
+                            ['max_errors' => 10, 'penalty' => 1.5],
+                        ],
+                    ],
+                ],
+                'vocabulary' => $params['sub_signals'] = [
+                    'spelling' => [
+                        'enabled' => true,
+                        'weight' => 1.0,
+                        'max_penalty' => 1.5,
+                        'thresholds' => [
+                            ['max_errors' => 0, 'penalty' => 0],
+                            ['max_errors' => 2, 'penalty' => 0.5],
+                            ['max_errors' => 5, 'penalty' => 1.0],
+                            ['max_errors' => 10, 'penalty' => 1.5],
+                        ],
+                    ],
+                ],
+                default => null,
+            };
+        }
+        unset($criterion, $params);
+
+        return $criteria;
+    }
+
+    /** @return list<array<string,mixed>> */
+    private function writingCriteriaV6(): array
+    {
+        $criteria = $this->writingCriteriaV5();
+
+        foreach ($criteria as &$criterion) {
+            $params = &$criterion['params'];
+
+            match ($criterion['key']) {
+                'task_fulfillment' => $params = array_merge($params, [
+                    'coverage_multiplier' => 7,    // was 8: tighter range per VSTEP TF=50%
+                    'task1_multiplier' => 5,        // was 6: letters get lower ceiling
+                    'position_bonus' => 0.5,        // was 1: less weight on signals
+                    'tf_cap_ratio' => 1.3,          // TF ≤ avg(gram, vocab, org) × 1.3 — prevents TF from dominating weaker criteria
+                ]),
+                'grammar' => $params = array_merge($params, [
+                    'band_thresholds' => [0 => 4, 1 => 5, 2 => 5.5, 3 => 6, 4 => 7, 5 => 7.5, 7 => 9, 9 => 10],
+                    'max_accuracy' => ['0-1' => 5, '2-3' => 6, '4-5' => 8, '6+' => 10],
+                    // B1: 0-2 types, some errors → (4+5)/2=4.5 to (5.5+6)/2=5.75
+                    // B2: 3-5 types, few errors → (6+6)/2=6.0 to (7.5+8)/2=7.75
+                    // C1: 6+ types, rare errors → (7.5+10)/2=8.75 to (10+10)/2=10.0
+                ]),
+                'vocabulary' => $params = array_merge($params, [
+                    'base' => 2,                    // was 3
+                    'cap' => 8,                     // was 9
+                    'unique_thresholds' => [         // stricter
+                        ['threshold' => 0.50, 'bonus' => 1],
+                        ['threshold' => 0.60, 'bonus' => 2],
+                        ['threshold' => 0.70, 'bonus' => 3],
+                    ],
+                    'length_thresholds' => [         // stricter
+                        ['threshold' => 5.0, 'bonus' => 1],
+                        ['threshold' => 6.0, 'bonus' => 2],
+                    ],
+                    'readability_thresholds' => [    // stricter
+                        ['threshold' => 10, 'bonus' => 1],
+                        ['threshold' => 12, 'bonus' => 2],
+                    ],
+                    'cefr_thresholds' => [           // remove 2.0 level
+                        ['threshold' => 2.5, 'bonus' => 1],
+                        ['threshold' => 3.0, 'bonus' => 2],
+                        ['threshold' => 3.5, 'bonus' => 3],
+                        ['threshold' => 4.0, 'bonus' => 4],
+                    ],
+                    'advanced_thresholds' => [       // stricter
+                        ['threshold' => 0.20, 'bonus' => 1],
+                        ['threshold' => 0.35, 'bonus' => 2],
+                    ],
+                ]),
+                default => null,
+            };
+        }
+        unset($criterion, $params);
+
+        return $criteria;
+    }
+
     /** @param array<string,string> $descriptors */
-    private function criterionV4(string $key, string $name, string $nameVi, array $descriptors, array $params): array
+    private function criterionV4(string $key, string $name, string $nameVi, array $descriptors, array $params, float $weight = 1.0): array
     {
         return [
             'key' => $key,
             'name' => $name,
             'name_vi' => $nameVi,
             'max_score' => 10,
-            'weight' => 1.0,
+            'weight' => $weight,
             'band_descriptors' => $descriptors,
             'params' => $params,
         ];

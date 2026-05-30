@@ -1,0 +1,16 @@
+source_id: "cambridge_b2_first"
+name: "Cambridge B2 First writing samples"
+sample_source: "engxam.com"
+sample_source_url: "https://engxam.com"
+scale_name: "Cambridge B2 First Writing Assessment Scale 0-5"
+scale_url: "https://www.cambridgeenglish.org/Images/600975-teacher-guide-for-writing-b2-first-for-schools.pdf"
+skill: "writing"
+task_type: "Task 2 - Essay"
+presentation_note: "Bộ mẫu này dùng bài viết đã có điểm và nhận xét từ nguồn độc lập. Hệ thống chấm lại rồi so sánh mức năng lực dự đoán với mức tham chiếu."
+technical_note: "Bảng dưới là hiệu chỉnh nội bộ sang thang 0-10 để kiểm thử trong codebase này; không phải bảng quy đổi chính thức của Cambridge. Nguồn chỉ cung cấp điểm Cambridge 0-5 và nhận xét giám khảo."
+internal_validation_band_by_source_grade:
+  "1": 2.5
+  "2": 4.0
+  "3": 5.5
+  "4": 6.5
+  "5": 7.5

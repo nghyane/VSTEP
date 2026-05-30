@@ -13,6 +13,7 @@ use App\Ai\Contracts\TaskFulfillmentAssessor;
 use App\Ai\Contracts\WritingFeedbackGenerator;
 use App\Services\LanguageToolService;
 use App\Services\SpeechToText;
+use Database\Seeders\AssessmentRubricSeeder;
 use Database\Seeders\GradingRubricSeeder;
 use Database\Seeders\SystemConfigSeeder;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
@@ -25,6 +26,7 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
         $this->seed(SystemConfigSeeder::class);
         $this->seed(GradingRubricSeeder::class);
+        $this->seed(AssessmentRubricSeeder::class);
 
         // Bind all AI contracts to fake implementations — no HTTP calls in tests.
         $fakeAi = new FakeAiClient;

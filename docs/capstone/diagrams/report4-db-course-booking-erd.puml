@@ -1,0 +1,86 @@
+@startuml
+!theme plain
+left to right direction
+hide circle
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #555555
+
+title Course Booking and Payment ERD
+
+entity "users" as users {
+  * id : uuid <<PK>>
+  --
+  email : varchar
+  full_name : varchar
+  role : varchar
+}
+
+entity "profiles" as profiles {
+  * id : uuid <<PK>>
+  --
+  account_id : uuid <<FK>>
+  display_name : varchar
+  target_level : varchar
+}
+
+entity "courses" as courses {
+  * id : uuid <<PK>>
+  --
+  teacher_id : uuid <<FK>>
+  title : varchar
+  price_vnd : bigint
+  max_slots : int
+  status : varchar
+}
+
+entity "course_enrollment_orders" as enrollment_orders {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  course_id : uuid <<FK>>
+  order_code : bigint
+  payment_url : text
+  status : varchar
+}
+
+entity "course_enrollments" as enrollments {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  course_id : uuid <<FK>>
+  status : varchar
+  enrolled_at : timestamp
+}
+
+entity "teacher_slots" as teacher_slots {
+  * id : uuid <<PK>>
+  --
+  teacher_id : uuid <<FK>>
+  course_id : uuid <<FK>>
+  starts_at : timestamp
+  ends_at : timestamp
+}
+
+entity "teacher_bookings" as teacher_bookings {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  teacher_slot_id : uuid <<FK>>
+  status : varchar
+}
+
+users ||--o{ profiles
+users ||--o{ courses
+users ||--o{ teacher_slots
+profiles ||--o{ enrollment_orders
+profiles ||--o{ enrollments
+profiles ||--o{ teacher_bookings
+courses ||--o{ enrollment_orders
+courses ||--o{ enrollments
+courses ||--o{ teacher_slots
+teacher_slots ||--o{ teacher_bookings
+
+@enduml

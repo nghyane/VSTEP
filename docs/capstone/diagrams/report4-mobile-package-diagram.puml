@@ -1,0 +1,39 @@
+@startuml
+!theme plain
+
+title Mobile App Package Diagram
+
+skinparam backgroundColor #FFFFFF
+skinparam packageStyle folder
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam PackageBorderColor #555555
+skinparam PackageFontColor #111111
+skinparam PackageFontStyle bold
+skinparam FontName Arial
+
+left to right direction
+
+package "app routes" as routes
+package "features" as features
+package "components" as components
+package "hooks" as hooks
+package "contexts" as contexts
+package "lib" as lib
+package "theme" as theme
+package "types" as types
+
+routes ..> features
+routes ..> components
+routes ..> contexts
+features ..> components
+features ..> hooks
+features ..> lib
+features ..> types
+components ..> hooks
+components ..> theme
+hooks ..> contexts
+hooks ..> lib
+contexts ..> lib
+
+@enduml

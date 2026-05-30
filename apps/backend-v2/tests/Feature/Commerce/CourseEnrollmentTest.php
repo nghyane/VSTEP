@@ -19,8 +19,10 @@ use App\Models\TeacherBooking;
 use App\Models\TeacherSlot;
 use App\Models\User;
 use App\Services\Admin\Course\AdminCourseBookingService;
+use App\Services\CourseOrderService;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -28,13 +30,27 @@ class CourseEnrollmentTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Http::fake([
+            'api-merchant.payos.vn/v2/payment-requests' => Http::response([
+                'data' => [
+                    'checkoutUrl' => 'https://pay.payos.test/checkout',
+                    'paymentLinkId' => 'payos_link_test',
+                ],
+            ]),
+        ]);
+    }
+
     public function test_enrollment_order_creates_pending(): void
     {
         [$user, $profile, $course] = $this->seedCourse(100_000, 200);
 
         $token = $this->tokenFor($user);
         $response = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders");
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos']);
 
         $response->assertCreated();
         $response->assertJsonPath('data.status', 'pending');
@@ -47,15 +63,12 @@ class CourseEnrollmentTest extends TestCase
         $wallet = $this->app->make(WalletService::class);
 
         $token = $this->tokenFor($user);
-        $order = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders")
-            ->json('data');
+        $orderCode = $this->createEnrollmentOrder($token, $course);
 
-        $response = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/enrollment-orders/{$order['id']}/confirm");
+        $confirmed = $this->app->make(CourseOrderService::class)
+            ->confirmByOrderCode($orderCode, 'test_txn_id', null);
 
-        $response->assertOk();
-        $response->assertJsonPath('data.status', 'paid');
+        $this->assertTrue($confirmed->isPaid());
 
         // Enrollment created
         $this->assertDatabaseHas('course_enrollments', [
@@ -73,21 +86,13 @@ class CourseEnrollmentTest extends TestCase
         [$user, $profile, $course] = $this->seedCourse(100_000, 200);
 
         $token = $this->tokenFor($user);
-        $order = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders")
-            ->json('data');
+        $orderCode = $this->createEnrollmentOrder($token, $course);
+        $service = $this->app->make(CourseOrderService::class);
 
-        // First confirm
-        $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/enrollment-orders/{$order['id']}/confirm")
-            ->assertOk();
+        $service->confirmByOrderCode($orderCode, 'test_txn_1', null);
+        $second = $service->confirmByOrderCode($orderCode, 'test_txn_1', null);
 
-        // Second confirm — should return same order without duplicate enrollment
-        $response = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/enrollment-orders/{$order['id']}/confirm");
-
-        $response->assertOk();
-        $response->assertJsonPath('data.status', 'paid');
+        $this->assertTrue($second->isPaid());
 
         // Only 1 enrollment
         $count = CourseEnrollment::query()
@@ -110,7 +115,7 @@ class CourseEnrollmentTest extends TestCase
 
         $token = $this->tokenFor($user);
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos'])
             ->assertStatus(422);
     }
 
@@ -120,12 +125,12 @@ class CourseEnrollmentTest extends TestCase
 
         $token = $this->tokenFor($user);
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos'])
             ->assertCreated();
 
         // Second attempt — already has pending order
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos'])
             ->assertStatus(422);
     }
 
@@ -135,12 +140,7 @@ class CourseEnrollmentTest extends TestCase
 
         $token = $this->tokenFor($user);
         // Create + confirm enrollment
-        $order = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders")
-            ->json('data');
-        $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/enrollment-orders/{$order['id']}/confirm")
-            ->assertOk();
+        $this->confirmEnrollment($token, $course);
 
         $slot = TeacherSlot::create([
             'course_id' => $course->id, 'teacher_id' => $course->teacher_id,
@@ -159,12 +159,7 @@ class CourseEnrollmentTest extends TestCase
 
         $token = $this->tokenFor($user);
         // Create + confirm enrollment
-        $order = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders")
-            ->json('data');
-        $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/enrollment-orders/{$order['id']}/confirm")
-            ->assertOk();
+        $this->confirmEnrollment($token, $course);
 
         // Reload enrollment to get enrolled_at
         $enrollment = CourseEnrollment::query()
@@ -247,12 +242,7 @@ class CourseEnrollmentTest extends TestCase
         $token = $this->tokenFor($user);
 
         // Confirm enrollment + meet commitment (re-uses helper inline).
-        $order = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders")
-            ->json('data');
-        $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/enrollment-orders/{$order['id']}/confirm")
-            ->assertOk();
+        $this->confirmEnrollment($token, $course);
 
         $enrollment = CourseEnrollment::query()
             ->where('profile_id', $profile->id)->where('course_id', $course->id)->first();
@@ -352,6 +342,21 @@ class CourseEnrollmentTest extends TestCase
         ]);
 
         return [$user, $profile, $course];
+    }
+
+    private function createEnrollmentOrder(string $token, Course $course): int
+    {
+        return $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos'])
+            ->json('data.order_code');
+    }
+
+    private function confirmEnrollment(string $token, Course $course): void
+    {
+        $orderCode = $this->createEnrollmentOrder($token, $course);
+
+        $this->app->make(CourseOrderService::class)
+            ->confirmByOrderCode($orderCode, 'test_txn_id', null);
     }
 
     private function tokenFor(User $user): string

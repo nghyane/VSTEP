@@ -1,0 +1,37 @@
+@startuml
+!theme plain
+title Course Booking & Payment Class Diagram
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+left to right direction
+
+class CourseController
+class CourseService
+class CourseOrderService
+class WalletService
+class NotificationService
+class AdminNotificationService
+class Course
+class CourseEnrollment
+class CourseEnrollmentOrder
+class TeacherSlot
+class TeacherBooking
+class CoinTransaction
+
+CourseController ..> CourseService
+CourseController ..> CourseOrderService
+CourseService ..> Course
+CourseService ..> TeacherSlot
+CourseService ..> TeacherBooking
+CourseService ..> WalletService : course bonus / booking charge
+CourseService ..> NotificationService
+CourseService ..> AdminNotificationService
+CourseOrderService ..> CourseEnrollmentOrder
+CourseOrderService ..> CourseService : create enrollment
+CourseOrderService ..> CourseEnrollment
+CourseService ..> CoinTransaction
+Course "1" -- "many" CourseEnrollment
+Course "1" -- "many" TeacherSlot
+TeacherSlot "1" -- "0..1" TeacherBooking
+CourseEnrollmentOrder "1" -- "0..1" CourseEnrollment
+@enduml

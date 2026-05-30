@@ -1,8 +1,83 @@
-import { useState, useRef, useCallback, useEffect } from "react";
-import Voice, { type SpeechResultsEvent, type SpeechErrorEvent } from "@react-native-voice/voice";
-import { Platform, PermissionsAndroid } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { requireOptionalNativeModule } from "expo";
 
-export type MicState = "idle" | "listening" | "stopped" | "unavailable";
+type ExpoSpeechRecognitionErrorCode =
+  | "aborted"
+  | "audio-capture"
+  | "interrupted"
+  | "bad-grammar"
+  | "language-not-supported"
+  | "network"
+  | "no-speech"
+  | "not-allowed"
+  | "service-not-allowed"
+  | "busy"
+  | "client"
+  | "speech-timeout"
+  | "unknown";
+
+interface ExpoSpeechRecognitionResult {
+  transcript: string;
+}
+
+interface ExpoSpeechRecognitionResultEvent {
+  isFinal: boolean;
+  results: ExpoSpeechRecognitionResult[];
+}
+
+interface ExpoSpeechRecognitionErrorEvent {
+  error: ExpoSpeechRecognitionErrorCode;
+  message: string;
+  code?: number;
+}
+
+interface ExpoSpeechRecognitionPermissionResponse {
+  granted: boolean;
+}
+
+interface ExpoSpeechRecognitionOptions {
+  lang?: string;
+  interimResults?: boolean;
+  continuous?: boolean;
+  maxAlternatives?: number;
+}
+
+type SpeechRecognitionEventMap = {
+  start: null;
+  result: ExpoSpeechRecognitionResultEvent;
+  end: null;
+  error: ExpoSpeechRecognitionErrorEvent;
+};
+
+interface EventSubscriptionLike {
+  remove: () => void;
+}
+
+interface ExpoSpeechRecognitionModuleLike {
+  addListener: <TEventName extends keyof SpeechRecognitionEventMap>(
+    eventName: TEventName,
+    listener: (event: SpeechRecognitionEventMap[TEventName]) => void,
+  ) => EventSubscriptionLike;
+  isRecognitionAvailable: () => boolean;
+  requestPermissionsAsync: () => Promise<ExpoSpeechRecognitionPermissionResponse>;
+  start: (options: ExpoSpeechRecognitionOptions) => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+let cachedSpeechModule: ExpoSpeechRecognitionModuleLike | null | undefined;
+
+function getSpeechModule(): ExpoSpeechRecognitionModuleLike | null {
+  if (cachedSpeechModule !== undefined) {
+    return cachedSpeechModule;
+  }
+
+  cachedSpeechModule = requireOptionalNativeModule<ExpoSpeechRecognitionModuleLike>("ExpoSpeechRecognition");
+
+  return cachedSpeechModule;
+}
+
+export type MicState = "idle" | "listening" | "processing" | "unavailable";
 
 interface UseSpeechToTextOptions {
   maxSeconds?: number;
@@ -12,70 +87,54 @@ interface UseSpeechToTextOptions {
   onError?: (error: string) => void;
 }
 
-// Convert Voice error codes to user-friendly Vietnamese messages.
-function voiceErrorMessage(e: SpeechErrorEvent): string {
-  const code = e.error?.code;
-  if (code === "7" || code === "no-match") return "Không nhận diện được giọng nói. Hãy nói rõ hơn.";
-  if (code === "8" || code === "recognition-busy") return "Hệ thống đang bận. Vui lòng thử lại sau.";
-  if (code === "9" || code === "insufficient-permissions") return "Chưa cấp quyền micro. Vào Cài đặt > VSTEP > Micro để bật.";
-  if (code === "audio-capture" || code === "audio") return "Không thể truy cập micro. Kiểm tra thiết bị.";
-  if (code === "network" || code === "network-error") return "Lỗi mạng khi nhận diện giọng nói. Kiểm tra kết nối.";
-  if (code === "not-allowed" || code === "service-not-allowed") return "Micro bị từ chối. Vào Cài đặt > VSTEP để cấp quyền.";
-  if (code === "client") return "Lỗi thiết bị khi khởi tạo nhận diện giọng nói.";
-  return e.error?.message ?? "Lỗi nhận diện giọng nói.";
+function errorMessage(error: unknown): string {
+  if (error && typeof error === "object" && "message" in error) {
+    const message = String((error as { message?: unknown }).message ?? "").trim();
+    if (message) return message;
+  }
+  return "Khong nhan dien duoc giong noi. Vui long thu lai.";
 }
 
-// iOS prompts on first Voice.start; Android needs an explicit runtime permission.
-async function requestMicrophonePermission(): Promise<boolean> {
-  if (Platform.OS !== "android") return true;
-  try {
-    const result = await PermissionsAndroid.request(
-      PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-      {
-        title: "Quyền micro",
-        message: "VSTEP cần quyền micro để nhận diện giọng nói khi luyện nói.",
-        buttonPositive: "Cho phép",
-        buttonNegative: "Từ chối",
-      },
-    );
-    return result === PermissionsAndroid.RESULTS.GRANTED;
-  } catch {
-    return false;
+function speechErrorMessage(event: ExpoSpeechRecognitionErrorEvent): string {
+  switch (event.error) {
+    case "not-allowed":
+      return "Chua cap quyen micro hoac nhan dien giong noi. Hay bat trong Cai dat.";
+    case "service-not-allowed":
+      return "Thiet bi chua co dich vu nhan dien giong noi. Hay thu lai tren development build.";
+    case "language-not-supported":
+      return "Ngon ngu nhan dien giong noi chua kha dung tren thiet bi nay.";
+    case "no-speech":
+      return "Khong nghe ro giong noi. Vui long noi lai.";
+    default:
+      return event.message || "Khong nhan dien duoc giong noi. Vui long thu lai.";
   }
 }
 
+const UNAVAILABLE_MESSAGE = "Nhan dien giong noi can development build. Expo Go chua ho tro tinh nang nay.";
+
 export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
   const { maxSeconds = 30, language = "en-US", onResult, onEnd, onError } = options;
+  const speechModule = getSpeechModule();
 
   const [state, setState] = useState<MicState>("idle");
   const [transcript, setTranscript] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(speechModule ? true : false);
 
+  const stateRef = useRef<MicState>("idle");
+  const transcriptRef = useRef("");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startMsRef = useRef<number | null>(null);
-  const isListeningRef = useRef(false);
-  // Ref copy of transcript so onSpeechEnd handler can read latest without stale closure.
-  const transcriptRef = useRef("");
-  // Ref for stop so the auto-stop timer always calls the latest stop (avoids stale closure).
+  const endingRef = useRef(false);
   const stopRef = useRef<() => void>(() => {});
 
-  // Check Voice availability on mount.
-  useEffect(() => {
-    let cancelled = false;
-    Voice.isAvailable()
-      .then((available: 0 | 1) => {
-        if (!cancelled) setIsAvailable(available === 1);
-      })
-      .catch(() => {
-        if (!cancelled) setIsAvailable(false);
-      });
-    return () => { cancelled = true; };
+  const syncState = useCallback((next: MicState) => {
+    stateRef.current = next;
+    setState(next);
   }, []);
 
-  // Timer cleanup.
-  const cleanup = useCallback(() => {
+  const cleanupTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -83,161 +142,191 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
     startMsRef.current = null;
   }, []);
 
-  // Detach Voice listeners to prevent stale closures across starts.
-  const removeVoiceListeners = useCallback(() => {
-    // Voice.destroy() handles native cleanup, but the singleton retains JS callback
-    // references. Replace with no-ops so stale callbacks from a prior start don't fire
-    // after we register new ones.
-    const NOOP = () => {};
-    Voice.onSpeechResults = NOOP;
-    Voice.onSpeechError = NOOP;
-    Voice.onSpeechEnd = NOOP;
-    Voice.onSpeechStart = NOOP;
-  }, []);
+  const callOnEndOnce = useCallback(() => {
+    if (endingRef.current) return;
+    endingRef.current = true;
+    onEnd?.();
+  }, [onEnd]);
 
-  // Start listening.
-  const start = useCallback(async () => {
-    if (isListeningRef.current) {
+  const finishWithError = useCallback(
+    (message: string, unavailable = false) => {
+      cleanupTimer();
+      setError(message);
+      onError?.(message);
+      syncState(unavailable ? "unavailable" : "idle");
+      callOnEndOnce();
+    },
+    [callOnEndOnce, cleanupTimer, onError, syncState],
+  );
+
+  const finishWithTranscript = useCallback(
+    (text: string) => {
+      cleanupTimer();
+      const trimmed = text.trim();
+      if (!trimmed) {
+        finishWithError("Khong nghe ro giong noi. Vui long noi lai.");
+        return;
+      }
+
+      transcriptRef.current = trimmed;
+      setTranscript(trimmed);
+      setError(null);
+      onResult?.(trimmed);
+      syncState("idle");
+      callOnEndOnce();
+    },
+    [callOnEndOnce, cleanupTimer, finishWithError, onResult, syncState],
+  );
+
+  useEffect(() => {
+    if (!speechModule) {
+      syncState("unavailable");
+      setIsAvailable(false);
+      setError(null);
       return;
     }
 
-    // Reset UI state.
+    const startSub = speechModule.addListener("start", () => {
+      if (stateRef.current === "processing") return;
+      syncState("listening");
+    });
+
+    const resultSub = speechModule.addListener("result", (event) => {
+      const text = event.results[0]?.transcript ?? "";
+      transcriptRef.current = text;
+      setTranscript(text);
+      if (event.isFinal) {
+        finishWithTranscript(text);
+      }
+    });
+
+    const endSub = speechModule.addListener("end", () => {
+      if (stateRef.current === "idle" || stateRef.current === "unavailable") return;
+      finishWithTranscript(transcriptRef.current);
+    });
+
+    const errorSub = speechModule.addListener("error", (event) => {
+      const unavailable =
+        event.error === "service-not-allowed" ||
+        event.error === "language-not-supported";
+      if (unavailable) setIsAvailable(false);
+      finishWithError(speechErrorMessage(event), unavailable);
+    });
+
+    return () => {
+      startSub.remove();
+      resultSub.remove();
+      endSub.remove();
+      errorSub.remove();
+    };
+  }, [finishWithError, finishWithTranscript, speechModule, syncState]);
+
+  const stop = useCallback(() => {
+    if (stateRef.current !== "listening" || !speechModule) return;
+    syncState("processing");
+    speechModule.stop();
+  }, [speechModule, syncState]);
+
+  stopRef.current = stop;
+
+  const reset = useCallback(async () => {
+    cleanupTimer();
+    if (speechModule) {
+      try {
+        speechModule.abort();
+      } catch {
+        // Native module may be absent in Expo Go; state cleanup is still safe.
+      }
+    }
+    transcriptRef.current = "";
+    setTranscript("");
+    setElapsed(0);
+    setError(null);
+    endingRef.current = false;
+    syncState("idle");
+  }, [cleanupTimer, speechModule, syncState]);
+
+  const start = useCallback(async (): Promise<boolean> => {
+    if (stateRef.current === "listening" || stateRef.current === "processing") {
+      return false;
+    }
+
     setError(null);
     setTranscript("");
     transcriptRef.current = "";
     setElapsed(0);
-
-    // Check Voice availability and block early when the service is unavailable.
-    if (isAvailable === false) {
-      const msg = Platform.OS === "android"
-        ? "Thiết bị không hỗ trợ nhận diện giọng nói. Cài Google app hoặc vào Cài đặt > Ngôn ngữ & nhập liệu > Nhập liệu giọng nói."
-        : "Thiết bị không hỗ trợ nhận diện giọng nói.";
-      setError(msg);
-      onError?.(msg);
-      return;
-    }
-
-    // Check microphone permission (required on Android before Voice.start).
-    const hasPermission = await requestMicrophonePermission();
-    if (!hasPermission) {
-      const msg = "Chưa cấp quyền micro. Vào Cài đặt > VSTEP > Micro để bật.";
-      setError(msg);
-      onError?.(msg);
-      return;
-    }
-
-    // Set guard flag BEFORE awaiting Voice.start() so double-tap is caught.
-    isListeningRef.current = true;
-
-    // Clean any stale listeners left from a previous session.
-    removeVoiceListeners();
-
-    Voice.onSpeechResults = (e: SpeechResultsEvent) => {
-      const results = e.value ?? [];
-      if (results.length > 0) {
-        setTranscript(results[0]);
-        transcriptRef.current = results[0];
-      }
-    };
-
-    Voice.onSpeechError = (e: SpeechErrorEvent) => {
-      const msg = voiceErrorMessage(e);
-      setError(msg);
-      onError?.(msg);
-      setState("idle");
-      isListeningRef.current = false;
-      cleanup();
-    };
-
-    Voice.onSpeechEnd = () => {
-      if (!isListeningRef.current) return;
-      isListeningRef.current = false;
-      cleanup();
-      setState("idle");
-      onEnd?.();
-
-      // Auto-submit transcript if we captured one (mirror FE v3 onend -> doSubmit).
-      const finalTranscript = transcriptRef.current.trim();
-      if (finalTranscript) {
-        onResult?.(finalTranscript);
-      }
-    };
+    endingRef.current = false;
 
     try {
-      await Voice.start(language);
+      if (!speechModule) {
+        const message = UNAVAILABLE_MESSAGE;
+        setIsAvailable(false);
+        finishWithError(message, true);
+        return false;
+      }
 
-      setState("listening");
+      if (!speechModule.isRecognitionAvailable()) {
+        const message = "Thiet bi chua ho tro nhan dien giong noi.";
+        setIsAvailable(false);
+        finishWithError(message, true);
+        return false;
+      }
+
+      const permission = await speechModule.requestPermissionsAsync();
+      if (!permission.granted) {
+        const message = "Chua cap quyen micro hoac nhan dien giong noi. Hay bat trong Cai dat.";
+        setIsAvailable(false);
+        finishWithError(message);
+        return false;
+      }
+
+      setIsAvailable(true);
+      syncState("listening");
       startMsRef.current = Date.now();
-
       timerRef.current = setInterval(() => {
         if (!startMsRef.current) return;
-        const elapsedSec = Math.floor((Date.now() - startMsRef.current) / 1000);
-        setElapsed(elapsedSec);
-        if (elapsedSec >= maxSeconds) {
+        const nextElapsed = Math.floor((Date.now() - startMsRef.current) / 1000);
+        setElapsed(nextElapsed);
+        if (nextElapsed >= maxSeconds) {
           stopRef.current();
         }
       }, 200);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Không thể khởi tạo nhận diện giọng nói";
-      setError(msg);
-      onError?.(msg);
-      setState("idle");
-      isListeningRef.current = false;
-      cleanup();
+
+      speechModule.start({
+        lang: language,
+        interimResults: true,
+        continuous: false,
+        maxAlternatives: 1,
+      });
+
+      return true;
+    } catch (err) {
+      const message = errorMessage(err);
+      setIsAvailable(false);
+      finishWithError(message, true);
+      return false;
     }
-  }, [language, maxSeconds, onEnd, onError, onResult, cleanup, isAvailable, removeVoiceListeners]);
+  }, [finishWithError, language, maxSeconds, speechModule, syncState]);
 
-  // Stop listening after the user taps the mic again.
-  const stop = useCallback(() => {
-    if (!isListeningRef.current) return;
-    isListeningRef.current = false;
-    cleanup();
-    setState("stopped");
-
-    const finalTranscript = transcriptRef.current.trim();
-    if (finalTranscript) {
-      onResult?.(finalTranscript);
-    } else {
-      setError("Không nghe rõ. Vui lòng thử lại.");
-    }
-
-    Voice.stop().catch(() => undefined);
-    Voice.destroy().catch(() => undefined);
-    removeVoiceListeners();
-  }, [onResult, cleanup, removeVoiceListeners]);
-
-  // Keep stopRef in sync so the auto-stop timer always calls the latest stop.
-  stopRef.current = stop;
-
-  // Reset to a clean slate.
-  const reset = useCallback(() => {
-    Voice.stop().catch(() => undefined);
-    Voice.destroy().catch(() => undefined);
-    removeVoiceListeners();
-    cleanup();
-    setState("idle");
-    setTranscript("");
-    transcriptRef.current = "";
-    setElapsed(0);
-    setError(null);
-    isListeningRef.current = false;
-  }, [cleanup, removeVoiceListeners]);
-
-  // Cleanup on unmount.
   useEffect(() => {
     return () => {
-      Voice.destroy().catch(() => undefined);
-      removeVoiceListeners();
-      cleanup();
+      cleanupTimer();
+      if (speechModule) {
+        try {
+          speechModule.abort();
+        } catch {
+          // Ignore missing native module during cleanup.
+        }
+      }
     };
-  }, [cleanup, removeVoiceListeners]);
+  }, [cleanupTimer, speechModule]);
 
   return {
     state,
     transcript,
     elapsed,
     error,
-    isAvailable, // null = checking, true = available, false = unavailable
+    isAvailable,
     start,
     stop,
     reset,

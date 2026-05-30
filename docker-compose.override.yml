@@ -14,6 +14,14 @@ services:
         VITE_API_URL: http://localhost:8000/api/v1
         VITE_GOOGLE_CLIENT_ID: 644444548899-q6kldv6576f2gjoccrm3i3s9sqlbetce.apps.googleusercontent.com
 
+  admin:
+    image: vstep-admin:local
+    pull_policy: never
+    build:
+      context: ./apps/admin
+      args:
+        VITE_API_URL: http://localhost:8000/api/v1
+
   backend:
     ports:
       - "8000:8000"
@@ -27,13 +35,7 @@ services:
       sh -c "
         composer install --optimize-autoloader --quiet &&
         php artisan migrate --force &&
-        php artisan db:seed --force --no-interaction --class=SystemConfigSeeder &&
-        php artisan db:seed --force --no-interaction --class=WalletSeeder &&
-        php artisan db:seed --force --no-interaction --class=ContentSeeder &&
-        php artisan db:seed --force --no-interaction --class=CurriculumBootstrapSeeder &&
-        php artisan db:seed --force --no-interaction --class=UserSeeder &&
-        php artisan db:seed --force --no-interaction --class=CourseSeeder &&
-        php artisan db:seed --force --no-interaction --class=DashboardDemoSeeder &&
+        php artisan db:seed --force --no-interaction &&
         php artisan demo:streak learner@vstep.test 12 &&
         php artisan storage:link 2>/dev/null;
         php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --workers=auto --max-requests=500

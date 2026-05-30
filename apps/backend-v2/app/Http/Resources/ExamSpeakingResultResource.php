@@ -16,10 +16,8 @@ final class ExamSpeakingResultResource extends JsonResource
     public function toArray(Request $request): array
     {
         $submission = $this->resource;
-        $job = $submission->gradingJob;
-        $result = $submission->gradingResults()
-            ->where('is_active', true)
-            ->first();
+        $attempt = $submission->assessmentAttempt;
+        $result = $attempt?->result;
 
         return [
             'submission_id' => $submission->id,
@@ -27,13 +25,12 @@ final class ExamSpeakingResultResource extends JsonResource
             'audio_url' => $submission->audio_url,
             'duration_seconds' => $submission->duration_seconds,
             'transcript' => $submission->transcript,
-            'grading_status' => $job?->status ?? 'failed',
+            'grading_status' => $attempt?->job?->status?->value ?? 'pending',
             'result' => $result !== null ? [
-                'rubric_scores' => $result->rubric_scores,
+                'criterion_scores' => $result->criterion_scores,
                 'overall_band' => $result->overall_band,
-                'strengths' => $result->strengths,
-                'improvements' => $result->improvements,
-                'pronunciation_report' => $result->pronunciation_report,
+                'feedback' => $result->feedback,
+                'calculation_trace' => $result->calculation_trace,
             ] : null,
         ];
     }

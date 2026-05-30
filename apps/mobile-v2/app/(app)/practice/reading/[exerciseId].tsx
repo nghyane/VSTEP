@@ -19,6 +19,7 @@ import {
   useReadingExerciseDetail, useMcqSession,
   startReadingSession, submitReadingSession,
 } from "@/hooks/use-practice";
+import { translateText } from "@/lib/translate";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { McqQuestion } from "@/hooks/use-practice";
 
@@ -108,6 +109,29 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
   const session = useMcqSession(sessionId, submitReadingSession, "reading");
   const [showPassage, setShowPassage] = useState(true);
   const [wordTapMode, setWordTapMode] = useState(false);
+  const [translation, setTranslation] = useState<string | null>(null);
+  const [translationLoading, setTranslationLoading] = useState(false);
+  const [translationError, setTranslationError] = useState(false);
+
+  function toggleTranslation() {
+    if (translation) {
+      setTranslation(null);
+      setTranslationError(false);
+      return;
+    }
+    const existingTranslation = exercise.vietnameseTranslation?.trim();
+    if (existingTranslation) {
+      setTranslation(existingTranslation);
+      return;
+    }
+    if (translationLoading) return;
+    setTranslationLoading(true);
+    setTranslationError(false);
+    translateText(exercise.passage, "en", "vi")
+      .then((res) => setTranslation(res ?? ""))
+      .catch(() => setTranslationError(true))
+      .finally(() => setTranslationLoading(false));
+  }
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>
@@ -143,13 +167,24 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
           <View style={[s.passageCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
             <View style={s.passageHeader}>
               <Text style={[s.passageTitle, { color: COLOR }]}>Part {exercise.part} · {exercise.title}</Text>
-              <HapticTouchable onPress={() => setWordTapMode(!wordTapMode)} style={s.wtapToggle}>
-                <Text style={[s.wtapBtn, {
-                  color: wordTapMode ? "#FFF" : c.subtle,
-                  backgroundColor: wordTapMode ? COLOR : "transparent",
-                  borderColor: wordTapMode ? COLOR : c.muted,
-                }]}>Từ điển</Text>
-              </HapticTouchable>
+              <View style={s.passageActions}>
+                <HapticTouchable onPress={toggleTranslation} style={s.wtapToggle}>
+                  <Text style={[s.wtapBtn, {
+                    color: translation || translationError ? "#FFF" : c.subtle,
+                    backgroundColor: translation || translationError ? COLOR : "transparent",
+                    borderColor: translation || translationError ? COLOR : c.muted,
+                  }]}>
+                    {translationLoading ? "..." : translation ? "Ẩn dịch" : "Dịch"}
+                  </Text>
+                </HapticTouchable>
+                <HapticTouchable onPress={() => setWordTapMode(!wordTapMode)} style={s.wtapToggle}>
+                  <Text style={[s.wtapBtn, {
+                    color: wordTapMode ? "#FFF" : c.subtle,
+                    backgroundColor: wordTapMode ? COLOR : "transparent",
+                    borderColor: wordTapMode ? COLOR : c.muted,
+                  }]}>Từ điển</Text>
+                </HapticTouchable>
+              </View>
             </View>
             <PassageWordView
               passage={exercise.passage}
@@ -157,6 +192,14 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
               accentColor={COLOR}
               c={c}
             />
+            {translation ? (
+              <View style={[s.translationBlock, { borderLeftColor: COLOR + "66" }]}>
+                <Text style={[s.translationLabel, { color: COLOR }]}>Dịch</Text>
+                <Text style={[s.translationText, { color: c.mutedForeground }]}>{translation}</Text>
+              </View>
+            ) : translationError ? (
+              <Text style={[s.translationText, { color: c.destructive }]}>Không thể dịch. Thử lại sau.</Text>
+            ) : null}
           </View>
         )}
 
@@ -186,6 +229,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
             answeredCount={session.answeredCount}
             total={questions.length}
             submitting={session.submitting}
+            submitError={session.submitError}
             accentColor={COLOR}
             onSubmit={() => session.submit()}
             c={c}
@@ -215,6 +259,7 @@ const s = StyleSheet.create({
   passageCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
   passageHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   passageTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
+  passageActions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   wtapToggle: { padding: spacing.xs },
   wtapBtn: {
     fontSize: 10,
@@ -224,6 +269,24 @@ const s = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 4,
     overflow: "hidden",
+  },
+  translationBlock: {
+    marginTop: spacing.sm,
+    paddingLeft: spacing.md,
+    borderLeftWidth: 2,
+    gap: spacing.xs,
+  },
+  translationLabel: {
+    fontSize: 10,
+    fontFamily: fontFamily.extraBold,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+  },
+  translationText: {
+    fontSize: fontSize.sm,
+    fontFamily: fontFamily.medium,
+    fontStyle: "italic",
+    lineHeight: 22,
   },
   footer: { backgroundColor: "#FFFFFF" },
 });

@@ -88,7 +88,7 @@ final class ExamController extends Controller
     public function writingResults(Request $request, ExamSession $examSession): JsonResponse
     {
         Gate::authorize('view', $examSession);
-        $examSession->load('writingSubmissions');
+        $examSession->load('writingSubmissions.assessmentAttempt.result', 'writingSubmissions.assessmentAttempt.job');
 
         return response()->json(['data' => ExamWritingResultResource::collection($examSession->writingSubmissions)]);
     }
@@ -96,7 +96,7 @@ final class ExamController extends Controller
     public function speakingResults(Request $request, ExamSession $examSession): JsonResponse
     {
         Gate::authorize('view', $examSession);
-        $examSession->load('speakingSubmissions');
+        $examSession->load('speakingSubmissions.assessmentAttempt.result', 'speakingSubmissions.assessmentAttempt.job');
 
         return response()->json(['data' => ExamSpeakingResultResource::collection($examSession->speakingSubmissions)]);
     }
@@ -237,8 +237,8 @@ final class ExamController extends Controller
 
         $examSession->load([
             'mcqAnswers',
-            'writingSubmissions.gradingResults',
-            'speakingSubmissions.gradingResults',
+            'writingSubmissions.assessmentAttempt.result',
+            'speakingSubmissions.assessmentAttempt.result',
             'examVersion.listeningSections.items',
             'examVersion.readingPassages.items',
             'listeningPlayLogs',
@@ -249,7 +249,7 @@ final class ExamController extends Controller
         $mcqSummary = $this->buildMcqSummary($examSession);
 
         $writingFeedback = $examSession->writingSubmissions->map(function ($submission) {
-            $result = $submission->gradingResults->where('is_active', true)->first();
+            $result = $submission->assessmentAttempt?->result;
 
             return [
                 'submission_id' => $submission->id,
@@ -257,16 +257,14 @@ final class ExamController extends Controller
                 'word_count' => $submission->word_count,
                 'text' => $submission->text,
                 'overall_band' => $result?->overall_band,
-                'rubric_scores' => $result?->rubric_scores,
-                'strengths' => $result?->strengths,
-                'improvements' => $result?->improvements,
-                'rewrites' => $result?->rewrites,
-                'paragraph_feedback' => $result?->paragraph_feedback,
+                'criterion_scores' => $result?->criterion_scores,
+                'feedback' => $result?->feedback,
+                'calculation_trace' => $result?->calculation_trace,
             ];
         });
 
         $speakingFeedback = $examSession->speakingSubmissions->map(function ($submission) {
-            $result = $submission->gradingResults->where('is_active', true)->first();
+            $result = $submission->assessmentAttempt?->result;
 
             return [
                 'submission_id' => $submission->id,
@@ -274,10 +272,9 @@ final class ExamController extends Controller
                 'audio_url' => $submission->audio_url,
                 'transcript' => $submission->transcript,
                 'overall_band' => $result?->overall_band,
-                'rubric_scores' => $result?->rubric_scores,
-                'strengths' => $result?->strengths,
-                'improvements' => $result?->improvements,
-                'pronunciation_report' => $result?->pronunciation_report,
+                'criterion_scores' => $result?->criterion_scores,
+                'feedback' => $result?->feedback,
+                'calculation_trace' => $result?->calculation_trace,
             ];
         });
 

@@ -3,8 +3,9 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { DepthCard } from "@/components/DepthCard";
 import { useActivityHeatmap } from "@/hooks/use-progress";
+import { heatmapLevels } from "@/lib/vstep";
 import { useThemeColors, spacing, fontSize, fontFamily, radius } from "@/theme";
-import type { HeatmapEntry } from "@/types/api";
+import type { SkillActivityDay } from "@/types/api";
 
 const WEEKS = 12;
 const DAYS = 7;
@@ -12,36 +13,54 @@ const DAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 const CELL_SIZE = 12;
 const GAP = 2;
 
+type HeatmapCell = { level: number; future: boolean };
+
 function levelColor(level: number, theme: { border: string; primary: string }): string {
   const colors = [theme.border, `${theme.primary}40`, `${theme.primary}80`, `${theme.primary}BF`, theme.primary];
   return colors[level] ?? theme.border;
 }
 
-function toLevel(minutes: number): number {
-  if (minutes <= 0) return 0;
-  if (minutes >= 120) return 4;
-  if (minutes >= 60) return 3;
-  if (minutes >= 30) return 2;
-  if (minutes >= 10) return 1;
-  return 0;
+function totalActivity(day?: SkillActivityDay): number {
+  if (!day) return 0;
+  return day.listening + day.reading + day.writing + day.speaking + day.vocab + day.exam;
 }
 
-function buildGrid(data: HeatmapEntry[]): number[][] {
-  const map = new Map(data.map((d) => [d.date.slice(0, 10), d.minutes]));
+function toLevel(total: number): number {
+  if (total < heatmapLevels[0]) return 0;
+  if (total >= heatmapLevels[3]) return 4;
+  if (total >= heatmapLevels[2]) return 3;
+  if (total >= heatmapLevels[1]) return 2;
+  return 1;
+}
+
+function isoDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function buildGrid(data: SkillActivityDay[]): HeatmapCell[][] {
+  const map = new Map(data.map((d) => [d.date.slice(0, 10), d]));
   const today = new Date();
-  const start = new Date(today);
-  start.setDate(start.getDate() - WEEKS * DAYS);
+  const todayKey = isoDate(today);
+  const end = new Date(today);
+  const endDow = (end.getDay() + 6) % 7;
+  end.setDate(end.getDate() + (DAYS - 1 - endDow));
 
-  const dow = (start.getDay() + 6) % 7;
-  start.setDate(start.getDate() - dow);
+  const start = new Date(end);
+  start.setDate(start.getDate() - (WEEKS * DAYS - 1));
 
-  const weeks: number[][] = [];
+  const weeks: HeatmapCell[][] = [];
   const cursor = new Date(start);
   for (let w = 0; w < WEEKS; w++) {
-    const week: number[] = [];
+    const week: HeatmapCell[] = [];
     for (let d = 0; d < DAYS; d++) {
-      const key = cursor.toISOString().slice(0, 10);
-      week.push(toLevel(map.get(key) ?? 0));
+      const key = isoDate(cursor);
+      week.push({
+        level: toLevel(totalActivity(map.get(key))),
+        future: key > todayKey,
+      });
       cursor.setDate(cursor.getDate() + 1);
     }
     weeks.push(week);
@@ -55,7 +74,7 @@ export function ActivityHeatmap() {
 
   const grid = useMemo(() => (data ? buildGrid(data) : []), [data]);
   const totalActiveDays = useMemo(
-    () => (data ? data.filter((d) => d.minutes > 0).length : 0),
+    () => (data ? data.filter((d) => totalActivity(d) > 0).length : 0),
     [data],
   );
 
@@ -91,13 +110,13 @@ export function ActivityHeatmap() {
         <View style={styles.weeks}>
           {grid.map((week, wi) => (
             <View key={wi} style={styles.weekColumn}>
-              {week.map((level, di) => (
+              {week.map((cell, di) => (
                 <View
                   key={di}
                   style={[
                     styles.cell,
                     {
-                      backgroundColor: levelColor(level, c),
+                      backgroundColor: cell.future ? "transparent" : levelColor(cell.level, c),
                       width: CELL_SIZE,
                       height: CELL_SIZE,
                       borderRadius: radius.sm,

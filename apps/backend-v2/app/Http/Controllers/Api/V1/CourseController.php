@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\PaymentProvider;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BookSlotRequest;
 use App\Http\Resources\EnrollmentOrderResource;
 use App\Models\Course;
-use App\Models\CourseEnrollmentOrder;
 use App\Models\TeacherSlot;
 use App\Services\CourseOrderService;
 use App\Services\CourseService;
@@ -55,39 +55,21 @@ final class CourseController extends Controller
         ]]);
     }
 
-    // ── Enrollment Orders (VND payment) ──
-
-    /**
-     * Create enrollment order. Returns order with pending status.
-     * FE uses order_id to confirm payment.
-     */
     public function createEnrollmentOrder(Request $request, Course $course): JsonResponse
     {
+        $validated = $request->validate([
+            'payment_provider' => ['required', 'string', 'in:'.implode(',', PaymentProvider::values())],
+            'return_url' => ['nullable', 'url'],
+        ]);
+
         $order = $this->courseOrderService->createOrder(
             $request->profile(),
             $course,
-            'mock',
+            PaymentProvider::from($validated['payment_provider']),
+            $validated['return_url'] ?? null,
         );
 
         return response()->json(['data' => EnrollmentOrderResource::make($order)], 201);
-    }
-
-    /**
-     * Confirm payment (mock). Creates enrollment + credits bonus coins.
-     */
-    public function confirmEnrollmentOrder(Request $request, CourseEnrollmentOrder $enrollmentOrder): JsonResponse
-    {
-        $validated = $request->validate([
-            'commitment_signature' => ['nullable', 'string', 'max:51200', 'starts_with:<svg'],
-        ]);
-
-        if ($enrollmentOrder->profile_id !== $request->profile()->id) {
-            abort(403);
-        }
-
-        $confirmed = $this->courseOrderService->confirm($enrollmentOrder, $validated['commitment_signature'] ?? null);
-
-        return response()->json(['data' => EnrollmentOrderResource::make($confirmed)]);
     }
 
     /**

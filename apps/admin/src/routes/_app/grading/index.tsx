@@ -75,7 +75,7 @@ function GradingListPage() {
 
 	return (
 		<Flex vertical gap={16}>
-			<PageHeader title="Tiêu chí chấm điểm" description="Rubric chấm điểm Writing & Speaking (read-only)" />
+			<PageHeader title="Tiêu chí chấm điểm" subtitle="Rubric chấm điểm Writing & Speaking (read-only)" />
 			<Flex gap={12}>
 				<Select
 					placeholder="Kỹ năng"

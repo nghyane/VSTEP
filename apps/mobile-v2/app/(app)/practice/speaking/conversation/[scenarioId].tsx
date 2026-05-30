@@ -63,7 +63,7 @@ export default function SpeakingConversationScreen() {
 
   // Mic pulse animation (listening + AI speaking states)
   useEffect(() => {
-    const active = speechToText.state === "listening" || !!speakingTurnId;
+    const active = speechToText.state === "listening" || speechToText.state === "processing" || !!speakingTurnId;
     if (active) {
       Animated.loop(
         Animated.sequence([
@@ -94,8 +94,18 @@ export default function SpeakingConversationScreen() {
       speechToText.stop();
       return;
     }
+    if (speechToText.isAvailable === false) {
+      Alert.alert(
+        "Chua the dung micro",
+        speechToText.error ?? "Nhan dien giong noi can development build. Expo Go chua ho tro tinh nang nay.",
+      );
+      return;
+    }
     if (speechToText.state === "idle") {
-      await speechToText.start();
+      const started = await speechToText.start();
+      if (!started && speechToText.error) {
+        Alert.alert("Chua the dung micro", speechToText.error);
+      }
     }
   };
 
@@ -255,11 +265,13 @@ export default function SpeakingConversationScreen() {
       {!conv.summary ? (
         <View style={[s.footer, { paddingBottom: insets.bottom + spacing.md, borderTopColor: c.borderLight, backgroundColor: c.surface }]}>
           {/* Live transcript while listening (mirror FE v3 listening state) */}
-          {speechToText.state === "listening" && (
+          {(speechToText.state === "listening" || speechToText.state === "processing") && (
             <View style={[s.sttBlock, { backgroundColor: c.card, borderColor: c.border }]}>
-              <Text style={[s.sttLabel, { color: c.mutedForeground }]}>Đang nghe...</Text>
+              <Text style={[s.sttLabel, { color: c.mutedForeground }]}>
+                {speechToText.state === "processing" ? "Đang chuyển thành chữ..." : "Đang nghe..."}
+              </Text>
               <Text style={[s.sttTranscript, { color: c.foreground }]} numberOfLines={2}>
-                {speechToText.transcript || "Nói vào micro..."}
+                {speechToText.transcript || (speechToText.state === "processing" ? "Đang xử lý bản ghi..." : "Nói vào micro...")}
               </Text>
               <View style={s.sttTimerRow}>
                 <Ionicons name="timer-outline" size={14} color={c.mutedForeground} />
@@ -303,15 +315,18 @@ export default function SpeakingConversationScreen() {
                   <View style={[s.micStopSquare, { backgroundColor: c.primaryForeground }]} />
                 </HapticTouchable>
               </View>
+            ) : speechToText.state === "processing" ? (
+              <View style={[s.micLargeBtn, { backgroundColor: c.surface, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
+                <ActivityIndicator size="small" color={c.skillSpeaking} />
+              </View>
             ) : (
               <HapticTouchable
                 onPress={handleMicPress}
                 disabled={
                   conv.isSubmitting ||
-                  speechToText.isAvailable === false ||
                   speechToText.isAvailable === null
                 }
-                style={[s.micLargeBtn, { backgroundColor: c.surface, borderColor: c.border, borderBottomColor: "#CACACA", opacity: conv.isSubmitting || speechToText.isAvailable === false ? 0.5 : 1 }]}
+                style={[s.micLargeBtn, { backgroundColor: c.surface, borderColor: c.border, borderBottomColor: "#CACACA", opacity: conv.isSubmitting ? 0.5 : 1 }]}
               >
                 {speechToText.isAvailable === null ? (
                   <ActivityIndicator size="small" color={c.skillSpeaking} />
@@ -325,6 +340,8 @@ export default function SpeakingConversationScreen() {
                 ? "Đang phát · Nhấn để bỏ qua"
                 : speechToText.state === "listening"
                   ? `${speechToText.elapsed}s / ${MAX_RECORD_SECONDS}s`
+                  : speechToText.state === "processing"
+                    ? "Đang chuyển giọng nói thành chữ..."
                   : speechToText.isAvailable === false
                     ? "Thiết bị không hỗ trợ"
                     : speechToText.isAvailable === null
@@ -334,7 +351,7 @@ export default function SpeakingConversationScreen() {
                         : "Nhấn để nói"}
             </Text>
 
-            {speechToText.error && (
+            {speechToText.error && speechToText.state !== "unavailable" && (
               <Text style={[s.sttError, { color: c.destructive }]}>{speechToText.error}</Text>
             )}
           </View>

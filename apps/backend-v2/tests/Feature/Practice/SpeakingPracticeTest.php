@@ -99,6 +99,12 @@ class SpeakingPracticeTest extends TestCase
             'session_id' => $sessionId,
             'task_ref_type' => 'practice_speaking_task',
         ]);
+        $profile = Profile::query()->where('account_id', $user->id)->firstOrFail();
+        $this->assertDatabaseHas('assessment_attempts', [
+            'profile_id' => $profile->id,
+            'source_type' => 'practice',
+        ]);
+        $this->assertDatabaseCount('assessment_jobs', 1);
     }
 
     public function test_list_vstep_tasks(): void

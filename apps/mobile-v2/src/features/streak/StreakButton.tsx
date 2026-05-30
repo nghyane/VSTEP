@@ -110,16 +110,16 @@ function StreakDialog({
         {/* Tiến độ hôm nay */}
         <View style={[styles.progressCard, { backgroundColor: c.muted }]}>
           <View style={styles.progressTop}>
-            <Text style={[styles.progressLabel, { color: c.foreground }]}>Tiến độ hôm nay</Text>
-            <Text style={[styles.progressValue, { color: goalReached ? c.success : c.warning }]}>
-              {done}/{dailyGoal} bài thi
-            </Text>
+          <Text style={[styles.progressLabel, { color: c.foreground }]}>Tiến độ hôm nay</Text>
+          <Text style={[styles.progressValue, { color: goalReached ? c.success : c.warning }]}>
+              {done}/{dailyGoal} hoạt động
+          </Text>
           </View>
           <View style={[styles.progressTrack, { backgroundColor: c.border }]}>
             <View style={[styles.progressFill, { width: `${Math.min(todayPct, 100)}%`, backgroundColor: goalReached ? c.success : c.warning }]} />
           </View>
           <Text style={[styles.progressHint, { color: c.mutedForeground }]}>
-            {goalReached ? "Hoàn thành! Streak được giữ hôm nay." : `Còn ${remaining} bài thi nữa để giữ streak`}
+            {goalReached ? "Hoàn thành! Streak được giữ hôm nay." : `Còn ${remaining} hoạt động nữa để giữ streak`}
           </Text>
         </View>
 

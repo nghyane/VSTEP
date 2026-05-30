@@ -1,0 +1,30 @@
+@startuml
+!theme plain
+
+title Admin App Package Diagram
+
+skinparam backgroundColor #FFFFFF
+skinparam packageStyle folder
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam PackageBorderColor #555555
+skinparam PackageFontColor #111111
+skinparam PackageFontStyle bold
+skinparam FontName Arial
+
+left to right direction
+
+package "routes" as routes
+package "features" as features
+package "components" as components
+package "lib" as lib
+package "styles" as styles
+
+routes ..> features
+routes ..> components
+features ..> components
+features ..> lib
+components ..> lib
+components ..> styles
+
+@enduml

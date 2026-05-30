@@ -1,0 +1,43 @@
+@startuml
+!theme plain
+title Practice Feedback Sequence Diagram
+
+actor Learner
+participant "Practice Screen" as UI
+participant "Writing/Speaking Controller" as Controller
+participant "Practice Service" as PracticeService
+participant "PracticeFeedbackService" as FeedbackService
+participant "AssessmentSubmissionService" as SubmissionService
+queue "ProcessAssessmentJob" as Job
+participant "AssessmentProcessingService" as ProcessingService
+database "PracticeSubmission" as Submission
+database "PracticeFeedbackRequest" as FeedbackRequest
+database "AssessmentAttempt" as Attempt
+database "AssessmentResult" as Result
+
+Learner -> UI : Submit writing/speaking answer
+UI -> Controller : POST practice submission
+Controller -> PracticeService : saveSubmission(payload)
+PracticeService -> Submission : create submission
+Submission --> PracticeService : submission id
+PracticeService -> SubmissionService : submit(AssessmentInput)
+SubmissionService -> Attempt : create assessment attempt
+SubmissionService -> Job : dispatch processing job
+PracticeService --> Controller : submission saved
+Controller --> UI : submission response
+
+Learner -> UI : Request feedback
+UI -> Controller : POST feedback request
+Controller -> FeedbackService : requestFeedback(submission)
+FeedbackService -> FeedbackRequest : create pending request
+FeedbackService -> SubmissionService : submit detailed feedback assessment
+SubmissionService -> Attempt : create feedback attempt
+SubmissionService -> Job : dispatch processing job
+Job -> ProcessingService : process(assessmentJob)
+ProcessingService -> Result : store scores and feedback
+ProcessingService -> FeedbackRequest : mark ready
+FeedbackService --> Controller : feedback ready/status
+Controller --> UI : feedback status/result
+UI --> Learner : Display feedback
+
+@enduml

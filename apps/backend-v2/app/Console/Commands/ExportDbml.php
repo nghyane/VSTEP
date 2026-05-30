@@ -27,7 +27,7 @@ class ExportDbml extends Command
             'exam_version_writing_tasks', 'exam_version_speaking_parts'],
         'exam_session' => ['exam_sessions', 'exam_mcq_answers', 'exam_listening_play_log',
             'exam_writing_submissions', 'exam_speaking_submissions',
-            'grading_jobs', 'writing_grading_results', 'speaking_grading_results'],
+            'assessment_attempts', 'assessment_jobs', 'assessment_evidence', 'assessment_results'],
         'practice' => ['practice_sessions', 'practice_mcq_answers',
             'practice_listening_exercises', 'practice_listening_questions',
             'practice_reading_exercises', 'practice_reading_questions',

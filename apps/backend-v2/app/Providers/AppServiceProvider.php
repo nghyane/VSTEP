@@ -11,8 +11,17 @@ use App\Ai\Contracts\ContentRelevanceAssessor;
 use App\Ai\Contracts\ConversationReviewer;
 use App\Ai\Contracts\ConversationTurnHandler;
 use App\Ai\Contracts\PronunciationAnalyzer;
+use App\Ai\Contracts\SpeakingFeedbackGenerator;
 use App\Ai\Contracts\TaskFulfillmentAssessor;
 use App\Ai\Contracts\WritingFeedbackGenerator;
+use App\Assessment\Contracts\RubricResolver as AssessmentRubricResolver;
+use App\Assessment\Rubrics\DatabaseRubricResolver;
+use App\Assessment\Services\StrategyRegistry as AssessmentStrategyRegistry;
+use App\Assessment\Strategies\SpeakingPart1PersonalStrategy;
+use App\Assessment\Strategies\SpeakingPart2SolutionStrategy;
+use App\Assessment\Strategies\SpeakingPart3DiscussionStrategy;
+use App\Assessment\Strategies\WritingTask1LetterStrategy;
+use App\Assessment\Strategies\WritingTask2EssayStrategy;
 use App\Models\Profile;
 use App\Services\Admin\Course\AdminCourseBookingService;
 use App\Services\Admin\Course\AdminCourseEnrollmentService;
@@ -24,15 +33,13 @@ use App\Services\Ai\LlmContentRelevanceAssessor;
 use App\Services\Ai\LlmConversationReviewer;
 use App\Services\Ai\LlmConversationTurnHandler;
 use App\Services\Ai\LlmPronunciationAnalyzer;
+use App\Services\Ai\LlmSpeakingFeedbackGenerator;
 use App\Services\Ai\LlmTaskFulfillmentAssessor;
 use App\Services\Ai\LlmWritingFeedbackGenerator;
 use App\Services\Contracts\LearningPathInterface;
 use App\Services\ConversationServiceInterface;
-use App\Services\Grading\GradingStrategyResolver;
 use App\Services\Grading\RubricResolver;
-use App\Services\Grading\SpeakingGradingStrategy;
 use App\Services\Grading\SpeakingScoringFormula;
-use App\Services\Grading\WritingGradingStrategy;
 use App\Services\Grading\WritingScoringFormula;
 use App\Services\LearningPathService;
 use App\Services\Payment\PaymentGatewayRegistry;
@@ -74,6 +81,7 @@ class AppServiceProvider extends ServiceProvider
         // ── AI Contracts → Implementations
         $this->app->bind(TaskFulfillmentAssessor::class, LlmTaskFulfillmentAssessor::class);
         $this->app->bind(WritingFeedbackGenerator::class, LlmWritingFeedbackGenerator::class);
+        $this->app->bind(SpeakingFeedbackGenerator::class, LlmSpeakingFeedbackGenerator::class);
         $this->app->bind(ContentRelevanceAssessor::class, LlmContentRelevanceAssessor::class);
         $this->app->bind(ConversationTurnHandler::class, LlmConversationTurnHandler::class);
         $this->app->bind(ConversationReviewer::class, LlmConversationReviewer::class);
@@ -93,14 +101,18 @@ class AppServiceProvider extends ServiceProvider
             $app->make(RubricResolver::class)->active('speaking'),
         ));
 
-        $this->app->singleton(GradingStrategyResolver::class, fn ($app) => new GradingStrategyResolver([
-            $app->make(WritingGradingStrategy::class),
-            $app->make(SpeakingGradingStrategy::class),
-        ]));
-
         $this->app->bind(ConversationServiceInterface::class, SpeakingConversationService::class);
 
         $this->app->bind(LearningPathInterface::class, LearningPathService::class);
+
+        $this->app->bind(AssessmentRubricResolver::class, DatabaseRubricResolver::class);
+        $this->app->singleton(AssessmentStrategyRegistry::class, fn ($app) => new AssessmentStrategyRegistry([
+            $app->make(WritingTask1LetterStrategy::class),
+            $app->make(WritingTask2EssayStrategy::class),
+            $app->make(SpeakingPart1PersonalStrategy::class),
+            $app->make(SpeakingPart2SolutionStrategy::class),
+            $app->make(SpeakingPart3DiscussionStrategy::class),
+        ]));
 
         $this->app->bind(AdminCourseBookingInterface::class, AdminCourseBookingService::class);
         $this->app->bind(AdminCourseEnrollmentInterface::class, AdminCourseEnrollmentService::class);

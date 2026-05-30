@@ -16,7 +16,7 @@ interface Props {
 
 export function WritingReviewPopup({ submissionId, onClose }: Props) {
 	const { data, isPending, isError, refetch } = useQuery({
-		...writingResultQuery("practice_writing", submissionId),
+		...writingResultQuery(submissionId),
 		refetchInterval: (query) => (query.state.data?.data ? false : 3000),
 	})
 	const result = data?.data
@@ -73,13 +73,22 @@ export function WritingReviewPopup({ submissionId, onClose }: Props) {
 						</div>
 
 						<div className="space-y-2">
-							{Object.entries(result.rubric_scores).map(([key, score]) => (
-								<RubricBar key={key} label={label(key)} score={score} max={10} color={COLOR} />
+							{result.criterion_scores.map((criterion) => (
+								<RubricBar
+									key={criterion.key}
+									label={label(criterion.key)}
+									score={criterion.score}
+									max={10}
+									color={COLOR}
+								/>
 							))}
 						</div>
 
-						<FeedbackSection strengths={result.strengths} improvements={result.improvements} />
-						<RewriteSection rewrites={result.rewrites} />
+						<FeedbackSection
+							strengths={result.feedback?.strengths ?? []}
+							improvements={result.feedback?.improvements ?? result.feedback?.evidenceNotes ?? []}
+						/>
+						<RewriteSection rewrites={result.feedback?.rewrites ?? []} />
 
 						<Link
 							to="/grading/writing/$submissionId"

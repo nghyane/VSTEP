@@ -24,16 +24,28 @@
       },
       "package": "com.vstep.mobile.v2",
       "softwareKeyboardLayoutMode": "pan",
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       "expo-system-ui",
       [
-        "expo-av",
+        "expo-audio",
         {
-          "microphonePermission": "Cho phep VSTEP ghi am bai speaking"
+          "microphonePermission": "Cho phep VSTEP su dung micro de luyen noi va ghi am bai speaking."
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Cho phep VSTEP su dung micro de luyen noi.",
+          "speechRecognitionPermission": "Cho phep VSTEP nhan dien giong noi de luyen noi.",
+          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
         }
       ]
     ],

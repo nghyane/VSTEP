@@ -1,37 +1,23 @@
-# VSTEP
+# VSTEP — Agent Instructions
 
-VSTEP exam practice platform with AI grading and adaptive learning. Capstone project (SP26SE145).
+These instructions are for repository operation only. Do not use this file as a source for product facts, report metrics, architecture documentation, or technology versions; verify those from code and package/config files.
 
-## Apps
+## App Boundaries
 
-| Directory | Status | Stack |
-|-----------|--------|-------|
-| `apps/backend-v2/` | Active | PHP 8.4 · Laravel 13 |
-| `apps/frontend-v3/` | Active | React 19 · Vite · TanStack Router |
-| `apps/admin/` | Active | React 19 · Vite · TanStack Router |
-| `apps/mobile-v2/` | Active | Expo · React Native |
-| `apps/frontend-v2/` | Legacy | Do not touch |
-| `apps/frontend/` | Legacy | Do not touch |
-| `apps/mobile/` | Legacy | Do not touch |
-| `apps/_deprecated/` | Legacy | Do not touch |
-
-Each active app has its own `AGENTS.md` with commands, architecture, and code rules. Read that first before working in that directory.
-
-## Boundaries
-
-- Never import code between apps. Each app is fully isolated.
-- API contract owned by `backend-v2`. Frontend and mobile are consumers only.
-- UI mockup source of truth: `apps/mockup/`
+- Each app is isolated. Do not import code across apps.
+- Work only in the app or docs area relevant to the user request.
+- Legacy/deprecated app directories are off-limits unless the user explicitly asks to modify them.
 
 ## Git
 
-- `git pull --no-rebase` (merge) by default. Never rebase, force-push, or `reset --hard` without asking.
+- `git pull --no-rebase` by default. Never rebase, force-push, or `reset --hard` without explicit approval.
 - Stage only files related to the current change.
+- Do not commit or push unless the user explicitly asks.
 
 ## Conventions
 
-Before writing code, activate the relevant convention skill:
-- `convention-check` — scan for violations before commit
-- `convention-service` — pattern for new services or refactoring
-- `convention-ai` — pattern for AI agents, gateways, prompts
-- `convention-test` — pattern for tests, factories, fakes
+Before writing code, activate the relevant convention skill when applicable:
+- `convention-check` — scan for convention violations before commit/review
+- `convention-service` — services, refactors, new features
+- `convention-ai` — AI agents/gateways/prompts/structured output
+- `convention-test` — tests, factories, fakes

@@ -3,9 +3,10 @@
 | Date | A/M/D | In charge | Change Description |
 |------|-------|-----------|-------------------|
 | 10/03/2026 | A | Hoàng Văn Anh Nghĩa | Initial version |
-| 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Corrected factual discrepancies between report and implementation; added limitations reflecting registration form scope gaps |
-| 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Corrected FE-05: Speaking grading uses 5 criteria (added missing Discourse Management) |
-| 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Added LI-11: no placement test — users self-select target; first mock test = real baseline |
+| 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Updated project scope and limitations based on implementation review |
+| 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Revised Writing and Speaking assessment scope |
+| 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Added limitation about onboarding and baseline assessment |
+| 30/05/2026 | M | Hoàng Văn Anh Nghĩa | Clarified assessment validation approach for rubric-based scoring |
 
 *A - Added   M - Modified   D - Deleted
 
@@ -35,7 +36,7 @@
 
 ## 2. Product Background
 
-The Vietnamese Standardized Test of English Proficiency (VSTEP) is widely used for graduation, certification, and professional purposes in Vietnam. Learners preparing for VSTEP have different proficiency levels across listening, reading, writing, and speaking. Traditional preparation methods rely on uniform materials and fixed-level mock tests, which do not adapt to individual needs, making it hard to track progress or focus on weak skills. A level-oriented digital system with comprehensive skill assessment and personalized learning recommendations is needed to support efficient and targeted exam preparation.
+The Vietnamese Standardized Test of English Proficiency (VSTEP) is widely used for graduation, certification, and professional purposes in Vietnam. Learners preparing for VSTEP have different proficiency levels across listening, reading, writing, and speaking. Traditional preparation methods rely on uniform materials and fixed-level mock tests, which do not adapt to individual needs, making it hard to track progress or focus on weak skills. A level-oriented digital system with comprehensive skill assessment and personalized learning recommendations is needed to support efficient and targeted exam preparation. In the current capstone scope, adaptive learning support is implemented through skill-gap-based recommendations and spaced repetition for vocabulary review, while dynamic difficulty adjustment for all exercises is planned as future work.
 
 Problems identified:
 - Learners cannot accurately identify their proficiency level and skill gaps.
@@ -65,7 +66,7 @@ These apps provide interactive, gamified learning experiences at low cost.
 Vietnamese platforms such as luyenthivstep.vn and vstepmaster.edu.vn offer large question banks with computer-based test simulation.
 
 - Pros: Interface simulates computer-based testing; instant results for Listening and Reading; large question banks.
-- Cons: No AI-powered assessment for Writing and Speaking; no personalized learning paths; scores displayed without detailed analysis.
+- Cons: No automated rubric-based assessment for Writing and Speaking; no personalized learning paths; scores displayed without detailed analysis.
 
 ### 3.4 AI Writing and Speaking Tools (Grammarly, Write & Improve)
 
@@ -87,40 +88,49 @@ The EdTech market in Vietnam is growing rapidly, projected to reach USD 1.1 bill
 
 Within this landscape, the VSTEP preparation market shows a clear gap. Traditional classes and textbooks use static materials without flexible feedback. VSTEP mock test websites primarily offer MCQ question banks, leaving Writing and Speaking assessment unaddressed. International apps like Duolingo or Grammarly do not align with VSTEP structure and do not serve Vietnamese certification goals.
 
-The proposed system differentiates through: (1) AI grading for Writing and Speaking against the official VSTEP rubric, (2) personalized learning recommendations based on identified skill gaps, (3) comprehensive progress visualization with spider charts and trend analysis, and (4) an AI resource management system that ensures sustainable operation by limiting LLM usage through a credit-based mechanism.
+The proposed system differentiates through: (1) rubric-based assessment for Writing and Speaking, where AI helps extract task evidence and generate feedback, (2) adaptive learning support through skill-gap-based recommendations and spaced repetition for vocabulary review, (3) comprehensive progress visualization, and (4) controlled usage of AI services to support sustainable operation.
+
+For assessment reliability, the assessment module is evaluated using two validation groups. The first group contains referenced Writing samples with independent scoring comments, used to compare the system's predicted proficiency level with a reference level. The second group contains VSTEP-style risk cases, such as off-topic, too-short, copied-prompt, repeated, or non-English responses, used to verify that abnormal submissions are not scored highly. These validation groups are reported separately so that benchmark results and risk-handling checks do not distort each other.
 
 ## 5. Software Product Vision
 
-For university students who need to meet graduation requirements and working professionals who need certification for career advancement in Vietnam, who struggle with VSTEP preparation methods that lack personalization and provide slow feedback, the Adaptive VSTEP Preparation System is a web and mobile platform that provides personalized learning paths, 4-skill assessment with rapid AI-powered feedback, and visual progress tracking. Unlike static mock test websites that only offer questions and answer keys, or general English apps that do not align with VSTEP, this product combines AI grading, learning path recommendations, and analytics to effectively close skill gaps.
+For university students who need to meet graduation requirements and working professionals who need certification for career advancement in Vietnam, who struggle with VSTEP preparation methods that lack personalization and provide slow feedback, the Adaptive VSTEP Preparation System is a web and mobile platform that provides personalized learning paths, 4-skill assessment with rapid evidence-based feedback, vocabulary review support, and visual progress tracking. Unlike static mock test websites that only offer questions and answer keys, or general English apps that do not align with VSTEP, this product combines rubric-based scoring, AI-supported evidence extraction, skill-gap recommendations, spaced repetition, and analytics to effectively close skill gaps.
 
 ## 6. Project Scope and Limitations
 
 ### 6.1 Major Features
 
-- FE-01: User Authentication — Register, login, and profile management with Learner, Teacher, Staff, and Admin roles.
-- FE-02: Practice Mode — Listening — Listening exercises with audio playback, transcript support, and instant auto-grading.
-- FE-03: Practice Mode — Reading — Reading exercises with MCQ format and instant auto-grading.
-- FE-04: Practice Mode — Writing — Writing exercises (Task 1: Letter/Email, Task 2: Essay) with AI grading against 4 VSTEP criteria (Grammar, Vocabulary, Organization, Task Fulfillment) and real-time progress via SSE streaming.
-- FE-05: Practice Mode — Speaking — Speaking exercises (Parts 1-3) with Azure Speech-to-Text transcription and AI grading against 5 VSTEP criteria (Grammar, Vocabulary, Fluency, Discourse Management, Pronunciation).
-- FE-06: Mock Test Mode — Full simulated VSTEP exam across all 4 skills with auto-save, countdown timer, and composite scoring (Task 1 × ⅓ + Task 2 × ⅔).
-- FE-07: AI Grading Engine — Deterministic scoring formulas based on the official VSTEP scoring rubric issued by the Ministry of Education and Training (MOET), using CEFR vocabulary classification, LanguageTool grammar checking, and SyntaxAnalyzer for structural complexity.
-- FE-08: Progress Tracking — Spider chart showing 4-skill competency, sliding window trend analysis, streak tracking, activity heatmap, and predicted CEFR level projection.
-- FE-09: Learning Path — Skill gap analysis from mock exam results with personalized practice recommendations prioritizing weak skills (threshold-based, band < 5.0).
-- FE-10: Course Management — Course creation with teacher assignment, schedule management, and 1-on-1 session booking between learners and teachers.
-- FE-11: Content Management — Admin tools for question bank CRUD, exam creation with blueprint validation (ExamVersionValidator), grammar curriculum, vocabulary topics, speaking drills/scenarios, and system configuration.
-- FE-12: Notification System — In-app notifications for grading completion, course enrollment, booking events, top-up completion, coin rewards, and scheduled daily study reminders via vstep:study-reminder.
+The major features of the system are grouped around learner access, VSTEP practice, mock testing, assessment, personalized learning support, course support, administration, and learner engagement.
+
+- FE-01: User Authentication — Register, login, and profile management for the main user roles.
+- FE-02: Practice Mode — Listening — Listening exercises with audio playback, transcript support, and instant automatic marking.
+- FE-03: Practice Mode — Reading — Reading exercises with MCQ format and instant automatic marking.
+- FE-04: Practice Mode — Writing — Writing exercises scored by rubric-based formulas, with AI used to extract task evidence and support feedback.
+- FE-05: Practice Mode — Speaking — Speaking exercises scored by rubric-based formulas using transcript, fluency, pronunciation, and content-relevance signals.
+- FE-06: Mock Test Mode — Full simulated VSTEP exam across all 4 skills with session saving, timer, automatic marking for objective skills, and rubric-based assessment for Writing and Speaking.
+- FE-07: AI-supported Assessment Engine — Automated support for Writing and Speaking assessment using scoring formulas, rubric parameters, language metrics, and AI-extracted evidence.
+- FE-08: Progress Tracking — Dashboard for skill performance, learning activity, score trends, and level progress.
+- FE-09: Learning Path — Skill gap analysis from mock exam results with personalized practice recommendations and spaced repetition support for vocabulary review.
+- FE-10: Course Management — Course creation, teacher assignment, schedule management, and session booking between learners and teachers.
+- FE-11: Content Management — Admin tools for question banks, exams, grammar, vocabulary, speaking practice content, and system configuration.
+- FE-12: Notification System — In-app notifications for assessment completion, course activities, payment events, rewards, and study reminders.
 - FE-13: Exercise Feedback — Learners can submit ratings and comments on exercises and practice materials.
+
+![Functional Decomposition Diagram](../diagrams/report1-major-features-diagram.png)
+
+*Figure 1.1. Functional Decomposition Diagram*
 
 ### 6.2 Limitations and Exclusions
 
 - LI-01: The system only supports the VSTEP format (B1–C1 levels). Other exams such as IELTS, TOEFL, and TOEIC are not supported.
-- LI-02: AI grading for Writing and Speaking is a supplementary practice tool. Official scores require instructor verification.
-- LI-03: The MVP version supports only Vietnamese as the interface language.
-- LI-04: VNPay payment gateway is not yet implemented (stub only). PayOS live integration is available for wallet top-up in the current increment.
+- LI-02: Automated scoring for Writing and Speaking is a supplementary practice tool. Official scores require instructor verification.
+- LI-03: The current capstone version supports only Vietnamese as the interface language.
+- LI-04: The current capstone version supports only the selected payment flow. Additional payment gateways are excluded from the current scope.
 - LI-05: Development timeline: 17 weeks (4 months), team of 4 members.
-- LI-06: The system depends on external LLM and STT (Azure Speech) API providers for AI grading functionality.
+- LI-06: The system depends on external AI and speech-processing services for evidence extraction, feedback support, transcription, and pronunciation signals.
 - LI-07: Reading exercises use 100% MCQ format (4 options, single correct answer), matching the official VSTEP Reading structure. Other question types (True/False/Not Given, Matching Headings, Gap Fill) are not part of the VSTEP format and are not implemented.
-- LI-08: Adaptive exercise difficulty adjustment and dynamic sequencing are not included. Exercises are served with static difficulty (filtered by skill part, not learner proficiency).
-- LI-09: Instructor assignment of exercises or learning modules to individual learners is not included. Teachers monitor progress and manage 1-on-1 bookings only.
-- LI-10: Predictive analytics for learner outcomes uses rule-based risk detection (band, streak, deadline proximity, trend direction), not machine-learning models.
-- LI-11: No placement or diagnostic test is administered at onboarding. Users self-select their target CEFR level and optionally provide a self-assessed entry level for cold-start AI context. The first mock test serves as the real baseline, after which all calculations use actual performance data.
+- LI-08: Dynamic adaptive difficulty adjustment for all exercises is not included. In the current capstone scope, adaptive learning support is implemented through skill-gap-based recommendations and spaced repetition for vocabulary review.
+- LI-09: Instructor monitoring and guidance are supported. Direct assignment of individual exercises or learning modules is outside the current scope and planned for future expansion.
+- LI-10: Learner progress and risk insights are rule-based in the current capstone scope. Machine-learning predictive analytics is planned as future work.
+- LI-11: No separate onboarding placement test is included. Users self-select their target level, and the first mock test serves as the initial performance baseline. Ongoing assessment is collected from practice and mock test results.
+- LI-12: Assessment validation in the current capstone scope demonstrates consistency on selected referenced samples and VSTEP-style risk cases. It is not a replacement for official examiner certification or large-scale psychometric validation.

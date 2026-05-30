@@ -105,6 +105,7 @@ export interface SampleMarker {
 
 export interface WritingSubmission {
 	submission_id: string
+	job_id: string
 	word_count: number
 	submitted_at: string
 	grading_status: string

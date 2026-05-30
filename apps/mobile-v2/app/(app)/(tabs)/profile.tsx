@@ -23,7 +23,6 @@ import { CreateProfileSheet } from "@/features/profile/CreateProfileSheet";
 import { EditProfileSheet } from "@/features/profile/EditProfileSheet";
 import { useAuth } from "@/hooks/use-auth";
 import {
-  useDeleteProfile,
   useProfiles,
   useResetProfile,
   useSwitchProfile,
@@ -39,7 +38,6 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { profile: activeProfile, user, signOut, switchSession } = useAuth();
   const { data: profiles, isLoading } = useProfiles();
-  const deleteMutation = useDeleteProfile();
   const resetMutation = useResetProfile();
   const switchMutation = useSwitchProfile();
 
@@ -47,7 +45,6 @@ export default function ProfileScreen() {
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [editing, setEditing] = useState<Profile | null>(null);
   const [pendingSwitch, setPendingSwitch] = useState<Profile | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<Profile | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
 
@@ -64,14 +61,6 @@ export default function ProfileScreen() {
         setPendingSwitch(null);
       },
       onError: () => setPendingSwitch(null),
-    });
-  }
-
-  function confirmDelete() {
-    if (!pendingDelete) return;
-    deleteMutation.mutate(pendingDelete.id, {
-      onSuccess: () => setPendingDelete(null),
-      onError: () => setPendingDelete(null),
     });
   }
 
@@ -140,7 +129,6 @@ export default function ProfileScreen() {
             isActive={p.id === activeProfile?.id}
             isSwitching={switchMutation.isPending && pendingSwitch?.id === p.id}
             onSwitch={requestSwitch}
-            onDelete={setPendingDelete}
           />
         ))}
       </View>
@@ -204,23 +192,6 @@ export default function ProfileScreen() {
       />
 
       <ConfirmDialog
-        open={!!pendingDelete}
-        title="Xóa hồ sơ?"
-        description={
-          pendingDelete
-            ? `Hồ sơ "${pendingDelete.nickname}" sẽ bị xóa vĩnh viễn. Toàn bộ dữ liệu học tập sẽ mất.`
-            : ""
-        }
-        confirmLabel="Xóa"
-        cancelLabel="Huỷ"
-        loadingLabel="Đang xóa…"
-        isLoading={deleteMutation.isPending}
-        destructive
-        onConfirm={confirmDelete}
-        onCancel={() => !deleteMutation.isPending && setPendingDelete(null)}
-      />
-
-      <ConfirmDialog
         open={confirmReset}
         title="Đặt lại tiến trình?"
         description="Toàn bộ dữ liệu học tập của hồ sơ hiện tại sẽ bị xóa. Hành động không thể hoàn tác."
@@ -257,13 +228,11 @@ function ProfileRow({
   isActive,
   isSwitching,
   onSwitch,
-  onDelete,
 }: {
   profile: Profile;
   isActive: boolean;
   isSwitching: boolean;
   onSwitch: (p: Profile) => void;
-  onDelete: (p: Profile) => void;
 }) {
   const c = useThemeColors();
   const initial = profile.nickname.charAt(0).toUpperCase();
@@ -300,11 +269,6 @@ function ProfileRow({
         </View>
       )}
       {isSwitching && <ActivityIndicator size="small" color={c.primary} />}
-      {!profile.isInitialProfile && !isActive && (
-        <HapticTouchable style={s.deleteBtn} onPress={() => onDelete(profile)} disabled={isSwitching}>
-          <Ionicons name="trash-outline" size={16} color={c.destructive} />
-        </HapticTouchable>
-      )}
     </HapticTouchable>
   );
 }
@@ -399,7 +363,6 @@ const s = StyleSheet.create({
   profileMeta: { fontSize: fontSize.xs },
   activeBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   activeBadgeText: { color: "#FFFFFF", fontSize: 10, fontFamily: fontFamily.bold },
-  deleteBtn: { padding: spacing.xs },
   menuGroup: {
     borderWidth: 2,
     borderBottomWidth: 4,

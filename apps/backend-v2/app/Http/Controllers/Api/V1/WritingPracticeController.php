@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\GradingJobStatus;
+use App\Assessment\Enums\AssessmentJobStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Practice\StartSessionRequest;
 use App\Http\Requests\Practice\SubmitWritingPracticeRequest;
@@ -12,6 +12,8 @@ use App\Http\Resources\WritingPromptDetailResource;
 use App\Http\Resources\WritingPromptSummaryResource;
 use App\Http\Resources\WritingSubmissionHistoryResource;
 use App\Models\PracticeSession;
+use App\Models\PracticeWritingSubmission;
+use App\Services\PracticeGradingResultService;
 use App\Services\PracticeSessionService;
 use App\Services\WritingPracticeService;
 use Illuminate\Http\JsonResponse;
@@ -24,6 +26,7 @@ final class WritingPracticeController extends Controller
     public function __construct(
         private readonly WritingPracticeService $writingService,
         private readonly PracticeSessionService $sessionService,
+        private readonly PracticeGradingResultService $gradingResultService,
     ) {}
 
     public function listPrompts(Request $request): JsonResponse
@@ -51,6 +54,13 @@ final class WritingPracticeController extends Controller
         )]);
     }
 
+    public function result(Request $request, PracticeWritingSubmission $submission): JsonResponse
+    {
+        return response()->json(
+            $this->gradingResultService->writing($request->profile(), $submission),
+        );
+    }
+
     public function startSession(StartSessionRequest $request): JsonResponse
     {
         $session = $this->writingService->startSession(
@@ -67,15 +77,16 @@ final class WritingPracticeController extends Controller
     {
         Gate::authorize('submit', $practiceSession);
 
-        $submission = $this->writingService->submit(
+        $result = $this->writingService->submit(
             $practiceSession, $request->validated('text'),
         );
 
         return response()->json(['data' => [
-            'submission_id' => $submission->id,
-            'word_count' => $submission->word_count,
-            'submitted_at' => $submission->submitted_at,
-            'grading_status' => GradingJobStatus::Pending->value,
+            'submission_id' => $result['submission']->id,
+            'job_id' => $result['job_id'],
+            'word_count' => $result['submission']->word_count,
+            'submitted_at' => $result['submission']->submitted_at,
+            'grading_status' => AssessmentJobStatus::Pending->value,
         ]]);
     }
 }

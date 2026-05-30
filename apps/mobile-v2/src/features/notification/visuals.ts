@@ -25,6 +25,7 @@ const VISUALS: Record<string, NotifVisual> = {
   course_unenrolled: { iconName: "trash-outline", tone: "destructive" },
   booking_created: { iconName: "time-outline", tone: "info" },
   booking_cancelled: { iconName: "trash-outline", tone: "destructive" },
+  study_reminder: { iconName: "alarm-outline", tone: "warning" },
 };
 
 const FALLBACK: NotifVisual = { iconName: "notifications-outline", tone: "coin" };

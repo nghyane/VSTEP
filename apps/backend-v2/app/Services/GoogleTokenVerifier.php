@@ -10,8 +10,8 @@ use Google\Client as GoogleClient;
 /**
  * Verifies Google ID tokens using Google's official PHP client.
  *
- * The GoogleClient instance is a singleton bound in AppServiceProvider so
- * its internal JWKS cache + Guzzle client are reused across Octane requests.
+ * Resolved only by the Google login endpoint so password auth does not depend
+ * on Google OAuth configuration.
  */
 final class GoogleTokenVerifier
 {

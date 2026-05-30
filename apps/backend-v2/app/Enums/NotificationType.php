@@ -12,8 +12,8 @@ enum NotificationType: string
 {
     case TopupCompleted = 'topup_completed';
     case CoinReceived = 'coin_received';
-    case GradingCompleted = 'grading_completed';
-    case GradingFailed = 'grading_failed';
+    case AssessmentCompleted = 'assessment_completed';
+    case AssessmentFailed = 'assessment_failed';
     case CourseEnrolled = 'course_enrolled';
     case CourseUnenrolled = 'course_unenrolled';
     case BookingCreated = 'booking_created';

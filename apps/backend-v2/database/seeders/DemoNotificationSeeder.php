@@ -26,14 +26,14 @@ final class DemoNotificationSeeder extends Seeder
         $pid = $profile->id;
 
         $this->push($notificationService, $profile, $pid,
-            NotificationType::GradingCompleted,
+            NotificationType::AssessmentCompleted,
             'Chấm bài Writing hoàn tất',
             'Bài viết Task 1 của bạn đã được chấm xong. Xem kết quả ngay!',
             IconKey::Check,
         );
 
         $this->push($notificationService, $profile, $pid,
-            NotificationType::GradingCompleted,
+            NotificationType::AssessmentCompleted,
             'Chấm bài Speaking hoàn tất',
             'Bài nói Part 1 của bạn đạt band 7.0. Xem chi tiết!',
             IconKey::Check,

@@ -6,6 +6,8 @@ namespace App\Services;
 
 use App\Enums\ExamSessionStatus;
 use App\Models\ExamSession;
+use App\Models\ExamSpeakingSubmission;
+use App\Models\ExamWritingSubmission;
 use App\Models\GrammarPoint;
 use App\Models\PracticeListeningExercise;
 use App\Models\PracticeReadingExercise;
@@ -15,10 +17,8 @@ use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
 use App\Models\ProfileGrammarMastery;
 use App\Models\ProfileVocabSrsState;
-use App\Models\SpeakingGradingResult;
 use App\Models\SystemConfig;
 use App\Models\VocabWord;
-use App\Models\WritingGradingResult;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -380,36 +380,22 @@ class ProgressService
 
     private function sessionWritingBand(string $sessionId): ?float
     {
-        $subId = DB::table('exam_writing_submissions')
+        $submission = ExamWritingSubmission::query()
+            ->with('assessmentAttempt.result')
             ->where('session_id', $sessionId)
-            ->value('id');
+            ->first();
 
-        if (! $subId) {
-            return null;
-        }
-
-        return WritingGradingResult::query()
-            ->where('submission_type', 'exam_writing')
-            ->where('submission_id', $subId)
-            ->where('is_active', true)
-            ->value('overall_band');
+        return $submission?->assessmentAttempt?->result?->overall_band;
     }
 
     private function sessionSpeakingBand(string $sessionId): ?float
     {
-        $subId = DB::table('exam_speaking_submissions')
+        $submission = ExamSpeakingSubmission::query()
+            ->with('assessmentAttempt.result')
             ->where('session_id', $sessionId)
-            ->value('id');
+            ->first();
 
-        if (! $subId) {
-            return null;
-        }
-
-        return SpeakingGradingResult::query()
-            ->where('submission_type', 'exam_speaking')
-            ->where('submission_id', $subId)
-            ->where('is_active', true)
-            ->value('overall_band');
+        return $submission?->assessmentAttempt?->result?->overall_band;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -500,25 +486,19 @@ class ProgressService
             return null;
         }
 
-        $writingSubIds = DB::table('exam_writing_submissions')
+        $writingBands = ExamWritingSubmission::query()
+            ->with('assessmentAttempt.result')
             ->whereIn('session_id', $sessions)
-            ->pluck('id');
+            ->get()
+            ->map(fn (ExamWritingSubmission $submission): ?float => $submission->assessmentAttempt?->result?->overall_band)
+            ->filter(fn (?float $band): bool => $band !== null);
 
-        $avgWriting = WritingGradingResult::query()
-            ->where('submission_type', 'exam_writing')
-            ->whereIn('submission_id', $writingSubIds)
-            ->where('is_active', true)
-            ->avg('overall_band');
-
-        $speakingSubIds = DB::table('exam_speaking_submissions')
+        $speakingBands = ExamSpeakingSubmission::query()
+            ->with('assessmentAttempt.result')
             ->whereIn('session_id', $sessions)
-            ->pluck('id');
-
-        $avgSpeaking = SpeakingGradingResult::query()
-            ->where('submission_type', 'exam_speaking')
-            ->whereIn('submission_id', $speakingSubIds)
-            ->where('is_active', true)
-            ->avg('overall_band');
+            ->get()
+            ->map(fn (ExamSpeakingSubmission $submission): ?float => $submission->assessmentAttempt?->result?->overall_band)
+            ->filter(fn (?float $band): bool => $band !== null);
 
         $listeningAvg = $this->mcqAvgBand($sessions, 'exam_listening_item');
         $readingAvg = $this->mcqAvgBand($sessions, 'exam_reading_item');
@@ -526,8 +506,8 @@ class ProgressService
         return [
             'listening' => $listeningAvg,
             'reading' => $readingAvg,
-            'writing' => $avgWriting ? round((float) $avgWriting, 1) : null,
-            'speaking' => $avgSpeaking ? round((float) $avgSpeaking, 1) : null,
+            'writing' => $writingBands->isNotEmpty() ? round((float) $writingBands->avg(), 1) : null,
+            'speaking' => $speakingBands->isNotEmpty() ? round((float) $speakingBands->avg(), 1) : null,
             'sample_size' => $sessions->count(),
         ];
     }

@@ -11,7 +11,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  * AI service (LLM, STT, IPA generator) is temporarily unavailable.
  * Renders as HTTP 503 with retry hint — FE shows retry button.
  *
- * Distinct from GradingFailedException (queue-level, retried by worker).
+ * Distinct from AssessmentFailedException (queue-level, retried by worker).
  * This one is synchronous user-facing — FE retry UI handles it.
  */
 final class AiServiceUnavailableException extends HttpException
