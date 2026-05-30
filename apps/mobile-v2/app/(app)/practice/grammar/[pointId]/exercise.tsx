@@ -59,7 +59,9 @@ export default function GrammarExerciseScreen() {
   if (s2.done) {
     return (
       <View style={[styles.fullCenter, { backgroundColor: c.background, paddingHorizontal: spacing.xl }]}>
-        <Text style={[styles.doneEmoji]}>🎉</Text>
+        <View style={[styles.doneIcon, { backgroundColor: c.primaryTint }]}>
+          <Ionicons name="checkmark" size={34} color={c.primary} />
+        </View>
         <Text style={[styles.doneTitle, { color: c.foreground }]}>Hoàn thành!</Text>
         <Text style={[styles.doneSub, { color: c.mutedForeground }]}>
           Bạn đã làm xong {s2.total} bài tập.
@@ -108,7 +110,11 @@ export default function GrammarExerciseScreen() {
       >
         {/* Question */}
         <DepthCard style={styles.questionCard}>
-          <QuestionPrompt exercise={ex} />
+          <QuestionPrompt
+            exercise={ex}
+            topic={detail.point.vietnameseName ?? detail.point.name}
+            summary={detail.point.summary}
+          />
         </DepthCard>
 
         {/* Input */}
@@ -121,7 +127,7 @@ export default function GrammarExerciseScreen() {
               const isWrongChoice = answered && !s2.result!.correct && isSelected;
               return (
                 <TouchableOpacity
-                  key={opt}
+                  key={`${ex.id}-${i}`}
                   activeOpacity={0.8}
                   disabled={answered}
                   onPress={() => s2.select(i)}
@@ -230,15 +236,46 @@ export default function GrammarExerciseScreen() {
   );
 }
 
-function QuestionPrompt({ exercise }: { exercise: ReturnType<typeof useGrammarExerciseSession>["current"] }) {
+function QuestionPrompt({
+  exercise,
+  topic,
+  summary,
+}: {
+  exercise: ReturnType<typeof useGrammarExerciseSession>["current"];
+  topic: string;
+  summary: string | null;
+}) {
   const c = useThemeColors();
   if (!exercise) return null;
+  const context = <QuestionContext topic={topic} summary={summary} />;
+
   switch (exercise.kind) {
-    case "mcq":
-      return <Text style={[styles.questionText, { color: c.foreground }]}>{exercise.payload.prompt}</Text>;
+    case "mcq": {
+      const stem = firstText(exercise.payload.stem, exercise.payload.question, exercise.payload.sentence);
+      const prompt = firstText(exercise.payload.prompt);
+      const mainQuestion = stem ?? prompt ?? "Chọn phương án đúng.";
+      const instruction = stem && prompt && normalizeText(stem) !== normalizeText(prompt) ? prompt : null;
+      return (
+        <>
+          {context}
+          <View style={styles.questionBody}>
+            <Text style={[styles.questionLabel, { color: c.subtle }]}>
+              {stem ? "Đề bài" : "Câu hỏi"}
+            </Text>
+            <Text style={[styles.questionText, { color: c.foreground }]}>{mainQuestion}</Text>
+            {instruction ? (
+              <Text style={[styles.questionInstruction, { color: c.mutedForeground }]}>
+                {instruction}
+              </Text>
+            ) : null}
+          </View>
+        </>
+      );
+    }
     case "error_correction":
       return (
         <>
+          {context}
           <Text style={[styles.questionHint, { color: c.mutedForeground }]}>Tìm và sửa lỗi sai trong câu:</Text>
           <Text style={[styles.questionText, { color: c.foreground }]}>{exercise.payload.sentence}</Text>
         </>
@@ -246,6 +283,7 @@ function QuestionPrompt({ exercise }: { exercise: ReturnType<typeof useGrammarEx
     case "fill_blank":
       return (
         <>
+          {context}
           <Text style={[styles.questionHint, { color: c.mutedForeground }]}>Điền từ vào chỗ trống:</Text>
           <Text style={[styles.questionText, { color: c.foreground }]}>{exercise.payload.template}</Text>
         </>
@@ -253,11 +291,43 @@ function QuestionPrompt({ exercise }: { exercise: ReturnType<typeof useGrammarEx
     case "rewrite":
       return (
         <>
+          {context}
           <Text style={[styles.questionHint, { color: c.mutedForeground }]}>{exercise.payload.instruction}</Text>
           <Text style={[styles.questionText, { color: c.foreground }]}>{exercise.payload.original}</Text>
         </>
       );
   }
+}
+
+function QuestionContext({ topic, summary }: { topic: string; summary: string | null }) {
+  const c = useThemeColors();
+  return (
+    <View style={styles.questionContext}>
+      <Text style={[styles.contextLabel, { color: c.primary }]}>Chủ điểm</Text>
+      <Text style={[styles.topicText, { color: c.foreground }]} numberOfLines={2}>
+        {topic}
+      </Text>
+      {summary ? (
+        <View style={[styles.ruleBox, { backgroundColor: c.primaryTint, borderColor: c.primary + "30" }]}>
+          <Text style={[styles.ruleText, { color: c.mutedForeground }]} numberOfLines={3}>
+            {summary}
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function firstText(...values: (string | null | undefined)[]): string | null {
+  for (const value of values) {
+    const text = typeof value === "string" ? value.trim() : "";
+    if (text.length > 0) return text;
+  }
+  return null;
+}
+
+function normalizeText(value: string): string {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
 const styles = StyleSheet.create({
@@ -279,9 +349,17 @@ const styles = StyleSheet.create({
   // Scroll
   scroll: { padding: spacing.xl, gap: spacing.lg },
   // Question
-  questionCard: { gap: spacing.sm },
+  questionCard: { gap: spacing.md, padding: spacing.lg },
+  questionContext: { gap: spacing.xs },
+  contextLabel: { fontSize: 10, fontFamily: fontFamily.extraBold, letterSpacing: 0.8, textTransform: "uppercase" },
+  topicText: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold, lineHeight: 22 },
+  ruleBox: { borderWidth: 1, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  ruleText: { fontSize: fontSize.xs, lineHeight: 18 },
+  questionBody: { gap: spacing.xs, paddingTop: spacing.xs },
+  questionLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   questionHint: { fontSize: fontSize.sm },
-  questionText: { fontSize: fontSize.lg, fontFamily: fontFamily.bold, lineHeight: 28 },
+  questionInstruction: { fontSize: fontSize.sm, lineHeight: 20 },
+  questionText: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold, lineHeight: 25 },
   // MCQ options
   optionsWrap: { gap: spacing.sm },
   optionBtn: {
@@ -313,7 +391,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   // Done screen
-  doneEmoji: { fontSize: 56, textAlign: "center", marginBottom: spacing.md },
+  doneIcon: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", marginBottom: spacing.md },
   doneTitle: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold, textAlign: "center" },
   doneSub: { fontSize: fontSize.sm, textAlign: "center", marginTop: spacing.sm, lineHeight: 20 },
 });

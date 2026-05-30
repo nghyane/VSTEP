@@ -197,7 +197,17 @@ services:
       REDIS_PASSWORD: ""
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-644444548899-q6kldv6576f2gjoccrm3i3s9sqlbetce.apps.googleusercontent.com}
     depends_on:
-      - backend
+      backend:
+        condition: service_started
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "php", "artisan", "horizon:status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
 
   # LanguageTool — grammar checker (rule-based, deterministic)

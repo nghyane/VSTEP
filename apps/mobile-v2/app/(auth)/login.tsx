@@ -19,7 +19,7 @@ import { DepthButton } from "@/components/DepthButton";
 import { Mascot } from "@/components/Mascot";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { loginApi, googleLoginApi, ApiError } from "@/lib/api";
-import { hasGoogleAuthConfig, signInWithGoogle } from "@/lib/google-auth";
+import { getGoogleAuthUnavailableReason, signInWithGoogle } from "@/lib/google-auth";
 import { useThemeColors, spacing, radius, fontSize, fontFamily, depthNeutral } from "@/theme";
 
 const LEARNER_ROLE = "learner";
@@ -27,9 +27,9 @@ const LEARNER_ROLE = "learner";
 function errorMessage(err: unknown): string {
   if (err instanceof ApiError) {
     const body = err.body as { message?: string } | null;
-    return body?.message ?? "Da xay ra loi. Thu lai.";
+    return body?.message ?? "Đã xảy ra lỗi. Thử lại.";
   }
-  return err instanceof Error ? err.message : "Da xay ra loi. Thu lai.";
+  return err instanceof Error ? err.message : "Đã xảy ra lỗi. Thử lại.";
 }
 
 export default function LoginScreen() {
@@ -37,7 +37,8 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { signIn, signOut, setSuggestedNickname } = useAuth();
-  const googleReady = hasGoogleAuthConfig();
+  const googleUnavailableReason = getGoogleAuthUnavailableReason();
+  const googleReady = !googleUnavailableReason;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,11 +51,11 @@ export default function LoginScreen() {
     const e: typeof errors = {};
     const trimmed = email.trim();
     if (!trimmed) {
-      e.email = "Vui long nhap email";
+      e.email = "Vui lòng nhập email";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-      e.email = "Email khong hop le";
+      e.email = "Email không hợp lệ";
     }
-    if (!password) e.password = "Vui long nhap mat khau";
+    if (!password) e.password = "Vui lòng nhập mật khẩu";
     setErrors(e);
     return Object.keys(e).length === 0;
   }, [email, password]);
@@ -67,7 +68,7 @@ export default function LoginScreen() {
       const res = await loginApi(email.trim(), password);
       if (res.user.role !== LEARNER_ROLE) {
         await signOut();
-        setErrors({ general: "Ung dung mobile hien chi ho tro tai khoan learner." });
+        setErrors({ general: "Ứng dụng mobile hiện chỉ hỗ trợ tài khoản learner." });
         return;
       }
       await signIn(res.accessToken, res.refreshToken, res.user, res.profile);
@@ -98,7 +99,7 @@ export default function LoginScreen() {
       const res = await googleLoginApi(auth.idToken);
       if (res.user.role !== LEARNER_ROLE) {
         await signOut();
-        setErrors({ general: "Ung dung mobile hien chi ho tro tai khoan learner." });
+        setErrors({ general: "Ứng dụng mobile hiện chỉ hỗ trợ tài khoản learner." });
         return;
       }
 
@@ -117,7 +118,7 @@ export default function LoginScreen() {
         setErrors({
           general:
             body?.message ??
-            "Email nay da duoc dang ky. Vui long dang nhap bang mat khau.",
+            "Email này đã được đăng ký. Vui lòng đăng nhập bằng mật khẩu.",
         });
       } else {
         setErrors({ general: errorMessage(err) });
@@ -147,8 +148,8 @@ export default function LoginScreen() {
           <Mascot name="wave" size={110} animation="none" />
         </View>
 
-        <Text style={[s.headline, { color: c.foreground }]}>Chao mung tro lai!</Text>
-        <Text style={[s.sub, { color: c.mutedForeground }]}>Dang nhap de tiep tuc hanh trinh VSTEP cua ban.</Text>
+        <Text style={[s.headline, { color: c.foreground }]}>Chào mừng trở lại!</Text>
+        <Text style={[s.sub, { color: c.mutedForeground }]}>Đăng nhập để tiếp tục hành trình VSTEP của bạn.</Text>
 
         <View style={[s.card, depthNeutral, { backgroundColor: c.surface }]}>
           {errors.general && (
@@ -178,20 +179,18 @@ export default function LoginScreen() {
                 <View style={[s.googleIconWrap, { backgroundColor: c.background }]}>
                   <Text style={[s.googleIconText, { color: c.foreground }]}>G</Text>
                 </View>
-                <Text style={[s.googleButtonText, { color: googleReady ? c.foreground : c.subtle }]}>Tiep tuc voi Google</Text>
+                <Text style={[s.googleButtonText, { color: googleReady ? c.foreground : c.subtle }]}>Tiếp tục với Google</Text>
               </>
             )}
           </HapticTouchable>
 
-          {!googleReady ? (
-            <Text style={[s.fieldHint, { color: c.warning }]}>Thieu EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID trong .env. Google Login native cung yeu cau development build hoac EAS build, khong chay trong Expo Go.</Text>
-          ) : (
-            <Text style={[s.fieldHint, { color: c.mutedForeground }]}>Google Login native yeu cau development build hoac EAS build. Neu vua doi cau hinh Google Cloud hoac package app, hay rebuild Android hoac iOS truoc khi thu lai.</Text>
-          )}
+          {googleUnavailableReason ? (
+            <Text style={[s.fieldHint, { color: c.warning }]}>{googleUnavailableReason}</Text>
+          ) : null}
 
           <View style={s.dividerRow}>
             <View style={[s.divider, { backgroundColor: c.border }]} />
-            <Text style={[s.dividerText, { color: c.subtle }]}>hoac</Text>
+            <Text style={[s.dividerText, { color: c.subtle }]}>hoặc</Text>
             <View style={[s.divider, { backgroundColor: c.border }]} />
           </View>
 
@@ -222,7 +221,7 @@ export default function LoginScreen() {
           </View>
 
           <View style={s.fieldGroup}>
-            <Text style={[s.label, { color: c.foreground }]}>Mat khau</Text>
+            <Text style={[s.label, { color: c.foreground }]}>Mật khẩu</Text>
             <View
               style={[
                 s.inputWrap,
@@ -235,7 +234,7 @@ export default function LoginScreen() {
               <Ionicons name="lock-closed-outline" size={18} color={c.mutedForeground} />
               <TextInput
                 style={[s.input, { color: c.foreground }]}
-                placeholder="Nhap mat khau..."
+                placeholder="Nhập mật khẩu..."
                 placeholderTextColor={c.placeholder}
                 value={password}
                 onChangeText={setPassword}
@@ -256,15 +255,15 @@ export default function LoginScreen() {
           </View>
 
           <DepthButton onPress={handleLogin} fullWidth disabled={loading || googleLoading}>
-            {loading ? <ActivityIndicator color={c.primaryForeground} size="small" /> : "Dang nhap"}
+            {loading ? <ActivityIndicator color={c.primaryForeground} size="small" /> : "Đăng nhập"}
           </DepthButton>
         </View>
 
         <View style={s.footer}>
-          <Text style={[s.footerText, { color: c.mutedForeground }]}>Chua co tai khoan? </Text>
+          <Text style={[s.footerText, { color: c.mutedForeground }]}>Chưa có tài khoản? </Text>
           <Link href="/(auth)/register" asChild>
             <TouchableOpacity>
-              <Text style={[s.footerLink, { color: c.primary }]}>Dang ky</Text>
+              <Text style={[s.footerLink, { color: c.primary }]}>Đăng ký</Text>
             </TouchableOpacity>
           </Link>
         </View>
@@ -295,12 +294,12 @@ const s = StyleSheet.create({
   },
   errorBanner: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    padding: spacing.md,
+    alignItems: "flex-start",
+    gap: spacing.xs,
+    padding: spacing.sm,
     borderRadius: radius.md,
   },
-  errorBannerText: { fontSize: fontSize.sm, flex: 1 },
+  errorBannerText: { fontSize: fontSize.xs, lineHeight: 18, flex: 1 },
   googleButton: {
     minHeight: 54,
     borderWidth: 2,

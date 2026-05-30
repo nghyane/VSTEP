@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,6 +8,7 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { GameIcon } from "@/components/GameIcon";
+import { LevelFilters, type Level } from "@/components/LevelFilters";
 import { MascotEmpty } from "@/components/MascotStates";
 import { useVocabTopics, useVocabSrsQueue, type VocabTopic } from "@/hooks/use-vocab";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
@@ -18,9 +20,15 @@ export default function VocabularyScreen() {
 
   const { data: topics, isLoading: topicsLoading } = useVocabTopics();
   const { data: srsQueue, isLoading: srsLoading } = useVocabSrsQueue();
+  const [level, setLevel] = useState<Level | null>(null);
 
   const dueCount = srsQueue ? srsQueue.newCount + srsQueue.learningCount + srsQueue.reviewCount : 0;
   const isLoading = topicsLoading || srsLoading;
+  const filteredTopics = useMemo(() => {
+    const allTopics = topics ?? [];
+    if (!level) return allTopics;
+    return allTopics.filter((topic) => topic.level.toUpperCase() === level);
+  }, [level, topics]);
 
   return (
     <ScrollView
@@ -88,20 +96,31 @@ export default function VocabularyScreen() {
         />
       ) : null}
 
-      {/* Topic Grid — matching FE v3 TopicGrid with progress bars */}
       {topics && topics.length > 0 ? (
         <View style={s.topicSection}>
           <Text style={[s.sectionTitle, { color: c.foreground }]}>Chủ đề</Text>
           <Text style={[s.sectionSub, { color: c.subtle }]}>Chọn chủ đề để học từ mới</Text>
-          <View style={s.topicGrid}>
-            {topics.map((topic) => (
-              <TopicCard
-                key={topic.id}
-                topic={topic}
-                onPress={() => router.push(`/(app)/vocabulary/${topic.id}` as any)}
-              />
-            ))}
-          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterWrap}>
+            <LevelFilters level={level} onLevelChange={setLevel} />
+          </ScrollView>
+
+          {filteredTopics.length === 0 ? (
+            <DepthCard style={s.emptyFilterCard}>
+              <Text style={[s.emptyFilterTitle, { color: c.foreground }]}>Không có chủ đề phù hợp</Text>
+              <Text style={[s.emptyFilterSub, { color: c.mutedForeground }]}>Thử đổi level để xem thêm chủ đề khác.</Text>
+            </DepthCard>
+          ) : (
+            <View style={s.topicGrid}>
+              {filteredTopics.map((topic) => (
+                <View key={topic.id} style={s.topicGridItem}>
+                  <TopicCard
+                    topic={topic}
+                    onPress={() => router.push(`/(app)/vocabulary/${topic.id}` as any)}
+                  />
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       ) : null}
 
@@ -115,6 +134,7 @@ function TopicCard({ topic, onPress }: { topic: VocabTopic; onPress: () => void 
   const learned = topic.learnedCount ?? 0;
   const total = topic.wordCount ?? 0;
   const pct = total > 0 ? Math.round((learned / total) * 100) : 0;
+  const meta = topic.tasks.join(" · ") || "Từ vựng";
 
   return (
     <HapticTouchable onPress={onPress} activeOpacity={0.85}>
@@ -134,15 +154,9 @@ function TopicCard({ topic, onPress }: { topic: VocabTopic; onPress: () => void 
           </Text>
         ) : null}
 
-        {topic.tasks.length > 0 ? (
-          <View style={s.taskRow}>
-            {topic.tasks.map((task) => (
-              <View key={task} style={[s.taskPill, { backgroundColor: c.muted }]}>
-                <Text style={[s.taskText, { color: c.mutedForeground }]}>{task}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
+        <Text style={[s.topicMeta, { color: c.mutedForeground }]} numberOfLines={1}>
+          {meta}
+        </Text>
 
         {/* Progress bar — matching FE v3 */}
         {total > 0 ? (
@@ -187,19 +201,30 @@ const s = StyleSheet.create({
   topicSection: { gap: spacing.xs },
   sectionTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
   sectionSub: { fontSize: fontSize.sm, marginBottom: spacing.md },
-  topicGrid: { gap: spacing.sm },
-  topicCard: { gap: spacing.sm },
+  filterWrap: { paddingBottom: spacing.sm },
+  topicGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginHorizontal: -spacing.xs,
+  },
+  topicGridItem: {
+    width: "50%",
+    paddingHorizontal: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  emptyFilterCard: { alignItems: "center", gap: spacing.xs, paddingVertical: spacing.xl },
+  emptyFilterTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold, textAlign: "center" },
+  emptyFilterSub: { fontSize: fontSize.sm, textAlign: "center" },
+  topicCard: { gap: spacing.xs, minHeight: 138 },
   topicHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   topicName: { fontSize: fontSize.base, fontFamily: fontFamily.bold, flex: 1 },
   levelBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full, marginLeft: spacing.sm },
   levelText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
-  topicDesc: { fontSize: fontSize.sm, lineHeight: 20 },
-  taskRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
-  taskPill: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
-  taskText: { fontSize: 10, fontFamily: fontFamily.medium },
+  topicDesc: { fontSize: fontSize.sm, lineHeight: 18, minHeight: 36 },
+  topicMeta: { fontSize: fontSize.xs, lineHeight: 16, minHeight: 16 },
 
   // Progress bar (FE v3 style)
-  progressSection: { marginTop: spacing.xs },
+  progressSection: { marginTop: "auto", paddingTop: spacing.sm },
   progressLabelRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
   progressLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   progressPct: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },

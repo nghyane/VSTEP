@@ -1,6 +1,6 @@
 import { CloseCircleOutlined, LinkOutlined, SearchOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
-import { Empty, Flex, Select, Space, Table, Tag, Typography } from "antd"
+import { Input as AntdInput, Empty, Flex, Select, Space, Table, Tag, Typography } from "antd"
 import { useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
@@ -77,7 +77,10 @@ export function BookingsTab({ courseId }: Props) {
 					placeholder="Trạng thái"
 					allowClear
 					value={statusFilter}
-					onChange={(v) => { setStatusFilter(v); setPage(1) }}
+					onChange={(v) => {
+						setStatusFilter(v)
+						setPage(1)
+					}}
 					style={{ width: 160 }}
 					options={[
 						{ label: "Đang đặt", value: "booked" },
@@ -85,17 +88,23 @@ export function BookingsTab({ courseId }: Props) {
 						{ label: "Đã hủy", value: "cancelled" },
 					]}
 				/>
-				<Input
+				<AntdInput
 					prefix={<SearchOutlined />}
 					placeholder="Tìm học viên…"
 					allowClear
 					value={search}
-					onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+					onChange={(e) => {
+						setSearch(e.target.value)
+						setPage(1)
+					}}
 					style={{ width: 220 }}
 				/>
 				<Select
 					value={sortKey}
-					onChange={(v) => { setSortKey(v); setPage(1) }}
+					onChange={(v) => {
+						setSortKey(v)
+						setPage(1)
+					}}
 					style={{ width: 200 }}
 					options={[
 						{ label: "Buổi học sắp tới trước", value: "starts_at:asc" },
