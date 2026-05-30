@@ -1,0 +1,119 @@
+@startuml
+!theme plain
+left to right direction
+hide circle
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #555555
+
+title Practice and Assessment ERD
+
+entity "profiles" as profiles {
+  * id : uuid <<PK>>
+  --
+  account_id : uuid <<FK>>
+  target_level : varchar
+}
+
+entity "practice_sessions" as practice_sessions {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  skill : varchar
+  status : varchar
+  started_at : timestamp
+}
+
+entity "practice_mcq_answers" as practice_mcq_answers {
+  * id : uuid <<PK>>
+  --
+  practice_session_id : uuid <<FK>>
+  question_id : uuid <<FK>>
+  selected_index : int
+  is_correct : boolean
+}
+
+entity "practice_writing_submissions" as practice_writing {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  prompt_id : uuid <<FK>>
+  text : text
+  word_count : int
+}
+
+entity "practice_speaking_submissions" as practice_speaking {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  task_id : uuid <<FK>>
+  audio_url : text
+  transcript : text
+}
+
+entity "assessment_rubrics" as rubrics {
+  * id : uuid <<PK>>
+  --
+  skill : varchar
+  task_type : varchar
+  criteria : jsonb
+  is_active : boolean
+}
+
+entity "assessment_attempts" as attempts {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  rubric_id : uuid <<FK>>
+  source_type : varchar
+  source_id : uuid
+  submitted_at : timestamp
+}
+
+entity "assessment_jobs" as jobs {
+  * id : uuid <<PK>>
+  --
+  attempt_id : uuid <<FK>>
+  status : varchar
+  progress : jsonb
+  completed_at : timestamp
+}
+
+entity "assessment_evidence" as evidence {
+  * id : uuid <<PK>>
+  --
+  attempt_id : uuid <<FK>>
+  rubric_id : uuid <<FK>>
+  signals : jsonb
+  evidence : jsonb
+}
+
+entity "assessment_results" as results {
+  * id : uuid <<PK>>
+  --
+  attempt_id : uuid <<FK>>
+  rubric_id : uuid <<FK>>
+  criterion_scores : jsonb
+  overall_band : decimal
+  feedback : jsonb
+}
+
+profiles ||--o{ practice_sessions
+practice_sessions ||--o{ practice_mcq_answers
+profiles ||--o{ practice_writing
+profiles ||--o{ practice_speaking
+
+profiles ||--o{ attempts
+rubrics ||--o{ attempts
+attempts ||--|| jobs
+attempts ||--o| evidence
+rubrics ||--o{ evidence
+attempts ||--o| results
+rubrics ||--o{ results
+
+practice_writing ||..o{ attempts
+practice_speaking ||..o{ attempts
+
+@enduml

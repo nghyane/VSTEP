@@ -19,8 +19,6 @@ The VSTEP Platform is designed as a multi-client learning system consisting of l
 
 *Figure 4.1. System Architecture Diagram*
 
-Diagram source: `docs/capstone/diagrams/report4-system-architecture-diagram.puml`
-
 Main components:
 
 | No | Component | Description |
@@ -42,15 +40,11 @@ The package diagrams below describe the main packages and namespace-level depend
 
 *Figure 4.2. Backend API Package Diagram*
 
-Diagram source: `docs/capstone/diagrams/report4-backend-package-diagram.puml`
-
 #### Learner Web App Package Diagram
 
 ![Learner Web App Package Diagram](../diagrams/report4-learner-web-package-diagram.png)
 
 *Figure 4.3. Learner Web App Package Diagram*
-
-Diagram source: `docs/capstone/diagrams/report4-learner-web-package-diagram.puml`
 
 #### Admin App Package Diagram
 
@@ -58,15 +52,11 @@ Diagram source: `docs/capstone/diagrams/report4-learner-web-package-diagram.puml
 
 *Figure 4.4. Admin App Package Diagram*
 
-Diagram source: `docs/capstone/diagrams/report4-admin-package-diagram.puml`
-
 #### Mobile App Package Diagram
 
 ![Mobile App Package Diagram](../diagrams/report4-mobile-package-diagram.png)
 
 *Figure 4.5. Mobile App Package Diagram*
-
-Diagram source: `docs/capstone/diagrams/report4-mobile-package-diagram.puml`
 
 #### Package Descriptions
 
@@ -103,48 +93,61 @@ Diagram source: `docs/capstone/diagrams/report4-mobile-package-diagram.puml`
 
 ## 2. Database Design
 
-The database design is organized around the main domains of the VSTEP Platform: authentication/profile, wallet/payment, course/booking, learning content, practice, exam sessions, assessment, progress, notification, and administration.
+The database is designed around the main operational areas of the VSTEP Platform: identity and learner profiles, wallet and payment, course booking, practice submissions, exam sessions, assessment processing, progress tracking, and notifications.
 
-![Database Relationship Diagram](../diagrams/report4-database-relationship-diagram.png)
+For readability, the database relationship is presented as four subject-area ERDs. This keeps the diagram format close to the required table-and-relationship style while avoiding a single oversized diagram with unreadable crossing lines. The table descriptions after the diagrams provide the complete table inventory.
 
-*Figure 4.6. Database Relationship Diagram*
+![Identity, Wallet and Promotion ERD](../diagrams/report4-db-identity-wallet-erd.png)
 
-Diagram source: `docs/capstone/diagrams/report4-database-relationship-diagram.puml`
+*Figure 4.6. Identity, Wallet and Promotion ERD*
+
+![Course Booking and Payment ERD](../diagrams/report4-db-course-booking-erd.png)
+
+*Figure 4.7. Course Booking and Payment ERD*
+
+![Practice and Assessment ERD](../diagrams/report4-db-practice-assessment-erd.png)
+
+*Figure 4.8. Practice and Assessment ERD*
+
+![Exam Session and Assessment ERD](../diagrams/report4-db-exam-assessment-erd.png)
+
+*Figure 4.9. Exam Session and Assessment ERD*
 
 ### Table Descriptions
 
 | No | Table | Description |
 |----|-------|-------------|
-| 01 | `users` | Stores system accounts for learners, teachers, and administrators. Primary keys: `id`. Foreign keys: none. |
-| 02 | `profiles` | Stores learner profile records under a user account, including target level and learning profile data. Primary keys: `id`. Foreign keys: `account_id`. |
-| 03 | `refresh_tokens` | Stores refresh-token records for authenticated sessions. Primary keys: `id`. Foreign keys: `user_id`. |
-| 04 | `profile_onboarding_responses` | Stores onboarding answers and versioned onboarding data for learner profiles. Primary keys: `id`. Foreign keys: `profile_id`. |
-| 05 | `coin_transactions` | Stores wallet credit/debit ledger entries for top-up, purchase, refund, booking, and feedback usage. Primary keys: `id`. Foreign keys: `profile_id`. |
-| 06 | `wallet_topup_orders` | Stores wallet top-up order lifecycle and payment information. Primary keys: `id`. Foreign keys: `profile_id`, `package_id`. |
-| 07 | `promo_codes` | Stores promotional code definitions and usage constraints. Primary keys: `id`. Foreign keys: none. |
-| 08 | `promo_code_redemptions` | Stores promo-code redemption history. Primary keys: `id`. Foreign keys: `promo_code_id`, `profile_id`. |
-| 09 | `courses` | Stores teacher-led course definitions, pricing, booking rules, and enrollment rules. Primary keys: `id`. Foreign keys: `teacher_id`. |
-| 10 | `course_enrollments` | Stores learner enrollment records for courses. Primary keys: `id`. Foreign keys: `profile_id`, `course_id`. |
-| 11 | `teacher_slots` | Stores teacher availability slots for booking. Primary keys: `id`. Foreign keys: `teacher_id`, `course_id`. |
-| 12 | `teacher_bookings` | Stores learner bookings against teacher slots. Primary keys: `id`. Foreign keys: `profile_id`, `teacher_slot_id`. |
-| 13 | `practice_sessions` | Stores learner practice session records for skill practice activities. Primary keys: `id`. Foreign keys: `profile_id`. |
-| 14 | `practice_mcq_answers` | Stores selected answers for listening/reading multiple-choice practice. Primary keys: `id`. Foreign keys: `practice_session_id`. |
-| 15 | `practice_writing_submissions` | Stores learner writing practice submissions. Primary keys: `id`. Foreign keys: `profile_id`, `prompt_id`. |
-| 16 | `practice_speaking_submissions` | Stores learner speaking practice submissions and audio references. Primary keys: `id`. Foreign keys: `profile_id`, `task_id`. |
-| 17 | `exams` | Stores exam definitions and high-level VSTEP exam configuration. Primary keys: `id`. Foreign keys: none. |
-| 18 | `exam_versions` | Stores versioned exam content sets. Primary keys: `id`. Foreign keys: `exam_id`. |
-| 19 | `exam_sessions` | Stores learner mock exam attempts, status, timing, and result state. Primary keys: `id`. Foreign keys: `profile_id`, `exam_version_id`. |
-| 20 | `exam_mcq_answers` | Stores answers for objective exam items. Primary keys: `id`. Foreign keys: `exam_session_id`. |
-| 21 | `exam_writing_submissions` | Stores writing responses in mock exam sessions. Primary keys: `id`. Foreign keys: `exam_session_id`, `writing_task_id`. |
-| 22 | `exam_speaking_submissions` | Stores speaking responses in mock exam sessions. Primary keys: `id`. Foreign keys: `exam_session_id`, `speaking_part_id`. |
-| 23 | `assessment_rubrics` | Stores active rubric definitions, criteria, evidence schema, and scoring policy for assessment tasks. Primary keys: `id`. Foreign keys: none. |
-| 24 | `assessment_attempts` | Stores normalized assessment attempts from practice or exam submissions. Primary keys: `id`. Foreign keys: `profile_id`, `rubric_id`. |
-| 25 | `assessment_jobs` | Stores asynchronous assessment processing state. Primary keys: `id`. Foreign keys: `attempt_id`. |
-| 26 | `assessment_evidence` | Stores extracted signals, evidence, validation details, and trace data for an assessment attempt. Primary keys: `id`. Foreign keys: `attempt_id`, `rubric_id`. |
-| 27 | `assessment_results` | Stores final criterion scores, overall band, calculation trace, insights, and feedback. Primary keys: `id`. Foreign keys: `attempt_id`, `rubric_id`. |
-| 28 | `profile_daily_activity` | Stores daily learning activity aggregates for progress dashboards. Primary keys: `id`. Foreign keys: `profile_id`. |
-| 29 | `profile_streak_state` | Stores current streak state and milestone progress for learner profiles. Primary keys: `id`. Foreign keys: `profile_id`. |
-| 30 | `notifications` | Stores learner-facing notification records. Primary keys: `id`. Foreign keys: `profile_id`. |
+| 01 | `users` | Stores accounts for learners, teachers, and administrators.<br>Primary keys: `id`<br>Foreign keys: none |
+| 02 | `profiles` | Stores learner profile and target-level information.<br>Primary keys: `id`<br>Foreign keys: `account_id` |
+| 03 | `refresh_tokens` | Stores refresh-token records for authenticated sessions.<br>Primary keys: `id`<br>Foreign keys: `user_id` |
+| 04 | `profile_onboarding_responses` | Stores learner onboarding answers and onboarding version.<br>Primary keys: `id`<br>Foreign keys: `profile_id` |
+| 05 | `coin_transactions` | Stores wallet credit and debit ledger entries.<br>Primary keys: `id`<br>Foreign keys: `profile_id` |
+| 06 | `wallet_topup_orders` | Stores wallet top-up payment orders and gateway status.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `package_id` |
+| 07 | `promo_codes` | Stores promotional code rules and reward configuration.<br>Primary keys: `id`<br>Foreign keys: none |
+| 08 | `promo_code_redemptions` | Stores promo-code redemption history by learner profile.<br>Primary keys: `id`<br>Foreign keys: `promo_code_id`, `profile_id` |
+| 09 | `courses` | Stores teacher-led course definitions and enrollment constraints.<br>Primary keys: `id`<br>Foreign keys: `teacher_id` |
+| 10 | `course_enrollment_orders` | Stores course enrollment payment orders and gateway callback state.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `course_id` |
+| 11 | `course_enrollments` | Stores confirmed learner enrollments for courses.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `course_id` |
+| 12 | `teacher_slots` | Stores teacher availability slots for course booking.<br>Primary keys: `id`<br>Foreign keys: `teacher_id`, `course_id` |
+| 13 | `teacher_bookings` | Stores learner bookings against teacher slots.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `teacher_slot_id` |
+| 14 | `practice_sessions` | Stores listening/reading practice session state.<br>Primary keys: `id`<br>Foreign keys: `profile_id` |
+| 15 | `practice_mcq_answers` | Stores selected answers for objective practice questions.<br>Primary keys: `id`<br>Foreign keys: `practice_session_id` |
+| 16 | `practice_writing_submissions` | Stores learner writing practice submissions.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `prompt_id` |
+| 17 | `practice_speaking_submissions` | Stores learner speaking practice audio and transcript data.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `task_id` |
+| 18 | `exams` | Stores mock exam definitions.<br>Primary keys: `id`<br>Foreign keys: none |
+| 19 | `exam_versions` | Stores versioned content sets for mock exams.<br>Primary keys: `id`<br>Foreign keys: `exam_id` |
+| 20 | `exam_sessions` | Stores learner mock exam attempts, timing, and status.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `exam_version_id` |
+| 21 | `exam_mcq_answers` | Stores listening/reading answers in mock exam sessions.<br>Primary keys: `id`<br>Foreign keys: `exam_session_id` |
+| 22 | `exam_writing_submissions` | Stores writing responses in mock exam sessions.<br>Primary keys: `id`<br>Foreign keys: `exam_session_id`, `writing_task_id` |
+| 23 | `exam_speaking_submissions` | Stores speaking responses in mock exam sessions.<br>Primary keys: `id`<br>Foreign keys: `exam_session_id`, `speaking_part_id` |
+| 24 | `assessment_rubrics` | Stores rubric criteria, evidence schema, and scoring policy.<br>Primary keys: `id`<br>Foreign keys: none |
+| 25 | `assessment_attempts` | Stores normalized assessment attempts from practice or exam submissions.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `rubric_id` |
+| 26 | `assessment_jobs` | Stores asynchronous assessment processing state.<br>Primary keys: `id`<br>Foreign keys: `attempt_id` |
+| 27 | `assessment_evidence` | Stores extracted signals, evidence, and validation details.<br>Primary keys: `id`<br>Foreign keys: `attempt_id`, `rubric_id` |
+| 28 | `assessment_results` | Stores final criterion scores, overall band, trace, and feedback.<br>Primary keys: `id`<br>Foreign keys: `attempt_id`, `rubric_id` |
+| 29 | `profile_daily_activity` | Stores daily learning activity aggregates.<br>Primary keys: `id`<br>Foreign keys: `profile_id` |
+| 30 | `profile_streak_state` | Stores learner streak status and milestone progress.<br>Primary keys: `id`<br>Foreign keys: `profile_id` |
+| 31 | `notifications` | Stores learner-facing notification records.<br>Primary keys: `id`<br>Foreign keys: `profile_id` |
 
 ## 3. Detailed Design
 
@@ -158,17 +161,13 @@ This function handles login, Google authentication, token issuing, refresh token
 
 ![Authentication & Profile Class Diagram](../diagrams/report4-authentication-class-diagram.png)
 
-*Figure 4.7. Authentication & Profile Class Diagram*
-
-Diagram source: `docs/capstone/diagrams/report4-authentication-class-diagram.puml`
+*Figure 4.10. Authentication & Profile Class Diagram*
 
 #### 3.1.2 Login Sequence
 
 ![Login Sequence Diagram](../diagrams/report4-login-sequence-diagram.png)
 
-*Figure 4.8. Login Sequence Diagram*
-
-Diagram source: `docs/capstone/diagrams/report4-login-sequence-diagram.puml`
+*Figure 4.11. Login Sequence Diagram*
 
 ### 3.2 Practice & Assessment Processing
 
@@ -178,17 +177,13 @@ This function handles learner writing/speaking practice submissions, paid feedba
 
 ![Practice & Assessment Class Diagram](../diagrams/report4-practice-assessment-class-diagram.png)
 
-*Figure 4.9. Practice & Assessment Class Diagram*
-
-Diagram source: `docs/capstone/diagrams/report4-practice-assessment-class-diagram.puml`
+*Figure 4.12. Practice & Assessment Class Diagram*
 
 #### 3.2.2 Practice Feedback Sequence
 
 ![Practice Feedback Sequence Diagram](../diagrams/report4-practice-feedback-sequence-diagram.png)
 
-*Figure 4.10. Practice Feedback Sequence Diagram*
-
-Diagram source: `docs/capstone/diagrams/report4-practice-feedback-sequence-diagram.puml`
+*Figure 4.13. Practice Feedback Sequence Diagram*
 
 ### 3.3 Mock Exam Session
 
@@ -198,17 +193,13 @@ This function handles VSTEP mock exam session creation, answer saving, draft per
 
 ![Mock Exam Session Class Diagram](../diagrams/report4-exam-session-class-diagram.png)
 
-*Figure 4.11. Mock Exam Session Class Diagram*
-
-Diagram source: `docs/capstone/diagrams/report4-exam-session-class-diagram.puml`
+*Figure 4.14. Mock Exam Session Class Diagram*
 
 #### 3.3.2 Exam Submission Sequence
 
 ![Mock Exam Submission Sequence Diagram](../diagrams/report4-exam-submission-sequence-diagram.png)
 
-*Figure 4.12. Mock Exam Submission Sequence Diagram*
-
-Diagram source: `docs/capstone/diagrams/report4-exam-submission-sequence-diagram.puml`
+*Figure 4.15. Mock Exam Submission Sequence Diagram*
 
 ### 3.4 Course Booking & Payment
 
@@ -218,14 +209,10 @@ This function handles course enrollment orders, teacher slot booking, payment ga
 
 ![Course Booking & Payment Class Diagram](../diagrams/report4-course-booking-payment-class-diagram.png)
 
-*Figure 4.13. Course Booking & Payment Class Diagram*
-
-Diagram source: `docs/capstone/diagrams/report4-course-booking-payment-class-diagram.puml`
+*Figure 4.16. Course Booking & Payment Class Diagram*
 
 #### 3.4.2 Course Enrollment Payment Sequence
 
 ![Course Enrollment Payment Sequence Diagram](../diagrams/report4-course-payment-sequence-diagram.png)
 
-*Figure 4.14. Course Enrollment Payment Sequence Diagram*
-
-Diagram source: `docs/capstone/diagrams/report4-course-payment-sequence-diagram.puml`
+*Figure 4.17. Course Enrollment Payment Sequence Diagram*
