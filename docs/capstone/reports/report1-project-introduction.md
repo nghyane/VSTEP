@@ -88,9 +88,9 @@ The EdTech market in Vietnam is growing rapidly, projected to reach USD 1.1 bill
 
 Within this landscape, the VSTEP preparation market shows a clear gap. Traditional classes and textbooks use static materials without flexible feedback. VSTEP mock test websites primarily offer MCQ question banks, leaving Writing and Speaking assessment unaddressed. International apps like Duolingo or Grammarly do not align with VSTEP structure and do not serve Vietnamese certification goals.
 
-The proposed system differentiates through: (1) rubric-based scoring for Writing and Speaking, where AI helps extract task evidence and generate feedback, (2) adaptive learning support through skill-gap-based recommendations and spaced repetition for vocabulary review, (3) comprehensive progress visualization, and (4) controlled usage of AI services to support sustainable operation.
+The proposed system differentiates through: (1) rubric-based assessment for Writing and Speaking, where AI helps extract task evidence and generate feedback, (2) adaptive learning support through skill-gap-based recommendations and spaced repetition for vocabulary review, (3) comprehensive progress visualization, and (4) controlled usage of AI services to support sustainable operation.
 
-For assessment reliability, the scoring module is checked using two validation groups. The first group contains referenced Writing samples with independent scoring comments, used to compare the system's predicted proficiency level with a reference level. The second group contains VSTEP-style risk cases, such as off-topic, too-short, copied-prompt, repeated, or non-English responses, used to verify that abnormal submissions are not scored highly. These validation groups are separated so that benchmark results and risk-handling checks do not distort each other.
+For assessment reliability, the assessment module is evaluated using two validation groups. The first group contains referenced Writing samples with independent scoring comments, used to compare the system's predicted proficiency level with a reference level. The second group contains VSTEP-style risk cases, such as off-topic, too-short, copied-prompt, repeated, or non-English responses, used to verify that abnormal submissions are not scored highly. These validation groups are reported separately so that benchmark results and risk-handling checks do not distort each other.
 
 ## 5. Software Product Vision
 
@@ -103,17 +103,17 @@ For university students who need to meet graduation requirements and working pro
 The major features of the system are grouped around learner access, VSTEP practice, mock testing, assessment, personalized learning support, course support, administration, and learner engagement.
 
 - FE-01: User Authentication — Register, login, and profile management for the main user roles.
-- FE-02: Practice Mode — Listening — Listening exercises with audio playback, transcript support, and instant auto-grading.
-- FE-03: Practice Mode — Reading — Reading exercises with MCQ format and instant auto-grading.
+- FE-02: Practice Mode — Listening — Listening exercises with audio playback, transcript support, and instant automatic marking.
+- FE-03: Practice Mode — Reading — Reading exercises with MCQ format and instant automatic marking.
 - FE-04: Practice Mode — Writing — Writing exercises scored by rubric-based formulas, with AI used to extract task evidence and support feedback.
 - FE-05: Practice Mode — Speaking — Speaking exercises scored by rubric-based formulas using transcript, fluency, pronunciation, and content-relevance signals.
-- FE-06: Mock Test Mode — Full simulated VSTEP exam across all 4 skills with session saving, timer, auto-grading for objective skills, and rubric-based scoring for Writing and Speaking.
-- FE-07: AI-supported Scoring Engine — Automated support for Writing and Speaking assessment using scoring formulas, rubric parameters, language metrics, and AI-extracted evidence.
+- FE-06: Mock Test Mode — Full simulated VSTEP exam across all 4 skills with session saving, timer, automatic marking for objective skills, and rubric-based assessment for Writing and Speaking.
+- FE-07: AI-supported Assessment Engine — Automated support for Writing and Speaking assessment using scoring formulas, rubric parameters, language metrics, and AI-extracted evidence.
 - FE-08: Progress Tracking — Dashboard for skill performance, learning activity, score trends, and level progress.
 - FE-09: Learning Path — Skill gap analysis from mock exam results with personalized practice recommendations and spaced repetition support for vocabulary review.
 - FE-10: Course Management — Course creation, teacher assignment, schedule management, and session booking between learners and teachers.
 - FE-11: Content Management — Admin tools for question banks, exams, grammar, vocabulary, speaking practice content, and system configuration.
-- FE-12: Notification System — In-app notifications for grading completion, course activities, payment events, rewards, and study reminders.
+- FE-12: Notification System — In-app notifications for assessment completion, course activities, payment events, rewards, and study reminders.
 - FE-13: Exercise Feedback — Learners can submit ratings and comments on exercises and practice materials.
 
 ![Functional Decomposition Diagram](../diagrams/report1-major-features-diagram.png)

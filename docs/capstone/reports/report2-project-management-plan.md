@@ -32,7 +32,7 @@
 | 3.3 | Mobile reading practice screens | Medium | 7 |
 | **4** | **FE-04: Practice — Writing** | | **38** |
 | 4.1 | Writing practice backend functions, rubric-based scoring, and feedback processing | Complex | 14 |
-| 4.2 | Web writing editor and grading result display | Complex | 12 |
+| 4.2 | Web writing editor and assessment result display | Complex | 12 |
 | 4.3 | Mobile writing practice screens | Complex | 12 |
 | **5** | **FE-05: Practice — Speaking** | | **46** |
 | 5.1 | Speaking practice backend functions, speech processing, and rubric-based scoring | Complex | 18 |
@@ -46,7 +46,7 @@
 | 7.1 | VSTEP rubric setup and scoring rules | Complex | 12 |
 | 7.2 | AI evidence extraction and feedback workflow with retry and failure handling | Complex | 14 |
 | 7.3 | External language support tools integration | Complex | 10 |
-| 7.4 | Background processing for grading feedback | Complex | 10 |
+| 7.4 | Background processing for assessment feedback | Complex | 10 |
 | 7.5 | Writing and Speaking evidence-based feedback generation | Medium | 6 |
 | **8** | **FE-08: Progress Tracking** | | **30** |
 | 8.1 | Learner statistics and progress analysis | Complex | 12 |
@@ -121,7 +121,7 @@
 | # | Risk Description | Impact | Possibility | Response Plans |
 |---|-----------------|--------|-------------|----------------|
 | 1 | External AI service instability or rate limiting delays task-evidence extraction and feedback generation for Writing/Speaking | High | Medium | Keep scoring formulas separated from AI calls; use centralized retry and circuit-breaker handling for temporary failures; persist completed results; mark failed jobs with visible error messages when the service remains unavailable |
-| 2 | Speech-processing service errors or low-quality recordings affect Speaking transcription and pronunciation signals | High | Medium | Store speaking submissions as background grading jobs; validate submitted audio references; retry through the queue for temporary failures; show clear processing or failed status; require resubmission when transcription or pronunciation signals cannot be produced |
+| 2 | Speech-processing service errors or low-quality recordings affect Speaking transcription and pronunciation signals | High | Medium | Store speaking submissions as assessment jobs; validate submitted audio references; retry through the queue for temporary failures; show clear processing or failed status; require resubmission when transcription or pronunciation signals cannot be produced |
 | 3 | Limited team experience with rubric-based scoring, AI evidence extraction, and prompt design slows assessment feature development | Medium | High | Allocate early research time; validate scoring formulas with sample answers; pair program on assessment components; review outputs with supervisors; document scoring assumptions and limitations |
 | 4 | Scope creep causes Phase 2 or out-of-scope features to enter the current development timeline | High | Medium | Maintain the approved capstone scope; keep dynamic adaptive difficulty beyond current learning support, teacher-assigned modules, and machine-learning prediction outside the current scope; review backlog weekly with the supervisor before accepting new work |
 | 5 | Payment integration complexity delays Wallet, course enrollment, and booking-related flows | Medium | Medium | Prioritize the selected wallet top-up payment flow for the current capstone scope; keep course enrollment confirmation independent for testing; make payment confirmation idempotent; keep additional gateways outside current scope |
@@ -213,7 +213,7 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 | 2 | Software Requirement Specification (SRS) | 31/01/2026 | Detailed system requirements and acceptance criteria |
 | 3 | System Architecture & Design Document | 15/02/2026 | Overall architecture and main UML diagrams |
 | 4 | Detailed Design Document (DDD) | 28/02/2026 | Database design, component design, and interface design |
-| 5 | Backend Application | 15/03/2026 | Core server-side functions for authentication, practice, tests, grading, and management |
+| 5 | Backend Application | 15/03/2026 | Core server-side functions for authentication, practice, tests, assessment, and management |
 | 6 | Web Application | 31/03/2026 | Learner-facing web functions for practice, mock tests, dashboard, and courses |
 | 7 | Mobile Application | 31/03/2026 | Learner-facing mobile functions for practice, mock tests, and learning support |
 | 8 | Admin Application | 07/04/2026 | Administration functions for content, users, analytics, and courses |
@@ -281,7 +281,7 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 | Supervisor Meeting (Academic) | Nghĩa + Lâm Hữu Khánh Phương | Progress reporting, academic guidance, milestone approval | Weekly, 30 minutes | In-person / Google Meet |
 | Supervisor Meeting (Industry) | Nghĩa + Trần Trọng Huỳnh | Technical review, industry best practice feedback | Bi-weekly, 30 minutes | Online, Email / Phone |
 | Code Review | Developer + Reviewer(s) | Ensure code quality, consistency, and correctness | Per Pull Request, asynchronous | GitHub Pull Request review |
-| Technical Discussion | Developers involved in specific module | Architecture decisions, debugging, design discussions | As needed | Discord voice / thread |
+| Technical Discussion | Developers involved in specific module | Architecture decisions, technical issue resolution, and design discussions | As needed | Discord voice / thread |
 | Task Tracking | All team members | Backlog management, issue tracking, progress visibility | Continuous | GitHub Issues + GitHub Projects |
 | File Sharing | All team members | Document collaboration, diagram sharing | Continuous | Google Drive (Docs, Sheets, Slides) |
 
