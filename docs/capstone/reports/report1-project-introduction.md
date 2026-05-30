@@ -100,6 +100,8 @@ For university students who need to meet graduation requirements and working pro
 
 ### 6.1 Major Features
 
+The major features of the system are grouped around learner access, VSTEP practice, mock testing, assessment, personalized learning support, course support, administration, and learner engagement.
+
 - FE-01: User Authentication — Register, login, and profile management for the main user roles.
 - FE-02: Practice Mode — Listening — Listening exercises with audio playback, transcript support, and instant auto-grading.
 - FE-03: Practice Mode — Reading — Reading exercises with MCQ format and instant auto-grading.
@@ -113,6 +115,10 @@ For university students who need to meet graduation requirements and working pro
 - FE-11: Content Management — Admin tools for question banks, exams, grammar, vocabulary, speaking practice content, and system configuration.
 - FE-12: Notification System — In-app notifications for grading completion, course activities, payment events, rewards, and study reminders.
 - FE-13: Exercise Feedback — Learners can submit ratings and comments on exercises and practice materials.
+
+![Functional Decomposition Diagram](../diagrams/report1-major-features-diagram.png)
+
+*Figure 1.1. Functional Decomposition Diagram*
 
 ### 6.2 Limitations and Exclusions
 
