@@ -14,6 +14,9 @@ use App\Ai\Contracts\PronunciationAnalyzer;
 use App\Ai\Contracts\SpeakingFeedbackGenerator;
 use App\Ai\Contracts\TaskFulfillmentAssessor;
 use App\Ai\Contracts\WritingFeedbackGenerator;
+use App\Assessment\Contracts\RubricResolver as AssessmentRubricResolver;
+use App\Assessment\Rubrics\DatabaseRubricResolver;
+use App\Assessment\Services\StrategyRegistry as AssessmentStrategyRegistry;
 use App\Models\Profile;
 use App\Services\Admin\Course\AdminCourseBookingService;
 use App\Services\Admin\Course\AdminCourseEnrollmentService;
@@ -104,6 +107,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ConversationServiceInterface::class, SpeakingConversationService::class);
 
         $this->app->bind(LearningPathInterface::class, LearningPathService::class);
+
+        $this->app->bind(AssessmentRubricResolver::class, DatabaseRubricResolver::class);
+        $this->app->singleton(AssessmentStrategyRegistry::class);
 
         $this->app->bind(AdminCourseBookingInterface::class, AdminCourseBookingService::class);
         $this->app->bind(AdminCourseEnrollmentInterface::class, AdminCourseEnrollmentService::class);
