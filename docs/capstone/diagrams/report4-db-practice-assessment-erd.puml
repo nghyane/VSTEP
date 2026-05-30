@@ -100,20 +100,20 @@ entity "assessment_results" as results {
   feedback : jsonb
 }
 
-profiles ||--o{ practice_sessions : profile_id
-practice_sessions ||--o{ practice_mcq_answers : practice_session_id
-profiles ||--o{ practice_writing : profile_id
-profiles ||--o{ practice_speaking : profile_id
+profiles ||--o{ practice_sessions
+practice_sessions ||--o{ practice_mcq_answers
+profiles ||--o{ practice_writing
+profiles ||--o{ practice_speaking
 
-profiles ||--o{ attempts : profile_id
-rubrics ||--o{ attempts : rubric_id
-attempts ||--|| jobs : attempt_id
-attempts ||--o| evidence : attempt_id
-rubrics ||--o{ evidence : rubric_id
-attempts ||--o| results : attempt_id
-rubrics ||--o{ results : rubric_id
+profiles ||--o{ attempts
+rubrics ||--o{ attempts
+attempts ||--|| jobs
+attempts ||--o| evidence
+rubrics ||--o{ evidence
+attempts ||--o| results
+rubrics ||--o{ results
 
-practice_writing ||..o{ attempts : source_id
-practice_speaking ||..o{ attempts : source_id
+practice_writing ||..o{ attempts
+practice_speaking ||..o{ attempts
 
 @enduml

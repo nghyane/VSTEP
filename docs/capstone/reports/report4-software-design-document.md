@@ -95,19 +95,23 @@ The package diagrams below describe the main packages and namespace-level depend
 
 The database is designed around the main operational areas of the VSTEP Platform: identity and learner profiles, wallet and payment, course booking, practice submissions, exam sessions, assessment processing, progress tracking, and notifications.
 
-For readability, the database relationship is presented as three subject-area ERDs. This keeps the diagram format close to the required table-and-relationship style while avoiding a single oversized diagram with unreadable crossing lines. The table descriptions after the diagrams provide the complete table inventory.
+For readability, the database relationship is presented as four subject-area ERDs. This keeps the diagram format close to the required table-and-relationship style while avoiding a single oversized diagram with unreadable crossing lines. The table descriptions after the diagrams provide the complete table inventory.
 
-![Core, Wallet, Course and Payment ERD](../diagrams/report4-db-core-commerce-erd.png)
+![Identity, Wallet and Promotion ERD](../diagrams/report4-db-identity-wallet-erd.png)
 
-*Figure 4.6. Core, Wallet, Course and Payment ERD*
+*Figure 4.6. Identity, Wallet and Promotion ERD*
+
+![Course Booking and Payment ERD](../diagrams/report4-db-course-booking-erd.png)
+
+*Figure 4.7. Course Booking and Payment ERD*
 
 ![Practice and Assessment ERD](../diagrams/report4-db-practice-assessment-erd.png)
 
-*Figure 4.7. Practice and Assessment ERD*
+*Figure 4.8. Practice and Assessment ERD*
 
 ![Exam Session and Assessment ERD](../diagrams/report4-db-exam-assessment-erd.png)
 
-*Figure 4.8. Exam Session and Assessment ERD*
+*Figure 4.9. Exam Session and Assessment ERD*
 
 ### Table Descriptions
 
@@ -157,13 +161,13 @@ This function handles login, Google authentication, token issuing, refresh token
 
 ![Authentication & Profile Class Diagram](../diagrams/report4-authentication-class-diagram.png)
 
-*Figure 4.9. Authentication & Profile Class Diagram*
+*Figure 4.10. Authentication & Profile Class Diagram*
 
 #### 3.1.2 Login Sequence
 
 ![Login Sequence Diagram](../diagrams/report4-login-sequence-diagram.png)
 
-*Figure 4.10. Login Sequence Diagram*
+*Figure 4.11. Login Sequence Diagram*
 
 ### 3.2 Practice & Assessment Processing
 
@@ -173,13 +177,13 @@ This function handles learner writing/speaking practice submissions, paid feedba
 
 ![Practice & Assessment Class Diagram](../diagrams/report4-practice-assessment-class-diagram.png)
 
-*Figure 4.11. Practice & Assessment Class Diagram*
+*Figure 4.12. Practice & Assessment Class Diagram*
 
 #### 3.2.2 Practice Feedback Sequence
 
 ![Practice Feedback Sequence Diagram](../diagrams/report4-practice-feedback-sequence-diagram.png)
 
-*Figure 4.12. Practice Feedback Sequence Diagram*
+*Figure 4.13. Practice Feedback Sequence Diagram*
 
 ### 3.3 Mock Exam Session
 
@@ -189,13 +193,13 @@ This function handles VSTEP mock exam session creation, answer saving, draft per
 
 ![Mock Exam Session Class Diagram](../diagrams/report4-exam-session-class-diagram.png)
 
-*Figure 4.13. Mock Exam Session Class Diagram*
+*Figure 4.14. Mock Exam Session Class Diagram*
 
 #### 3.3.2 Exam Submission Sequence
 
 ![Mock Exam Submission Sequence Diagram](../diagrams/report4-exam-submission-sequence-diagram.png)
 
-*Figure 4.14. Mock Exam Submission Sequence Diagram*
+*Figure 4.15. Mock Exam Submission Sequence Diagram*
 
 ### 3.4 Course Booking & Payment
 
@@ -205,10 +209,10 @@ This function handles course enrollment orders, teacher slot booking, payment ga
 
 ![Course Booking & Payment Class Diagram](../diagrams/report4-course-booking-payment-class-diagram.png)
 
-*Figure 4.15. Course Booking & Payment Class Diagram*
+*Figure 4.16. Course Booking & Payment Class Diagram*
 
 #### 3.4.2 Course Enrollment Payment Sequence
 
 ![Course Enrollment Payment Sequence Diagram](../diagrams/report4-course-payment-sequence-diagram.png)
 
-*Figure 4.16. Course Enrollment Payment Sequence Diagram*
+*Figure 4.17. Course Enrollment Payment Sequence Diagram*

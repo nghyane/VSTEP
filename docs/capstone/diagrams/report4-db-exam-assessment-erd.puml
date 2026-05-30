@@ -106,20 +106,20 @@ entity "assessment_results" as results {
   overall_band : decimal
 }
 
-profiles ||--o{ exam_sessions : profile_id
-exams ||--o{ exam_versions : exam_id
-exam_versions ||--o{ exam_sessions : exam_version_id
-exam_sessions ||--o{ exam_mcq_answers : exam_session_id
-exam_sessions ||--o{ exam_writing : exam_session_id
-exam_sessions ||--o{ exam_speaking : exam_session_id
+profiles ||--o{ exam_sessions
+exams ||--o{ exam_versions
+exam_versions ||--o{ exam_sessions
+exam_sessions ||--o{ exam_mcq_answers
+exam_sessions ||--o{ exam_writing
+exam_sessions ||--o{ exam_speaking
 
-profiles ||--o{ attempts : profile_id
-rubrics ||--o{ attempts : rubric_id
-attempts ||--|| jobs : attempt_id
-attempts ||--o| results : attempt_id
-rubrics ||--o{ results : rubric_id
+profiles ||--o{ attempts
+rubrics ||--o{ attempts
+attempts ||--|| jobs
+attempts ||--o| results
+rubrics ||--o{ results
 
-exam_writing ||..o{ attempts : source_id
-exam_speaking ||..o{ attempts : source_id
+exam_writing ||..o{ attempts
+exam_speaking ||..o{ attempts
 
 @enduml
