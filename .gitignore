@@ -42,6 +42,10 @@ opencode.json.*.bak
 # Local AI/dev tooling folders
 docs/mobile-v2-fe-v3-handoff.md
 apps/mobile-v2/HANDOFF.md
+apps/mobile-v2/MOBILE-TEST-CASES.md
+apps/mobile-v2/android/
+apps/mobile-v2/eas.json
+apps/mobile-v2/package-lock.json
 .agent
 .agents
 !apps/frontend-v2/.agents/
@@ -73,4 +77,3 @@ skills
 !apps/frontend-v2/.agents/skills/
 !apps/frontend-v3/.agents/
 !apps/frontend-v3/.agents/skills/
-

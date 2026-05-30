@@ -16,7 +16,6 @@ final class AuthService
 {
     public function __construct(
         private readonly ProfileService $profileService,
-        private readonly GoogleTokenVerifier $googleTokenVerifier,
         private readonly TokenService $tokenService,
     ) {}
 
@@ -202,9 +201,12 @@ final class AuthService
      *     suggested_nickname: ?string,
      * }
      */
-    public function loginWithGoogle(string $idToken, ?string $userAgent = null): array
-    {
-        $payload = $this->googleTokenVerifier->verify($idToken);
+    public function loginWithGoogle(
+        string $idToken,
+        GoogleTokenVerifier $googleTokenVerifier,
+        ?string $userAgent = null,
+    ): array {
+        $payload = $googleTokenVerifier->verify($idToken);
 
         if (! $payload['email_verified']) {
             throw ValidationException::withMessages([

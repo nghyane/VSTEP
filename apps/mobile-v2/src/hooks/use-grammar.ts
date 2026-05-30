@@ -45,7 +45,18 @@ export interface GrammarVstepTip {
 }
 
 export type GrammarExercise =
-  | { id: string; kind: "mcq"; payload: { prompt: string; options: string[] }; displayOrder: number }
+  | {
+      id: string;
+      kind: "mcq";
+      payload: {
+        prompt: string;
+        options: string[];
+        stem?: string | null;
+        question?: string | null;
+        sentence?: string | null;
+      };
+      displayOrder: number;
+    }
   | { id: string; kind: "error_correction"; payload: { sentence: string; errorStart: number; errorEnd: number }; displayOrder: number }
   | { id: string; kind: "fill_blank"; payload: { template: string }; displayOrder: number }
   | { id: string; kind: "rewrite"; payload: { instruction: string; original: string }; displayOrder: number }
@@ -75,19 +86,59 @@ export interface GrammarAttemptResponse {
   mastery: GrammarMastery;
 }
 
+function asArray<T>(value: T[] | null | undefined): T[] {
+  return Array.isArray(value) ? value : [];
+}
+
+function normalizeGrammarPoint(point: GrammarPoint): GrammarPoint {
+  return {
+    ...point,
+    levels: asArray(point.levels),
+    tasks: asArray(point.tasks),
+    functions: asArray(point.functions),
+  };
+}
+
+function normalizeGrammarPointDetail(detail: GrammarPointDetail): GrammarPointDetail {
+  return {
+    ...detail,
+    point: normalizeGrammarPoint(detail.point),
+    structures: asArray(detail.structures),
+    examples: asArray(detail.examples),
+    commonMistakes: asArray(detail.commonMistakes),
+    vstepTips: asArray(detail.vstepTips),
+    exercises: asArray(detail.exercises).map((exercise) => {
+      if (exercise.kind !== "mcq") return exercise;
+      return {
+        ...exercise,
+        payload: {
+          ...exercise.payload,
+          options: asArray(exercise.payload.options),
+        },
+      };
+    }),
+  };
+}
+
 // ── Queries ──
 
 export function useGrammarPoints() {
   return useQuery({
     queryKey: ["grammar", "points"],
-    queryFn: () => api.get<GrammarPoint[]>("/api/v1/grammar/points"),
+    queryFn: async () => {
+      const points = await api.get<GrammarPoint[]>("/api/v1/grammar/points");
+      return asArray(points).map(normalizeGrammarPoint);
+    },
   });
 }
 
 export function useGrammarPointDetail(id: string) {
   return useQuery({
     queryKey: ["grammar", "points", id],
-    queryFn: () => api.get<GrammarPointDetail>(`/api/v1/grammar/points/${id}`),
+    queryFn: async () => {
+      const detail = await api.get<GrammarPointDetail>(`/api/v1/grammar/points/${id}`);
+      return normalizeGrammarPointDetail(detail);
+    },
     enabled: !!id,
   });
 }
