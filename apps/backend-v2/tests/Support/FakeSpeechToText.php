@@ -12,7 +12,7 @@ use App\Services\SpeechToText;
  */
 final class FakeSpeechToText implements SpeechToText
 {
-    public function transcribe(string $audioContent, string $language = 'en-US'): ?array
+    public function transcribe(string $audioContent, string $language = 'en-US', ?string $contentType = null): ?array
     {
         return $this->mockResult();
     }

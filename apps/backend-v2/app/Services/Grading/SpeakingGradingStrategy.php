@@ -74,15 +74,12 @@ final class SpeakingGradingStrategy implements GradingStrategy
 
         $azurePron = $sttResult['pronunciation'] ?? null;
 
-        if ($azurePron === null || ! isset($azurePron['overall'])) {
-            throw new GradingFailedException(
-                'Azure Pronunciation Assessment not available. Ensure AZURE_SPEECH_KEY has pronunciation assessment enabled.',
-            );
-        }
-
         $contentFactor = $this->checkContentRelevance($transcript, $submission);
 
-        $pronunciationScore = (float) $azurePron['overall'];
+        $hasAzurePronunciation = $azurePron !== null && isset($azurePron['overall']);
+        $pronunciationScore = $hasAzurePronunciation
+            ? (float) $azurePron['overall']
+            : $this->fallbackPronunciationScore($sttConfidence, $speakingRate, $pauseCount, $sttWordCount);
 
         $scores = [
             'grammar' => $this->formula->grammar($syntaxAnalysis, 0, $metrics['sentence_count']),
@@ -133,10 +130,14 @@ final class SpeakingGradingStrategy implements GradingStrategy
             rubricScores: $scores,
             overallBand: $rubric->computeOverallBand($scores),
             strengths: $strengths,
-            improvements: $this->sttQualityNote($sttConfidence),
+            improvements: [
+                ...$this->sttQualityNote($sttConfidence),
+                ...$this->pronunciationQualityNote($hasAzurePronunciation),
+            ],
             transcript: $transcript,
             pronunciationReport: [
                 'accuracy_score' => round($pronunciationScore, 1),
+                'source' => $hasAzurePronunciation ? 'azure' : 'fallback',
                 'insights' => $insights,
             ],
             rubricId: $rubric->id,
@@ -185,6 +186,37 @@ final class SpeakingGradingStrategy implements GradingStrategy
             'message' => 'Chất lượng thu âm thấp (độ tin cậy: '.round($confidence * 100).'%). Điểm có thể bị ảnh hưởng bởi lỗi nhận dạng.',
             'explanation' => 'STT confidence below 0.7. Scores computed from transcript may include recognition errors.',
         ]];
+    }
+
+    private function pronunciationQualityNote(bool $hasAzurePronunciation): array
+    {
+        if ($hasAzurePronunciation) {
+            return [];
+        }
+
+        return [[
+            'message' => 'Điểm phát âm đang dùng chế độ dự phòng.',
+            'explanation' => 'Bản ghi mobile không có Azure Pronunciation Assessment. Hệ thống vẫn chấm để không làm hỏng bài nộp, nhưng nên dùng file WebM/WAV khi cần điểm phát âm chính xác hơn.',
+        ]];
+    }
+
+    private function fallbackPronunciationScore(float $confidence, float $speakingRate, int $pauseCount, int $wordCount): float
+    {
+        $score = $confidence > 0 ? $confidence * 10 : 6.0;
+
+        if ($wordCount < 5) {
+            $score -= 0.8;
+        }
+
+        if ($speakingRate > 0 && ($speakingRate < 55 || $speakingRate > 190)) {
+            $score -= 0.5;
+        }
+
+        if ($pauseCount > 6) {
+            $score -= 0.5;
+        }
+
+        return max(4.0, min(8.0, round($score, 1)));
     }
 
     private function checkContentRelevance(string $transcript, Model $submission): float

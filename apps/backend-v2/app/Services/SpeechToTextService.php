@@ -35,40 +35,35 @@ final class SpeechToTextService implements SpeechToText
      * @param  string  $language  BCP-47 language tag
      * @return array{text: string, confidence: float, duration_ms: int, word_count: int, pause_count: int, speaking_rate: float}|null
      */
-    public function transcribe(string $audioContent, string $language = 'en-US'): ?array
+    public function transcribe(string $audioContent, string $language = 'en-US', ?string $contentType = null): ?array
+    {
+        $azure = $this->transcribeWithAzure($audioContent, $language, $contentType);
+        if ($azure !== null) {
+            return $azure;
+        }
+
+        return $this->transcribeWithOpenAi($audioContent, $language, $contentType);
+    }
+
+    /**
+     * @return array{text: string, confidence: float, duration_ms: int, word_count: int, pause_count: int, speaking_rate: float, pronunciation: ?array}|null
+     */
+    private function transcribeWithAzure(string $audioContent, string $language, ?string $contentType): ?array
     {
         $key = $this->key();
         if ($key === '') {
-            throw new \RuntimeException('AZURE_SPEECH_KEY is not configured. Speech-to-text cannot run without Azure credentials.');
+            return null;
         }
 
         $region = $this->region();
         $endpoint = "https://{$region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1";
+        $lastFailure = null;
 
         try {
-            $response = Http::withHeaders([
-                'Ocp-Apim-Subscription-Key' => $key,
-                'Content-Type' => 'audio/webm; codecs=opus',
-                'Accept' => 'application/json',
-            ])
-                ->withQueryParameters([
-                    'language' => $language,
-                    'format' => 'detailed',
-                    'pronunciationAssessment' => json_encode([
-                        'GradingSystem' => 'FivePoint',
-                        'Granularity' => 'Word',
-                        'EnableMiscue' => true,
-                    ]),
-                ])
-                ->withBody($audioContent, 'audio/webm; codecs=opus')
-                ->timeout(30)
-                ->post($endpoint);
-
-            if (! $response->successful()) {
-                // Retry with WAV content type (fallback for WAV audio)
+            foreach ($this->azureContentTypeCandidates($contentType) as $candidate) {
                 $response = Http::withHeaders([
                     'Ocp-Apim-Subscription-Key' => $key,
-                    'Content-Type' => 'audio/wav',
+                    'Content-Type' => $candidate,
                     'Accept' => 'application/json',
                 ])
                     ->withQueryParameters([
@@ -80,13 +75,59 @@ final class SpeechToTextService implements SpeechToText
                             'EnableMiscue' => true,
                         ]),
                     ])
-                    ->withBody($audioContent, 'audio/wav')
+                    ->withBody($audioContent, $candidate)
                     ->timeout(30)
                     ->post($endpoint);
+
+                if ($response->successful()) {
+                    return $this->parseAzureResponse($response->json());
+                }
+
+                $lastFailure = [
+                    'content_type' => $candidate,
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ];
             }
 
+            Log::error('Azure STT failed', $lastFailure ?? []);
+
+            return null;
+        } catch (\Throwable $e) {
+            Log::error('Azure STT exception', ['error' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
+    /**
+     * @return array{text: string, confidence: float, duration_ms: int, word_count: int, pause_count: int, speaking_rate: float, pronunciation: ?array}|null
+     */
+    private function transcribeWithOpenAi(string $audioContent, string $language, ?string $contentType): ?array
+    {
+        $key = (string) config('ai.providers.openai.key');
+        if ($key === '') {
+            return null;
+        }
+
+        $baseUrl = rtrim((string) (config('ai.providers.openai.url') ?: 'https://api.openai.com'), '/');
+        $endpoint = $baseUrl.(str_ends_with($baseUrl, '/v1') ? '/audio/transcriptions' : '/v1/audio/transcriptions');
+        $mime = $this->normalizeMime($contentType) ?? 'audio/mp4';
+        $filename = 'speech.'.$this->extensionForMime($mime);
+
+        try {
+            $response = Http::withToken($key)
+                ->acceptJson()
+                ->attach('file', $audioContent, $filename, ['Content-Type' => $mime])
+                ->timeout(45)
+                ->post($endpoint, [
+                    'model' => env('OPENAI_TRANSCRIPTION_MODEL', 'whisper-1'),
+                    'language' => strtolower(substr($language, 0, 2)),
+                    'response_format' => 'json',
+                ]);
+
             if (! $response->successful()) {
-                Log::error('Azure STT failed', [
+                Log::error('OpenAI STT failed', [
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
@@ -94,48 +135,123 @@ final class SpeechToTextService implements SpeechToText
                 return null;
             }
 
-            $data = $response->json();
-            $best = $data['NBest'][0] ?? null;
-            $durationMs = (int) ($data['Duration'] ?? 0) / 10_000;
-
-            // Pronunciation assessment scores (Azure built-in)
-            $pronAssessment = $best['PronunciationAssessment'] ?? null;
-            $pronScores = $pronAssessment !== null ? [
-                'accuracy' => (float) ($pronAssessment['AccuracyScore'] ?? 0) / 100 * 10,
-                'fluency' => (float) ($pronAssessment['FluencyScore'] ?? 0) / 100 * 10,
-                'prosody' => (float) ($pronAssessment['ProsodyScore'] ?? 0) / 100 * 10,
-                'overall' => (float) ($pronAssessment['PronScore'] ?? 0) / 100 * 10,
-            ] : null;
-
-            // Word-level timing: detect pauses between words (>500ms gap = pause)
-            $words = $best['Words'] ?? $data['Words'] ?? [];
-            $wordCount = count($words);
-            $pauseCount = 0;
-            for ($i = 1; $i < $wordCount; $i++) {
-                $prevEnd = ($words[$i - 1]['Offset'] ?? 0) + ($words[$i - 1]['Duration'] ?? 0);
-                $currStart = $words[$i]['Offset'] ?? 0;
-                if (($currStart - $prevEnd) > 50_000) { // 50ms in 100ns ticks
-                    $pauseCount++;
-                }
+            $text = trim((string) ($response->json('text') ?? ''));
+            if ($text === '') {
+                return null;
             }
 
-            // Speaking rate: words per minute
-            $speakingRate = $durationMs > 0 ? ($wordCount / ($durationMs / 1000)) * 60 : 0;
+            $wordCount = str_word_count($text);
 
             return [
-                'text' => $data['DisplayText'] ?? $best['Display'] ?? '',
-                'confidence' => (float) ($best['Confidence'] ?? 0),
-                'duration_ms' => $durationMs,
+                'text' => $text,
+                'confidence' => 0.0,
+                'duration_ms' => 0,
                 'word_count' => $wordCount,
-                'pause_count' => $pauseCount,
-                'speaking_rate' => round($speakingRate, 1),
-                'pronunciation' => $pronScores,
+                'pause_count' => 0,
+                'speaking_rate' => 0.0,
+                'pronunciation' => null,
             ];
         } catch (\Throwable $e) {
-            Log::error('Azure STT exception', ['error' => $e->getMessage()]);
+            Log::error('OpenAI STT exception', ['error' => $e->getMessage()]);
 
             return null;
         }
+    }
+
+    /**
+     * @param  array<string,mixed>  $data
+     * @return array{text: string, confidence: float, duration_ms: int, word_count: int, pause_count: int, speaking_rate: float, pronunciation: ?array}
+     */
+    private function parseAzureResponse(array $data): array
+    {
+        $best = $data['NBest'][0] ?? null;
+        $durationMs = (int) (((int) ($data['Duration'] ?? 0)) / 10_000);
+
+        $pronAssessment = $best['PronunciationAssessment'] ?? null;
+        $pronScores = $pronAssessment !== null ? [
+            'accuracy' => (float) ($pronAssessment['AccuracyScore'] ?? 0) / 100 * 10,
+            'fluency' => (float) ($pronAssessment['FluencyScore'] ?? 0) / 100 * 10,
+            'prosody' => (float) ($pronAssessment['ProsodyScore'] ?? 0) / 100 * 10,
+            'overall' => (float) ($pronAssessment['PronScore'] ?? 0) / 100 * 10,
+        ] : null;
+
+        $words = $best['Words'] ?? $data['Words'] ?? [];
+        $wordCount = count($words);
+        $pauseCount = 0;
+        for ($i = 1; $i < $wordCount; $i++) {
+            $prevEnd = ($words[$i - 1]['Offset'] ?? 0) + ($words[$i - 1]['Duration'] ?? 0);
+            $currStart = $words[$i]['Offset'] ?? 0;
+            if (($currStart - $prevEnd) > 50_000) {
+                $pauseCount++;
+            }
+        }
+
+        $speakingRate = $durationMs > 0 ? ($wordCount / ($durationMs / 1000)) * 60 : 0;
+
+        return [
+            'text' => $data['DisplayText'] ?? $best['Display'] ?? '',
+            'confidence' => (float) ($best['Confidence'] ?? 0),
+            'duration_ms' => $durationMs,
+            'word_count' => $wordCount,
+            'pause_count' => $pauseCount,
+            'speaking_rate' => round($speakingRate, 1),
+            'pronunciation' => $pronScores,
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function azureContentTypeCandidates(?string $contentType): array
+    {
+        return array_values(array_unique(array_filter([
+            $this->normalizeMime($contentType),
+            'audio/webm; codecs=opus',
+            'audio/ogg; codecs=opus',
+            'audio/wav; codecs=audio/pcm; samplerate=16000',
+            'audio/wav',
+        ])));
+    }
+
+    private function normalizeMime(?string $contentType): ?string
+    {
+        $mime = strtolower(trim((string) $contentType));
+        if ($mime === '') {
+            return null;
+        }
+
+        if (str_contains($mime, 'm4a') || str_contains($mime, 'mp4')) {
+            return 'audio/mp4';
+        }
+
+        if (str_contains($mime, 'mpeg') || str_contains($mime, 'mp3')) {
+            return 'audio/mpeg';
+        }
+
+        if (str_contains($mime, 'webm')) {
+            return 'audio/webm; codecs=opus';
+        }
+
+        if (str_contains($mime, 'ogg') || str_contains($mime, 'opus')) {
+            return 'audio/ogg; codecs=opus';
+        }
+
+        if (str_contains($mime, 'wav')) {
+            return 'audio/wav';
+        }
+
+        return $mime;
+    }
+
+    private function extensionForMime(string $mime): string
+    {
+        return match (true) {
+            str_contains($mime, 'webm') => 'webm',
+            str_contains($mime, 'ogg') || str_contains($mime, 'opus') => 'ogg',
+            str_contains($mime, 'wav') => 'wav',
+            str_contains($mime, 'mpeg') => 'mp3',
+            default => 'm4a',
+        };
     }
 
     /**
@@ -146,11 +262,25 @@ final class SpeechToTextService implements SpeechToText
         try {
             $content = $storage->getContent($audioKey);
 
-            return $this->transcribe($content);
+            return $this->transcribe($content, 'en-US', $this->mimeFromAudioKey($audioKey));
         } catch (\Throwable $e) {
             Log::error('STT from storage failed', ['key' => $audioKey, 'error' => $e->getMessage()]);
 
             return null;
         }
+    }
+
+    private function mimeFromAudioKey(string $audioKey): ?string
+    {
+        $extension = strtolower(pathinfo(parse_url($audioKey, PHP_URL_PATH) ?: $audioKey, PATHINFO_EXTENSION));
+
+        return match ($extension) {
+            'm4a', 'mp4', 'aac' => 'audio/mp4',
+            'mp3', 'mpeg' => 'audio/mpeg',
+            'ogg', 'opus' => 'audio/ogg',
+            'wav' => 'audio/wav',
+            'webm' => 'audio/webm',
+            default => null,
+        };
     }
 }

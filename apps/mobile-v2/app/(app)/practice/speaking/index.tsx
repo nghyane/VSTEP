@@ -213,7 +213,7 @@ export default function SpeakingListScreen() {
         </View>
       )}
 
-      {!isLoading && (!tasks || tasks.length === 0) && (
+      {!isLoading && !isError && (!tasks || tasks.length === 0) && (
         <MascotEmpty mascot="think" title="Chưa có bài nói" subtitle="Nội dung đang được cập nhật." />
       )}
 

@@ -45,7 +45,7 @@ export default function ExamsScreen() {
   const c = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { data, isLoading } = useExams();
+  const { data, isLoading, isError } = useExams();
   const { data: config } = useAppConfig();
   const activeSession = useActiveExamSession();
   const [search, setSearch] = useState("");
@@ -139,7 +139,15 @@ export default function ExamsScreen() {
         </View>
       ) : null}
 
-      {!isLoading && !showSubmittedSessions && exams.length === 0 ? (
+      {isError && !showSubmittedSessions ? (
+        <View style={styles.loadingWrap}>
+          <Text style={{ color: c.destructive, fontSize: fontSize.sm, textAlign: "center" }}>
+            Không thể tải danh sách đề thi. Kiểm tra kết nối và thử lại.
+          </Text>
+        </View>
+      ) : null}
+
+      {!isLoading && !isError && !showSubmittedSessions && exams.length === 0 ? (
         <MascotEmpty
           mascot="think"
           title="Không tìm thấy đề thi nào"

@@ -35,16 +35,17 @@
       "expo-secure-store",
       "expo-system-ui",
       [
-        "expo-av",
+        "expo-audio",
         {
-          "microphonePermission": "Cho phep VSTEP ghi am bai speaking"
+          "microphonePermission": "Cho phep VSTEP su dung micro de luyen noi va ghi am bai speaking."
         }
       ],
       [
-        "@react-native-voice/voice",
+        "expo-speech-recognition",
         {
-          "microphone": "Cho phép VSTEP sử dụng micro để luyện nói.",
-          "speechRecognition": "Cho phép VSTEP nhận diện giọng nói để luyện nói."
+          "microphonePermission": "Cho phep VSTEP su dung micro de luyen noi.",
+          "speechRecognitionPermission": "Cho phep VSTEP nhan dien giong noi de luyen noi.",
+          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
         }
       ]
     ],

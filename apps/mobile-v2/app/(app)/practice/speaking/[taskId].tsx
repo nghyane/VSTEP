@@ -18,14 +18,15 @@ import * as Haptics from "expo-haptics";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
-import { MascotResult } from "@/components/MascotStates";
 import {
   useSpeakingTaskDetail,
   startSpeakingSession,
   submitSpeakingSession,
-  presignUpload,
   type SpeakingTopic,
 } from "@/hooks/use-practice";
+import { useExpoAudioRecorder } from "@/hooks/use-audio-recorder";
+import { getApiErrorMessage } from "@/lib/api";
+import { uploadSpeakingAudio } from "@/lib/audio-upload";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 const COLOR = "#FFC800";
@@ -75,16 +76,21 @@ export default function SpeakingExerciseScreen() {
           </View>
           <Text style={[s.previewTitle, { color: c.foreground }]}>{detail.title}</Text>
           <Text style={[s.previewMeta, { color: c.subtle }]}>
-            {detail.speakingSeconds}s · {detail.taskType}
+            {detail.speakingSeconds}s Â· {detail.taskType}
           </Text>
-          <Text style={[s.previewNote, { color: c.mutedForeground }]}>Ghi âm câu trả lời · AI chấm phát âm và nội dung</Text>
+          <Text style={[s.previewNote, { color: c.mutedForeground }]}>Ghi Ã¢m cÃ¢u tráº£ lá»i Â· AI cháº¥m phÃ¡t Ã¢m vÃ  ná»™i dung</Text>
           <DepthButton
             onPress={() => startMutation.mutate()}
             disabled={startMutation.isPending}
             style={{ marginTop: spacing.xl, minWidth: 200, backgroundColor: COLOR, borderColor: COLOR }}
           >
-            {startMutation.isPending ? "Đang bắt đầu..." : "Bắt đầu"}
+            {startMutation.isPending ? "Äang báº¯t Ä‘áº§u..." : "Báº¯t Ä‘áº§u"}
           </DepthButton>
+          {startMutation.error ? (
+            <Text style={[s.inlineError, { color: c.destructive }]}>
+              KhÃ´ng thá»ƒ báº¯t Ä‘áº§u bÃ i nÃ³i: {getApiErrorMessage(startMutation.error)}
+            </Text>
+          ) : null}
         </View>
       </View>
     );
@@ -118,16 +124,11 @@ interface RecordScreenProps {
 }
 
 function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordScreenProps) {
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [audioUri, setAudioUri] = useState<string | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [elapsedMs, setElapsedMs] = useState(0);
-  const [submitted, setSubmitted] = useState<string | null>(null);
-  const [score, setScore] = useState(0);
-  const [totalSentences, setTotalSentences] = useState(0);
-  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startRef = useRef<number | null>(null);
   const maxMs = detail.speakingSeconds * 1000;
+  const recorder = useExpoAudioRecorder({ maxMs });
+  const audioUri = recorder.audioUri;
+  const isRecording = recorder.isRecording;
+  const elapsedMs = recorder.elapsedMs;
   const countdown = Math.max(0, detail.speakingSeconds - elapsedMs / 1000);
   const barAnim = useRef(new Animated.Value(0)).current;
 
@@ -144,78 +145,33 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
       barAnim.stopAnimation();
       barAnim.setValue(0);
     }
-  }, [isRecording]);
+  }, [barAnim, isRecording]);
 
-  const startRecording = useCallback(async () => {
-    try {
-      const perm = await Audio.requestPermissionsAsync();
-      if (!perm.granted) {
-        Alert.alert("Không thể ghi âm", "Chưa cấp quyền micro. Vào Cài đặt > VSTEP > Micro để bật.");
-        return;
-      }
-      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
-      const { recording: rec } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY,
-      );
-      setRecording(rec);
-      setIsRecording(true);
-      setElapsedMs(0);
-      startRef.current = Date.now();
-      tickRef.current = setInterval(() => {
-        if (!startRef.current) return;
-        const el = Date.now() - startRef.current;
-        setElapsedMs(el);
-        if (el >= maxMs) stopRecording(rec);
-      }, 100);
-    } catch (e: unknown) {
+  async function startRecording() {
+    submitMutation.reset();
+    const started = await recorder.start();
+    if (!started) {
       Alert.alert(
-        "Không thể ghi âm",
-        `Hãy kiểm tra quyền truy cập micro trong cài đặt thiết bị.\n${e instanceof Error ? e.message : ""}`,
+        "Khong the ghi am",
+        recorder.error ?? "Hay kiem tra quyen truy cap micro trong cai dat thiet bi.",
       );
     }
-  }, [maxMs]);
+  }
 
-  const stopRecording = useCallback(async (rec?: Audio.Recording) => {
-    const r = rec ?? recording;
-    if (!r) return;
-    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
-    await r.stopAndUnloadAsync();
-    await Audio.setAudioModeAsync({ allowsRecordingIOS: false, playsInSilentModeIOS: true });
-    setAudioUri(r.getURI());
-    setIsRecording(false);
-    setRecording(null);
-  }, [recording]);
-
-  useEffect(() => () => { if (tickRef.current) clearInterval(tickRef.current); }, []);
+  const stopRecording = useCallback(async () => {
+    await recorder.stop();
+  }, [recorder]);
 
   // Upload audio to presign URL, then submit
   const submitMutation = useMutation({
     mutationFn: async () => {
       if (!audioUri) throw new Error("No audio file");
 
-      // Step 1: Get presigned upload URL
-      const presign = await presignUpload("speaking");
-
-      // Step 2: Upload raw audio bytes to presigned URL
-      const audioResponse = await fetch(audioUri);
-      const audioBlob = await audioResponse.blob();
-      await fetch(presign.uploadUrl, {
-        method: "PUT",
-        body: audioBlob,
-        headers: { "Content-Type": "audio/mp4" },
-      });
-
-      // Step 3: Submit with audio_key
-      return submitSpeakingSession(sessionId, presign.audioKey, Math.round(elapsedMs / 1000));
+      const { audioKey } = await uploadSpeakingAudio(audioUri, "speaking");
+      return submitSpeakingSession(sessionId, audioKey, Math.max(1, Math.ceil(elapsedMs / 1000)));
     },
     onSuccess: (res) => {
-      setSubmitted(res.submissionId);
-      const allSentences = detail.content?.topics?.reduce(
-        (acc, t) => acc + t.questions.length,
-        0,
-      ) ?? 0;
-      setTotalSentences(allSentences);
-      setScore(0);
+      router.replace(`/(app)/grading/speaking/${res.submissionId}` as never);
     },
   });
 
@@ -224,25 +180,6 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
     await Audio.Sound.createAsync({ uri: audioUri }, { shouldPlay: true });
   }, [audioUri]);
-
-  if (submitted) {
-    return (
-      <View style={[s.root, { backgroundColor: c.background }]}>
-        <View style={[s.topBar, { paddingTop: insets.top + spacing.sm, borderBottomColor: c.borderLight }]}>
-          <HapticTouchable onPress={onBack} style={s.closeBtn}>
-            <Ionicons name="close" size={22} color={c.foreground} />
-          </HapticTouchable>
-          <Text style={[s.topBarTitle, { color: c.foreground }]}>Kết quả luyện nói</Text>
-        </View>
-        <MascotResult
-          score={score}
-          total={totalSentences}
-          onBack={onBack}
-          backLabel="Quay lại"
-        />
-      </View>
-    );
-  }
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>
@@ -260,14 +197,14 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
         {/* Prompt card */}
         <DepthCard style={s.promptCard}>
           <View style={[s.taskTypeBadge, { backgroundColor: COLOR + "25" }]}>
-            <Text style={[s.taskTypeText, { color: COLOR_TEXT }]}>Part {detail.part} · {detail.taskType}</Text>
+            <Text style={[s.taskTypeText, { color: COLOR_TEXT }]}>Part {detail.part} Â· {detail.taskType}</Text>
           </View>
           {detail.content?.topics?.map((topic) => (
             <View key={topic.name} style={s.topicBlock}>
               <Text style={[s.topicName, { color: c.foreground }]}>{topic.name}</Text>
               {topic.questions.map((q) => (
                 <View key={q} style={s.topicQRow}>
-                  <Text style={{ color: COLOR }}>•</Text>
+                  <Text style={{ color: COLOR }}>â€¢</Text>
                   <Text style={[s.topicQ, { color: c.subtle }]}>{q}</Text>
                 </View>
               ))}
@@ -285,7 +222,7 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
         >
           {/* Countdown */}
           <View style={s.countdownRow}>
-            <Text style={[s.countdownLabel, { color: c.mutedForeground }]}>Thời gian còn lại</Text>
+            <Text style={[s.countdownLabel, { color: c.mutedForeground }]}>Thá»i gian cÃ²n láº¡i</Text>
             <Text style={[s.countdown, { color: isRecording && countdown < 10 ? "#FF9B00" : COLOR_TEXT }]}>
               {fmt(countdown)}
             </Text>
@@ -313,7 +250,7 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
                   />
                 ))}
               </View>
-              <Text style={[s.waveHint, { color: c.mutedForeground }]}>Bấm để dừng</Text>
+              <Text style={[s.waveHint, { color: c.mutedForeground }]}>Báº¥m Ä‘á»ƒ dá»«ng</Text>
             </HapticTouchable>
           ) : (
             <View style={s.micBtnWrap}>
@@ -321,33 +258,34 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
                 <>
                   <HapticTouchable onPress={handlePlayback} style={[s.micBtn, { backgroundColor: c.muted, borderBottomColor: "#CACACA" }]}>
                     <Ionicons name="play" size={28} color={c.mutedForeground} />
-                    <Text style={[s.micBtnText, { color: c.mutedForeground }]}>Nghe lại</Text>
+                    <Text style={[s.micBtnText, { color: c.mutedForeground }]}>Nghe láº¡i</Text>
                   </HapticTouchable>
                   <HapticTouchable onPress={startRecording} style={[s.micBtn, { backgroundColor: COLOR, borderBottomColor: COLOR_DARK }]}>
                     <Ionicons name="refresh" size={28} color="#fff" />
-                    <Text style={[s.micBtnText, { color: "#fff" }]}>Ghi âm lại</Text>
+                    <Text style={[s.micBtnText, { color: "#fff" }]}>Ghi Ã¢m láº¡i</Text>
                   </HapticTouchable>
                 </>
               ) : (
                 <HapticTouchable onPress={startRecording} style={[s.micBtn, { backgroundColor: COLOR, borderBottomColor: COLOR_DARK }]}>
                   <Ionicons name="mic" size={28} color="#fff" />
-                  <Text style={[s.micBtnText, { color: "#fff" }]}>Bắt đầu nói</Text>
+                  <Text style={[s.micBtnText, { color: "#fff" }]}>Báº¯t Ä‘áº§u nÃ³i</Text>
                 </HapticTouchable>
               )}
             </View>
           )}
 
           {!isRecording && !audioUri && (
-            <Text style={[s.recHint, { color: c.subtle }]}>Đọc đề bài, chuẩn bị rồi bấm để ghi âm</Text>
+            <Text style={[s.recHint, { color: c.subtle }]}>Äá»c Ä‘á» bÃ i, chuáº©n bá»‹ rá»“i báº¥m Ä‘á»ƒ ghi Ã¢m</Text>
           )}
 
           {audioUri && !isRecording && (
-            <Text style={[s.recHint, { color: c.success }]}>Đã ghi xong — sẵn sàng nộp bài</Text>
+            <Text style={[s.recHint, { color: c.success }]}>ÄÃ£ ghi xong â€” sáºµn sÃ ng ná»™p bÃ i</Text>
           )}
         </DepthCard>
 
         {/* Submit */}
         {audioUri && !isRecording && (
+          <View style={s.submitBlock}>
           <DepthButton
             fullWidth
             disabled={submitMutation.isPending}
@@ -360,12 +298,18 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
             {submitMutation.isPending ? (
               <View style={s.submittingRow}>
                 <ActivityIndicator color="#fff" size="small" />
-                <Text style={[s.micBtnText, { color: "#fff" }]}>Đang upload...</Text>
+                <Text style={[s.micBtnText, { color: "#fff" }]}>Äang upload...</Text>
               </View>
             ) : (
-              "Nộp bài"
+              "Ná»™p bÃ i"
             )}
           </DepthButton>
+          {submitMutation.error ? (
+            <Text style={[s.inlineError, { color: c.destructive }]}>
+              KhÃ´ng thá»ƒ ná»™p bÃ i: {getApiErrorMessage(submitMutation.error)}
+            </Text>
+          ) : null}
+          </View>
         )}
       </ScrollView>
     </View>
@@ -384,6 +328,7 @@ const s = StyleSheet.create({
   previewTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold, textAlign: "center", paddingHorizontal: spacing.xl },
   previewMeta: { fontSize: fontSize.sm, marginTop: spacing.sm },
   previewNote: { fontSize: fontSize.xs, marginTop: spacing.xs, textAlign: "center", paddingHorizontal: spacing.xl },
+  inlineError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, textAlign: "center", marginTop: spacing.sm },
   scroll: { padding: spacing.xl, gap: spacing.lg },
   resultCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.sm },
   resultTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
@@ -417,5 +362,6 @@ const s = StyleSheet.create({
   },
   micBtnText: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
   recHint: { fontSize: fontSize.xs, textAlign: "center" },
+  submitBlock: { gap: spacing.sm },
   submittingRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm },
 });

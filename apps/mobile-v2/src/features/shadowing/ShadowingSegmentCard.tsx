@@ -20,7 +20,7 @@ import type {
   ShadowingSegment,
 } from "@/features/shadowing/types";
 
-type MicState = "idle" | "listening" | "speaking";
+type MicState = "idle" | "listening" | "processing" | "speaking";
 
 interface Props {
   segment: ShadowingSegment;
@@ -28,6 +28,7 @@ interface Props {
   elapsed: number;
   attempt: ShadowingAttemptResult | null;
   emptyWarning: boolean;
+  errorText?: string | null;
   onListen: () => void;
   onRecord: () => void;
 }
@@ -38,6 +39,7 @@ export function ShadowingSegmentCard({
   elapsed,
   attempt,
   emptyWarning,
+  errorText,
   onListen,
   onRecord,
 }: Props) {
@@ -88,12 +90,12 @@ export function ShadowingSegmentCard({
       <View style={s.controlsRow}>
         <HapticTouchable
           onPress={onListen}
-          disabled={mic === "listening"}
+          disabled={mic === "listening" || mic === "processing"}
           style={[
             s.controlBtn,
             {
               backgroundColor: mic === "speaking" ? speakingColor : c.muted,
-              opacity: mic === "listening" ? 0.5 : 1,
+              opacity: mic === "listening" || mic === "processing" ? 0.5 : 1,
             },
           ]}
         >
@@ -114,21 +116,21 @@ export function ShadowingSegmentCard({
 
         <HapticTouchable
           onPress={onRecord}
-          disabled={mic === "speaking"}
+          disabled={mic === "speaking" || mic === "processing"}
           style={[
             s.controlBtn,
             {
               backgroundColor:
-                mic === "listening" ? c.destructive : c.primary,
+                mic === "listening" ? c.destructive : mic === "processing" ? c.info : c.primary,
               opacity: mic === "speaking" ? 0.5 : 1,
             },
           ]}
         >
-          {mic === "listening" ? (
+          {mic === "listening" || mic === "processing" ? (
             <>
               <ActivityIndicator color={c.primaryForeground} size="small" />
               <Text style={[s.controlText, { color: c.primaryForeground }]}>
-                {elapsed}s · Dừng
+                {mic === "processing" ? "Đang chấm..." : `${elapsed}s · Dừng`}
               </Text>
             </>
           ) : (
@@ -145,6 +147,12 @@ export function ShadowingSegmentCard({
       {emptyWarning ? (
         <Text style={[s.warning, { color: c.destructive }]}>
           Không nghe rõ giọng nói. Vui lòng nói lại.
+        </Text>
+      ) : null}
+
+      {errorText ? (
+        <Text style={[s.warning, { color: c.destructive }]}>
+          {errorText}
         </Text>
       ) : null}
 
