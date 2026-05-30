@@ -1,10 +1,13 @@
 import { ArrowLeftOutlined } from "@ant-design/icons"
-import { Link, createFileRoute } from "@tanstack/react-router"
-import { Button, Card, Collapse, Descriptions, Flex, Result, Skeleton, Table, Tag, Typography } from "antd"
 import { useQuery } from "@tanstack/react-query"
-import { rubricDetailQuery } from "#/features/admin-grading/queries"
-import type { Criterion, ScoringPolicy, CapRule } from "#/features/admin-grading/types"
+import { createFileRoute, Link } from "@tanstack/react-router"
+import { Button, Card, Collapse, Descriptions, Flex, Result, Skeleton, Table, Tag, Typography } from "antd"
 import { PageHeader } from "#/components/PageHeader"
+import { rubricDetailQuery } from "#/features/admin-grading/queries"
+import { RubricExplanation } from "#/features/admin-grading/RubricExplanation"
+import type { CapRule, Criterion, ScoringPolicy } from "#/features/admin-grading/types"
+
+const gradingSearch = { page: 1, skill: null, is_active: null }
 
 export const Route = createFileRoute("/_app/grading/$rubricId")({
 	component: RubricDetailPage,
@@ -22,14 +25,18 @@ function RubricDetailPage() {
 				status="404"
 				title="Không tìm thấy tiêu chí"
 				subTitle="Rubric này không tồn tại hoặc chưa được tạo trong hệ thống."
-				extra={<Link to="/grading"><Button type="primary">Quay lại danh sách</Button></Link>}
+				extra={
+					<Link to="/grading" search={gradingSearch}>
+						<Button type="primary">Quay lại danh sách</Button>
+					</Link>
+				}
 			/>
 		)
 	}
 
 	return (
 		<Flex vertical gap={24}>
-			<Link to="/grading">
+			<Link to="/grading" search={gradingSearch}>
 				<Button type="link" icon={<ArrowLeftOutlined />} style={{ paddingLeft: 0 }}>
 					Quay lại
 				</Button>
@@ -37,7 +44,7 @@ function RubricDetailPage() {
 
 			<PageHeader
 				title={rubric.name}
-				description={`${rubric.skill === "writing" ? "Writing" : "Speaking"} — v${rubric.version}`}
+				subtitle={`${rubric.skill === "writing" ? "Writing" : "Speaking"} — v${rubric.version}`}
 			/>
 
 			<Descriptions bordered column={2}>
@@ -55,14 +62,22 @@ function RubricDetailPage() {
 				<Descriptions.Item label="Nguồn tham chiếu">{rubric.source_reference ?? "—"}</Descriptions.Item>
 			</Descriptions>
 
-			<Typography.Title level={4} style={{ margin: 0 }}>Tiêu chí ({rubric.criteria.length})</Typography.Title>
+			<RubricExplanation rubric={rubric} />
+
+			<Typography.Title level={4} style={{ margin: 0 }}>
+				Tiêu chí ({rubric.criteria.length})
+			</Typography.Title>
 			<Collapse
 				items={rubric.criteria.map((c: Criterion) => ({
 					key: c.key,
 					label: (
 						<Flex justify="space-between" align="center" style={{ width: "100%" }}>
-							<span>{c.name_vi ?? c.name} ({c.key})</span>
-							<Typography.Text type="secondary">Max: {c.max_score} — Weight: {c.weight}</Typography.Text>
+							<span>
+								{c.name_vi ?? c.name} ({c.key})
+							</span>
+							<Typography.Text type="secondary">
+								Max: {c.max_score} — Weight: {Math.round(c.weight * 100)}%
+							</Typography.Text>
 						</Flex>
 					),
 					children: <BandDescriptorTable descriptors={c.band_descriptors} />,
@@ -71,9 +86,15 @@ function RubricDetailPage() {
 
 			{rubric.policies && rubric.policies.length > 0 && (
 				<>
-					<Typography.Title level={4} style={{ margin: 0 }}>Scoring Policies ({rubric.policies.length})</Typography.Title>
+					<Typography.Title level={4} style={{ margin: 0 }}>
+						Scoring Policies ({rubric.policies.length})
+					</Typography.Title>
 					{rubric.policies.map((p: ScoringPolicy) => (
-						<Card key={p.id} title={`${p.name} (v${p.version})`} extra={p.is_active ? <Tag color="success">Active</Tag> : <Tag>Inactive</Tag>}>
+						<Card
+							key={p.id}
+							title={`${p.name} (v${p.version})`}
+							extra={p.is_active ? <Tag color="success">Active</Tag> : <Tag>Inactive</Tag>}
+						>
 							<PolicyRules rules={p.rules} />
 						</Card>
 					))}
