@@ -13,7 +13,7 @@ interface Props {
 
 export function WritingResult({ submissionId }: Props) {
 	const { data, isLoading } = useQuery({
-		...writingResultQuery("practice_writing", submissionId),
+		...writingResultQuery(submissionId),
 		refetchInterval: (query) => (query.state.data?.data ? false : 3000),
 	})
 	const result = data?.data

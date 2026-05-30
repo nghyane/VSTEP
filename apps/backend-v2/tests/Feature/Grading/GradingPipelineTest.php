@@ -115,7 +115,7 @@ class GradingPipelineTest extends TestCase
         ])->json('data.access_token');
 
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->getJson("/api/v1/grading/jobs/{$job->id}")
+            ->getJson("/api/v1/grading-jobs/{$job->id}")
             ->assertOk()
             ->assertJsonPath('data.status', 'ready');
     }
@@ -134,7 +134,7 @@ class GradingPipelineTest extends TestCase
         ])->json('data.access_token');
 
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->getJson("/api/v1/grading/jobs/{$job->id}")
+            ->getJson("/api/v1/grading-jobs/{$job->id}")
             ->assertForbidden();
     }
 

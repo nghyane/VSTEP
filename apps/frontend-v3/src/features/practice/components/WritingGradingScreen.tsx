@@ -1,6 +1,7 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useSuspenseQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { Icon } from "#/components/Icon"
+import { appConfigQuery } from "#/features/exam/queries"
 import { FeedbackSection, RewriteSection } from "#/features/grading/components/FeedbackSection"
 import { InsightsSection } from "#/features/grading/components/InsightsSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
@@ -20,12 +21,14 @@ interface Props {
 
 export function WritingGradingScreen({ prompt, submissionId, jobId }: Props) {
 	const poll = useGradingPoll(jobId)
+	const { data: configData } = useSuspenseQuery(appConfigQuery)
 	const feedbackMutation = useMutation({ mutationFn: () => requestWritingFeedback(submissionId) })
 
 	const loading = poll.status === "connecting" || poll.status === "streaming"
 	const failed = poll.status === "failed"
 	const scores = poll.scores
 	const hasFeedback = feedbackMutation.isSuccess || poll.feedbackReady
+	const feedbackCost = configData.data.pricing.practice.feedback_cost_coins
 
 	if (failed) {
 		return (
@@ -64,7 +67,9 @@ export function WritingGradingScreen({ prompt, submissionId, jobId }: Props) {
 		)
 	}
 
-	if (!scores) return null
+	if (!scores) {
+		throw new Error("Missing grading scores after grading completed.")
+	}
 
 	const insights = (scores.annotations?._insights ?? null) as Record<
 		string,
@@ -123,7 +128,8 @@ export function WritingGradingScreen({ prompt, submissionId, jobId }: Props) {
 							<img src="/mascot/lac-happy.png" alt="" className="w-16 h-16 mx-auto object-contain" />
 							<p className="text-sm font-bold text-foreground">Bạn muốn AI đánh giá chi tiết?</p>
 							<p className="text-xs text-subtle">
-								Nhận phân tích chuyên sâu, gợi ý cải thiện và bài viết mẫu.
+								Nhận phân tích chuyên sâu, gợi ý cải thiện và bài viết mẫu
+								{` với ${feedbackCost} xu.`}
 							</p>
 							<button
 								type="button"
@@ -132,7 +138,7 @@ export function WritingGradingScreen({ prompt, submissionId, jobId }: Props) {
 								className="inline-flex items-center gap-2 px-5 py-2.5 rounded-(--radius-button) font-bold text-sm text-white transition-opacity disabled:opacity-50"
 								style={{ backgroundColor: COLOR, boxShadow: `0 4px 0 ${COLOR}80` }}
 							>
-								{feedbackMutation.isPending ? "Đang yêu cầu..." : "Yêu cầu AI đánh giá"}
+								{feedbackMutation.isPending ? "Đang yêu cầu..." : `Yêu cầu AI đánh giá · ${feedbackCost} xu`}
 							</button>
 						</div>
 					)}

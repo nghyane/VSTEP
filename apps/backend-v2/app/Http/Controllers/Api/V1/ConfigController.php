@@ -5,26 +5,33 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\SystemConfig;
+use App\Services\EconomyConfigService;
 use Illuminate\Http\JsonResponse;
 
 final class ConfigController extends Controller
 {
+    public function __construct(
+        private readonly EconomyConfigService $economyConfig,
+    ) {}
+
     public function show(): JsonResponse
     {
-        $fullTestCost = (int) (SystemConfig::get('exam.full_test_cost_coins') ?? 25);
-        $customPerSkillCost = (int) (SystemConfig::get('exam.custom_per_skill_coins') ?? 8);
+        $fullTestCost = $this->economyConfig->examFullTestCost();
+        $customPerSkillCost = $this->economyConfig->examCustomPerSkillCost();
 
         return response()->json([
             'data' => [
                 'wallet' => [
-                    'onboarding_initial_coins' => (int) (SystemConfig::get('onboarding.initial_coins') ?? 0),
+                    'onboarding_initial_coins' => $this->economyConfig->onboardingInitialCoins(),
                 ],
                 'pricing' => [
                     'exam' => [
                         'full_test_cost_coins' => $fullTestCost,
                         'custom_per_skill_coins' => $customPerSkillCost,
                         'max_cost_coins' => $fullTestCost,
+                    ],
+                    'practice' => [
+                        'feedback_cost_coins' => $this->economyConfig->practiceFeedbackCost(),
                     ],
                 ],
             ],

@@ -10,6 +10,9 @@ export interface AppConfig {
 			custom_per_skill_coins: number
 			max_cost_coins: number
 		}
+		practice: {
+			feedback_cost_coins: number
+		}
 	}
 }
 

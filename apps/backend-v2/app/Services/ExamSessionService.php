@@ -17,7 +17,6 @@ use App\Models\ExamVersion;
 use App\Models\ExamWritingSubmission;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
-use App\Models\SystemConfig;
 use App\Services\Grading\GradingService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +32,7 @@ final class ExamSessionService
         private readonly ExamScoringService $scoringService,
         private readonly GradingService $gradingService,
         private readonly ProgressService $progressService,
+        private readonly EconomyConfigService $economyConfig,
     ) {}
 
     /** @return Collection<int,Exam> */
@@ -273,10 +273,10 @@ final class ExamSessionService
     {
         $allSkills = ['listening', 'reading', 'writing', 'speaking'];
         if (count(array_intersect($skills, $allSkills)) === 4) {
-            return (int) (SystemConfig::get('exam.full_test_cost_coins') ?? 25);
+            return $this->economyConfig->examFullTestCost();
         }
-        $perSkill = (int) (SystemConfig::get('exam.custom_per_skill_coins') ?? 8);
-        $fullCost = (int) (SystemConfig::get('exam.full_test_cost_coins') ?? 25);
+        $perSkill = $this->economyConfig->examCustomPerSkillCost();
+        $fullCost = $this->economyConfig->examFullTestCost();
 
         return min($fullCost, $perSkill * count($skills));
     }

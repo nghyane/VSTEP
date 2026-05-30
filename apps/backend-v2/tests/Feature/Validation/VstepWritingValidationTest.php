@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\WritingGradingResult;
 use App\Services\Grading\GradingService;
 use App\Services\RuleBasedScoringService;
+use Database\Seeders\CefrVocabularySeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -34,6 +35,7 @@ final class VstepWritingValidationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->seed(CefrVocabularySeeder::class);
         $this->grading = $this->app->make(GradingService::class);
         $this->metrics = new RuleBasedScoringService;
     }

@@ -107,6 +107,8 @@ export interface RequestFeedbackResponse {
 	status: string
 	channel: string
 	event: string
+	cost_coins: number
+	charged: boolean
 }
 
 export async function requestWritingFeedback(submissionId: string) {

@@ -68,6 +68,7 @@ final class SyntaxAnalyzer
             |\b(?:despite|in\s+spite\s+of)\b
             |\bwhereas\b
             |\bwhile\b(?!.*\?)
+            |\bbecause\b
             |\b(?:so\s+that|in\s+order\s+(?:that|to))\b
             |\b(?:as\s+long\s+as|as\s+soon\s+as|as\s+far\s+as)\b
         ~ix',

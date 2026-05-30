@@ -5,42 +5,24 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\FeedbackJob;
 use App\Models\PracticeWritingSubmission;
-use App\Models\WritingGradingResult;
+use App\Services\PracticeFeedbackService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 /**
- * On-demand AI feedback — costs 1 coin, SSE streamed when ready.
+ * On-demand paid practice writing feedback.
  */
 final class WritingFeedbackController extends Controller
 {
-    public function generate(string $submissionId): JsonResponse
+    public function __construct(
+        private readonly PracticeFeedbackService $service,
+    ) {}
+
+    public function generate(Request $request, PracticeWritingSubmission $submission): JsonResponse
     {
-        $submission = PracticeWritingSubmission::query()->find($submissionId);
-        if ($submission === null) {
-            return response()->json(['message' => 'Submission not found.'], 404);
-        }
-
-        $result = WritingGradingResult::query()
-            ->where('submission_type', 'practice_writing')
-            ->where('submission_id', $submissionId)
-            ->where('is_active', true)
-            ->first();
-
-        if ($result === null) {
-            return response()->json(['message' => 'Submission not graded yet.'], 422);
-        }
-
-        FeedbackJob::dispatch($submissionId);
-
         return response()->json([
-            'data' => [
-                'submission_id' => $submissionId,
-                'status' => 'processing',
-                'channel' => "feedback.{$submissionId}",
-                'event' => 'feedback.completed',
-            ],
+            'data' => $this->service->requestWriting($request->profile(), $submission),
         ], 202);
     }
 }

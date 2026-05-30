@@ -13,7 +13,7 @@ interface Props {
 
 export function SpeakingResult({ submissionId }: Props) {
 	const { data, isLoading } = useQuery({
-		...speakingResultQuery("practice_speaking", submissionId),
+		...speakingResultQuery(submissionId),
 		refetchInterval: (query) => (query.state.data?.data ? false : 3000),
 	})
 	const result = data?.data

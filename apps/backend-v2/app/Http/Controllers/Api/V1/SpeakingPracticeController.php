@@ -16,6 +16,8 @@ use App\Http\Resources\SpeakingSubmissionHistoryResource;
 use App\Http\Resources\SpeakingTaskDetailResource;
 use App\Http\Resources\SpeakingTaskSummaryResource;
 use App\Models\PracticeSession;
+use App\Models\PracticeSpeakingSubmission;
+use App\Services\PracticeGradingResultService;
 use App\Services\PracticeSessionService;
 use App\Services\SpeakingPracticeService;
 use Illuminate\Http\JsonResponse;
@@ -28,6 +30,7 @@ final class SpeakingPracticeController extends Controller
     public function __construct(
         private readonly SpeakingPracticeService $speakingService,
         private readonly PracticeSessionService $sessionService,
+        private readonly PracticeGradingResultService $gradingResultService,
     ) {}
 
     public function listDrills(Request $request): JsonResponse
@@ -74,6 +77,13 @@ final class SpeakingPracticeController extends Controller
         $task = $this->speakingService->getTask($id);
 
         return response()->json(['data' => SpeakingTaskDetailResource::make($task)]);
+    }
+
+    public function result(Request $request, PracticeSpeakingSubmission $submission): JsonResponse
+    {
+        return response()->json(
+            $this->gradingResultService->speaking($request->profile(), $submission),
+        );
     }
 
     public function startDrillSession(StartSessionRequest $request): JsonResponse

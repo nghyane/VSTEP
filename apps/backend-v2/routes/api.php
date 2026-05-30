@@ -8,7 +8,6 @@ use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\CourseController;
 use App\Http\Controllers\Api\V1\ExamController;
 use App\Http\Controllers\Api\V1\FeedbackController;
-use App\Http\Controllers\Api\V1\GradingController;
 use App\Http\Controllers\Api\V1\GradingJobController;
 use App\Http\Controllers\Api\V1\GrammarController;
 use App\Http\Controllers\Api\V1\HealthController;
@@ -105,9 +104,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/practice/writing/prompts', [WritingPracticeController::class, 'listPrompts']);
         Route::get('/practice/writing/prompts/{id}', [WritingPracticeController::class, 'showPrompt']);
         Route::get('/practice/writing/history', [WritingPracticeController::class, 'history']);
+        Route::get('/practice/writing/submissions/{submission}/result', [WritingPracticeController::class, 'result'])->whereUuid('submission');
         Route::post('/practice/writing/sessions', [WritingPracticeController::class, 'startSession']);
         Route::post('/practice/writing/sessions/{practice_session}/submit', [WritingPracticeController::class, 'submit']);
-        Route::post('/practice/writing/submissions/{submissionId}/feedback', [WritingFeedbackController::class, 'generate'])->whereUuid('submissionId');
+        Route::post('/practice/writing/submissions/{submission}/feedback', [WritingFeedbackController::class, 'generate'])->whereUuid('submission');
 
         // Grading SSE stream — single connection for progress + scores + feedback
         Route::get('/grading-jobs/{grading_job}', [GradingJobController::class, 'show'])->whereUuid('grading_job');
@@ -119,11 +119,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/practice/speaking/tasks/{id}', [SpeakingPracticeController::class, 'showTask']);
         Route::get('/practice/speaking/drill-history', [SpeakingPracticeController::class, 'drillHistory']);
         Route::get('/practice/speaking/vstep-history', [SpeakingPracticeController::class, 'vstepHistory']);
+        Route::get('/practice/speaking/submissions/{submission}/result', [SpeakingPracticeController::class, 'result'])->whereUuid('submission');
         Route::post('/practice/speaking/drill-sessions', [SpeakingPracticeController::class, 'startDrillSession']);
         Route::post('/practice/speaking/vstep-sessions', [SpeakingPracticeController::class, 'startVstepSession']);
         Route::post('/practice/speaking/drill-sessions/{practice_session}/attempt', [SpeakingPracticeController::class, 'drillAttempt']);
         Route::post('/practice/speaking/vstep-sessions/{practice_session}/submit', [SpeakingPracticeController::class, 'submitVstep']);
-        Route::post('/practice/speaking/submissions/{practice_speaking_submission}/feedback', [SpeakingFeedbackController::class, 'generate']);
+        Route::post('/practice/speaking/submissions/{submission}/feedback', [SpeakingFeedbackController::class, 'generate'])->whereUuid('submission');
 
         // Practice Speaking — conversation roleplay.
         Route::get('/practice/speaking/scenarios', [SpeakingConversationController::class, 'listScenarios']);
@@ -158,17 +159,6 @@ Route::prefix('v1')->group(function () {
         Route::get('/exam-sessions/{exam_session}/listening-played', [ExamController::class, 'listeningPlaySummary']);
         Route::get('/exam-sessions/{exam_session}/writing-results', [ExamController::class, 'writingResults']);
         Route::get('/exam-sessions/{exam_session}/speaking-results', [ExamController::class, 'speakingResults']);
-
-        // Grading.
-        Route::get('/grading/jobs/{grading_job}', [GradingController::class, 'showJob']);
-        Route::get('/grading/jobs/{grading_job}/status', [GradingController::class, 'jobStatus']);
-        Route::get('/grading/jobs/{grading_job}/stream', [GradingController::class, 'stream']);
-        Route::get('/grading/writing/{submissionType}/{submissionId}', [GradingController::class, 'writingResult'])
-            ->whereIn('submissionType', ['practice_writing', 'exam_writing'])
-            ->whereUuid('submissionId');
-        Route::get('/grading/speaking/{submissionType}/{submissionId}', [GradingController::class, 'speakingResult'])
-            ->whereIn('submissionType', ['practice_speaking', 'exam_speaking'])
-            ->whereUuid('submissionId');
 
         // Audio presigned URLs (R2).
         Route::post('/audio/presign-upload', [AudioController::class, 'presignUpload']);

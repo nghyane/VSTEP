@@ -2,22 +2,22 @@ import { queryOptions } from "@tanstack/react-query"
 import type { RubricMeta, SpeakingGradingResult, WritingGradingResult } from "#/features/grading/types"
 import { type ApiResponse, api } from "#/lib/api"
 
-/** Load writing result by submission — used for history/rubric display. */
-export const writingResultQuery = (submissionType: string, submissionId: string) =>
+/** Load practice writing result by submission — used for history/rubric display. */
+export const writingResultQuery = (submissionId: string) =>
 	queryOptions({
-		queryKey: ["grading", "writing", submissionType, submissionId],
+		queryKey: ["practice", "writing", "result", submissionId],
 		queryFn: () =>
 			api
-				.get(`grading/writing/${submissionType}/${submissionId}`)
+				.get(`practice/writing/submissions/${submissionId}/result`)
 				.json<ApiResponse<WritingGradingResult | null> & { rubric?: RubricMeta }>(),
 	})
 
-/** Load speaking result by submission — used for history/rubric display. */
-export const speakingResultQuery = (submissionType: string, submissionId: string) =>
+/** Load practice speaking result by submission — used for history/rubric display. */
+export const speakingResultQuery = (submissionId: string) =>
 	queryOptions({
-		queryKey: ["grading", "speaking", submissionType, submissionId],
+		queryKey: ["practice", "speaking", "result", submissionId],
 		queryFn: () =>
 			api
-				.get(`grading/speaking/${submissionType}/${submissionId}`)
+				.get(`practice/speaking/submissions/${submissionId}/result`)
 				.json<ApiResponse<SpeakingGradingResult | null> & { rubric?: RubricMeta }>(),
 	})
