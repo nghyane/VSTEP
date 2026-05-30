@@ -8,7 +8,7 @@ export interface ExamDraft {
   skillIdx: number;
   mcqAnswers: Record<string, number>;
   writingAnswers: Record<string, string>;
-  speakingMarks: Record<string, string>;
+  speakingMarks: Record<string, string | { audioUrl: string; durationSeconds: number }>;
   savedAt: string;
 }
 

@@ -10,6 +10,7 @@
 // behavior, adapted to React Native primitives (expo-speech for TTS, mobile
 // useSpeechToText hook for STT).
 import { useCallback, useEffect, useReducer, useRef } from "react";
+import { Alert } from "react-native";
 import * as Speech from "expo-speech";
 
 import { useSpeechToText } from "@/hooks/useSpeechToText";
@@ -78,6 +79,7 @@ export function useShadowingSession(lesson: ShadowingLessonDetail) {
   // ── STT ──
   const segmentRef = useRef(segment);
   segmentRef.current = segment;
+  const lastSttErrorRef = useRef<string | null>(null);
 
   const stt = useSpeechToText({
     maxSeconds: 30,
@@ -109,6 +111,11 @@ export function useShadowingSession(lesson: ShadowingLessonDetail) {
     },
     onEnd: () => {
       dispatch({ type: "mic", state: "idle" });
+    },
+    onError: (message) => {
+      if (lastSttErrorRef.current === message) return;
+      lastSttErrorRef.current = message;
+      Alert.alert("Chưa thể dùng micro", message);
     },
   });
 
@@ -177,6 +184,7 @@ export function useShadowingSession(lesson: ShadowingLessonDetail) {
     if (state.mic !== "idle") return;
     Speech.stop();
     dispatch({ type: "empty-warning", value: false });
+    lastSttErrorRef.current = null;
     dispatch({ type: "mic", state: "listening" });
     const started = await stt.start();
     if (!started) dispatch({ type: "mic", state: "idle" });

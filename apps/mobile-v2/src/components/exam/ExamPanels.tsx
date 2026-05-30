@@ -3,7 +3,6 @@ import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View 
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import { resolvePlayableAudioUrl } from "@/lib/asset-url";
-import { HighlightablePassage } from "@/components/HighlightablePassage";
 import { useLogListeningPlayed } from "@/hooks/use-exam-session";
 import { useThemeColors, spacing, radius, fontSize, fontFamily, colors as themeColors } from "@/theme";
 import type { ExamVersionMcqItem, ExamVersionListeningSection, ExamVersionReadingPassage, ExamVersionWritingTask } from "@/types/api";
@@ -32,6 +31,7 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [playing, setPlaying] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [audioRetry, setAudioRetry] = useState(0);
   const [ready, setReady] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const shouldAutoPlayRef = useRef(false);
@@ -65,7 +65,13 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
       try {
         const audioUrl = await resolvePlayableAudioUrl(section.audioUrl);
         if (cancelled) return;
-        await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        });
         const { sound: loaded } = await Audio.Sound.createAsync(
           { uri: audioUrl },
           { shouldPlay: false },
@@ -89,30 +95,42 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
           logSectionPlayed(sectionId);
           await loaded.playAsync();
         }
-      } catch {
+      } catch (error) {
+        if (__DEV__) {
+          console.warn("Exam listening audio load failed", { audioUrl: section.audioUrl, error });
+        }
         setSound(null);
         setPlaying(false);
-        setAudioError(`Không tải được audio. Vui lòng thử lại hoặc báo lỗi nếu audio bị khóa quyền.`);
+        setAudioError("Không tải được audio. Vui lòng thử lại.");
       }
     })();
     return () => {
       cancelled = true;
       snd?.unloadAsync().catch(() => undefined);
     };
-  }, [section?.audioUrl, section?.id, sectionInPartIdx, activeGroup?.sections.length]);
+  }, [section?.audioUrl, section?.id, sectionInPartIdx, activeGroup?.sections.length, audioRetry]);
 
   async function togglePlay() {
     if (!sound || !section) return;
     try {
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
       if (playing) await sound.pauseAsync();
       else {
         logSectionPlayed(section.id);
         await sound.playAsync();
       }
     } catch (e: unknown) {
+      if (__DEV__) {
+        console.warn("Exam listening playback failed", e);
+      }
       setPlaying(false);
-      setAudioError(`Không phát được audio: ${e instanceof Error ? e.message : String(e)}`);
+      setAudioError("Không phát được audio. Vui lòng thử lại.");
     }
   }
 
@@ -144,20 +162,24 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
             const total = group.sections.reduce((sum, sec) => sum + sec.items.length, 0);
             return (
             <TouchableOpacity key={group.part} onPress={() => setPartIdx(i)} style={[s.sectionTab, { borderBottomColor: i === partIdx ? color : "transparent" }]}>
-              <Text style={[s.sectionTabText, { color: i === partIdx ? color : c.mutedForeground }]}>Part {group.part} · {answered}/{total}</Text>
+              <Text style={[s.sectionTabText, { color: i === partIdx ? color : c.mutedForeground }]}>Part {group.part} - {answered}/{total}</Text>
             </TouchableOpacity>
             );
           })}
         </ScrollView>
       )}
       <View style={[s.audioCard, { backgroundColor: c.card, borderColor: c.border }]}>
-        <Text style={[s.audioPartLabel, { color }]}>Part {activeGroup.part} · {section.partTitle}</Text>
+        <Text style={[s.audioPartLabel, { color }]}>Part {activeGroup.part} - {section.partTitle}</Text>
         {activeGroup.sections.length > 1 ? (
           <Text style={[s.audioSubText, { color: c.mutedForeground }]}>Audio {sectionInPartIdx + 1}/{activeGroup.sections.length}</Text>
         ) : null}
-        <TouchableOpacity onPress={togglePlay} disabled={!sound || !!audioError} style={[s.playBtn, { backgroundColor: audioError ? c.mutedForeground : color }]}>
-          <Ionicons name={playing ? "pause" : "play"} size={22} color="#fff" />
-          <Text style={s.playBtnText}>{playing ? "Tạm dừng" : "Phát audio"}</Text>
+        <TouchableOpacity
+          onPress={audioError ? () => setAudioRetry((v) => v + 1) : togglePlay}
+          disabled={!sound && !audioError}
+          style={[s.playBtn, { backgroundColor: audioError ? c.mutedForeground : color }]}
+        >
+          <Ionicons name={audioError ? "refresh" : playing ? "pause" : "play"} size={22} color="#fff" />
+          <Text style={s.playBtnText}>{audioError ? "Thử lại" : playing ? "Tạm dừng" : "Phát audio"}</Text>
         </TouchableOpacity>
         {audioError && <Text style={[s.audioError, { color: c.destructive }]}>{audioError}</Text>}
       </View>
@@ -255,8 +277,8 @@ export function ReadingPanel({ passages, answers, onAnswer, c, insets }: Reading
       <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]}>
         {showPassage ? (
           <View style={[s.passageCard, { backgroundColor: c.card, borderColor: c.border }]}>
-            <Text style={[s.passageTitle, { color }]}>Part {passage.part} · {passage.title}</Text>
-            <HighlightablePassage text={passage.passage} passageId={passage.id} />
+            <Text style={[s.passageTitle, { color }]}>Part {passage.part} - {passage.title}</Text>
+            <PlainPassage text={passage.passage} c={c} />
           </View>
         ) : (
           passage.items.map((item, qi) => (
@@ -264,6 +286,20 @@ export function ReadingPanel({ passages, answers, onAnswer, c, insets }: Reading
           ))
         )}
       </ScrollView>
+    </View>
+  );
+}
+
+function PlainPassage({ text, c }: { text: string; c: ReturnType<typeof useThemeColors> }) {
+  const paragraphs = text.split(/\n{2,}/).map((part) => part.trim()).filter(Boolean);
+
+  return (
+    <View style={s.passageTextBlock}>
+      {paragraphs.map((paragraph, index) => (
+        <Text key={`${index}-${paragraph.slice(0, 16)}`} style={[s.passageParagraph, { color: c.foreground }]}>
+          {paragraph}
+        </Text>
+      ))}
     </View>
   );
 }
@@ -378,6 +414,8 @@ const s = StyleSheet.create({
   readyButtonText: { fontSize: fontSize.sm, fontFamily: fontFamily.extraBold, textTransform: "uppercase" },
   passageCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
   passageTitle: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
+  passageTextBlock: { gap: spacing.md },
+  passageParagraph: { fontSize: fontSize.base, lineHeight: 26 },
   promptCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
   promptLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
   promptText: { fontSize: fontSize.sm, lineHeight: 22 },

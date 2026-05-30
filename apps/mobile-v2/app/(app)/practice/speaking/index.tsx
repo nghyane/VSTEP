@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,19 +8,24 @@ import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { LevelFilters, type Level } from "@/components/LevelFilters";
 import { MascotEmpty } from "@/components/MascotStates";
-import { StatusFilters, type StatusFilter } from "@/components/StatusFilters";
+import { STATUS_OPTIONS, StatusFilters, type StatusFilter } from "@/components/StatusFilters";
+import { useShadowingProgress } from "@/features/shadowing/use-shadowing-progress";
 import {
+  type SpeakingConversationScenario,
+  type SpeakingDrill,
   useSpeakingConversationHistory,
   useSpeakingConversationScenarios,
-  useSpeakingTasks,
+  useSpeakingDrills,
 } from "@/hooks/use-practice";
-import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
+
+const ALL = STATUS_OPTIONS[0];
+const NOT_STARTED = STATUS_OPTIONS[1];
+const IN_PROGRESS = STATUS_OPTIONS[2];
 
 function chunkPairs<T>(arr: T[]): T[][] {
   const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += 2) {
-    result.push(arr.slice(i, i + 2));
-  }
+  for (let i = 0; i < arr.length; i += 2) result.push(arr.slice(i, i + 2));
   return result;
 }
 
@@ -27,34 +33,47 @@ export default function SpeakingListScreen() {
   const c = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const speakingColor = c.skillSpeaking;
-  const speakingText = c.coinDark;
-  const { data: tasks, isLoading, isError } = useSpeakingTasks();
-  const { data: scenarios, isLoading: scenariosLoading } = useSpeakingConversationScenarios();
+
+  const { data: drills, isLoading: drillsLoading, isError: drillsError } = useSpeakingDrills();
+  const { data: progress } = useShadowingProgress();
+  const { data: scenarios, isLoading: scenariosLoading, isError: scenariosError } = useSpeakingConversationScenarios();
   const { data: history } = useSpeakingConversationHistory();
 
   const [level, setLevel] = useState<Level | null>(null);
-  const [status, setStatus] = useState<StatusFilter>("Tất cả");
+  const [status, setStatus] = useState<StatusFilter>(ALL);
 
-  // Build a set of completed scenario IDs to drive the status filter.
   const completedScenarios = useMemo(() => {
     const set = new Set<string>();
     for (const item of history ?? []) set.add(item.scenario.id);
     return set;
   }, [history]);
 
-  // Apply both level + status filters to the AI roleplay list.
-  const filteredScenarios = useMemo(() => {
-    if (!scenarios) return scenarios;
-    return scenarios.filter((sc) => {
-      if (level && sc.level.toUpperCase() !== level) return false;
-      if (status === "Tất cả") return true;
-      const done = completedScenarios.has(sc.id);
-      if (status === "Chưa làm") return !done;
-      if (status === "Đang làm") return false; // conversation doesn't expose in-progress state
-      return done; // Hoàn thành
+  const filteredDrills = useMemo(() => {
+    return (drills ?? []).filter((drill) => {
+      if (level && drill.level.toUpperCase() !== level) return false;
+      if (status === ALL) return true;
+
+      const doneCount = new Set((progress?.[drill.id] ?? []).map((item) => item.segmentIndex)).size;
+      const pct = drill.segmentCount > 0 ? Math.round((doneCount / drill.segmentCount) * 100) : 0;
+      if (status === NOT_STARTED) return doneCount === 0;
+      if (status === IN_PROGRESS) return doneCount > 0 && pct < 100;
+      return pct >= 100;
     });
-  }, [scenarios, level, status, completedScenarios]);
+  }, [drills, level, progress, status]);
+
+  const filteredScenarios = useMemo(() => {
+    return (scenarios ?? []).filter((scenario) => {
+      if (level && scenario.level.toUpperCase() !== level) return false;
+      if (status === ALL) return true;
+      const done = completedScenarios.has(scenario.id);
+      if (status === NOT_STARTED) return !done;
+      if (status === IN_PROGRESS) return false;
+      return done;
+    });
+  }, [completedScenarios, level, scenarios, status]);
+
+  const loading = drillsLoading || scenariosLoading;
+  const hasData = filteredDrills.length > 0 || filteredScenarios.length > 0;
 
   return (
     <ScrollView
@@ -63,162 +82,200 @@ export default function SpeakingListScreen() {
       showsVerticalScrollIndicator={false}
     >
       <HapticTouchable onPress={() => router.back()} style={s.backRow}>
-        <Ionicons name="arrow-back" size={20} color={c.foreground} />
-        <Text style={[s.backText, { color: c.foreground }]}>Luyện tập</Text>
+        <Ionicons name="arrow-back" size={22} color={c.foreground} />
+        <Text style={[s.backText, { color: c.foreground }]}>Nói</Text>
       </HapticTouchable>
 
-      <View>
-        <Text style={[s.title, { color: c.foreground }]}>Luyện nói</Text>
-        <Text style={[s.sub, { color: c.mutedForeground }]}>Roleplay, shadowing và VSTEP Speaking trên mobile</Text>
+      <View style={s.header}>
+        <Text style={[s.subtitle, { color: c.mutedForeground }]}>3 phần · ghi âm + AI đánh giá phát âm</Text>
       </View>
 
-      <View style={s.quickActions}>
-        <View style={[s.quickCardWrapper, { backgroundColor: c.card, borderColor: c.border }]}>
-          <HapticTouchable
-            scalePress
-            onPress={() => router.push("/(app)/practice/speaking/shadowing" as never)}
-          >
-            <View style={s.quickCardInner}>
-              <Ionicons name="volume-high-outline" size={18} color={speakingColor} />
-              <View style={s.quickCopy}>
-                <Text style={[s.quickText, { color: c.foreground }]}>Shadowing</Text>
-                <Text style={[s.quickSub, { color: c.mutedForeground }]}>Nghe - nhắc lại - check độ khớp</Text>
-              </View>
-            </View>
-          </HapticTouchable>
-        </View>
-        <View style={[s.quickCardWrapper, { backgroundColor: c.card, borderColor: c.border }]}>
-          <HapticTouchable
-            scalePress
-            onPress={() => router.push("/(app)/practice/speaking/history" as never)}
-          >
-            <View style={s.quickCardInner}>
-              <Ionicons name="time-outline" size={18} color={speakingColor} />
-              <View style={s.quickCopy}>
-                <Text style={[s.quickText, { color: c.foreground }]}>Lịch sử</Text>
-                <Text style={[s.quickSub, { color: c.mutedForeground }]}>Drill và VSTEP đã nộp</Text>
-              </View>
-            </View>
-          </HapticTouchable>
-        </View>
+      <View style={s.filters}>
+        <LevelFilters level={level} onLevelChange={setLevel} />
+        <StatusFilters status={status} onStatusChange={setStatus} />
       </View>
 
-      <View>
-        <Text style={[s.sectionLabel, { color: c.subtle }]}>AI ROLEPLAY</Text>
-        <View style={s.filtersStack}>
-          <LevelFilters level={level} onLevelChange={setLevel} />
-          <StatusFilters status={status} onStatusChange={setStatus} />
-        </View>
-        {scenariosLoading && <ActivityIndicator color={speakingColor} style={s.inlineLoader} />}
-        {!scenariosLoading && filteredScenarios && filteredScenarios.length > 0 && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.scenarioRow}>
-            {filteredScenarios.map((scenario) => (
-              <View key={scenario.id} style={[s.scenarioCard, { backgroundColor: c.card, borderColor: c.border }]}>
-                <HapticTouchable
-                  scalePress
-                  onPress={() => router.push(`/(app)/practice/speaking/conversation/${scenario.id}` as never)}
-                >
-                <View style={s.scenarioInner}>
-                <View style={[s.avatar, { backgroundColor: c.coinTint }]}>
-                  <Ionicons name="chatbubbles-outline" size={20} color={speakingText} />
-                </View>
-                <Text style={[s.scenarioTitle, { color: c.foreground }]} numberOfLines={2}>{scenario.title}</Text>
-                <Text style={[s.scenarioMeta, { color: c.mutedForeground }]} numberOfLines={1}>
-                  {scenario.characterName} · {scenario.level}
-                </Text>
-                <Text style={[s.scenarioDesc, { color: c.subtle }]} numberOfLines={2}>
-                  {scenario.description ?? "Luyện phản xạ hội thoại với AI."}
-                </Text>
-                {completedScenarios.has(scenario.id) ? (
-                  <View style={[s.doneBadge, { backgroundColor: c.primaryTint }]}>
-                    <Text style={[s.doneBadgeText, { color: c.primaryDark }]}>Đã luyện</Text>
-                  </View>
-                ) : null}
-              </View>
-              </HapticTouchable>
-            </View>
-            ))}
-          </ScrollView>
-        )}
-        {!scenariosLoading && (!filteredScenarios || filteredScenarios.length === 0) && (
-          <View style={[s.emptyStrip, { backgroundColor: c.card, borderColor: c.border }]}>
-            <Text style={[s.emptyText, { color: c.mutedForeground }]}>
-              {scenarios && scenarios.length > 0
-                ? "Không có bài nào phù hợp với bộ lọc."
-                : "Chưa có kịch bản roleplay từ server."}
-            </Text>
-          </View>
-        )}
-      </View>
+      <SpeakingSection
+        title="Shadowing"
+        description="Nghe và nhại theo từng câu. AI đánh giá độ chính xác từng từ."
+        loading={drillsLoading}
+        error={drillsError}
+      >
+        <CardGrid
+          items={filteredDrills}
+          render={(drill) => {
+            const doneCount = new Set((progress?.[drill.id] ?? []).map((item) => item.segmentIndex)).size;
+            const total = drill.segmentCount;
+            const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+            const progressLabel = doneCount > 0 ? `${doneCount}/${total}` : null;
+            return (
+              <DrillCard
+                key={drill.id}
+                drill={drill}
+                progressLabel={progressLabel}
+                completed={pct >= 100}
+                onPress={() => router.push(`/(app)/practice/speaking/shadowing/${drill.id}` as never)}
+              />
+            );
+          }}
+        />
+      </SpeakingSection>
 
-      <View style={[s.wideAction, { backgroundColor: c.card, borderColor: c.border }]}>
-        <HapticTouchable
-          scalePress
-          onPress={() => router.push("/(app)/practice/speaking/drills" as never)}
-        >
-          <View style={s.wideActionInner}>
-          <View style={[s.actionIcon, { backgroundColor: c.coinTint }]}>
-            <Ionicons name="flash-outline" size={20} color={speakingText} />
-          </View>
-          <View style={s.quickCopy}>
-            <Text style={[s.quickText, { color: c.foreground }]}>Speaking Drills</Text>
-            <Text style={[s.quickSub, { color: c.mutedForeground }]}>Shadowing và dictation theo câu ngắn, có chấm điểm</Text>
-          </View>
-        </View>
-      </HapticTouchable>
-      </View>
+      <SpeakingSection
+        title="Hội thoại AI"
+        description="Roleplay với nhân vật AI. AI phản hồi tự nhiên và chấm từng lượt nói."
+        loading={scenariosLoading}
+        error={scenariosError}
+      >
+        <CardGrid
+          items={filteredScenarios}
+          render={(scenario) => (
+            <ScenarioCard
+              key={scenario.id}
+              scenario={scenario}
+              completed={completedScenarios.has(scenario.id)}
+              onPress={() => router.push(`/(app)/practice/speaking/conversation/${scenario.id}` as never)}
+            />
+          )}
+        />
+      </SpeakingSection>
 
-      {isLoading && (
-        <View style={s.center}><ActivityIndicator color={speakingColor} size="large" /></View>
-      )}
-
-      {isError && (
-        <View style={s.center}>
-          <Text style={[s.errorText, { color: c.destructive }]}>Không thể tải dữ liệu. Kiểm tra kết nối và thử lại.</Text>
-        </View>
-      )}
-
-      {!isLoading && tasks && tasks.length > 0 && (
-        <View>
-          <Text style={[s.sectionLabel, { color: c.subtle }]}>VSTEP SPEAKING</Text>
-          <View style={s.cardGrid}>
-            {chunkPairs(tasks).map((pair, rowIdx) => (
-              <View key={rowIdx} style={s.cardRow}>
-                {pair.map((task) => (
-                  <View key={task.id} style={s.cardWrapper}>
-                    <HapticTouchable
-                      scalePress
-                      onPress={() => router.push(`/(app)/practice/speaking/${task.id}` as never)}
-                      style={s.cardTouchable}
-                    >
-                      <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.border }]}>
-                        <View style={[s.partBadge, { backgroundColor: c.coinTint }]}>
-                          <Text style={[s.partBadgeText, { color: speakingText }]}>Part {task.part}</Text>
-                        </View>
-                        <Text style={[s.cardTitle, { color: c.foreground }]} numberOfLines={3}>{task.title}</Text>
-                        <View style={s.cardMeta}>
-                          <Ionicons name="mic-outline" size={12} color={speakingColor} />
-                          <Text style={[s.cardMetaText, { color: c.mutedForeground }]}>
-                            {task.speakingSeconds}s · {task.taskType}
-                          </Text>
-                        </View>
-                      </View>
-                    </HapticTouchable>
-                  </View>
-                ))}
-                {pair.length === 1 && <View style={s.cardWrapper} />}
-              </View>
-            ))}
-          </View>
-        </View>
-      )}
-
-      {!isLoading && !isError && (!tasks || tasks.length === 0) && (
+      {!loading && !hasData ? (
         <MascotEmpty mascot="think" title="Chưa có bài nói" subtitle="Nội dung đang được cập nhật." />
-      )}
+      ) : null}
 
       <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
+  );
+}
+
+function SpeakingSection({
+  title,
+  description,
+  loading,
+  error,
+  children,
+}: {
+  title: string;
+  description: string;
+  loading: boolean;
+  error: boolean;
+  children: ReactNode;
+}) {
+  const c = useThemeColors();
+
+  return (
+    <View style={s.section}>
+      <Text style={[s.sectionTitle, { color: c.foreground }]}>{title}</Text>
+      <Text style={[s.sectionDesc, { color: c.mutedForeground }]}>{description}</Text>
+      {loading ? <ActivityIndicator color={c.skillSpeaking} style={s.loader} /> : null}
+      {error ? (
+        <View style={[s.emptyStrip, { backgroundColor: c.card, borderColor: c.border }]}>
+          <Text style={[s.emptyText, { color: c.destructive }]}>Không thể tải dữ liệu. Vui lòng thử lại.</Text>
+        </View>
+      ) : null}
+      {!loading && !error ? children : null}
+    </View>
+  );
+}
+
+function CardGrid<T>({ items, render }: { items: T[]; render: (item: T) => ReactNode }) {
+  const c = useThemeColors();
+  if (items.length === 0) {
+    return (
+      <View style={[s.emptyStrip, { backgroundColor: c.card, borderColor: c.border }]}>
+        <Text style={[s.emptyText, { color: c.mutedForeground }]}>Không có bài nào phù hợp với bộ lọc.</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={s.cardGrid}>
+      {chunkPairs(items).map((pair, idx) => (
+        <View key={idx} style={s.cardRow}>
+          {pair.map((item) => render(item))}
+          {pair.length === 1 ? <View style={s.cardWrapper} /> : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function DrillCard({
+  drill,
+  progressLabel,
+  completed,
+  onPress,
+}: {
+  drill: SpeakingDrill;
+  progressLabel: string | null;
+  completed: boolean;
+  onPress: () => void;
+}) {
+  const c = useThemeColors();
+  return (
+    <View style={s.cardWrapper}>
+      <HapticTouchable scalePress onPress={onPress} style={s.cardTouchable}>
+        <View style={[s.card, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={s.cardTop}>
+            <Text style={[s.cardTitle, { color: c.foreground }]} numberOfLines={2}>{drill.title}</Text>
+            <LevelBadge level={drill.level} />
+          </View>
+          <Text style={[s.cardMeta, { color: c.mutedForeground }]} numberOfLines={1}>
+            {drill.segmentCount} đoạn · {drill.estimatedMinutes ?? "?"} phút
+          </Text>
+          {progressLabel ? (
+            <Text style={[s.progressText, { color: completed ? c.success : c.info }]}>{progressLabel}</Text>
+          ) : null}
+        </View>
+      </HapticTouchable>
+    </View>
+  );
+}
+
+function ScenarioCard({
+  scenario,
+  completed,
+  onPress,
+}: {
+  scenario: SpeakingConversationScenario;
+  completed: boolean;
+  onPress: () => void;
+}) {
+  const c = useThemeColors();
+  return (
+    <View style={s.cardWrapper}>
+      <HapticTouchable scalePress onPress={onPress} style={s.cardTouchable}>
+        <View style={[s.card, { backgroundColor: c.card, borderColor: c.border }]}>
+          <View style={s.cardTop}>
+            <Text style={[s.cardTitle, { color: c.foreground }]} numberOfLines={2}>{scenario.title}</Text>
+            <LevelBadge level={scenario.level} />
+          </View>
+          <Text style={[s.cardMeta, { color: c.mutedForeground }]} numberOfLines={1}>
+            {scenario.characterName} · {scenario.estimatedMinutes ?? "?"} phút
+          </Text>
+          <Text style={[s.cardDesc, { color: c.subtle }]} numberOfLines={3}>
+            {scenario.description ?? "Luyện phản xạ hội thoại với AI."}
+          </Text>
+          {completed ? (
+            <View style={[s.doneBadge, { backgroundColor: c.primaryTint }]}>
+              <Text style={[s.doneBadgeText, { color: c.primaryDark }]}>Đã luyện</Text>
+            </View>
+          ) : null}
+        </View>
+      </HapticTouchable>
+    </View>
+  );
+}
+
+function LevelBadge({ level }: { level: string }) {
+  const c = useThemeColors();
+  const upper = level.toUpperCase();
+  const color = upper === "A2" ? c.info : upper === "B1" || upper === "B2" ? c.warning : c.success;
+  return (
+    <View style={[s.levelBadge, { backgroundColor: color + "22", borderColor: color }]}>
+      <Text style={[s.levelText, { color }]}>{upper}</Text>
+    </View>
   );
 }
 
@@ -226,54 +283,40 @@ const s = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: spacing.xl, gap: spacing.lg, paddingBottom: spacing["3xl"] },
   backRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  backText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
-  sub: { fontSize: fontSize.sm, marginTop: spacing.xs },
-  center: { paddingVertical: spacing["2xl"], alignItems: "center" },
-  quickActions: { flexDirection: "row", gap: spacing.sm },
-  quickCard: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.md },
-  quickCardWrapper: { flex: 1, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, overflow: "hidden" },
-  quickCardInner: { flexDirection: "row", alignItems: "center", gap: spacing.sm, padding: spacing.md },
-  wideAction: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, overflow: "hidden" },
-  wideActionInner: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md },
-  quickCopy: { flex: 1, gap: 2 },
-  quickText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
-  quickSub: { fontSize: 11, lineHeight: 15 },
-  inlineLoader: { alignSelf: "flex-start", marginVertical: spacing.md },
-  sectionLabel: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1, marginBottom: spacing.md },
-  scenarioRow: { gap: spacing.md, paddingRight: spacing.xl },
-  scenarioCard: { width: 220, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, overflow: "hidden" },
-  scenarioInner: { padding: spacing.base, gap: spacing.sm },
-  avatar: { width: 40, height: 40, borderRadius: radius.full, alignItems: "center", justifyContent: "center" },
-  scenarioTitle: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold, lineHeight: 21 },
-  scenarioMeta: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
-  scenarioDesc: { fontSize: fontSize.xs, lineHeight: 17 },
-  emptyStrip: { borderWidth: 2, borderRadius: radius.lg, padding: spacing.base },
-  emptyText: { fontSize: fontSize.sm, textAlign: "center" },
-  filtersStack: { gap: spacing.sm, marginBottom: spacing.md },
-  doneBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-  },
-  doneBadgeText: { fontSize: 10, fontFamily: fontFamily.bold },
-  actionIcon: { width: 44, height: 44, borderRadius: radius.full, alignItems: "center", justifyContent: "center" },
-  errorText: { fontSize: 14, textAlign: "center" },
+  backText: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
+  header: { gap: spacing.xs },
+  subtitle: { fontSize: fontSize.sm, lineHeight: 20 },
+  filters: { gap: spacing.sm },
+  section: { gap: spacing.sm },
+  sectionTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
+  sectionDesc: { fontSize: fontSize.sm, lineHeight: 20, marginBottom: spacing.xs },
+  loader: { alignSelf: "flex-start", marginVertical: spacing.md },
   cardGrid: { gap: spacing.md },
   cardRow: { flexDirection: "row", gap: spacing.md },
-  cardWrapper: { flex: 1 },
+  cardWrapper: { flex: 1, minWidth: 0 },
   cardTouchable: { flex: 1 },
   card: {
-    flex: 1,
-    borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg,
-    padding: spacing.base, gap: spacing.sm,
-    shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06, shadowRadius: 4, elevation: 3,
+    minHeight: 116,
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.lg,
+    padding: spacing.base,
+    gap: spacing.sm,
   },
-  partBadge: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
-  partBadgeText: { fontSize: 10, fontFamily: fontFamily.extraBold },
-  cardTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.bold, lineHeight: 20 },
-  cardMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
-  cardMetaText: { fontSize: fontSize.xs },
+  cardTop: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
+  cardTitle: { flex: 1, fontSize: fontSize.sm, fontFamily: fontFamily.extraBold, lineHeight: 20 },
+  cardMeta: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
+  cardDesc: { fontSize: fontSize.xs, lineHeight: 18 },
+  progressText: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
+  levelBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    borderWidth: 1,
+  },
+  levelText: { fontSize: 10, fontFamily: fontFamily.extraBold },
+  doneBadge: { alignSelf: "flex-start", paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
+  doneBadgeText: { fontSize: 10, fontFamily: fontFamily.bold },
+  emptyStrip: { borderWidth: 2, borderRadius: radius.lg, padding: spacing.base },
+  emptyText: { fontSize: fontSize.sm, textAlign: "center" },
 });

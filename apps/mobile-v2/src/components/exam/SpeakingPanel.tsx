@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import { DepthButton } from "@/components/DepthButton";
@@ -28,12 +28,13 @@ interface SpeakingPanelProps {
 export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClearSpeakingAnswer, onBusyChange, c, insets }: SpeakingPanelProps) {
   const [partIdx, setPartIdx] = useState(0);
   const part = parts[partIdx];
-  const maxMs = part.durationMinutes * 60 * 1000;
+  const maxSeconds = Math.max(1, (part?.durationMinutes ?? 1) * 60);
+  const maxMs = maxSeconds * 1000;
   const {
     audioUri,
     elapsedMs,
     error: recorderError,
-    isRecording: isRec,
+    isRecording,
     reset: resetRecorder,
     setAudioUri,
     start: startRecorder,
@@ -42,13 +43,12 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
   const soundRef = useRef<Audio.Sound | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [recError, setRecError] = useState<string | null>(null);
   const [recordedSeconds, setRecordedSeconds] = useState(0);
   const accentColor = themeColors.light.skillSpeaking;
   const accentDark = themeColors.light.skillSpeaking + "CC";
-  const isBusy = isRec || uploading;
+  const isBusy = isRecording || uploading;
   const elapsedSeconds = Math.floor(elapsedMs / 1000);
-  const progressPct = Math.min(100, Math.round((elapsedSeconds / part.durationMinutes * 60) * 100));
+  const progressPct = Math.min(100, Math.round((elapsedSeconds / maxSeconds) * 100));
 
   useEffect(() => {
     onBusyChange(isBusy);
@@ -60,7 +60,6 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
     soundRef.current?.unloadAsync().catch(() => undefined);
     soundRef.current = null;
     setIsPlaying(false);
-    setRecError(null);
     setRecordedSeconds(0);
   }, [partIdx, resetRecorder]);
 
@@ -68,25 +67,31 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
     soundRef.current?.unloadAsync().catch(() => undefined);
   }, []);
 
+  const showRecordingNotice = useCallback((message: string) => {
+    Alert.alert("Không thể ghi âm", message);
+  }, []);
+
   async function startRec() {
-    setRecError(null);
     const started = await startRecorder();
     if (!started) {
-      setRecError(recorderError ?? "Khong the khoi tao ghi am.");
+      if (__DEV__ && recorderError) {
+        console.warn("Exam speaking recorder failed", recorderError);
+      }
+      showRecordingNotice("Thiết bị hoặc bản chạy hiện tại chưa hỗ trợ ghi âm. Hãy thử lại trong development build.");
     }
   }
 
   const stopRec = useCallback(async () => {
+    const duration = Math.max(1, Math.round((elapsedMs || 1000) / 1000));
     const uri = await stopRecorder();
-    const duration = Math.max(1, Math.round(elapsedMs / 1000));
     if (!uri) {
-      setRecError("Ghi am that bai, khong co file.");
+      showRecordingNotice("Không tạo được file ghi âm. Hãy thử ghi lại.");
       setRecordedSeconds(0);
       return;
     }
     setAudioUri(uri);
     setRecordedSeconds(duration);
-  }, [elapsedMs, setAudioUri, stopRecorder]);
+  }, [elapsedMs, setAudioUri, showRecordingNotice, stopRecorder]);
 
   async function uploadAudio(): Promise<string | null> {
     if (!audioUri) return null;
@@ -94,7 +99,10 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
     try {
       const { audioKey } = await uploadSpeakingAudio(audioUri, "exam_speaking");
       return audioKey;
-    } catch {
+    } catch (error) {
+      if (__DEV__) {
+        console.warn("Exam speaking upload failed", error);
+      }
       return null;
     } finally {
       setUploading(false);
@@ -104,10 +112,10 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
   async function handleConfirmRecord() {
     const audioKey = await uploadAudio();
     if (!audioKey) {
-      setRecError("Táº£i lÃªn tháº¥t báº¡i. Vui lÃ²ng thá»­ láº¡i.");
+      Alert.alert("Chưa lưu được ghi âm", "Vui lòng kiểm tra mạng và thử lại.");
       return;
     }
-    const duration = recordedSeconds || Math.max(1, Math.round(elapsedMs / 1000));
+    const duration = recordedSeconds || Math.max(1, Math.round((elapsedMs || 1000) / 1000));
     const answer: SpeakingAnswer = { partId: part.id, audioUrl: audioKey, durationSeconds: duration };
     onSetSpeakingAnswer(part.id, answer);
     onDone(part.id);
@@ -118,15 +126,26 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
     try {
       await soundRef.current?.unloadAsync().catch(() => undefined);
       soundRef.current = null;
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false,
+      });
       const { sound: newSound } = await Audio.Sound.createAsync(
         { uri: audioUri },
         { shouldPlay: true },
-        (status) => { if (status.isLoaded) setIsPlaying(status.isPlaying); },
+        (status) => {
+          if (status.isLoaded) setIsPlaying(status.isPlaying);
+        },
       );
       soundRef.current = newSound;
-    } catch (e: unknown) {
-      setRecError(`KhÃ´ng phÃ¡t Ä‘Æ°á»£c: ${e instanceof Error ? e.message : String(e)}`);
+    } catch (error) {
+      if (__DEV__) {
+        console.warn("Exam speaking playback failed", error);
+      }
+      Alert.alert("Không phát được ghi âm", "Vui lòng thử ghi lại.");
     }
   }
 
@@ -135,10 +154,11 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
     soundRef.current = null;
     setIsPlaying(false);
     void resetRecorder();
-    setRecError(null);
     setRecordedSeconds(0);
     onClearSpeakingAnswer(part.id);
   }
+
+  if (!part) return null;
 
   const hasRecording = done.has(part.id);
 
@@ -158,58 +178,67 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
           ))}
         </ScrollView>
       )}
+
       <View style={[s.promptCard, { backgroundColor: c.card, borderColor: c.border }]}>
-        <Text style={[s.promptLabel, { color: accentDark }]}>Part {part.part} Â· {part.type}</Text>
-        <Text style={[s.promptMeta, { color: c.mutedForeground }]}>{part.durationMinutes} phÃºt Â· Ghi Ã¢m cÃ¢u tráº£ lá»i</Text>
+        <Text style={[s.promptLabel, { color: accentDark }]}>Part {part.part} - {part.type}</Text>
+        <Text style={[s.promptMeta, { color: c.mutedForeground }]}>{part.durationMinutes} phút - Ghi âm câu trả lời</Text>
       </View>
-      <View style={[s.recCard, { backgroundColor: c.card, borderColor: isRec ? accentColor : c.border }]}>
-        <View style={[s.recStatusPill, { backgroundColor: isRec ? c.destructiveTint : uploading ? c.infoTint : hasRecording ? c.primaryTint : c.coinTint }]}>
+
+      <View style={[s.recCard, { backgroundColor: c.card, borderColor: isRecording ? accentColor : c.border }]}>
+        <View style={[s.recStatusPill, { backgroundColor: isRecording ? c.destructiveTint : uploading ? c.infoTint : hasRecording ? c.primaryTint : c.coinTint }]}>
           <Ionicons
-            name={isRec ? "radio-button-on" : uploading ? "cloud-upload-outline" : hasRecording ? "checkmark-circle" : audioUri ? "play-circle-outline" : "mic-outline"}
+            name={isRecording ? "radio-button-on" : uploading ? "cloud-upload-outline" : hasRecording ? "checkmark-circle" : audioUri ? "play-circle-outline" : "mic-outline"}
             size={15}
-            color={isRec ? c.destructive : uploading ? c.info : hasRecording ? c.primary : accentDark}
+            color={isRecording ? c.destructive : uploading ? c.info : hasRecording ? c.primary : accentDark}
           />
-          <Text style={[s.recStatusText, { color: isRec ? c.destructive : uploading ? c.info : hasRecording ? c.primaryDark : accentDark }]}>
-            {isRec ? "Äang ghi Ã¢m" : uploading ? "Äang táº£i lÃªn" : hasRecording ? "ÄÃ£ lÆ°u cÃ¢u tráº£ lá»i" : audioUri ? "Sáºµn sÃ ng xÃ¡c nháº­n" : "Sáºµn sÃ ng ghi"}
+          <Text style={[s.recStatusText, { color: isRecording ? c.destructive : uploading ? c.info : hasRecording ? c.primaryDark : accentDark }]}>
+            {isRecording ? "Đang ghi âm" : uploading ? "Đang tải lên" : hasRecording ? "Đã lưu câu trả lời" : audioUri ? "Sẵn sàng xác nhận" : "Sẵn sàng ghi"}
           </Text>
         </View>
-        {!audioUri && !hasRecording && (
+
+        {!audioUri && !hasRecording ? (
           <>
-            {isRec && (
+            {isRecording ? (
               <View style={s.recTimerBlock}>
                 <Text style={[s.timerText, { color: accentDark }]}>
-                  {elapsedSeconds}s / {part.durationMinutes * 60}s
+                  {elapsedSeconds}s / {maxSeconds}s
                 </Text>
                 <View style={[s.recProgressTrack, { backgroundColor: c.borderLight }]}>
                   <View style={[s.recProgressFill, { width: `${progressPct}%`, backgroundColor: accentColor }]} />
                 </View>
               </View>
-            )}
-            <DepthButton onPress={isRec ? stopRec : startRec} disabled={uploading}>
-              {isRec ? "Dá»«ng ghi Ã¢m" : "Báº¯t Ä‘áº§u nÃ³i"}
+            ) : null}
+            <DepthButton onPress={isRecording ? stopRec : startRec} disabled={uploading}>
+              {isRecording ? "Dừng ghi âm" : "Bắt đầu nói"}
             </DepthButton>
           </>
-        )}
-        {audioUri && !hasRecording && (
+        ) : null}
+
+        {audioUri && !hasRecording ? (
           <>
             <DepthButton variant="secondary" onPress={handlePlayback} disabled={isPlaying || uploading}>
-              {isPlaying ? "Äang phÃ¡t..." : "Nghe láº¡i"}
+              {isPlaying ? "Đang phát..." : "Nghe lại"}
             </DepthButton>
             <DepthButton variant="secondary" onPress={handleRerecord} disabled={uploading}>
-              Ghi Ã¢m láº¡i
+              Ghi âm lại
             </DepthButton>
             <DepthButton onPress={handleConfirmRecord} disabled={uploading}>
-              {uploading ? "Äang táº£i lÃªn..." : "XÃ¡c nháº­n & tiáº¿p"}
+              {uploading ? "Đang tải lên..." : "Xác nhận & tiếp"}
             </DepthButton>
           </>
-        )}
-        {hasRecording && (
-          <View style={s.doneRow}>
-            <Ionicons name="checkmark-circle" size={16} color={c.primary} />
-            <Text style={[s.doneText, { color: c.primaryDark }]}>ÄÃ£ ghi Ã¢m Â· {recordedSeconds || part.durationMinutes * 60}s</Text>
-          </View>
-        )}
-        {recError && <Text style={[s.errorText, { color: c.destructive }]}>{recError}</Text>}
+        ) : null}
+
+        {hasRecording ? (
+          <>
+            <View style={s.doneRow}>
+              <Ionicons name="checkmark-circle" size={16} color={c.primary} />
+              <Text style={[s.doneText, { color: c.primaryDark }]}>Đã ghi âm - {recordedSeconds || maxSeconds}s</Text>
+            </View>
+            <DepthButton variant="secondary" onPress={handleRerecord} disabled={uploading}>
+              Ghi lại phần này
+            </DepthButton>
+          </>
+        ) : null}
       </View>
     </ScrollView>
   );
@@ -233,5 +262,4 @@ const s = StyleSheet.create({
   timerText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   doneRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
   doneText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  errorText: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, textAlign: "center" },
 });

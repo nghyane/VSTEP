@@ -94,8 +94,18 @@ export default function SpeakingConversationScreen() {
       speechToText.stop();
       return;
     }
+    if (speechToText.isAvailable === false) {
+      Alert.alert(
+        "Chua the dung micro",
+        speechToText.error ?? "Nhan dien giong noi can development build. Expo Go chua ho tro tinh nang nay.",
+      );
+      return;
+    }
     if (speechToText.state === "idle") {
-      await speechToText.start();
+      const started = await speechToText.start();
+      if (!started && speechToText.error) {
+        Alert.alert("Chua the dung micro", speechToText.error);
+      }
     }
   };
 
@@ -314,10 +324,9 @@ export default function SpeakingConversationScreen() {
                 onPress={handleMicPress}
                 disabled={
                   conv.isSubmitting ||
-                  speechToText.isAvailable === false ||
                   speechToText.isAvailable === null
                 }
-                style={[s.micLargeBtn, { backgroundColor: c.surface, borderColor: c.border, borderBottomColor: "#CACACA", opacity: conv.isSubmitting || speechToText.isAvailable === false ? 0.5 : 1 }]}
+                style={[s.micLargeBtn, { backgroundColor: c.surface, borderColor: c.border, borderBottomColor: "#CACACA", opacity: conv.isSubmitting ? 0.5 : 1 }]}
               >
                 {speechToText.isAvailable === null ? (
                   <ActivityIndicator size="small" color={c.skillSpeaking} />
@@ -342,7 +351,7 @@ export default function SpeakingConversationScreen() {
                         : "Nhấn để nói"}
             </Text>
 
-            {speechToText.error && (
+            {speechToText.error && speechToText.state !== "unavailable" && (
               <Text style={[s.sttError, { color: c.destructive }]}>{speechToText.error}</Text>
             )}
           </View>

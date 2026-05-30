@@ -51,10 +51,16 @@ final class ExamScoringService
         $mcqAnswers = $session->relationLoaded('mcqAnswers')
             ? $session->mcqAnswers
             : ExamMcqAnswer::query()->where('session_id', $session->id)->get(['is_correct', 'item_ref_type']);
+        $itemMap = $this->loadMcqItemMap($session);
+        $skills = $session->selected_skills ?? [];
 
         return [
-            'listening' => $this->mcqBandFromCollection($mcqAnswers, 'exam_listening_item'),
-            'reading' => $this->mcqBandFromCollection($mcqAnswers, 'exam_reading_item'),
+            'listening' => in_array('listening', $skills, true)
+                ? $this->mcqBandFromCollection($mcqAnswers, 'exam_listening_item', $this->countMcqItems($itemMap, 'exam_listening_item'))
+                : null,
+            'reading' => in_array('reading', $skills, true)
+                ? $this->mcqBandFromCollection($mcqAnswers, 'exam_reading_item', $this->countMcqItems($itemMap, 'exam_reading_item'))
+                : null,
             'writing' => $this->writingComposite($session),
             'speaking' => $this->speakingBand($session),
         ];
@@ -62,18 +68,28 @@ final class ExamScoringService
 
     /**
      * Compute MCQ band from a pre-loaded collection, filtered by item_ref_type.
+     * Unanswered items stay in the denominator, matching submit() scoring.
      */
-    private function mcqBandFromCollection(Collection $answers, string $itemRefType): ?float
+    private function mcqBandFromCollection(Collection $answers, string $itemRefType, int $total): ?float
     {
-        $filtered = $answers->where('item_ref_type', $itemRefType);
-
-        if ($filtered->isEmpty()) {
+        if ($total <= 0) {
             return null;
         }
 
-        $correct = $filtered->where('is_correct', true)->count();
+        $correct = $answers
+            ->where('item_ref_type', $itemRefType)
+            ->where('is_correct', true)
+            ->count();
 
-        return round($correct / $filtered->count() * 10, 1);
+        return round($correct / $total * 10, 1);
+    }
+
+    /** @param array<string,int> $itemMap */
+    private function countMcqItems(array $itemMap, string $itemRefType): int
+    {
+        $prefix = "{$itemRefType}:";
+
+        return count(array_filter(array_keys($itemMap), fn (string $key) => str_starts_with($key, $prefix)));
     }
 
     /**

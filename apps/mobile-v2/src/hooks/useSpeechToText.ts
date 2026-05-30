@@ -98,9 +98,9 @@ function errorMessage(error: unknown): string {
 function speechErrorMessage(event: ExpoSpeechRecognitionErrorEvent): string {
   switch (event.error) {
     case "not-allowed":
-      return "Chua cap quyen micro / nhan dien giong noi. Vao Cai dat > VSTEP de bat.";
+      return "Chua cap quyen micro hoac nhan dien giong noi. Hay bat trong Cai dat.";
     case "service-not-allowed":
-      return "Thiet bi chua co dich vu nhan dien giong noi. Hay cai/cap nhat Google app hoac thu lai tren development build.";
+      return "Thiet bi chua co dich vu nhan dien giong noi. Hay thu lai tren development build.";
     case "language-not-supported":
       return "Ngon ngu nhan dien giong noi chua kha dung tren thiet bi nay.";
     case "no-speech":
@@ -109,6 +109,8 @@ function speechErrorMessage(event: ExpoSpeechRecognitionErrorEvent): string {
       return event.message || "Khong nhan dien duoc giong noi. Vui long thu lai.";
   }
 }
+
+const UNAVAILABLE_MESSAGE = "Nhan dien giong noi can development build. Expo Go chua ho tro tinh nang nay.";
 
 export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
   const { maxSeconds = 30, language = "en-US", onResult, onEnd, onError } = options;
@@ -180,7 +182,7 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
     if (!speechModule) {
       syncState("unavailable");
       setIsAvailable(false);
-      setError("Tính năng nhận diện giọng nói chưa có trong build hiện tại. Hãy dùng development build / rebuild app.");
+      setError(null);
       return;
     }
 
@@ -257,7 +259,7 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
 
     try {
       if (!speechModule) {
-        const message = "Tính năng nhận diện giọng nói chưa có trong build hiện tại. Hãy dùng development build / rebuild app.";
+        const message = UNAVAILABLE_MESSAGE;
         setIsAvailable(false);
         finishWithError(message, true);
         return false;
@@ -272,7 +274,7 @@ export function useSpeechToText(options: UseSpeechToTextOptions = {}) {
 
       const permission = await speechModule.requestPermissionsAsync();
       if (!permission.granted) {
-        const message = "Chua cap quyen micro / nhan dien giong noi. Vao Cai dat > VSTEP de bat.";
+        const message = "Chua cap quyen micro hoac nhan dien giong noi. Hay bat trong Cai dat.";
         setIsAvailable(false);
         finishWithError(message);
         return false;

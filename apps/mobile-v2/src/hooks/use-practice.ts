@@ -72,10 +72,20 @@ export interface WritingPromptDetail {
   prompt: string; minWords: number; maxWords: number;
   requiredPoints: string[]; sentenceStarters: string[];
   keywords: string[]; sampleAnswer: string | null;
-  sampleMarkers: { criterion: string; band: number; description: string }[];
+  sampleMarkers: WritingSampleMarker[];
   outlineSections: WritingOutlineSection[];
   templateSections: WritingTemplateSection[];
   estimatedMinutes: number | null;
+}
+
+export interface WritingSampleMarker {
+  id: string;
+  match: string;
+  occurrence: number;
+  side: string;
+  color: "yellow" | "blue" | "pink" | string;
+  label: string;
+  detail: string | null;
 }
 
 export interface WritingHistoryItem {
