@@ -23,6 +23,8 @@ export interface TTSPlayer {
   toggle: () => void;
 }
 
+const SPEAKER_RE = /^([A-Z][A-Za-z\s]+):\s*/;
+
 /** Estimate ms per word: ~150 wpm at rate 1.0 → ~400ms/word */
 function msPerWord(rate: number): number {
   return 400 / rate;
@@ -60,15 +62,37 @@ function findWordAtChar(
   return globalStart;
 }
 
-/** Parse transcript into sentence turns for monologue listening */
-function parseTranscript(transcript: string): Turn[] {
-  const sentences = transcript.split(/(?<=[.!?])\s+|\n+/).filter((s) => s.trim());
+/** Parse transcript into dialogue turns and strip speaker names from spoken text. */
+function parseDialogue(transcript: string): Turn[] {
+  const rawLines = transcript
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
   const turns: Turn[] = [];
+  let lastSpeaker = "";
 
-  for (const s of sentences) {
-    const text = s.trim();
-    if (!text) continue;
-    turns.push({ speaker: "", text, globalWordStart: 0, globalWordEnd: 0 });
+  for (const line of rawLines) {
+    const match = SPEAKER_RE.exec(line);
+    if (match) {
+      const speaker = match[1].trim();
+      const text = line.slice(match[0].length).trim();
+      if (text) {
+        turns.push({ speaker, text, globalWordStart: 0, globalWordEnd: 0 });
+        lastSpeaker = speaker;
+      }
+    } else if (turns.length > 0 && lastSpeaker) {
+      turns[turns.length - 1].text += ` ${line}`;
+    } else {
+      turns.push({ speaker: "", text: line, globalWordStart: 0, globalWordEnd: 0 });
+    }
+  }
+
+  if (turns.length <= 1 && turns.every((turn) => !turn.speaker)) {
+    const sentences = transcript.split(/(?<=[.!?])\s+|\n+/).filter((sentence) => sentence.trim());
+    turns.length = 0;
+    for (const sentence of sentences) {
+      turns.push({ speaker: "", text: sentence.trim(), globalWordStart: 0, globalWordEnd: 0 });
+    }
   }
 
   let wordCount = 0;
@@ -90,7 +114,7 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
   const cancelledRef = useRef(false);
   const wordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const turns = useMemo(() => (transcript ? parseTranscript(transcript) : []), [transcript]);
+  const turns = useMemo(() => (transcript ? parseDialogue(transcript) : []), [transcript]);
   const totalWords = turns.length > 0 ? turns[turns.length - 1].globalWordEnd + 1 : 0;
 
   const clearWordTimer = useCallback(() => {
@@ -156,9 +180,10 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
           if (cancelledRef.current) return;
           clearWordTimer();
           setActiveWordIndex(turn.globalWordEnd);
+          const delay = turns.some((item) => item.speaker) ? 600 : 400;
           setTimeout(() => {
             if (!cancelledRef.current) speakTurn(turnIdx + 1);
-          }, 400);
+          }, delay);
         },
         onStopped: () => {
           if (!cancelledRef.current) {
