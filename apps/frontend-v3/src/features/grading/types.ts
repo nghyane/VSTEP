@@ -1,12 +1,28 @@
 export interface Improvement {
 	message: string
-	explanation: string
+	explanation?: string
 }
 
 export interface Rewrite {
 	original: string
 	improved: string
-	reason: string
+	reason?: string
+}
+
+export interface CriterionScore {
+	key: string
+	score: number
+	weight: number
+	evidence_used?: unknown
+	trace?: unknown
+}
+
+export interface AssessmentFeedback {
+	strengths?: string[]
+	improvements?: Array<Improvement | string>
+	warnings?: string[]
+	evidenceNotes?: string[]
+	rewrites?: Array<Rewrite | string>
 }
 
 export interface InsightsEntry {
@@ -15,37 +31,28 @@ export interface InsightsEntry {
 }
 
 export interface WritingGradingResult {
-	id: string
-	rubric_scores: Record<string, number>
+	id?: string
+	criterion_scores: CriterionScore[]
 	overall_band: number
-	strengths: string[]
-	improvements: Improvement[]
-	rewrites: Rewrite[]
-	annotations: { _insights?: Record<string, InsightsEntry> } | null
-	created_at: string
+	feedback: AssessmentFeedback | null
+	annotations?: { _insights?: Record<string, InsightsEntry> } | null
+	created_at?: string
 }
 
 export interface SpeakingGradingResult {
-	id: string
-	rubric_scores: {
-		fluency: number
-		pronunciation: number
-		content: number
-		vocab: number
-		grammar: number
-	}
+	id?: string
+	criterion_scores: CriterionScore[]
 	overall_band: number
-	strengths: string[]
-	improvements: Improvement[]
-	pronunciation_report: { accuracy_score: number; insights?: Record<string, InsightsEntry> } | null
-	transcript: string | null
-	created_at: string
+	feedback: AssessmentFeedback | null
+	pronunciation_report?: { accuracy_score: number; insights?: Record<string, InsightsEntry> } | null
+	transcript?: string | null
+	created_at?: string
 }
 
 export interface RubricCriteriaMeta {
 	key: string
 	label: string
-	max: number
+	max?: number
 }
 
 export interface RubricMeta {

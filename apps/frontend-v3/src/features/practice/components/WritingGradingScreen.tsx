@@ -71,10 +71,17 @@ export function WritingGradingScreen({ prompt, submissionId, jobId }: Props) {
 		throw new Error("Missing grading scores after grading completed.")
 	}
 
-	const insights = (scores.annotations?._insights ?? null) as Record<
-		string,
-		{ label: string; detail: string }
-	> | null
+	const criterionScores = Object.fromEntries(
+		scores.criterion_scores.map((criterion) => [criterion.key, criterion.score]),
+	)
+	const insights = scores.feedback?.evidenceNotes?.length
+		? Object.fromEntries(
+				scores.feedback.evidenceNotes.map((note, index) => [
+					`note_${index}`,
+					{ label: `Nhận xét ${index + 1}`, detail: note },
+				]),
+			)
+		: null
 	const rubricCriteria = [
 		{ key: "grammar", label: "Ngữ pháp", max: 10 },
 		{ key: "vocabulary", label: "Từ vựng", max: 10 },
@@ -105,22 +112,31 @@ export function WritingGradingScreen({ prompt, submissionId, jobId }: Props) {
 
 					<div className="card p-6 space-y-3">
 						<p className="text-xs font-bold uppercase tracking-wide text-subtle mb-2">Rubric</p>
-						{Object.entries(scores.rubric_scores).map(([key, score]) => (
-							<RubricBar key={key} label={label(key)} score={score} max={max(key)} color={COLOR} />
+						{scores.criterion_scores.map((criterion) => (
+							<RubricBar
+								key={criterion.key}
+								label={label(criterion.key)}
+								score={criterion.score}
+								max={max(criterion.key)}
+								color={COLOR}
+							/>
 						))}
 					</div>
 
 					{insights && Object.keys(insights).length > 0 && (
-						<InsightsSection insights={insights} scores={scores.rubric_scores} color={COLOR} />
+						<InsightsSection insights={insights} scores={criterionScores} color={COLOR} />
 					)}
 
 					{hasFeedback ? (
 						<>
 							<div className="card p-6">
-								<FeedbackSection strengths={[]} improvements={[]} />
+								<FeedbackSection
+									strengths={scores.feedback?.strengths ?? []}
+									improvements={scores.feedback?.improvements ?? scores.feedback?.evidenceNotes ?? []}
+								/>
 							</div>
 							<div className="card p-6">
-								<RewriteSection rewrites={[]} />
+								<RewriteSection rewrites={scores.feedback?.rewrites ?? []} />
 							</div>
 						</>
 					) : (

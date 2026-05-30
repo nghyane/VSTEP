@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
+import type { AssessmentFeedback, CriterionScore } from "#/features/grading/types"
 import { type ApiResponse, api } from "#/lib/api"
 
 export interface GradingProgress {
@@ -9,7 +10,9 @@ export interface GradingProgress {
 
 export interface GradingScores {
 	overall_band: number
-	rubric_scores: Record<string, number>
+	criterion_scores: CriterionScore[]
+	feedback?: AssessmentFeedback | null
+	caps_applied?: unknown
 	annotations?: Record<string, unknown>
 	pronunciation_report?: Record<string, unknown>
 	transcript?: string
@@ -17,7 +20,7 @@ export interface GradingScores {
 
 interface GradingJobData {
 	status: string
-	progress: GradingProgress[]
+	progress: GradingProgress[] | GradingProgress
 	scores?: GradingScores
 	feedback_ready?: boolean
 	error?: string
@@ -67,17 +70,18 @@ export function useGradingPoll(jobId: string | null) {
 			}
 
 			try {
-				const res = await api.get(`grading-jobs/${jobId}`).json<ApiResponse<GradingJobData>>()
+				const res = await api.get(`assessment-jobs/${jobId}`).json<ApiResponse<GradingJobData>>()
 
 				const { status: jobStatus, progress, scores, feedback_ready, error } = res.data
+				const progressEntries = Array.isArray(progress) ? progress : [progress]
 
-				progressRef.current = progress
+				progressRef.current = progressEntries
 				setState((s) => ({
 					...s,
 					status: jobStatus === "failed" ? "failed" : "streaming",
-					progress,
+					progress: progressEntries,
 					scores: scores ?? s.scores,
-					feedbackReady: feedback_ready ?? false,
+					feedbackReady: feedback_ready ?? Boolean(scores?.feedback),
 					error: error ?? null,
 				}))
 

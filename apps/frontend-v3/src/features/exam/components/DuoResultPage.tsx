@@ -138,23 +138,28 @@ function WritingDetail({ section, rubric }: { section: WritingSection; rubric?: 
 	const meta = (rubric ?? []) as RubricCriteriaMeta[]
 	return (
 		<div className="space-y-4">
-			{section.rubricScores && (
+			{section.criterionScores && (
 				<div className="space-y-2">
-					{Object.entries(section.rubricScores).map(([key, score]) => (
+					{section.criterionScores.map((criterion) => (
 						<RubricBar
-							key={key}
-							label={meta.find((c) => c.key === key)?.label ?? key}
-							score={score}
-							max={meta.find((c) => c.key === key)?.max ?? 10}
+							key={criterion.key}
+							label={meta.find((c) => c.key === criterion.key)?.label ?? criterion.key}
+							score={criterion.score}
+							max={meta.find((c) => c.key === criterion.key)?.max ?? 10}
 							color="var(--color-skill-writing)"
 						/>
 					))}
 				</div>
 			)}
-			{(section.strengths || section.improvements) && (
-				<FeedbackSection strengths={section.strengths ?? []} improvements={section.improvements ?? []} />
+			{section.feedback && (
+				<FeedbackSection
+					strengths={section.feedback.strengths ?? []}
+					improvements={section.feedback.improvements ?? section.feedback.evidenceNotes ?? []}
+				/>
 			)}
-			{section.rewrites && section.rewrites.length > 0 && <RewriteSection rewrites={section.rewrites} />}
+			{section.feedback?.rewrites && section.feedback.rewrites.length > 0 && (
+				<RewriteSection rewrites={section.feedback.rewrites} />
+			)}
 			{section.text && (
 				<div className="mt-3 rounded-lg border-2 border-border bg-background p-3">
 					<p className="mb-1 text-[10px] font-bold uppercase text-subtle">Bài làm ({section.wordCount} từ)</p>
@@ -180,21 +185,24 @@ function SpeakingDetail({ section, rubric }: { section: SpeakingSection; rubric?
 					<p className="text-sm leading-relaxed text-foreground">{section.transcript}</p>
 				</div>
 			)}
-			{section.rubricScores && (
+			{section.criterionScores && (
 				<div className="space-y-2">
-					{Object.entries(section.rubricScores).map(([key, score]) => (
+					{section.criterionScores.map((criterion) => (
 						<RubricBar
-							key={key}
-							label={meta.find((c) => c.key === key)?.label ?? key}
-							score={score}
-							max={meta.find((c) => c.key === key)?.max ?? 10}
+							key={criterion.key}
+							label={meta.find((c) => c.key === criterion.key)?.label ?? criterion.key}
+							score={criterion.score}
+							max={meta.find((c) => c.key === criterion.key)?.max ?? 10}
 							color="var(--color-skill-speaking)"
 						/>
 					))}
 				</div>
 			)}
-			{(section.strengths || section.improvements) && (
-				<FeedbackSection strengths={section.strengths ?? []} improvements={section.improvements ?? []} />
+			{section.feedback && (
+				<FeedbackSection
+					strengths={section.feedback.strengths ?? []}
+					improvements={section.feedback.improvements ?? section.feedback.evidenceNotes ?? []}
+				/>
 			)}
 		</div>
 	)
