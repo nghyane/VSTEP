@@ -3,6 +3,7 @@
 | Date | A/M/D | In charge | Change Description |
 |------|-------|-----------|-------------------|
 | 31/05/2026 | A | Hoàng Văn Anh Nghĩa | Initial Software Design Document with system architecture, package diagram, and database design references |
+| 31/05/2026 | M | Hoàng Văn Anh Nghĩa | Added rendered system architecture and database relationship diagrams; aligned terminology with Assessment Engine implementation |
 
 *A - Added   M - Modified   D - Deleted
 
@@ -14,7 +15,11 @@
 
 The VSTEP Platform is designed as a multi-client learning system consisting of learner-facing web and mobile applications, an admin application, a Laravel backend API, relational database storage, media storage, and external services for identity verification, payment processing, grammar checking, speech processing, and AI-supported assessment.
 
-The system architecture diagram is maintained separately and can be inserted into this section during final report assembly.
+![System Architecture Diagram](../diagrams/report4-system-architecture-diagram.png)
+
+*Figure 4.1. System Architecture Diagram*
+
+Diagram source: `docs/capstone/diagrams/report4-system-architecture-diagram.puml`
 
 Main components:
 
@@ -35,7 +40,7 @@ The package diagrams below describe the main packages and namespace-level depend
 
 ![Backend API Package Diagram](../diagrams/report4-backend-package-diagram.png)
 
-*Figure 4.1. Backend API Package Diagram*
+*Figure 4.2. Backend API Package Diagram*
 
 Diagram source: `docs/capstone/diagrams/report4-backend-package-diagram.puml`
 
@@ -43,7 +48,7 @@ Diagram source: `docs/capstone/diagrams/report4-backend-package-diagram.puml`
 
 ![Learner Web App Package Diagram](../diagrams/report4-learner-web-package-diagram.png)
 
-*Figure 4.2. Learner Web App Package Diagram*
+*Figure 4.3. Learner Web App Package Diagram*
 
 Diagram source: `docs/capstone/diagrams/report4-learner-web-package-diagram.puml`
 
@@ -51,7 +56,7 @@ Diagram source: `docs/capstone/diagrams/report4-learner-web-package-diagram.puml
 
 ![Admin App Package Diagram](../diagrams/report4-admin-package-diagram.png)
 
-*Figure 4.3. Admin App Package Diagram*
+*Figure 4.4. Admin App Package Diagram*
 
 Diagram source: `docs/capstone/diagrams/report4-admin-package-diagram.puml`
 
@@ -59,7 +64,7 @@ Diagram source: `docs/capstone/diagrams/report4-admin-package-diagram.puml`
 
 ![Mobile App Package Diagram](../diagrams/report4-mobile-package-diagram.png)
 
-*Figure 4.4. Mobile App Package Diagram*
+*Figure 4.5. Mobile App Package Diagram*
 
 Diagram source: `docs/capstone/diagrams/report4-mobile-package-diagram.puml`
 
@@ -78,13 +83,13 @@ Diagram source: `docs/capstone/diagrams/report4-mobile-package-diagram.puml`
 | 09 | Backend API — `model` | Contains Eloquent models and relationships for persistent domain entities. |
 | 10 | Backend API — `integration` | Encapsulates communication with external providers such as AI, speech, grammar, payment, identity, and media storage services. |
 | 11 | Learner Web — `routes` | Defines browser routes and connects learner pages to feature modules. |
-| 12 | Learner Web — `features` | Contains learner-facing modules such as authentication, onboarding, profile, practice, exam, grading, vocabulary, grammar, dashboard, course, booking, wallet, and notifications. |
+| 12 | Learner Web — `features` | Contains learner-facing modules such as authentication, onboarding, profile, practice, exam, assessment result display, vocabulary, grammar, dashboard, course, booking, wallet, and notifications. |
 | 13 | Learner Web — `components` | Contains reusable UI components used by learner pages and feature modules. |
 | 14 | Learner Web — `lib` | Contains API clients, authentication helpers, query configuration, utility functions, and shared frontend helpers. |
 | 15 | Learner Web — `types` | Contains shared TypeScript types used by learner features and components. |
 | 16 | Learner Web — `assets` and `styles` | Contains static assets and styling resources for the learner web application. |
 | 17 | Admin App — `routes` | Defines admin routes and maps administration screens to feature modules. |
-| 18 | Admin App — `features` | Contains administration modules for users, courses, exams, practice content, grading, grammar, vocabulary, promos, top-up, and teacher workflows. |
+| 18 | Admin App — `features` | Contains administration modules for users, courses, exams, practice content, assessment operations, grammar, vocabulary, promos, top-up, and teacher workflows. |
 | 19 | Admin App — `components` | Contains reusable UI components for admin pages. |
 | 20 | Admin App — `lib` | Contains admin API client, authentication helper, and utility functions. |
 | 21 | Admin App — `styles` | Contains styling resources for the admin interface. |
@@ -98,9 +103,13 @@ Diagram source: `docs/capstone/diagrams/report4-mobile-package-diagram.puml`
 
 ## 2. Database Design
 
-The database design is organized around the main domains of the VSTEP Platform: authentication/profile, wallet/payment, course/booking, learning content, practice, exam sessions, assessment/grading, progress, notification, and administration.
+The database design is organized around the main domains of the VSTEP Platform: authentication/profile, wallet/payment, course/booking, learning content, practice, exam sessions, assessment, progress, notification, and administration.
 
-The database relationship diagram is maintained separately and can be inserted into this section during final report assembly.
+![Database Relationship Diagram](../diagrams/report4-database-relationship-diagram.png)
+
+*Figure 4.6. Database Relationship Diagram*
+
+Diagram source: `docs/capstone/diagrams/report4-database-relationship-diagram.puml`
 
 ### Table Descriptions
 
@@ -149,7 +158,7 @@ This function handles login, Google authentication, token issuing, refresh token
 
 ![Authentication & Profile Class Diagram](../diagrams/report4-authentication-class-diagram.png)
 
-*Figure 4.5. Authentication & Profile Class Diagram*
+*Figure 4.7. Authentication & Profile Class Diagram*
 
 Diagram source: `docs/capstone/diagrams/report4-authentication-class-diagram.puml`
 
@@ -157,7 +166,7 @@ Diagram source: `docs/capstone/diagrams/report4-authentication-class-diagram.pum
 
 ![Login Sequence Diagram](../diagrams/report4-login-sequence-diagram.png)
 
-*Figure 4.9. Login Sequence Diagram*
+*Figure 4.8. Login Sequence Diagram*
 
 Diagram source: `docs/capstone/diagrams/report4-login-sequence-diagram.puml`
 
@@ -169,7 +178,7 @@ This function handles learner writing/speaking practice submissions, paid feedba
 
 ![Practice & Assessment Class Diagram](../diagrams/report4-practice-assessment-class-diagram.png)
 
-*Figure 4.6. Practice & Assessment Class Diagram*
+*Figure 4.9. Practice & Assessment Class Diagram*
 
 Diagram source: `docs/capstone/diagrams/report4-practice-assessment-class-diagram.puml`
 
@@ -189,7 +198,7 @@ This function handles VSTEP mock exam session creation, answer saving, draft per
 
 ![Mock Exam Session Class Diagram](../diagrams/report4-exam-session-class-diagram.png)
 
-*Figure 4.7. Mock Exam Session Class Diagram*
+*Figure 4.11. Mock Exam Session Class Diagram*
 
 Diagram source: `docs/capstone/diagrams/report4-exam-session-class-diagram.puml`
 
@@ -197,7 +206,7 @@ Diagram source: `docs/capstone/diagrams/report4-exam-session-class-diagram.puml`
 
 ![Mock Exam Submission Sequence Diagram](../diagrams/report4-exam-submission-sequence-diagram.png)
 
-*Figure 4.11. Mock Exam Submission Sequence Diagram*
+*Figure 4.12. Mock Exam Submission Sequence Diagram*
 
 Diagram source: `docs/capstone/diagrams/report4-exam-submission-sequence-diagram.puml`
 
@@ -209,7 +218,7 @@ This function handles course enrollment orders, teacher slot booking, payment ga
 
 ![Course Booking & Payment Class Diagram](../diagrams/report4-course-booking-payment-class-diagram.png)
 
-*Figure 4.8. Course Booking & Payment Class Diagram*
+*Figure 4.13. Course Booking & Payment Class Diagram*
 
 Diagram source: `docs/capstone/diagrams/report4-course-booking-payment-class-diagram.puml`
 
@@ -217,6 +226,6 @@ Diagram source: `docs/capstone/diagrams/report4-course-booking-payment-class-dia
 
 ![Course Enrollment Payment Sequence Diagram](../diagrams/report4-course-payment-sequence-diagram.png)
 
-*Figure 4.12. Course Enrollment Payment Sequence Diagram*
+*Figure 4.14. Course Enrollment Payment Sequence Diagram*
 
 Diagram source: `docs/capstone/diagrams/report4-course-payment-sequence-diagram.puml`

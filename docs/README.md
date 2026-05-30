@@ -9,7 +9,10 @@ docs/
 ├── capstone/
 │   ├── reports/
 │   │   ├── report1-project-introduction.md
-│   │   └── report2-project-management-plan.md
+│   │   ├── report2-project-management-plan.md
+│   │   └── report4-software-design-document.md
+│   ├── diagrams/
+│   │   └── report4 UML and architecture diagrams
 │   ├── scope-alignment.md
 │   └── defense-presentation-guide.md
 │
@@ -32,6 +35,7 @@ docs/
 
 - [`capstone/reports/report1-project-introduction.md`](capstone/reports/report1-project-introduction.md)
 - [`capstone/reports/report2-project-management-plan.md`](capstone/reports/report2-project-management-plan.md)
+- [`capstone/reports/report4-software-design-document.md`](capstone/reports/report4-software-design-document.md)
 - [`capstone/scope-alignment.md`](capstone/scope-alignment.md)
 - [`capstone/defense-presentation-guide.md`](capstone/defense-presentation-guide.md)
 
@@ -40,12 +44,6 @@ docs/
 - [`decisions/assessment-scoring-principles.md`](decisions/assessment-scoring-principles.md)
 - [`decisions/assessment-validation-strategy.md`](decisions/assessment-validation-strategy.md)
 
-## Working notes cần rà soát sau
+## Archive
 
-Các file kế hoạch cũ hoặc note kỹ thuật chưa được dọn hẳn:
-
-- `improvement-plan.md`
-- `practice-system-plan.md`
-- `speaking-conversation-spec.md`
-
-Nếu không còn dùng trong báo cáo hoặc development hiện tại, chuyển vào `archive/` thay vì xóa trực tiếp.
+Các ghi chú/kế hoạch cũ đã được loại khỏi bộ tài liệu bảo vệ chính. Nếu cần khôi phục ngữ cảnh lịch sử, kiểm tra `archive/` hoặc lịch sử Git.
