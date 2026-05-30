@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace App\Contracts;
 
 use App\Enums\PaymentProvider;
-use App\Models\WalletTopupOrder;
 use App\ValueObjects\CallbackValidationResult;
 use App\ValueObjects\PaymentGatewayResponse;
+use Illuminate\Database\Eloquent\Model;
 
 interface PaymentGateway
 {
     /** Generate payment URL from gateway API. */
     public function createPayment(
-        WalletTopupOrder $order,
+        Model $order,
         string $returnUrl,
         string $cancelUrl,
     ): PaymentGatewayResponse;

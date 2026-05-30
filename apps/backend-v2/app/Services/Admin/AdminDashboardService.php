@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
+use App\Assessment\Enums\AssessmentJobStatus;
 use App\Enums\ExamSessionStatus;
-use App\Enums\GradingJobStatus;
+use App\Models\AssessmentJob;
 use App\Models\Course;
 use App\Models\Exam;
 use App\Models\ExamSession;
 use App\Models\ExamVersionListeningSection;
-use App\Models\GradingJob;
 use App\Models\GrammarPoint;
 use App\Models\PracticeListeningExercise;
 use App\Models\PracticeReadingExercise;
@@ -48,10 +48,10 @@ final class AdminDashboardService
                 ->where('status', ExamSessionStatus::Active)
                 ->where('server_deadline_at', '<', now())
                 ->count(),
-            'grading_pending' => GradingJob::query()->where('status', GradingJobStatus::Pending)->count(),
-            'grading_failed' => GradingJob::query()->where('status', GradingJobStatus::Failed)->count(),
-            'grading_done_today' => GradingJob::query()
-                ->where('status', GradingJobStatus::Ready)
+            'assessment_pending' => AssessmentJob::query()->where('status', AssessmentJobStatus::Pending)->count(),
+            'assessment_failed' => AssessmentJob::query()->where('status', AssessmentJobStatus::Failed)->count(),
+            'assessment_done_today' => AssessmentJob::query()
+                ->where('status', AssessmentJobStatus::Ready)
                 ->where('completed_at', '>=', $today)
                 ->count(),
             'vocab_topics' => VocabTopic::query()->count(),
@@ -66,12 +66,12 @@ final class AdminDashboardService
         $alerts = [];
         $today = CarbonImmutable::now()->toDateString();
 
-        $failedJobs = GradingJob::query()->where('status', GradingJobStatus::Failed)->count();
+        $failedJobs = AssessmentJob::query()->where('status', AssessmentJobStatus::Failed)->count();
         if ($failedJobs > 0) {
             $alerts[] = [
                 'type' => 'error',
-                'message' => "{$failedJobs} grading job thất bại cần retry",
-                'action' => '/grading',
+                'message' => "{$failedJobs} assessment job thất bại cần retry",
+                'action' => '/assessments',
             ];
         }
 
@@ -112,9 +112,9 @@ final class AdminDashboardService
             $items[] = ['label' => "{$draftExams} đề thi chưa xuất bản", 'action' => '/exams', 'badge' => $draftExams];
         }
 
-        $failedJobs = GradingJob::query()->where('status', GradingJobStatus::Failed)->count();
+        $failedJobs = AssessmentJob::query()->where('status', AssessmentJobStatus::Failed)->count();
         if ($failedJobs > 0) {
-            $items[] = ['label' => "{$failedJobs} grading job cần retry", 'action' => '/grading', 'badge' => $failedJobs];
+            $items[] = ['label' => "{$failedJobs} assessment job cần retry", 'action' => '/assessments', 'badge' => $failedJobs];
         }
 
         $unpublishedVocab = VocabTopic::query()->where('is_published', false)->count();

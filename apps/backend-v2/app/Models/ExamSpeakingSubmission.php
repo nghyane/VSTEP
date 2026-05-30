@@ -6,12 +6,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Speaking submission trong exam session.
- * 1 submission → N grading results (versioning).
  */
 #[Fillable([
     'session_id',
@@ -48,16 +46,9 @@ class ExamSpeakingSubmission extends BaseModel
         return $this->belongsTo(ExamVersionSpeakingPart::class, 'part_id');
     }
 
-    public function gradingJob(): HasOne
+    public function assessmentAttempt(): HasOne
     {
-        return $this->hasOne(GradingJob::class, 'submission_id')
-            ->where('submission_type', 'exam_speaking')
-            ->latestOfMany();
-    }
-
-    public function gradingResults(): HasMany
-    {
-        return $this->hasMany(SpeakingGradingResult::class, 'submission_id')
-            ->where('submission_type', 'exam_speaking');
+        return $this->hasOne(AssessmentAttempt::class, 'source_id')
+            ->where('source_type', 'exam');
     }
 }

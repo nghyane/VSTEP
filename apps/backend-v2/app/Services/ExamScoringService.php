@@ -6,8 +6,8 @@ namespace App\Services;
 
 use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
-use App\Models\SpeakingGradingResult;
-use App\Models\WritingGradingResult;
+use App\Models\ExamSpeakingSubmission;
+use App\Models\ExamWritingSubmission;
 use Illuminate\Support\Collection;
 
 final class ExamScoringService
@@ -42,7 +42,7 @@ final class ExamScoringService
      *
      * Listening/Reading: MCQ correct ratio → band 0-10.
      * Writing: (Task1 + 2×Task2)/3 weighted composite (VNU Journal of Foreign Studies, 2018).
-     * Speaking: avg overall_band from active grading results.
+     * Speaking: avg overall_band from assessment results.
      *
      * @return array{listening: ?float, reading: ?float, writing: ?float, speaking: ?float}
      */
@@ -56,7 +56,7 @@ final class ExamScoringService
             'listening' => $this->mcqBandFromCollection($mcqAnswers, 'exam_listening_item'),
             'reading' => $this->mcqBandFromCollection($mcqAnswers, 'exam_reading_item'),
             'writing' => $this->writingComposite($session),
-            'speaking' => $this->gradingBand('exam_speaking', 'exam_speaking_submissions', $session),
+            'speaking' => $this->speakingBand($session),
         ];
     }
 
@@ -136,46 +136,35 @@ final class ExamScoringService
      */
     private function writingComposite(ExamSession $session): ?float
     {
-        $rows = \DB::table('exam_writing_submissions')
-            ->join('exam_version_writing_tasks', 'exam_writing_submissions.task_id', '=', 'exam_version_writing_tasks.id')
-            ->join('writing_grading_results', function ($join) {
-                $join->on('exam_writing_submissions.id', '=', 'writing_grading_results.submission_id')
-                    ->where('writing_grading_results.submission_type', '=', 'exam_writing')
-                    ->where('writing_grading_results.is_active', '=', true);
-            })
+        $rows = ExamWritingSubmission::query()
+            ->with(['task:id,part', 'assessmentAttempt.result'])
             ->where('exam_writing_submissions.session_id', $session->id)
-            ->select([
-                'exam_version_writing_tasks.part',
-                'writing_grading_results.overall_band',
-            ])
             ->get();
 
-        $task1 = $rows->where('part', 1)->first();
-        $task2 = $rows->where('part', 2)->first();
+        $task1 = $rows->first(fn (ExamWritingSubmission $submission): bool => $submission->task?->part === 1);
+        $task2 = $rows->first(fn (ExamWritingSubmission $submission): bool => $submission->task?->part === 2);
 
-        if ($task1 === null || $task2 === null) {
+        $task1Band = $task1?->assessmentAttempt?->result?->overall_band;
+        $task2Band = $task2?->assessmentAttempt?->result?->overall_band;
+
+        if ($task1Band === null || $task2Band === null) {
             return null;
         }
 
-        $composite = ((float) $task1->overall_band + 2 * (float) $task2->overall_band) / 3;
+        $composite = ((float) $task1Band + 2 * (float) $task2Band) / 3;
 
         return round($composite * 2) / 2;
     }
 
-    private function gradingBand(string $submissionType, string $submissionTable, ExamSession $session): ?float
+    private function speakingBand(ExamSession $session): ?float
     {
-        $model = $submissionType === 'exam_writing'
-            ? WritingGradingResult::class
-            : SpeakingGradingResult::class;
+        $bands = ExamSpeakingSubmission::query()
+            ->with('assessmentAttempt.result')
+            ->where('session_id', $session->id)
+            ->get()
+            ->map(fn (ExamSpeakingSubmission $submission): ?float => $submission->assessmentAttempt?->result?->overall_band)
+            ->filter(fn (?float $band): bool => $band !== null);
 
-        $band = $model::query()
-            ->where('submission_type', $submissionType)
-            ->whereIn('submission_id', function ($q) use ($submissionTable, $session) {
-                $q->select('id')->from($submissionTable)->where('session_id', $session->id);
-            })
-            ->where('is_active', true)
-            ->avg('overall_band');
-
-        return $band !== null ? round((float) $band, 1) : null;
+        return $bands->isNotEmpty() ? round((float) $bands->avg(), 1) : null;
     }
 }

@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Assessment\Enums\AssessmentSkill;
+use App\Assessment\Enums\AssessmentSourceType;
+use App\Assessment\Enums\AssessmentTaskType;
 use App\Enums\CoinTransactionType;
+use App\Models\AssessmentAttempt;
+use App\Models\AssessmentResult;
+use App\Models\AssessmentRubric;
 use App\Models\CoinTransaction;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
@@ -14,15 +20,12 @@ use App\Models\ExamSpeakingSubmission;
 use App\Models\ExamVersion;
 use App\Models\ExamWritingSubmission;
 use App\Models\ExerciseFeedback;
-use App\Models\GradingJob;
 use App\Models\PracticeListeningExercise;
 use App\Models\PracticeReadingExercise;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
 use App\Models\ProfileVocabSrsState;
-use App\Models\SpeakingGradingResult;
 use App\Models\VocabWord;
-use App\Models\WritingGradingResult;
 use App\Services\McqSkillService;
 use App\Services\ProgressService;
 use App\Services\WalletService;
@@ -247,32 +250,31 @@ final class DemoProgressSeeder extends Seeder
             'submitted_at' => $submittedAt,
         ]);
 
-        $job = GradingJob::create([
-            'submission_type' => 'exam_writing',
-            'submission_id' => $submission->id,
-            'status' => 'ready',
-            'started_at' => $submittedAt,
-            'completed_at' => $submittedAt->copy()->addSeconds(rand(5, 30)),
+        $rubric = $this->rubric(AssessmentTaskType::WritingTask2Essay);
+        $attempt = AssessmentAttempt::create([
+            'profile_id' => $profileId,
+            'rubric_id' => $rubric->id,
+            'skill' => AssessmentSkill::Writing,
+            'task_type' => AssessmentTaskType::WritingTask2Essay,
+            'source_type' => AssessmentSourceType::Exam,
+            'source_id' => $submission->id,
+            'prompt' => ['requirements' => ['Demo writing task']],
+            'response_payload' => ['text' => $submission->text, 'metadata' => ['word_count' => $submission->word_count]],
+            'submitted_at' => $submittedAt,
         ]);
 
-        WritingGradingResult::create([
-            'job_id' => $job->id,
-            'submission_type' => 'exam_writing',
-            'submission_id' => $submission->id,
-            'version' => 1,
-            'is_active' => true,
-            'rubric_scores' => [
-                'task_fulfillment' => $band,
-                'organization' => $band,
-                'vocabulary' => $band,
-                'grammar' => $band,
+        AssessmentResult::create([
+            'attempt_id' => $attempt->id,
+            'rubric_id' => $rubric->id,
+            'criterion_scores' => [
+                ['key' => 'task_fulfillment', 'score' => $band, 'weight' => 0.30],
+                ['key' => 'organization', 'score' => $band, 'weight' => 0.20],
+                ['key' => 'vocabulary', 'score' => $band, 'weight' => 0.25],
+                ['key' => 'grammar', 'score' => $band, 'weight' => 0.25],
             ],
             'overall_band' => $band,
-            'strengths' => ['Demo seed data'],
-            'improvements' => [],
-            'rewrites' => [],
-            'annotations' => [],
-            'paragraph_feedback' => [],
+            'calculation_trace' => ['source' => 'demo_seed'],
+            'feedback' => ['strengths' => ['Demo seed data']],
         ]);
     }
 
@@ -289,33 +291,41 @@ final class DemoProgressSeeder extends Seeder
         ]);
         $submission->update(['audio_url' => 'https://demo.vstep.test/audio/'.$submission->id.'.mp3']);
 
-        $job = GradingJob::create([
-            'submission_type' => 'exam_speaking',
-            'submission_id' => $submission->id,
-            'status' => 'ready',
-            'started_at' => $submittedAt,
-            'completed_at' => $submittedAt->copy()->addSeconds(rand(5, 30)),
+        $rubric = $this->rubric(AssessmentTaskType::SpeakingPart1Personal);
+        $attempt = AssessmentAttempt::create([
+            'profile_id' => $profileId,
+            'rubric_id' => $rubric->id,
+            'skill' => AssessmentSkill::Speaking,
+            'task_type' => AssessmentTaskType::SpeakingPart1Personal,
+            'source_type' => AssessmentSourceType::Exam,
+            'source_id' => $submission->id,
+            'prompt' => ['requirements' => ['Demo speaking task']],
+            'response_payload' => ['audio_url' => $submission->audio_url, 'metadata' => ['duration_seconds' => $submission->duration_seconds]],
+            'submitted_at' => $submittedAt,
         ]);
 
-        SpeakingGradingResult::create([
-            'job_id' => $job->id,
-            'submission_type' => 'exam_speaking',
-            'submission_id' => $submission->id,
-            'version' => 1,
-            'is_active' => true,
-            'rubric_scores' => [
-                'grammar' => $band,
-                'vocabulary' => $band,
-                'pronunciation' => $band,
-                'fluency' => $band,
-                'discourse_management' => $band,
+        AssessmentResult::create([
+            'attempt_id' => $attempt->id,
+            'rubric_id' => $rubric->id,
+            'criterion_scores' => [
+                ['key' => 'grammar', 'score' => $band, 'weight' => 0.20],
+                ['key' => 'vocabulary', 'score' => $band, 'weight' => 0.20],
+                ['key' => 'pronunciation', 'score' => $band, 'weight' => 0.20],
+                ['key' => 'fluency', 'score' => $band, 'weight' => 0.20],
+                ['key' => 'discourse_management', 'score' => $band, 'weight' => 0.20],
             ],
             'overall_band' => $band,
-            'strengths' => ['Demo seed data'],
-            'improvements' => [],
-            'pronunciation_report' => ['accuracy_score' => 0.7],
-            'transcript' => 'Seed speaking transcript.',
+            'calculation_trace' => ['source' => 'demo_seed'],
+            'feedback' => ['strengths' => ['Demo seed data']],
         ]);
+    }
+
+    private function rubric(AssessmentTaskType $taskType): AssessmentRubric
+    {
+        return AssessmentRubric::query()
+            ->where('task_type', $taskType)
+            ->where('is_active', true)
+            ->firstOrFail();
     }
 
     // ═══════════════════════════════════════════════════════════════

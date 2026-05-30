@@ -1,0 +1,34 @@
+reference_id: "vstep_writing"
+name: "VSTEP Writing format and scoring target"
+language: "vi"
+source_note: "Chuẩn mục tiêu của hệ thống theo định dạng VSTEP Writing B1-C1. File này không phải benchmark dữ liệu, mà là tham chiếu format/rubric để thiết kế và giải thích validation."
+skill: "writing"
+score_scale:
+  min: 0
+  max: 10
+  cefr_mapping:
+    below_b1: "0.0-3.5"
+    b1: "4.0-5.5"
+    b2: "6.0-8.0"
+    c1: "8.5-10.0"
+criteria:
+  - task_fulfillment
+  - organization
+  - vocabulary
+  - grammar
+tasks:
+  task_1:
+    name: "Viết thư/email"
+    minimum_words: 120
+    suggested_minutes: 20
+    score_weight: "1/3"
+    typical_requirements: "Trả lời 2-3 ý chính trong đề, đúng mục đích giao tiếp và đúng văn phong."
+  task_2:
+    name: "Viết luận"
+    minimum_words: 250
+    suggested_minutes: 40
+    score_weight: "2/3"
+    typical_requirements: "Trình bày quan điểm/lập luận, phát triển ý, ví dụ và kết luận rõ ràng."
+validation_role:
+  benchmark: "Dùng bài có nguồn độc lập để kiểm chứng độ ổn định điểm chấm."
+  guardrail: "Dùng case theo format VSTEP để kiểm tra bài lạc đề, quá ngắn, copy đề, spam hoặc không hợp lệ không bị chấm cao."

@@ -6,7 +6,11 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\PaymentProvider;
 use App\Http\Controllers\Controller;
+use App\Models\CourseEnrollmentOrder;
+use App\Models\WalletTopupOrder;
+use App\Services\CourseOrderService;
 use App\Services\Payment\OrderNotFoundAfterValidation;
+use App\Services\Payment\PaymentGatewayRegistry;
 use App\Services\TopupService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,8 +24,13 @@ use Illuminate\Support\Facades\Log;
  */
 final class PaymentCallbackController extends Controller
 {
-    public function handle(string $provider, Request $request, TopupService $topup): JsonResponse
-    {
+    public function handle(
+        string $provider,
+        Request $request,
+        PaymentGatewayRegistry $gateways,
+        TopupService $topup,
+        CourseOrderService $courseOrders,
+    ): JsonResponse {
         $paymentProvider = PaymentProvider::tryFrom($provider);
         if ($paymentProvider === null) {
             Log::warning('Payment callback: unknown provider', ['provider' => $provider]);
@@ -30,7 +39,21 @@ final class PaymentCallbackController extends Controller
         }
 
         try {
-            $topup->handleCallback($paymentProvider, $request->all());
+            $result = $gateways->get($paymentProvider)->validateCallback($request->all());
+
+            if (! $result->success) {
+                $this->markFailedOrder($result->orderCode, $paymentProvider, $topup, $courseOrders, $request->all());
+
+                return response()->json(['success' => false, 'message' => $result->failureReason], 400);
+            }
+
+            if (WalletTopupOrder::query()->where('order_code', $result->orderCode)->exists()) {
+                $topup->confirmByOrderCode($result->orderCode, $result->gatewayTransactionId, $result->rawData);
+            } elseif (CourseEnrollmentOrder::query()->where('order_code', $result->orderCode)->exists()) {
+                $courseOrders->confirmByOrderCode($result->orderCode, $result->gatewayTransactionId, $result->rawData);
+            } else {
+                throw new OrderNotFoundAfterValidation($result->orderCode);
+            }
 
             return response()->json(['success' => true]);
         } catch (OrderNotFoundAfterValidation $e) {
@@ -49,6 +72,20 @@ final class PaymentCallbackController extends Controller
             ]);
 
             return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+        }
+    }
+
+    private function markFailedOrder(
+        int $orderCode,
+        PaymentProvider $paymentProvider,
+        TopupService $topup,
+        CourseOrderService $courseOrders,
+        array $payload,
+    ): void {
+        if (WalletTopupOrder::query()->where('order_code', $orderCode)->exists()) {
+            $topup->handleCallback($paymentProvider, $payload);
+        } elseif (CourseEnrollmentOrder::query()->where('order_code', $orderCode)->exists()) {
+            $courseOrders->handleCallback($paymentProvider, $payload);
         }
     }
 }

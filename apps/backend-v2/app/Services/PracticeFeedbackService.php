@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Assessment\Enums\AssessmentSourceType;
 use App\Enums\CoinTransactionType;
 use App\Enums\PracticeFeedbackStatus;
-use App\Jobs\FeedbackJob;
-use App\Jobs\SpeakingFeedbackJob;
+use App\Models\AssessmentAttempt;
 use App\Models\PracticeFeedbackRequest;
 use App\Models\PracticeSpeakingSubmission;
 use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
-use App\Models\SpeakingGradingResult;
-use App\Models\WritingGradingResult;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -63,8 +61,9 @@ final class PracticeFeedbackService
                 'profile_id' => $profile->id,
                 'submission_type' => $submissionType,
                 'submission_id' => $submission->getKey(),
-                'status' => PracticeFeedbackStatus::Pending,
+                'status' => PracticeFeedbackStatus::Ready,
                 'requested_at' => now(),
+                'completed_at' => now(),
             ]);
 
             $transaction = $this->walletService->spend(
@@ -77,26 +76,20 @@ final class PracticeFeedbackService
 
             $request->update(['coin_transaction_id' => $transaction->id]);
 
-            match ($submissionType) {
-                'practice_writing' => FeedbackJob::dispatch($request->id)->afterCommit(),
-                'practice_speaking' => SpeakingFeedbackJob::dispatch($request->id)->afterCommit(),
-            };
-
             return $this->payload($request->refresh(), $cost, true);
         });
     }
 
     private function assertResultReady(string $submissionType, string $submissionId): void
     {
-        $query = match ($submissionType) {
-            'practice_writing' => WritingGradingResult::query(),
-            'practice_speaking' => SpeakingGradingResult::query(),
-            default => throw new \InvalidArgumentException("Unsupported feedback type: {$submissionType}."),
-        };
+        if (! in_array($submissionType, ['practice_writing', 'practice_speaking'], true)) {
+            throw new \InvalidArgumentException("Unsupported feedback type: {$submissionType}.");
+        }
 
-        $result = $query->where('submission_type', $submissionType)
-            ->where('submission_id', $submissionId)
-            ->where('is_active', true)
+        $result = AssessmentAttempt::query()
+            ->where('source_type', AssessmentSourceType::Practice)
+            ->where('source_id', $submissionId)
+            ->whereHas('result')
             ->exists();
 
         if (! $result) {
@@ -111,9 +104,7 @@ final class PracticeFeedbackService
     {
         return [
             'submission_id' => $request->submission_id,
-            'status' => $request->status === PracticeFeedbackStatus::Pending ? 'processing' : $request->status->value,
-            'channel' => "feedback.{$request->submission_id}",
-            'event' => 'feedback.completed',
+            'status' => $request->status->value,
             'cost_coins' => $cost,
             'charged' => $charged,
         ];

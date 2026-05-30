@@ -4,19 +4,20 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Practice;
 
+use App\Assessment\Enums\AssessmentSkill;
+use App\Assessment\Enums\AssessmentSourceType;
+use App\Assessment\Enums\AssessmentTaskType;
 use App\Enums\CoinTransactionType;
-use App\Enums\GradingJobStatus;
-use App\Jobs\FeedbackJob;
-use App\Models\GradingJob;
+use App\Models\AssessmentAttempt;
+use App\Models\AssessmentResult;
+use App\Models\AssessmentRubric;
 use App\Models\PracticeFeedbackRequest;
 use App\Models\PracticeSession;
 use App\Models\PracticeWritingPrompt;
 use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
 use App\Models\User;
-use App\Models\WritingGradingResult;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class WritingPracticeTest extends TestCase
@@ -74,6 +75,11 @@ class WritingPracticeTest extends TestCase
             'profile_id' => $profile->id,
             'prompt_id' => $prompt->id,
         ]);
+        $this->assertDatabaseHas('assessment_attempts', [
+            'profile_id' => $profile->id,
+            'source_type' => 'practice',
+        ]);
+        $this->assertDatabaseCount('assessment_jobs', 1);
     }
 
     public function test_submit_rejects_already_submitted(): void
@@ -98,19 +104,16 @@ class WritingPracticeTest extends TestCase
 
     public function test_paid_feedback_charges_once_and_is_idempotent(): void
     {
-        Queue::fake();
-
         [$user, $submission] = $this->gradedWritingSubmission();
         $token = $this->tokenFor($user);
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson("/api/v1/practice/writing/submissions/{$submission->id}/feedback")
             ->assertAccepted()
-            ->assertJsonPath('data.status', 'processing')
+            ->assertJsonPath('data.status', 'ready')
             ->assertJsonPath('data.cost_coins', 1)
             ->assertJsonPath('data.charged', true);
 
-        Queue::assertPushed(FeedbackJob::class);
         $this->assertDatabaseHas('coin_transactions', [
             'profile_id' => $submission->profile_id,
             'type' => CoinTransactionType::PracticeFeedback->value,
@@ -127,8 +130,6 @@ class WritingPracticeTest extends TestCase
 
     public function test_paid_feedback_rejects_non_owner(): void
     {
-        Queue::fake();
-
         [, $submission] = $this->gradedWritingSubmission();
         $intruder = User::factory()->create();
         Profile::factory()->initial()->forAccount($intruder)->create();
@@ -175,24 +176,26 @@ class WritingPracticeTest extends TestCase
             'word_count' => 6,
             'submitted_at' => now(),
         ]);
-        $job = GradingJob::factory()->ready()->create([
-            'submission_type' => 'practice_writing',
-            'submission_id' => $submission->id,
-            'status' => GradingJobStatus::Ready,
+        $rubric = AssessmentRubric::query()
+            ->where('task_type', AssessmentTaskType::WritingTask2Essay)
+            ->firstOrFail();
+        $attempt = AssessmentAttempt::create([
+            'profile_id' => $profile->id,
+            'rubric_id' => $rubric->id,
+            'skill' => AssessmentSkill::Writing,
+            'task_type' => AssessmentTaskType::WritingTask2Essay,
+            'source_type' => AssessmentSourceType::Practice,
+            'source_id' => $submission->id,
+            'prompt' => ['requirements' => ['Write clearly']],
+            'response_payload' => ['text' => $submission->text, 'metadata' => ['word_count' => $submission->word_count]],
+            'submitted_at' => now(),
         ]);
-        WritingGradingResult::create([
-            'job_id' => $job->id,
-            'submission_type' => 'practice_writing',
-            'submission_id' => $submission->id,
-            'version' => 1,
-            'is_active' => true,
-            'rubric_scores' => ['grammar' => 6],
+        AssessmentResult::create([
+            'attempt_id' => $attempt->id,
+            'rubric_id' => $rubric->id,
+            'criterion_scores' => [['key' => 'grammar', 'score' => 6.0, 'weight' => 0.25]],
             'overall_band' => 6.0,
-            'strengths' => [],
-            'improvements' => [],
-            'rewrites' => [],
-            'annotations' => [],
-            'paragraph_feedback' => [],
+            'calculation_trace' => ['formula' => 'test'],
         ]);
 
         return [$user, $submission];

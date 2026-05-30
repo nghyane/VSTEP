@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\PracticeWritingSubmission;
-use App\Models\WritingGradingResult;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,8 +15,7 @@ final class WritingSubmissionHistoryResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        /** @var WritingGradingResult|null $result */
-        $result = $this->resource->activeGradingResult;
+        $result = $this->resource->assessmentAttempt?->result;
 
         return [
             'id' => $this->resource->id,

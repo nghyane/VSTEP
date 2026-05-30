@@ -4,65 +4,62 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Assessment\Enums\AssessmentSourceType;
+use App\Models\AssessmentAttempt;
 use App\Models\PracticeSpeakingSubmission;
 use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
-use App\Models\SpeakingGradingResult;
-use App\Models\WritingGradingResult;
-use App\Services\Grading\RubricResolver;
 
 final class PracticeGradingResultService
 {
-    public function __construct(
-        private readonly RubricResolver $rubricResolver,
-    ) {}
-
-    /** @return array{data: WritingGradingResult|null, rubric: array<string,mixed>} */
+    /** @return array{data: array<string,mixed>|null, rubric: array<string,mixed>|null} */
     public function writing(Profile $profile, PracticeWritingSubmission $submission): array
     {
         if ($submission->profile_id !== $profile->id) {
             abort(403);
         }
 
-        return [
-            'data' => WritingGradingResult::query()
-                ->where('submission_type', 'practice_writing')
-                ->where('submission_id', $submission->id)
-                ->where('is_active', true)
-                ->first(),
-            'rubric' => $this->rubricMeta('writing'),
-        ];
+        return $this->payload($submission->id);
     }
 
-    /** @return array{data: SpeakingGradingResult|null, rubric: array<string,mixed>} */
+    /** @return array{data: array<string,mixed>|null, rubric: array<string,mixed>|null} */
     public function speaking(Profile $profile, PracticeSpeakingSubmission $submission): array
     {
         if ($submission->profile_id !== $profile->id) {
             abort(403);
         }
 
-        return [
-            'data' => SpeakingGradingResult::query()
-                ->where('submission_type', 'practice_speaking')
-                ->where('submission_id', $submission->id)
-                ->where('is_active', true)
-                ->first(),
-            'rubric' => $this->rubricMeta('speaking'),
-        ];
+        return $this->payload($submission->id);
     }
 
-    /** @return array{max_score: int, criteria: list<array{key: string, label: string, max: int}>} */
-    private function rubricMeta(string $skill): array
+    /** @return array{data: array<string,mixed>|null, rubric: array<string,mixed>|null} */
+    private function payload(string $submissionId): array
     {
-        $rubric = $this->rubricResolver->active($skill);
+        $attempt = AssessmentAttempt::query()
+            ->with(['result', 'rubric'])
+            ->where('source_type', AssessmentSourceType::Practice)
+            ->where('source_id', $submissionId)
+            ->latest('submitted_at')
+            ->first();
+
+        if ($attempt === null) {
+            return ['data' => null, 'rubric' => null];
+        }
 
         return [
-            'max_score' => (int) ($rubric->criteria[0]['max_score'] ?? 10),
-            'criteria' => array_map(fn (array $criterion) => [
-                'key' => $criterion['key'],
-                'label' => $criterion['name_vi'] ?? $criterion['name'] ?? $criterion['key'],
-                'max' => (int) ($criterion['max_score'] ?? 10),
-            ], $rubric->criteria),
+            'data' => $attempt->result === null ? null : [
+                'overall_band' => $attempt->result->overall_band,
+                'criterion_scores' => $attempt->result->criterion_scores,
+                'caps_applied' => $attempt->result->caps_applied,
+                'calculation_trace' => $attempt->result->calculation_trace,
+                'feedback' => $attempt->result->feedback,
+            ],
+            'rubric' => [
+                'id' => $attempt->rubric->id,
+                'title' => $attempt->rubric->title,
+                'task_type' => $attempt->rubric->task_type->value,
+                'criteria' => $attempt->rubric->criteria,
+            ],
         ];
     }
 }

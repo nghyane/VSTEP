@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\GradingJobStatus;
+use App\Assessment\Enums\AssessmentJobStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Practice\StartSessionRequest;
 use App\Http\Requests\Practice\SubmitWritingPracticeRequest;
@@ -86,7 +86,7 @@ final class WritingPracticeController extends Controller
             'job_id' => $result['job_id'],
             'word_count' => $result['submission']->word_count,
             'submitted_at' => $result['submission']->submitted_at,
-            'grading_status' => GradingJobStatus::Pending->value,
+            'grading_status' => AssessmentJobStatus::Pending->value,
         ]]);
     }
 }

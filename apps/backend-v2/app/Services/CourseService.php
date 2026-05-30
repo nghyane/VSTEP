@@ -15,6 +15,8 @@ use App\Enums\SlotStatus;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\ExamSession;
+use App\Models\ExamSpeakingSubmission;
+use App\Models\ExamWritingSubmission;
 use App\Models\Profile;
 use App\Models\TeacherBooking;
 use App\Models\TeacherSlot;
@@ -643,30 +645,24 @@ final class CourseService
     {
         $bands = [];
 
-        // Writing
-        $writingSub = DB::table('exam_writing_submissions')
+        $writingBands = ExamWritingSubmission::query()
+            ->with('assessmentAttempt.result')
             ->where('session_id', $sessionId)
-            ->pluck('id');
-        $writingBand = (float) DB::table('writing_grading_results')
-            ->where('submission_type', 'exam_writing')
-            ->whereIn('submission_id', $writingSub)
-            ->where('is_active', true)
-            ->avg('overall_band');
-        if ($writingBand > 0) {
-            $bands[] = $writingBand;
+            ->get()
+            ->map(fn (ExamWritingSubmission $submission): ?float => $submission->assessmentAttempt?->result?->overall_band)
+            ->filter(fn (?float $band): bool => $band !== null);
+        if ($writingBands->isNotEmpty()) {
+            $bands[] = (float) $writingBands->avg();
         }
 
-        // Speaking
-        $speakingSub = DB::table('exam_speaking_submissions')
+        $speakingBands = ExamSpeakingSubmission::query()
+            ->with('assessmentAttempt.result')
             ->where('session_id', $sessionId)
-            ->pluck('id');
-        $speakingBand = (float) DB::table('speaking_grading_results')
-            ->where('submission_type', 'exam_speaking')
-            ->whereIn('submission_id', $speakingSub)
-            ->where('is_active', true)
-            ->avg('overall_band');
-        if ($speakingBand > 0) {
-            $bands[] = $speakingBand;
+            ->get()
+            ->map(fn (ExamSpeakingSubmission $submission): ?float => $submission->assessmentAttempt?->result?->overall_band)
+            ->filter(fn (?float $band): bool => $band !== null);
+        if ($speakingBands->isNotEmpty()) {
+            $bands[] = (float) $speakingBands->avg();
         }
 
         // Listening

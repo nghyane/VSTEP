@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Assessment\Services\AssessmentIntakeService;
 use App\Models\PracticeSession;
 use App\Models\PracticeSpeakingDrill;
 use App\Models\PracticeSpeakingDrillAttempt;
@@ -11,7 +12,6 @@ use App\Models\PracticeSpeakingDrillSentence;
 use App\Models\PracticeSpeakingSubmission;
 use App\Models\PracticeSpeakingTask;
 use App\Models\Profile;
-use App\Services\Grading\GradingService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -21,7 +21,7 @@ final class SpeakingPracticeService
 {
     public function __construct(
         private readonly PracticeSessionService $sessionService,
-        private readonly GradingService $gradingService,
+        private readonly AssessmentIntakeService $assessments,
     ) {}
 
     /** @return Collection<int,PracticeSpeakingDrill> */
@@ -118,6 +118,7 @@ final class SpeakingPracticeService
         return PracticeSpeakingSubmission::query()
             ->where('profile_id', $profile->id)
             ->where('task_ref_type', 'practice_speaking_task')
+            ->with('assessmentAttempt.result')
             ->when($part !== null, fn ($q) => $q->whereHas(
                 'speakingTask', fn ($q) => $q->where('part', $part),
             ))
@@ -175,7 +176,7 @@ final class SpeakingPracticeService
             ]);
 
             $this->sessionService->complete($locked);
-            $this->gradingService->enqueue('practice_speaking', $submission->id);
+            $this->assessments->submitPracticeSpeaking($submission);
 
             return $submission;
         });

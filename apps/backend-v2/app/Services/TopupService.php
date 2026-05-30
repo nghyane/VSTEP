@@ -54,7 +54,7 @@ final class TopupService
         $gateway = $this->gateways->get($provider);
         $expiryMinutes = (int) config('payment.order_expiry_minutes', 15);
 
-        return DB::transaction(function () use ($profile, $package, $provider, $gateway, $expiryMinutes) {
+        return DB::transaction(function () use ($profile, $package, $provider, $gateway, $expiryMinutes, $returnUrl) {
             // Generate unique integer order_code for PayOS.
             $orderCode = $this->nextOrderCode();
 

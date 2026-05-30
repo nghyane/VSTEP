@@ -2,13 +2,13 @@
 
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\Admin;
+use App\Http\Controllers\Api\V1\AssessmentJobController;
 use App\Http\Controllers\Api\V1\AudioController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\CourseController;
 use App\Http\Controllers\Api\V1\ExamController;
 use App\Http\Controllers\Api\V1\FeedbackController;
-use App\Http\Controllers\Api\V1\GradingJobController;
 use App\Http\Controllers\Api\V1\GrammarController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\LearningPathController;
@@ -109,8 +109,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/practice/writing/sessions/{practice_session}/submit', [WritingPracticeController::class, 'submit']);
         Route::post('/practice/writing/submissions/{submission}/feedback', [WritingFeedbackController::class, 'generate'])->whereUuid('submission');
 
-        // Grading SSE stream — single connection for progress + scores + feedback
-        Route::get('/grading-jobs/{grading_job}', [GradingJobController::class, 'show'])->whereUuid('grading_job');
+        Route::get('/assessment-jobs/{assessment_job}', [AssessmentJobController::class, 'show'])->whereUuid('assessment_job');
 
         // Practice Speaking — drill + VSTEP.
         Route::get('/practice/speaking/drills', [SpeakingPracticeController::class, 'listDrills']);
@@ -184,7 +183,6 @@ Route::prefix('v1')->group(function () {
         Route::get('/courses/{course}', [CourseController::class, 'show']);
         Route::post('/courses/{course}/enrollment-orders', [CourseController::class, 'createEnrollmentOrder']);
         Route::get('/courses/enrollment-orders', [CourseController::class, 'enrollmentOrders']);
-        Route::post('/courses/enrollment-orders/{enrollment_order}/confirm', [CourseController::class, 'confirmEnrollmentOrder']);
         Route::get('/courses/{course}/bookings', [CourseController::class, 'bookings']);
         Route::post('/courses/{course}/bookings', [CourseController::class, 'bookSlot']);
 
