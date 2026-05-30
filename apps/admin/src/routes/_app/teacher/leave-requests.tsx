@@ -77,7 +77,7 @@ function TeacherLeaveRequests() {
 		<Flex vertical gap={24}>
 			<PageHeader
 				title="Xin nghỉ"
-				subtitle="Quản lý đơn xin nghỉ phép. Đơn mới cần được admin duyệt."
+				subtitle="Quản lý đơn xin nghỉ phép. Đơn mới cần được nhân viên duyệt."
 				action={
 					<Button type="primary" icon={<PlusOutlined />} onClick={openModal}>
 						Tạo đơn xin nghỉ

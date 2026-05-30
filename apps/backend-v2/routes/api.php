@@ -205,8 +205,8 @@ Route::prefix('v1')->group(function () {
         // Audio upload (presigned PUT to R2) — staff only.
         Route::post('/audio/presign-upload', [Admin\AudioUploadController::class, 'presignUpload']);
 
-        // Top-up packages CRUD (Plans tab).
-        Route::prefix('topup-packages')->group(function () {
+        // Top-up packages CRUD — ADMIN ONLY (payment/economy setup).
+        Route::middleware('role:admin')->prefix('topup-packages')->group(function () {
             Route::get('/', [Admin\TopupPackageController::class, 'index']);
             Route::post('/', [Admin\TopupPackageController::class, 'store']);
             Route::get('/{id}', [Admin\TopupPackageController::class, 'show']);
@@ -216,8 +216,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/{id}/deactivate', [Admin\TopupPackageController::class, 'deactivate']);
         });
 
-        // Grading rubrics (read-only — reference data).
-        Route::prefix('grading-rubrics')->group(function () {
+        // Grading rubrics — ADMIN ONLY (reference scoring criteria).
+        Route::middleware('role:admin')->prefix('grading-rubrics')->group(function () {
             Route::get('/', [Admin\GradingRubricController::class, 'index']);
             Route::get('/{id}', [Admin\GradingRubricController::class, 'show'])->whereUuid('id');
         });

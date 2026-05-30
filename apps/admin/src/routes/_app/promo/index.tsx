@@ -1,6 +1,6 @@
 import { EditOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { Input as AntInput, Empty, Flex, Space, Table, Tag, Tooltip, Typography } from "antd"
 import { useState } from "react"
 import { Button } from "#/components/Button"
@@ -16,6 +16,7 @@ import {
 	PROMO_STATUSES,
 	type PromoStatus,
 } from "#/features/admin-promos/types"
+import { useAuth } from "#/lib/auth"
 
 interface Search {
 	page?: number
@@ -24,6 +25,10 @@ interface Search {
 }
 
 export const Route = createFileRoute("/_app/promo/")({
+	beforeLoad: () => {
+		const user = useAuth.getState().user
+		if (!user || user.role !== "admin") throw redirect({ to: "/" })
+	},
 	validateSearch: (s: Record<string, unknown>): Search => ({
 		page: typeof s.page === "number" ? s.page : undefined,
 		q: typeof s.q === "string" ? s.q : undefined,

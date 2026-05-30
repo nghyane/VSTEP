@@ -3,7 +3,6 @@ import {
 	CalendarOutlined,
 	CheckSquareOutlined,
 	DatabaseOutlined,
-	DollarOutlined,
 	EditOutlined,
 	GiftOutlined,
 	HomeOutlined,
@@ -11,6 +10,7 @@ import {
 	ReadOutlined,
 	ScheduleOutlined,
 	SettingOutlined,
+	SolutionOutlined,
 	TeamOutlined,
 } from "@ant-design/icons"
 import { Link, useLocation } from "@tanstack/react-router"
@@ -81,11 +81,6 @@ function buildStaffItems(isAdmin: boolean): ItemType[] {
 			label: "Đề thi",
 			children: [
 				{ key: "/exams", icon: <ProfileOutlined />, label: <Link to={t("/exams")}>Danh sách đề</Link> },
-				{
-					key: "/grading",
-					icon: <CheckSquareOutlined />,
-					label: <Link to={t("/grading")}>Tiêu chí chấm điểm</Link>,
-				},
 			],
 		},
 		{
@@ -116,13 +111,11 @@ function buildStaffItems(isAdmin: boolean): ItemType[] {
 			type: "group",
 			label: "Quản lý",
 			children: [
-				{ key: "/users", icon: <TeamOutlined />, label: <Link to={t("/users")}>Người dùng</Link> },
 				{ key: "/courses", icon: <DatabaseOutlined />, label: <Link to={t("/courses")}>Khóa học</Link> },
-				{ key: "/promo", icon: <GiftOutlined />, label: <Link to={t("/promo")}>Khuyến mãi</Link> },
 				{
-					key: "/topup-packages",
-					icon: <DollarOutlined />,
-					label: <Link to={t("/topup-packages")}>Gói nạp</Link>,
+					key: "/leave-requests",
+					icon: <SolutionOutlined />,
+					label: <Link to={t("/leave-requests")}>Đơn nghỉ</Link>,
 				},
 			],
 		},
@@ -131,8 +124,20 @@ function buildStaffItems(isAdmin: boolean): ItemType[] {
 	if (isAdmin) {
 		items.push({
 			type: "group",
-			label: "Hệ thống",
+			label: "Quản trị",
 			children: [
+				{
+					key: "/grading",
+					icon: <CheckSquareOutlined />,
+					label: <Link to={t("/grading")}>Tiêu chí chấm điểm</Link>,
+				},
+				{
+					key: "/topup-packages",
+					icon: <GiftOutlined />,
+					label: <Link to={t("/topup-packages")}>Gói nạp</Link>,
+				},
+				{ key: "/users", icon: <TeamOutlined />, label: <Link to={t("/users")}>Người dùng</Link> },
+				{ key: "/promo", icon: <GiftOutlined />, label: <Link to={t("/promo")}>Khuyến mãi</Link> },
 				{ key: "/settings", icon: <SettingOutlined />, label: <Link to={t("/settings")}>Cấu hình</Link> },
 			],
 		})
@@ -151,16 +156,17 @@ const STAFF_KEYS = [
 	"/vocab",
 	"/grammar",
 	"/exams",
-	"/grading",
 	"/practice/listening",
 	"/practice/reading",
 	"/practice/writing",
 	"/practice/speaking-drills",
 	"/practice/speaking-scenarios",
-	"/users",
 	"/courses",
-	"/promo",
+	"/leave-requests",
+	"/grading",
 	"/topup-packages",
+	"/users",
+	"/promo",
 	"/settings",
 ]
 

@@ -1,15 +1,20 @@
 import { ArrowLeftOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { createFileRoute, Link, redirect } from "@tanstack/react-router"
 import { Button, Card, Collapse, Descriptions, Flex, Result, Skeleton, Table, Tag, Typography } from "antd"
 import { PageHeader } from "#/components/PageHeader"
 import { rubricDetailQuery } from "#/features/admin-grading/queries"
 import { RubricExplanation } from "#/features/admin-grading/RubricExplanation"
 import type { CapRule, Criterion, ScoringPolicy } from "#/features/admin-grading/types"
+import { useAuth } from "#/lib/auth"
 
 const gradingSearch = { page: 1, skill: null, is_active: null }
 
 export const Route = createFileRoute("/_app/grading/$rubricId")({
+	beforeLoad: () => {
+		const user = useAuth.getState().user
+		if (!user || user.role !== "admin") throw redirect({ to: "/" })
+	},
 	component: RubricDetailPage,
 })
 
