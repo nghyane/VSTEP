@@ -1,0 +1,37 @@
+@startuml
+!theme plain
+title Practice & Assessment Class Diagram
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+left to right direction
+
+class WritingPracticeController
+class SpeakingPracticeController
+class WritingPracticeService
+class SpeakingPracticeService
+class PracticeFeedbackService
+class AssessmentSubmissionService
+class ProcessAssessmentJob
+class AssessmentProcessingService
+class PracticeWritingSubmission
+class PracticeSpeakingSubmission
+class PracticeFeedbackRequest
+class AssessmentAttempt
+class AssessmentResult
+
+WritingPracticeController ..> WritingPracticeService
+SpeakingPracticeController ..> SpeakingPracticeService
+WritingPracticeService ..> PracticeWritingSubmission
+WritingPracticeService ..> AssessmentSubmissionService : submit writing assessment
+SpeakingPracticeService ..> PracticeSpeakingSubmission
+SpeakingPracticeService ..> AssessmentSubmissionService : submit speaking assessment
+PracticeFeedbackService ..> PracticeFeedbackRequest
+PracticeFeedbackService ..> AssessmentSubmissionService : request detailed feedback
+AssessmentSubmissionService ..> AssessmentAttempt : creates
+AssessmentSubmissionService ..> ProcessAssessmentJob : dispatches
+ProcessAssessmentJob ..> AssessmentProcessingService : invokes
+AssessmentProcessingService ..> AssessmentResult : stores
+PracticeWritingSubmission "1" -- "0..1" AssessmentAttempt
+PracticeSpeakingSubmission "1" -- "0..1" AssessmentAttempt
+AssessmentAttempt "1" -- "0..1" AssessmentResult
+@enduml

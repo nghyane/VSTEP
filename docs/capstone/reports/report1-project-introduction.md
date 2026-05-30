@@ -6,6 +6,7 @@
 | 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Updated project scope and limitations based on implementation review |
 | 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Revised Writing and Speaking assessment scope |
 | 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Added limitation about onboarding and baseline assessment |
+| 30/05/2026 | M | Hoàng Văn Anh Nghĩa | Clarified assessment validation approach for rubric-based scoring |
 
 *A - Added   M - Modified   D - Deleted
 
@@ -89,6 +90,8 @@ Within this landscape, the VSTEP preparation market shows a clear gap. Tradition
 
 The proposed system differentiates through: (1) rubric-based scoring for Writing and Speaking, where AI helps extract task evidence and generate feedback, (2) adaptive learning support through skill-gap-based recommendations and spaced repetition for vocabulary review, (3) comprehensive progress visualization, and (4) controlled usage of AI services to support sustainable operation.
 
+For assessment reliability, the scoring module is checked using two validation groups. The first group contains referenced Writing samples with independent scoring comments, used to compare the system's predicted proficiency level with a reference level. The second group contains VSTEP-style risk cases, such as off-topic, too-short, copied-prompt, repeated, or non-English responses, used to verify that abnormal submissions are not scored highly. These validation groups are separated so that benchmark results and risk-handling checks do not distort each other.
+
 ## 5. Software Product Vision
 
 For university students who need to meet graduation requirements and working professionals who need certification for career advancement in Vietnam, who struggle with VSTEP preparation methods that lack personalization and provide slow feedback, the Adaptive VSTEP Preparation System is a web and mobile platform that provides personalized learning paths, 4-skill assessment with rapid evidence-based feedback, vocabulary review support, and visual progress tracking. Unlike static mock test websites that only offer questions and answer keys, or general English apps that do not align with VSTEP, this product combines rubric-based scoring, AI-supported evidence extraction, skill-gap recommendations, spaced repetition, and analytics to effectively close skill gaps.
@@ -124,3 +127,4 @@ For university students who need to meet graduation requirements and working pro
 - LI-09: Instructor monitoring and guidance are supported. Direct assignment of individual exercises or learning modules is outside the current scope and planned for future expansion.
 - LI-10: Learner progress and risk insights are rule-based in the current capstone scope. Machine-learning predictive analytics is planned as future work.
 - LI-11: No separate onboarding placement test is included. Users self-select their target level, and the first mock test serves as the initial performance baseline. Ongoing assessment is collected from practice and mock test results.
+- LI-12: Assessment validation in the current capstone scope demonstrates consistency on selected referenced samples and VSTEP-style risk cases. It is not a replacement for official examiner certification or large-scale psychometric validation.

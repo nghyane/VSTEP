@@ -1,0 +1,46 @@
+@startuml
+!theme plain
+title Mock Exam Submission Sequence Diagram
+
+actor Learner
+participant "Exam Screen" as UI
+participant "ExamSessionController" as Controller
+participant "ExamSessionService" as Service
+participant "ExamScoringService" as ScoringService
+participant "AssessmentSubmissionService" as AssessmentService
+participant "ProgressService" as ProgressService
+queue "ProcessAssessmentJob" as Job
+database "ExamVersion" as ExamVersion
+database "ExamSession" as Session
+database "ExamMcqAnswer" as McqAnswer
+database "ExamWritingSubmission" as WritingSubmission
+database "ExamSpeakingSubmission" as SpeakingSubmission
+
+Learner -> UI : Start mock exam
+UI -> Controller : POST /exam-sessions
+Controller -> Service : start(profile, examVersion)
+Service -> ExamVersion : load published version
+Service -> Service : compute exam cost and duration
+Service -> Session : create session
+Session --> Service : session id
+Service --> Controller : session data
+Controller --> UI : exam session
+
+Learner -> UI : Submit completed exam
+UI -> Controller : POST /exam-sessions/{id}/submit
+Controller -> Service : submit(session, answers)
+Service -> ScoringService : load MCQ answer key
+Service -> McqAnswer : save listening/reading answers
+Service -> WritingSubmission : save writing tasks
+Service -> SpeakingSubmission : save speaking parts
+Service -> AssessmentService : submit writing assessments
+Service -> AssessmentService : submit speaking assessments
+AssessmentService -> Job : dispatch assessment jobs
+Service -> ProgressService : record exam completion after commit
+Service -> Session : mark submitted/processing
+Session --> Service : updated status
+Service --> Controller : submission accepted
+Controller --> UI : exam submitted
+UI --> Learner : Show processing/results status
+
+@enduml

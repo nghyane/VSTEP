@@ -6,6 +6,7 @@
 | 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Updated project scope, responsibility assignments, and risk management plan |
 | 29/05/2026 | M | Hoàng Văn Anh Nghĩa | Updated tools, infrastructure, and configuration management sections |
 | 30/05/2026 | M | Hoàng Văn Anh Nghĩa | Revised report content to align with Report 2 project management template |
+| 30/05/2026 | M | Hoàng Văn Anh Nghĩa | Added assessment validation approach for scoring quality management |
 
 *A - Added   M - Modified   D - Deleted
 
@@ -189,6 +190,8 @@ Sprint Planning → Development → Code Review → Testing → Sprint Review �
 | 5 | Acceptance Test | Verify against SRS functional requirements and URS user stories | Manual verification | Academic supervisor |
 
 **Test Isolation:** External services are replaced with controlled test doubles during automated testing so test results remain reproducible and do not depend on third-party availability.
+
+**Assessment Validation:** Writing and Speaking scoring quality is checked separately from normal API tests. For Writing, the team uses (1) referenced benchmark samples with independent scoring comments to compare predicted proficiency levels, and (2) VSTEP-style risk cases to verify that off-topic, too-short, copied, repeated, or invalid-language responses are not scored highly. Benchmark samples and risk cases are reported separately to avoid mixing accuracy evaluation with abnormal-input handling.
 
 ### 2.3 Training Plan
 

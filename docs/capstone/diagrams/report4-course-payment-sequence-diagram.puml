@@ -1,0 +1,37 @@
+@startuml
+!theme plain
+title Course Enrollment Payment Sequence Diagram
+
+actor Learner
+participant "Course Screen" as UI
+participant "CourseController" as Controller
+participant "CourseOrderService" as OrderService
+participant "CourseService" as CourseService
+participant "NotificationService" as NotificationService
+database "Course" as Course
+database "CourseEnrollmentOrder" as Order
+database "CoinTransaction" as CoinTransaction
+database "CourseEnrollment" as Enrollment
+
+Learner -> UI : Choose course and enroll
+UI -> Controller : POST course enrollment order
+Controller -> OrderService : createOrder(profile, course)
+OrderService -> Course : validate course availability
+Course --> OrderService : course data
+OrderService -> Order : create pending mock payment order
+OrderService --> Controller : pending order + provider reference
+Controller --> UI : show payment/confirmation info
+
+Learner -> UI : Confirm payment
+UI -> Controller : POST confirm order
+Controller -> OrderService : confirm(order)
+OrderService -> Order : mark paid
+OrderService -> CourseService : createEnrollment(profile, course)
+CourseService -> Enrollment : create enrollment
+CourseService -> CoinTransaction : credit course bonus if configured
+CourseService -> NotificationService : notify enrollment
+NotificationService --> OrderService : notification queued
+OrderService --> Controller : confirmation accepted
+UI --> Learner : Show enrollment status
+
+@enduml
