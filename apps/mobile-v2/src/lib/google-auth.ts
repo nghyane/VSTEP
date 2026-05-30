@@ -54,8 +54,7 @@ function missingIdToken(): GoogleAuthResult {
 function developerError(): GoogleAuthResult {
   return {
     status: "error",
-    message:
-      "Google Login chưa khớp cấu hình Android OAuth. Kiểm tra package name com.vstep.mobile.v2 và SHA-1 debug trong Google Cloud, sau đó rebuild development build.",
+    message: "Google chưa khớp OAuth Android. Kiểm tra package/SHA-1 trong Google Cloud rồi cài lại APK.",
   };
 }
 
@@ -107,7 +106,7 @@ export async function signInWithGoogle(): Promise<GoogleAuthResult> {
     if (isPlayServicesError(normalized.code)) {
       return {
         status: "error",
-        message: "Thiết bị này chưa có Google Play Services khả dụng để đăng nhập Google.",
+        message: "Thiết bị chưa có Google Play Services để đăng nhập Google.",
       };
     }
 
@@ -119,7 +118,7 @@ export async function signInWithGoogle(): Promise<GoogleAuthResult> {
       status: "error",
       message:
         normalized.message ??
-        "Không thể mở đăng nhập Google. Hãy dùng development build và kiểm tra cấu hình Google Cloud.",
+        "Không thể mở đăng nhập Google. Vui lòng kiểm tra cấu hình Google Cloud.",
     };
   }
 }
