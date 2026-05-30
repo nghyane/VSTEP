@@ -79,12 +79,11 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
   // ── Foundation — Vocabulary (Phase 4) ──
   {
     area: "Foundation",
-    flow: "Vocabulary index, topic detail, flashcard, exercise, SRS review",
+    flow: "Vocabulary index, topic detail, practice modes, SRS review",
     frontendV3: [
       "src/routes/_app/luyen-tap/tu-vung/index.tsx",
       "src/routes/_app/luyen-tap/tu-vung/$topicId.tsx",
-      "src/routes/_focused/vocab/$topicId/flashcard.tsx",
-      "src/routes/_focused/vocab/$topicId/exercise.tsx",
+      "src/routes/_focused/vocab/$topicId/practice.tsx",
       "src/routes/_focused/vocab/srs-review.tsx",
       "src/features/vocab",
     ],
@@ -92,8 +91,8 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "app/(app)/vocabulary/index.tsx",
       "app/(app)/vocabulary/[id].tsx",
       "app/(app)/vocabulary/[id]/flashcard.tsx",
-      "app/(app)/vocabulary/[id]/exercise.tsx",
       "app/(app)/vocabulary/srs-review.tsx",
+      "src/features/vocab/use-practice-session.ts",
       "src/components/FlipCard.tsx",
       "src/components/SrsFlipCard.tsx",
       "src/components/SrsRatingButtons.tsx",
@@ -104,7 +103,6 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "GET /api/v1/vocab/topics/{id}",
       "GET /api/v1/vocab/srs/queue",
       "POST /api/v1/vocab/srs/review",
-      "POST /api/v1/vocab/exercises/{id}/attempt",
     ],
     status: "done",
     gaps: [],
