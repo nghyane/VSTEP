@@ -1,0 +1,731 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/a3vlab",
+    "id": "a3vlab",
+    "slide": 19,
+    "layoutId": "a085ed76-5900-4e1e-a271-69f475facf1e",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "b19d757f-0cbc-4f32-ba6e-91c934160beb",
+    "masterLayoutName": "Master",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Aptos",
+      "Aptos Display"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "a085ed76-5900-4e1e-a271-69f475facf1e",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "b19d757f-0cbc-4f32-ba6e-91c934160beb",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "b19d757f-0cbc-4f32-ba6e-91c934160beb",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/d4vmtwra",
+      "id": "1",
+      "bbox": [
+        0,
+        0,
+        1280,
+        720
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFFFF",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/6dcbulwv",
+      "id": "2",
+      "bbox": [
+        0,
+        0,
+        12,
+        720
+      ],
+      "geometry": "rect",
+      "fillColor": "#F37021",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/vy90je9c",
+      "id": "3",
+      "bbox": [
+        12,
+        0,
+        8,
+        720
+      ],
+      "geometry": "rect",
+      "fillColor": "#1FA463",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/o7qpg3ex",
+      "id": "4",
+      "bbox": [
+        20,
+        0,
+        8,
+        720
+      ],
+      "geometry": "rect",
+      "fillColor": "#0C76BC",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/dsji5sne",
+      "id": "5",
+      "bbox": [
+        52,
+        666,
+        280,
+        20
+      ],
+      "geometry": "rect",
+      "text": "SP26SE145 | GSP26SE63",
+      "textPreview": "SP26SE145 | GSP26SE63",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Aptos",
+        "color": "#5B6475",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "SP26SE145 | GSP26SE63"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "SP26SE145 | GSP26SE63",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Aptos",
+            "color": "#5B6475",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "SP26SE145 | GSP26SE63",
+              "fontSize": 12,
+              "typeface": "Aptos",
+              "color": "#5B6475"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/61032lsz",
+      "id": "6",
+      "bbox": [
+        1132,
+        666,
+        36,
+        20
+      ],
+      "geometry": "rect",
+      "text": "19",
+      "textPreview": "19",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Aptos",
+        "color": "#5B6475",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "19"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "19",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Aptos",
+            "color": "#5B6475",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "19",
+              "fontSize": 12,
+              "typeface": "Aptos",
+              "color": "#5B6475"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "image",
+      "scope": "slide",
+      "aid": "im/adsji5sn",
+      "id": "7",
+      "bbox": [
+        1184,
+        644,
+        58,
+        40
+      ],
+      "alt": "FPT University logo",
+      "contentType": "image/png",
+      "imageFit": "contain",
+      "asset": {
+        "assetId": "fbdcf157-b2e1-4046-9d98-773eaa853326",
+        "contentType": "image/png",
+        "byteLength": 49564
+      }
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ovahoza1",
+      "id": "8",
+      "bbox": [
+        68,
+        48,
+        900,
+        54
+      ],
+      "geometry": "rect",
+      "text": "Learning Path",
+      "textPreview": "Learning Path",
+      "resolvedFontSize": 31,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 31,
+        "typeface": "Aptos Display",
+        "color": "#172033",
+        "bold": true,
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Learning Path"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Learning Path",
+          "resolvedTextStyle": {
+            "fontSize": 31,
+            "typeface": "Aptos Display",
+            "color": "#172033",
+            "bold": true,
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Learning Path",
+              "fontSize": 31,
+              "typeface": "Aptos Display",
+              "color": "#172033",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/dg7adsji",
+      "id": "9",
+      "bbox": [
+        68,
+        112,
+        96,
+        4
+      ],
+      "geometry": "rect",
+      "fillColor": "#F37021",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1032lszq",
+      "id": "10",
+      "bbox": [
+        168,
+        112,
+        62,
+        4
+      ],
+      "geometry": "rect",
+      "fillColor": "#1FA463",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cfa9w3m9",
+      "id": "11",
+      "bbox": [
+        234,
+        112,
+        62,
+        4
+      ],
+      "geometry": "rect",
+      "fillColor": "#0C76BC",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/judg7ads",
+      "id": "12",
+      "bbox": [
+        110,
+        178,
+        9,
+        9
+      ],
+      "geometry": "rect",
+      "fillColor": "#F37021",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/u9knih4b",
+      "id": "13",
+      "bbox": [
+        136,
+        170,
+        920,
+        40
+      ],
+      "geometry": "rect",
+      "text": "Analyze skill gaps from mock tests and practice.",
+      "textPreview": "Analyze skill gaps from mock tests and practice.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Aptos",
+        "color": "#172033",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Analyze skill gaps from mock tests and practice."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Analyze skill gaps from mock tests and practice.",
+          "resolvedTextStyle": {
+            "fontSize": 24,
+            "typeface": "Aptos",
+            "color": "#172033",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Analyze skill gaps from mock tests and practice.",
+              "fontSize": 24,
+              "typeface": "Aptos",
+              "color": "#172033"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1orytsvu",
+      "id": "14",
+      "bbox": [
+        110,
+        248,
+        9,
+        9
+      ],
+      "geometry": "rect",
+      "fillColor": "#1FA463",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/c7u54zid",
+      "id": "15",
+      "bbox": [
+        136,
+        240,
+        920,
+        40
+      ],
+      "geometry": "rect",
+      "text": "Recommend exercises for weaker skills.",
+      "textPreview": "Recommend exercises for weaker skills.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Aptos",
+        "color": "#172033",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Recommend exercises for weaker skills."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Recommend exercises for weaker skills.",
+          "resolvedTextStyle": {
+            "fontSize": 24,
+            "typeface": "Aptos",
+            "color": "#172033",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Recommend exercises for weaker skills.",
+              "fontSize": 24,
+              "typeface": "Aptos",
+              "color": "#172033"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/jm1cfa9w",
+      "id": "16",
+      "bbox": [
+        110,
+        318,
+        9,
+        9
+      ],
+      "geometry": "rect",
+      "fillColor": "#0C76BC",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/u18jqh0f",
+      "id": "17",
+      "bbox": [
+        136,
+        310,
+        920,
+        40
+      ],
+      "geometry": "rect",
+      "text": "Use rule-based recommendation logic.",
+      "textPreview": "Use rule-based recommendation logic.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Aptos",
+        "color": "#172033",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Use rule-based recommendation logic."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Use rule-based recommendation logic.",
+          "resolvedTextStyle": {
+            "fontSize": 24,
+            "typeface": "Aptos",
+            "color": "#172033",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Use rule-based recommendation logic.",
+              "fontSize": 24,
+              "typeface": "Aptos",
+              "color": "#172033"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/5gbq1ory",
+      "id": "18",
+      "bbox": [
+        110,
+        388,
+        9,
+        9
+      ],
+      "geometry": "rect",
+      "fillColor": "#F37021",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cvixczed",
+      "id": "19",
+      "bbox": [
+        136,
+        380,
+        920,
+        40
+      ],
+      "geometry": "rect",
+      "text": "Avoid claims of ML predictive analytics in current scope.",
+      "textPreview": "Avoid claims of ML predictive analytics in current scope.",
+      "resolvedFontSize": 24,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 24,
+        "typeface": "Aptos",
+        "color": "#172033",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Avoid claims of ML predictive analytics in current scope."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Avoid claims of ML predictive analytics in current scope.",
+          "resolvedTextStyle": {
+            "fontSize": 24,
+            "typeface": "Aptos",
+            "color": "#172033",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Avoid claims of ML predictive analytics in current scope.",
+              "fontSize": 24,
+              "typeface": "Aptos",
+              "color": "#172033"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

@@ -10,16 +10,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Status machine:
- *   pending → paid (mock confirm / real gateway callback)
+ *   pending → paid (gateway callback)
  *   pending → expired (timeout)
  */
 #[Fillable([
     'profile_id',
+    'order_code',
     'course_id',
     'amount_vnd',
     'status',
     'payment_provider',
     'provider_ref',
+    'payment_url',
+    'gateway_transaction_id',
+    'gateway_response',
+    'callback_received_at',
+    'expires_at',
     'paid_at',
 ])]
 class CourseEnrollmentOrder extends BaseModel
@@ -28,7 +34,14 @@ class CourseEnrollmentOrder extends BaseModel
 
     protected function casts(): array
     {
-        return ['paid_at' => 'datetime', 'status' => OrderStatus::class];
+        return [
+            'order_code' => 'integer',
+            'paid_at' => 'datetime',
+            'callback_received_at' => 'datetime',
+            'expires_at' => 'datetime',
+            'gateway_response' => 'array',
+            'status' => OrderStatus::class,
+        ];
     }
 
     public function profile(): BelongsTo

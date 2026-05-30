@@ -288,7 +288,16 @@ export function useExamSession({
 					.filter((x): x is WritingAnswerPayload => x !== null)
 			: []
 		submitMutation.mutate({ mcq_answers, writing_answers })
-	}, [state.phase])
+	}, [
+		activeSkills,
+		listeningItems,
+		readingItems,
+		state.mcqAnswers,
+		state.phase,
+		state.writingAnswers,
+		submitMutation,
+		writingTasks,
+	])
 
 	const handleAnswerMcq = useCallback((itemId: string, selectedIndex: number) => {
 		dispatch({ type: "ANSWER_MCQ", itemId, selectedIndex })

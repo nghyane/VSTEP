@@ -1,0 +1,40 @@
+@startuml
+!theme plain
+
+title Backend API Package Diagram
+
+skinparam backgroundColor #FFFFFF
+skinparam packageStyle folder
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam PackageBorderColor #555555
+skinparam PackageFontColor #111111
+skinparam PackageFontStyle bold
+skinparam FontName Arial
+
+left to right direction
+
+package "routes" as routes
+package "middleware" as middleware
+package "controller" as controller
+package "request" as request
+package "resource" as resource
+package "service" as service
+package "assessment" as assessment
+package "job" as job
+package "model" as model
+package "integration" as integration
+
+routes ..> middleware
+routes ..> controller
+controller ..> request
+controller ..> service
+controller ..> resource
+service ..> model
+service ..> integration
+service ..> assessment
+assessment ..> model
+assessment ..> integration
+job ..> service
+
+@enduml

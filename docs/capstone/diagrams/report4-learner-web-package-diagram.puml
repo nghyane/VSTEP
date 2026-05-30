@@ -1,0 +1,35 @@
+@startuml
+!theme plain
+
+title Learner Web App Package Diagram
+
+skinparam backgroundColor #FFFFFF
+skinparam packageStyle folder
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam PackageBorderColor #555555
+skinparam PackageFontColor #111111
+skinparam PackageFontStyle bold
+skinparam FontName Arial
+
+left to right direction
+
+package "routes" as routes
+package "features" as features
+package "components" as components
+package "lib" as lib
+package "types" as types
+package "assets" as assets
+package "styles" as styles
+
+routes ..> features
+routes ..> components
+features ..> components
+features ..> lib
+features ..> types
+components ..> lib
+components ..> types
+components ..> assets
+components ..> styles
+
+@enduml

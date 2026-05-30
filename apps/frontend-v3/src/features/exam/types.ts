@@ -10,6 +10,9 @@ export interface AppConfig {
 			custom_per_skill_coins: number
 			max_cost_coins: number
 		}
+		practice: {
+			feedback_cost_coins: number
+		}
 	}
 }
 
@@ -221,7 +224,7 @@ export interface McqDetailItem {
 	answered_at: string | null
 }
 
-import type { Improvement, Rewrite } from "#/features/grading/types"
+import type { AssessmentFeedback, CriterionScore } from "#/features/grading/types"
 
 export interface WritingFeedbackItem {
 	submission_id: string
@@ -229,16 +232,9 @@ export interface WritingFeedbackItem {
 	word_count: number
 	text: string
 	overall_band: number | null
-	rubric_scores: {
-		task_achievement: number
-		coherence: number
-		lexical: number
-		grammar: number
-	} | null
-	strengths: string[] | null
-	improvements: Improvement[] | null
-	rewrites: Rewrite[] | null
-	paragraph_feedback: unknown
+	criterion_scores: CriterionScore[] | null
+	feedback: AssessmentFeedback | null
+	calculation_trace: unknown
 }
 
 export interface SpeakingFeedbackItem {
@@ -247,21 +243,16 @@ export interface SpeakingFeedbackItem {
 	audio_url: string | null
 	transcript: string | null
 	overall_band: number | null
-	rubric_scores: {
-		fluency: number
-		pronunciation: number
-		content: number
-		vocab: number
-		grammar: number
-	} | null
-	strengths: string[] | null
-	improvements: Improvement[] | null
-	pronunciation_report: { accuracy_score: number } | null
+	criterion_scores: CriterionScore[] | null
+	feedback: AssessmentFeedback | null
+	calculation_trace: unknown
 }
 
 export interface SessionResultsData {
 	session: ExamSessionSummary
 	scores: unknown
+	overall_band: number | null
+	level: string
 	/** Aggregate MCQ: score (đã chấm) / total (số câu trong scope, câu không đáp tính sai). */
 	mcq: { score: number; total: number }
 	mcq_detail: McqDetailItem[]

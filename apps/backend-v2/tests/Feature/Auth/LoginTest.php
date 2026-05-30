@@ -40,6 +40,25 @@ class LoginTest extends TestCase
         $response->assertJsonPath('data.profile.id', $profile->id);
     }
 
+    public function test_password_login_does_not_require_google_client_id(): void
+    {
+        config(['services.google.client_id' => null]);
+
+        $user = User::factory()->create([
+            'email' => 'learner@example.com',
+            'password' => Hash::make('secret123'),
+        ]);
+        Profile::factory()->initial()->forAccount($user)->create();
+
+        $response = $this->postJson('/api/v1/auth/login', [
+            'email' => 'learner@example.com',
+            'password' => 'secret123',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonStructure(['data' => ['access_token', 'refresh_token']]);
+    }
+
     public function test_login_admin_returns_null_profile(): void
     {
         User::factory()->admin()->create([

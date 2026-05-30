@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Enums\LeaveRequestStatus;
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\Teacher\StoreLeaveRequestRequest;
 use App\Http\Requests\Admin\Teacher\UpdateLeaveRequestStatusRequest;
 use App\Http\Resources\Admin\TeacherScheduleItemResource;
 use App\Models\TeacherLeaveRequest;
+use App\Models\User;
 use App\Services\Admin\TeacherDashboardService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,13 +25,13 @@ final class TeacherController extends Controller
 
     public function dashboard(Request $request): JsonResponse
     {
-        return response()->json(['data' => $this->service->stats($request->user())]);
+        return response()->json(['data' => $this->service->stats($this->teacherFrom($request))]);
     }
 
     public function slots(Request $request): JsonResponse
     {
         $paginator = $this->service->slots(
-            $request->user(),
+            $this->teacherFrom($request),
             $request->input('from'),
             $request->input('to'),
         );
@@ -41,7 +43,7 @@ final class TeacherController extends Controller
     {
         return TeacherScheduleItemResource::collection(
             $this->service->scheduleItems(
-                $request->user(),
+                $this->teacherFrom($request),
                 $request->input('from'),
                 $request->input('to'),
             ),
@@ -51,7 +53,7 @@ final class TeacherController extends Controller
     public function bookings(Request $request): JsonResponse
     {
         $paginator = $this->service->bookings(
-            $request->user(),
+            $this->teacherFrom($request),
             $request->input('status'),
         );
 
@@ -60,13 +62,13 @@ final class TeacherController extends Controller
 
     public function leaveRequests(Request $request): JsonResponse
     {
-        return response()->json(['data' => $this->service->leaveRequests($request->user())]);
+        return response()->json(['data' => $this->service->leaveRequests($this->teacherFrom($request))]);
     }
 
     public function storeLeaveRequest(StoreLeaveRequestRequest $request): JsonResponse
     {
         $leave = $this->service->storeLeaveRequest(
-            $request->user(),
+            $this->teacherFrom($request),
             $request->validated('date'),
             $request->validated('reason'),
         );
@@ -102,5 +104,16 @@ final class TeacherController extends Controller
         );
 
         return response()->json(['data' => $updated]);
+    }
+
+    private function teacherFrom(Request $request): User
+    {
+        $user = $request->user();
+
+        if (! $user instanceof User || $user->role !== Role::Teacher) {
+            abort(403, 'Teacher account required.');
+        }
+
+        return $user;
     }
 }

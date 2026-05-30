@@ -19,6 +19,7 @@ use App\Models\Profile;
 use App\Models\SystemConfig;
 use App\Models\User;
 use App\Services\AuthService;
+use App\Services\GoogleTokenVerifier;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -71,10 +72,11 @@ final class AuthController extends Controller
         ]]);
     }
 
-    public function googleLogin(GoogleLoginRequest $request): JsonResponse
+    public function googleLogin(GoogleLoginRequest $request, GoogleTokenVerifier $googleTokenVerifier): JsonResponse
     {
         $result = $this->authService->loginWithGoogle(
             $request->validated('id_token'),
+            $googleTokenVerifier,
             $request->userAgent(),
         );
 

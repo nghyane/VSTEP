@@ -46,10 +46,9 @@ class PracticeWritingSubmission extends BaseModel
         return $this->belongsTo(PracticeWritingPrompt::class, 'prompt_id');
     }
 
-    public function activeGradingResult(): HasOne
+    public function assessmentAttempt(): HasOne
     {
-        return $this->hasOne(WritingGradingResult::class, 'submission_id')
-            ->where('submission_type', 'practice_writing')
-            ->where('is_active', true);
+        return $this->hasOne(AssessmentAttempt::class, 'source_id')
+            ->where('source_type', 'practice');
     }
 }

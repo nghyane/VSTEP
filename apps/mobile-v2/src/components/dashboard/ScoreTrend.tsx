@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useQuery } from "@tanstack/react-query";
+import Svg, { Circle, G, Line, Polyline, Rect, Text as SvgText } from "react-native-svg";
 
 import { DepthCard } from "@/components/DepthCard";
-import { HapticTouchable } from "@/components/HapticTouchable";
 import { SkillIcon } from "@/components/SkillIcon";
 import { api } from "@/lib/api";
 import { useOverview } from "@/hooks/use-progress";
@@ -12,6 +12,16 @@ import { useThemeColors, spacing, fontSize, fontFamily, radius, type ThemeColors
 import type { ExamSessionResult, Skill } from "@/types/api";
 
 const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
+const MAX_TESTS = 7;
+
+const CHART_W = 600;
+const CHART_H = 240;
+const LEFT = 38;
+const RIGHT = 584;
+const TOP = 22;
+const BASE = 176;
+const PLOT_H = BASE - TOP;
+
 const SKILL_META: Record<Skill, { vi: string }> = {
   listening: { vi: "Nghe" },
   reading: { vi: "Đọc" },
@@ -19,7 +29,12 @@ const SKILL_META: Record<Skill, { vi: string }> = {
   speaking: { vi: "Nói" },
 };
 
-function getSkillColor(skill: Skill, theme: ReturnType<typeof useThemeColors>): string {
+type ScoredSession = ExamSessionResult & {
+  scores: Record<Skill, number | null>;
+  submittedAt: string;
+};
+
+function getSkillColor(skill: Skill, theme: ThemeColors): string {
   const map: Record<Skill, string> = {
     listening: theme.info,
     reading: theme.skillReading,
@@ -31,43 +46,45 @@ function getSkillColor(skill: Skill, theme: ReturnType<typeof useThemeColors>): 
 
 function formatShortDate(iso: string): string {
   const d = new Date(iso);
-  return `${d.getDate()}/${d.getMonth() + 1}`;
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  return `${day}/${month}`;
+}
+
+function bandToY(value: number): number {
+  return BASE - (Math.max(0, Math.min(10, value)) / 10) * PLOT_H;
 }
 
 function computeAvg(scores: Record<Skill, number | null>): number {
-  const vals = SKILLS.map((s) => scores[s]).filter((v): v is number => v !== null);
+  const vals = SKILLS.map((skill) => scores[skill]).filter((value): value is number => value !== null);
   if (vals.length === 0) return 0;
-  return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10;
+  return Math.round((vals.reduce((sum, value) => sum + value, 0) / vals.length) * 10) / 10;
 }
 
 export function ScoreTrend() {
   const c = useThemeColors();
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const { data: overview } = useOverview();
   const { data, isLoading } = useQuery({
     queryKey: ["exam-sessions"],
     queryFn: () => api.get<ExamSessionResult[]>("/api/v1/exam-sessions"),
   });
 
-  if (isLoading || !data || !overview) return null;
+  const tests = useMemo(() => {
+    return (data ?? [])
+      .filter((session): session is ScoredSession => session.submittedAt !== null && session.scores !== null)
+      .slice(0, MAX_TESTS)
+      .reverse();
+  }, [data]);
 
-  const sessions = data;
-  if (!sessions || sessions.length === 0) {
+  if (isLoading || !overview) {
     return (
       <DepthCard style={styles.root}>
-        <Text style={[styles.title, { color: c.foreground }]}>Điểm qua các lần thi</Text>
-        <Text style={[styles.subtitle, { color: c.subtle }]}>Chưa có bài thi thử nào</Text>
+        <ActivityIndicator color={c.primary} />
       </DepthCard>
     );
   }
-
-  const targetBand = getTargetBand(overview.profile.targetLevel);
-  const tests = sessions
-    .filter((s): s is ExamSessionResult & { scores: Record<Skill, number | null>; submittedAt: string } =>
-      s.submittedAt !== null && s.scores !== null,
-    )
-    .slice(0, 10)
-    .reverse();
 
   if (tests.length === 0) {
     return (
@@ -78,109 +95,290 @@ export function ScoreTrend() {
     );
   }
 
+  const targetLevel = overview.profile.targetLevel ?? "B2";
+  const targetBand = getTargetBand(targetLevel);
+  const activeTest = activeIdx !== null ? tests[activeIdx] : null;
+  const activeAvg = activeTest ? computeAvg(activeTest.scores) : null;
+
   return (
     <DepthCard style={styles.root}>
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerCopy}>
           <Text style={[styles.title, { color: c.foreground }]}>Điểm qua các lần thi</Text>
-          <Text style={[styles.subtitle, { color: c.subtle }]}>
-            {tests.length} bài thi gần nhất
-          </Text>
+          <Text style={[styles.subtitle, { color: c.subtle }]}>{tests.length} bài thi gần nhất</Text>
         </View>
         <View style={[styles.targetBadge, { backgroundColor: c.destructiveTint }]}>
           <Text style={[styles.targetBadgeText, { color: c.destructive }]}>
-            Mục tiêu: {targetBand}
+            {targetLevel} = {targetBand}
           </Text>
         </View>
       </View>
 
-      {/* Skill legend */}
-      <View style={styles.legend}>
-        {SKILLS.map((s) => (
-          <View key={s} style={styles.legendItem}>
-            <SkillIcon skill={s} size={14} bare />
-            <Text style={[styles.legendText, { color: getSkillColor(s, c) }]}>
-              {SKILL_META[s].vi}
-            </Text>
+      <ScoreLegend colors={c} />
+
+      <Pressable style={styles.chartTapArea} onPress={() => setZoomOpen(true)}>
+        <ScoreTrendChart
+          tests={tests}
+          targetLevel={targetLevel}
+          targetBand={targetBand}
+          activeIdx={activeIdx}
+          onSelect={(index) => setActiveIdx(activeIdx === index ? null : index)}
+          colors={c}
+          width="100%"
+          height={244}
+        />
+      </Pressable>
+
+      {activeTest ? (
+        <View style={[styles.detailPanel, { backgroundColor: c.surface, borderColor: c.border }]}>
+          <View>
+            <Text style={[styles.detailDate, { color: c.foreground }]}>{formatShortDate(activeTest.submittedAt)}</Text>
+            <Text style={[styles.detailAvg, { color: c.primaryDark }]}>Trung bình {activeAvg?.toFixed(1)}</Text>
           </View>
-        ))}
-      </View>
+          <ScoreBreakdown test={activeTest} colors={c} />
+        </View>
+      ) : (
+        <Text style={[styles.tapHint, { color: c.subtle }]}>Chạm biểu đồ để phóng to. Chạm cột để xem chi tiết.</Text>
+      )}
 
-      {/* Test rows */}
-      <View style={styles.testRows}>
-        {tests.map((test) => {
-          const avg = computeAvg(test.scores);
-          const aboveTarget = avg >= targetBand;
-
-          return (
-            <ScoreRow
-              key={test.id}
-              test={test}
-              avg={avg}
-              aboveTarget={aboveTarget}
-              expanded={expandedId === test.id}
-              onPress={() => setExpandedId(expandedId === test.id ? null : test.id)}
-            />
-          );
-        })}
-      </View>
+      <ScoreTrendZoomModal
+        visible={zoomOpen}
+        tests={tests}
+        targetLevel={targetLevel}
+        targetBand={targetBand}
+        activeIdx={activeIdx}
+        onSelect={(index) => setActiveIdx(activeIdx === index ? null : index)}
+        onClose={() => setZoomOpen(false)}
+        colors={c}
+      />
     </DepthCard>
   );
 }
 
-interface ScoreRowProps {
-  test: ExamSessionResult & { scores: Record<Skill, number | null>; submittedAt: string };
-  avg: number;
-  aboveTarget: boolean;
-  expanded: boolean;
-  onPress: () => void;
-}
-
-function ScoreRow({ test, avg, aboveTarget, expanded, onPress }: ScoreRowProps) {
-  const c = useThemeColors();
-
+function ScoreLegend({ colors }: { colors: ThemeColors }) {
   return (
-    <HapticTouchable onPress={onPress} activeOpacity={0.85} scalePress>
-      <View style={[styles.testRow, { borderBottomColor: c.border }]}>
-        <View style={styles.testInfo}>
-          <Text style={[styles.testDate, { color: c.subtle }]}>{formatShortDate(test.submittedAt)}</Text>
-          <ScoreBars scores={test.scores} colors={c} />
-          {expanded && <SkillBreakdown scores={test.scores} />}
+    <View style={styles.legend}>
+      {SKILLS.map((skill) => (
+        <View key={skill} style={styles.legendItem}>
+          <SkillIcon skill={skill} size={14} bare />
+          <Text style={[styles.legendText, { color: getSkillColor(skill, colors) }]}>{SKILL_META[skill].vi}</Text>
         </View>
-        <View style={styles.avgBadge}>
-          <Text style={[styles.avgValue, { color: aboveTarget ? c.success : c.destructive }]}>{avg.toFixed(1)}</Text>
-          <Text style={[styles.expandHint, { color: c.subtle }]}>{expanded ? "Ẩn" : "Chi tiết"}</Text>
-        </View>
+      ))}
+      <View style={styles.legendItem}>
+        <View style={[styles.avgLegend, { backgroundColor: colors.primaryDark }]} />
+        <Text style={[styles.legendText, { color: colors.primaryDark }]}>Trung bình</Text>
       </View>
-    </HapticTouchable>
-  );
-}
-
-function ScoreBars({ scores, colors }: { scores: Record<Skill, number | null>; colors: ThemeColors }) {
-  return (
-    <View style={styles.scoreDots}>
-      {SKILLS.map((skill) => {
-        const score = scores[skill] ?? 0;
-        const ratio = score / 10;
-        return (
-          <View
-            key={skill}
-            style={[styles.scoreBar, { width: Math.max(4, ratio * 40), backgroundColor: getSkillColor(skill, colors), opacity: score > 0 ? 0.8 : 0.2 }]}
-          />
-        );
-      })}
+      <View style={styles.legendItem}>
+        <View style={[styles.targetLegend, { borderTopColor: colors.destructive }]} />
+        <Text style={[styles.legendText, { color: colors.destructive }]}>Mục tiêu</Text>
+      </View>
     </View>
   );
 }
 
-function SkillBreakdown({ scores }: { scores: Record<Skill, number | null> }) {
-  const c = useThemeColors();
+function ScoreTrendChart({
+  tests,
+  targetLevel,
+  targetBand,
+  activeIdx,
+  onSelect,
+  colors,
+  width,
+  height,
+}: {
+  tests: ScoredSession[];
+  targetLevel: string;
+  targetBand: number;
+  activeIdx: number | null;
+  onSelect: (index: number) => void;
+  colors: ThemeColors;
+  width: number | `${number}%`;
+  height: number;
+}) {
+  const spacingX = tests.length > 1 ? (RIGHT - LEFT - 24) / (tests.length - 1) : 0;
+  const centers = tests.map((_, index) => (tests.length === 1 ? (LEFT + RIGHT) / 2 : LEFT + 12 + index * spacingX));
+  const avgPoints = tests.map((test, index) => `${centers[index]},${bandToY(computeAvg(test.scores))}`).join(" ");
+
   return (
-    <View style={styles.breakdown}>
+    <Svg width={width} height={height} viewBox={`0 0 ${CHART_W} ${CHART_H}`}>
+      <G>
+        {[0, 2.5, 5, 7.5, 10].map((value) => {
+          const y = bandToY(value);
+          return (
+            <G key={value}>
+              <Line
+                x1={LEFT}
+                y1={y}
+                x2={RIGHT}
+                y2={y}
+                stroke={value === 0 ? colors.border : colors.borderLight}
+                strokeWidth={value === 0 ? 1.4 : 1}
+              />
+              <SvgText x={LEFT - 10} y={y + 4} textAnchor="end" fontSize="10" fill={colors.placeholder}>
+                {value}
+              </SvgText>
+            </G>
+          );
+        })}
+      </G>
+
+      {tests.map((test, testIndex) => {
+        const cx = centers[testIndex];
+        const isActive = activeIdx === testIndex;
+        const barW = 9;
+        const barGap = 2;
+        const groupW = SKILLS.length * barW + (SKILLS.length - 1) * barGap;
+        return (
+          <G key={test.id}>
+            {SKILLS.map((skill, skillIndex) => {
+              const value = test.scores[skill] ?? 0;
+              const y = bandToY(value);
+              return (
+                <Rect
+                  key={skill}
+                  x={cx - groupW / 2 + skillIndex * (barW + barGap)}
+                  y={y}
+                  width={barW}
+                  height={Math.max(0, BASE - y)}
+                  rx={3}
+                  fill={getSkillColor(skill, colors)}
+                  opacity={isActive || activeIdx === null ? 0.82 : 0.42}
+                />
+              );
+            })}
+            <SvgText x={cx} y={216} textAnchor="middle" fontSize="10" fontWeight="700" fill={colors.subtle}>
+              {formatShortDate(test.submittedAt)}
+            </SvgText>
+            <Rect
+              x={cx - 28}
+              y={TOP}
+              width={56}
+              height={BASE - TOP + 34}
+              fill="transparent"
+              onPress={() => onSelect(testIndex)}
+            />
+          </G>
+        );
+      })}
+
+      <Line
+        x1={LEFT}
+        y1={bandToY(targetBand)}
+        x2={RIGHT}
+        y2={bandToY(targetBand)}
+        stroke={colors.destructive}
+        strokeWidth={1.6}
+        strokeDasharray="6 6"
+      />
+      <SvgText x={RIGHT} y={bandToY(targetBand) - 6} textAnchor="end" fontSize="10" fontWeight="800" fill={colors.destructive}>
+        {targetLevel} = {targetBand}
+      </SvgText>
+
+      <Polyline
+        points={avgPoints}
+        fill="none"
+        stroke={colors.primaryDark}
+        strokeWidth={3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {tests.map((test, index) => {
+        const avg = computeAvg(test.scores);
+        const x = centers[index];
+        const y = bandToY(avg);
+        return (
+          <G key={`avg-${test.id}`}>
+            <Circle cx={x} cy={y} r={5} fill={colors.card} stroke={colors.primaryDark} strokeWidth={3} />
+            <SvgText x={x} y={y + 20} textAnchor="middle" fontSize="11" fontWeight="800" fill={colors.mutedForeground}>
+              {avg.toFixed(1)}
+            </SvgText>
+          </G>
+        );
+      })}
+    </Svg>
+  );
+}
+
+function ScoreTrendZoomModal({
+  visible,
+  tests,
+  targetLevel,
+  targetBand,
+  activeIdx,
+  onSelect,
+  onClose,
+  colors,
+}: {
+  visible: boolean;
+  tests: ScoredSession[];
+  targetLevel: string;
+  targetBand: number;
+  activeIdx: number | null;
+  onSelect: (index: number) => void;
+  onClose: () => void;
+  colors: ThemeColors;
+}) {
+  const activeTest = activeIdx !== null ? tests[activeIdx] : null;
+  const activeAvg = activeTest ? computeAvg(activeTest.scores) : null;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.modalBackdrop} onPress={onClose}>
+        <Pressable
+          style={[styles.zoomSheet, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={(event) => event.stopPropagation()}
+        >
+          <View style={styles.zoomHeader}>
+            <View style={styles.headerCopy}>
+              <Text style={[styles.zoomTitle, { color: colors.foreground }]}>Điểm qua các lần thi</Text>
+              <Text style={[styles.zoomSub, { color: colors.subtle }]}>Kéo ngang để xem rõ hơn</Text>
+            </View>
+            <Pressable style={[styles.closePill, { backgroundColor: colors.surface }]} onPress={onClose}>
+              <Text style={[styles.closeText, { color: colors.foreground }]}>Đóng</Text>
+            </Pressable>
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.zoomScroll}>
+            <View style={styles.zoomChartCanvas}>
+              <ScoreTrendChart
+                tests={tests}
+                targetLevel={targetLevel}
+                targetBand={targetBand}
+                activeIdx={activeIdx}
+                onSelect={onSelect}
+                colors={colors}
+                width={920}
+                height={368}
+              />
+            </View>
+          </ScrollView>
+
+          {activeTest ? (
+            <View style={[styles.detailPanel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View>
+                <Text style={[styles.detailDate, { color: colors.foreground }]}>{formatShortDate(activeTest.submittedAt)}</Text>
+                <Text style={[styles.detailAvg, { color: colors.primaryDark }]}>Trung bình {activeAvg?.toFixed(1)}</Text>
+              </View>
+              <ScoreBreakdown test={activeTest} colors={colors} />
+            </View>
+          ) : (
+            <Text style={[styles.tapHint, { color: colors.subtle }]}>Chạm vào một cụm cột để xem chi tiết.</Text>
+          )}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+function ScoreBreakdown({ test, colors }: { test: ScoredSession; colors: ThemeColors }) {
+  return (
+    <View style={styles.detailScores}>
       {SKILLS.map((skill) => (
-        <View key={skill} style={styles.breakdownItem}>
-          <Text style={[styles.breakdownLabel, { color: getSkillColor(skill, c) }]}>{SKILL_META[skill].vi}</Text>
-          <Text style={[styles.breakdownValue, { color: c.foreground }]}>{scores[skill]?.toFixed(1) ?? "—"}</Text>
+        <View key={skill} style={styles.detailScore}>
+          <Text style={[styles.detailSkill, { color: getSkillColor(skill, colors) }]}>{SKILL_META[skill].vi}</Text>
+          <Text style={[styles.detailValue, { color: colors.foreground }]}>
+            {test.scores[skill]?.toFixed(1) ?? "—"}
+          </Text>
         </View>
       ))}
     </View>
@@ -191,12 +389,16 @@ const styles = StyleSheet.create({
   root: {
     padding: spacing.base,
     marginBottom: spacing.base,
+    gap: spacing.sm,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  headerCopy: {
+    flex: 1,
   },
   title: {
     fontSize: fontSize.base,
@@ -208,17 +410,18 @@ const styles = StyleSheet.create({
   },
   targetBadge: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.md,
+    paddingVertical: 5,
+    borderRadius: radius.full,
   },
   targetBadgeText: {
     fontSize: fontSize.xs,
-    fontFamily: fontFamily.bold,
+    fontFamily: fontFamily.extraBold,
   },
   legend: {
     flexDirection: "row",
-    gap: spacing.md,
-    marginBottom: spacing.md,
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    marginTop: spacing.xs,
   },
   legendItem: {
     flexDirection: "row",
@@ -226,62 +429,98 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   legendText: {
-    fontSize: fontSize.xs,
+    fontSize: 10,
     fontFamily: fontFamily.bold,
   },
-  testRows: {
+  avgLegend: {
+    width: 14,
+    height: 3,
+    borderRadius: 2,
+  },
+  targetLegend: {
+    width: 14,
+    height: 1,
+    borderTopWidth: 2,
+    borderStyle: "dashed",
+  },
+  chartTapArea: {
+    borderRadius: radius.lg,
+  },
+  detailPanel: {
+    borderWidth: 1,
+    borderRadius: radius.lg,
+    padding: spacing.sm,
     gap: spacing.sm,
   },
-  testRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
+  detailDate: {
+    fontSize: fontSize.sm,
+    fontFamily: fontFamily.extraBold,
   },
-  testInfo: {
-    flex: 1,
-    gap: 4,
-  },
-  testDate: {
+  detailAvg: {
     fontSize: fontSize.xs,
-    fontFamily: fontFamily.semiBold,
+    fontFamily: fontFamily.bold,
+    marginTop: 2,
   },
-  scoreDots: {
+  detailScores: {
     flexDirection: "row",
-    gap: 2,
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  detailScore: {
+    minWidth: 58,
+  },
+  detailSkill: {
+    fontSize: 10,
+    fontFamily: fontFamily.extraBold,
+  },
+  detailValue: {
+    fontSize: fontSize.sm,
+    fontFamily: fontFamily.extraBold,
+  },
+  tapHint: {
+    fontSize: fontSize.xs,
+    textAlign: "center",
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(20, 20, 24, 0.45)",
+    justifyContent: "center",
+    padding: spacing.base,
+  },
+  zoomSheet: {
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.xl,
+    padding: spacing.base,
+    gap: spacing.sm,
+    maxHeight: "84%",
+  },
+  zoomHeader: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: spacing.md,
   },
-  scoreBar: {
-    height: 6,
-    borderRadius: 3,
-  },
-  avgBadge: {
-    alignItems: "center",
-  },
-  avgValue: {
+  zoomTitle: {
     fontSize: fontSize.base,
     fontFamily: fontFamily.extraBold,
   },
-  expandHint: {
-    fontSize: 10,
-    fontFamily: fontFamily.bold,
+  zoomSub: {
+    fontSize: fontSize.xs,
+    marginTop: 2,
   },
-  breakdown: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-    marginTop: spacing.xs,
+  closePill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
   },
-  breakdownItem: {
-    minWidth: 70,
-  },
-  breakdownLabel: {
-    fontSize: 10,
+  closeText: {
+    fontSize: fontSize.xs,
     fontFamily: fontFamily.extraBold,
   },
-  breakdownValue: {
-    fontSize: fontSize.sm,
-    fontFamily: fontFamily.extraBold,
+  zoomScroll: {
+    paddingVertical: spacing.xs,
+  },
+  zoomChartCanvas: {
+    width: 920,
   },
 });

@@ -19,17 +19,17 @@ import { RubricBar } from "#/features/grading/components/RubricBar"
 import { cn, round } from "#/lib/utils"
 
 const WRITING_RUBRIC: Record<string, string> = {
-	task_achievement: "Task Achievement",
-	coherence: "Coherence & Cohesion",
-	lexical: "Lexical Resource",
+	task_fulfillment: "Task Fulfillment",
+	organization: "Organization",
+	vocabulary: "Vocabulary",
 	grammar: "Grammar Range & Accuracy",
 }
 
 const SPEAKING_RUBRIC: Record<string, string> = {
 	fluency: "Fluency",
 	pronunciation: "Pronunciation",
-	content: "Content",
-	vocab: "Vocabulary",
+	discourse_management: "Discourse Management",
+	vocabulary: "Vocabulary",
 	grammar: "Grammar",
 }
 
@@ -326,27 +326,33 @@ function WritingFeedbackBlock({
 						</p>
 					</details>
 
-					{feedback.rubric_scores && (
+					{feedback.criterion_scores && (
 						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4 space-y-3">
 							<p className="text-xs font-extrabold uppercase tracking-wide text-subtle">Rubric</p>
-							{Object.entries(feedback.rubric_scores).map(([k, v]) => (
-								<RubricBar key={k} label={WRITING_RUBRIC[k] ?? k} score={v as number} max={4} color={color} />
+							{feedback.criterion_scores.map((criterion) => (
+								<RubricBar
+									key={criterion.key}
+									label={WRITING_RUBRIC[criterion.key] ?? criterion.key}
+									score={criterion.score}
+									max={10}
+									color={color}
+								/>
 							))}
 						</div>
 					)}
 
-					{(feedback.strengths || feedback.improvements) && (
+					{feedback.feedback && (
 						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4">
 							<FeedbackSection
-								strengths={feedback.strengths ?? []}
-								improvements={feedback.improvements ?? []}
+								strengths={feedback.feedback.strengths ?? []}
+								improvements={feedback.feedback.improvements ?? feedback.feedback.evidenceNotes ?? []}
 							/>
 						</div>
 					)}
 
-					{feedback.rewrites && feedback.rewrites.length > 0 && (
+					{feedback.feedback?.rewrites && feedback.feedback.rewrites.length > 0 && (
 						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4">
-							<RewriteSection rewrites={feedback.rewrites} />
+							<RewriteSection rewrites={feedback.feedback.rewrites} />
 						</div>
 					)}
 				</div>
@@ -401,40 +407,26 @@ function SpeakingFeedbackBlock({
 						</details>
 					)}
 
-					{feedback.rubric_scores && (
+					{feedback.criterion_scores && (
 						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4 space-y-3">
 							<p className="text-xs font-extrabold uppercase tracking-wide text-subtle">Rubric</p>
-							{Object.entries(feedback.rubric_scores).map(([k, v]) => (
+							{feedback.criterion_scores.map((criterion) => (
 								<RubricBar
-									key={k}
-									label={SPEAKING_RUBRIC[k] ?? k}
-									score={v as number}
-									max={4}
+									key={criterion.key}
+									label={SPEAKING_RUBRIC[criterion.key] ?? criterion.key}
+									score={criterion.score}
+									max={10}
 									color={color}
 								/>
 							))}
 						</div>
 					)}
 
-					{feedback.pronunciation_report && (
-						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4">
-							<p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-subtle">
-								Phát âm (Azure)
-							</p>
-							<p className="text-sm">
-								<span className="font-extrabold text-foreground tabular-nums">
-									{round(feedback.pronunciation_report.accuracy_score)}
-								</span>
-								<span className="ml-1 text-muted">/100 — Accuracy</span>
-							</p>
-						</div>
-					)}
-
-					{(feedback.strengths || feedback.improvements) && (
+					{feedback.feedback && (
 						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4">
 							<FeedbackSection
-								strengths={feedback.strengths ?? []}
-								improvements={feedback.improvements ?? []}
+								strengths={feedback.feedback.strengths ?? []}
+								improvements={feedback.feedback.improvements ?? feedback.feedback.evidenceNotes ?? []}
 							/>
 						</div>
 					)}

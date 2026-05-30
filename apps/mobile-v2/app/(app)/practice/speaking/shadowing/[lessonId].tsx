@@ -70,7 +70,7 @@ interface SessionViewProps {
 
 function SessionView({ lesson, insets, c, onBack }: SessionViewProps) {
   const session = useShadowingSession(lesson);
-  const { segment, current, total, mergedDone, mic, elapsed, attempt, emptyWarning } = session;
+  const { segment, current, total, mergedDone, mic, elapsed, attempt, emptyWarning, errorText } = session;
   const completedCount = mergedDone.size;
   const isLast = current === total - 1;
 
@@ -116,6 +116,7 @@ function SessionView({ lesson, insets, c, onBack }: SessionViewProps) {
             elapsed={elapsed}
             attempt={attempt}
             emptyWarning={emptyWarning}
+            errorText={errorText}
             onListen={session.handleListen}
             onRecord={session.handleRecord}
           />

@@ -1,0 +1,7 @@
+Task mode: create from pasted outline because no source PPTX was present.
+Primary deck profile: engineering-platform.
+Secondary gates: academic capstone defense, edtech assessment, demo-focused narrative.
+Required proof objects: system overview, user flow, scoring formulas, validation summary, demo scenario.
+Brand constraints: use verified FPT University logo from the provided Wikimedia URL; do not create substitute brand marks.
+QA gates: render all slides to PNG, inspect contact sheet, check layout JSON for overflow/font substitution warnings where available.
+Known missing inputs: supervisor/team names were not provided; title slide retains placeholder text.

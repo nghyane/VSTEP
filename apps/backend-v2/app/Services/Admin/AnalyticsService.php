@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Admin;
 
 use App\Enums\OrderStatus;
+use App\Models\AssessmentJob;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
@@ -215,7 +216,7 @@ final class AnalyticsService
     }
 
     /**
-     * Grading queue throughput per day.
+     * Assessment queue throughput per day.
      *
      * @return list<array{date: string, done: int, failed: int, pending: int}>
      */
@@ -224,7 +225,7 @@ final class AnalyticsService
         $days = $this->clampDays($days);
         $from = now()->subDays($days - 1)->startOfDay();
 
-        $rows = DB::table('grading_jobs')
+        $rows = AssessmentJob::query()
             ->selectRaw('DATE(created_at) as day, status, COUNT(*) as total')
             ->where('created_at', '>=', $from)
             ->groupBy('day', 'status')
@@ -237,7 +238,7 @@ final class AnalyticsService
 
         return $this->fillDailySeries($days, fn (string $date): array => [
             'date' => $date,
-            'done' => $byDay[$date]['done'] ?? 0,
+            'done' => $byDay[$date]['ready'] ?? 0,
             'failed' => $byDay[$date]['failed'] ?? 0,
             'pending' => $byDay[$date]['pending'] ?? 0,
         ]);

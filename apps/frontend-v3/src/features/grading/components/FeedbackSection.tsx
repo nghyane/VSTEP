@@ -2,7 +2,7 @@ import type { Improvement, Rewrite } from "#/features/grading/types"
 
 interface FeedbackProps {
 	strengths: string[]
-	improvements: Improvement[]
+	improvements: Array<Improvement | string>
 }
 
 export function FeedbackSection({ strengths, improvements }: FeedbackProps) {
@@ -25,12 +25,16 @@ export function FeedbackSection({ strengths, improvements }: FeedbackProps) {
 				<div>
 					<p className="text-xs font-bold text-warning uppercase tracking-wide mb-2">Cần cải thiện</p>
 					<ul className="space-y-1.5">
-						{improvements.map((item) => (
-							<li key={item.message} className="flex gap-2 text-sm text-foreground">
-								<span className="text-warning shrink-0">•</span>
-								{item.message}
-							</li>
-						))}
+						{improvements.map((item) => {
+							const message = typeof item === "string" ? item : item.message
+
+							return (
+								<li key={message} className="flex gap-2 text-sm text-foreground">
+									<span className="text-warning shrink-0">•</span>
+									{message}
+								</li>
+							)
+						})}
 					</ul>
 				</div>
 			)}
@@ -39,7 +43,7 @@ export function FeedbackSection({ strengths, improvements }: FeedbackProps) {
 }
 
 interface RewriteProps {
-	rewrites: Rewrite[]
+	rewrites: Array<Rewrite | string>
 }
 
 export function RewriteSection({ rewrites }: RewriteProps) {
@@ -49,13 +53,23 @@ export function RewriteSection({ rewrites }: RewriteProps) {
 		<div>
 			<p className="text-xs font-bold text-info uppercase tracking-wide mb-2">Gợi ý viết lại</p>
 			<div className="space-y-3">
-				{rewrites.map((r) => (
-					<div key={r.original} className="text-sm space-y-1 p-3 bg-background rounded-lg">
-						<p className="text-destructive line-through">{r.original}</p>
-						<p className="text-success font-medium">{r.improved}</p>
-						<p className="text-subtle text-xs">{r.reason}</p>
-					</div>
-				))}
+				{rewrites.map((r) => {
+					if (typeof r === "string") {
+						return (
+							<div key={r} className="text-sm p-3 bg-background rounded-lg text-foreground">
+								{r}
+							</div>
+						)
+					}
+
+					return (
+						<div key={r.original} className="text-sm space-y-1 p-3 bg-background rounded-lg">
+							<p className="text-destructive line-through">{r.original}</p>
+							<p className="text-success font-medium">{r.improved}</p>
+							{r.reason && <p className="text-subtle text-xs">{r.reason}</p>}
+						</div>
+					)
+				})}
 			</div>
 		</div>
 	)

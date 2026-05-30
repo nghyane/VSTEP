@@ -5,15 +5,14 @@ import type {
 	McqDetailItem,
 	SessionResultsData,
 	SkillKey,
-	SkillScores,
 } from "#/features/exam/types"
-import type { RubricCriteriaMeta } from "#/features/grading/types"
+import type { AssessmentFeedback, CriterionScore, RubricCriteriaMeta } from "#/features/grading/types"
 
 export interface ExamResultUi {
 	examTitle: string
 	overallBand: number | null
 	level: string
-	scores: SkillScores
+	scores: unknown
 	activeSkills: SkillKey[]
 	hasPending: boolean
 	mcqParts: McqPart[]
@@ -37,10 +36,8 @@ export interface WritingSection {
 	label: string
 	part?: number
 	overallBand: number | null
-	rubricScores: Record<string, number> | null
-	strengths: string[] | null
-	improvements: Array<{ message: string; explanation: string }> | null
-	rewrites: Array<{ original: string; improved: string; reason: string }> | null
+	criterionScores: CriterionScore[] | null
+	feedback: AssessmentFeedback | null
 	text: string
 	wordCount: number
 	prompt?: string
@@ -51,12 +48,10 @@ export interface SpeakingSection {
 	label: string
 	part?: number
 	overallBand: number | null
-	rubricScores: Record<string, number> | null
-	strengths: string[] | null
-	improvements: Array<{ message: string; explanation: string }> | null
+	criterionScores: CriterionScore[] | null
+	feedback: AssessmentFeedback | null
 	audioUrl: string | null
 	transcript: string | null
-	pronunciationReport: { accuracy_score: number } | null
 }
 
 export function useExamResultUi(
@@ -65,7 +60,7 @@ export function useExamResultUi(
 	activeSkills: SkillKey[],
 	results: SessionResultsData,
 ): ExamResultUi {
-	const { scores, overallBand, level, mcq_detail, writing_feedback, speaking_feedback, rubrics } = results
+	const { scores, overall_band, level, mcq_detail, writing_feedback, speaking_feedback } = results
 
 	const hasPending =
 		writing_feedback.some((w) => w.overall_band === null) ||
@@ -113,10 +108,8 @@ export function useExamResultUi(
 				label: `Viết · Bài ${i + 1}${task ? ` (Part ${task.part})` : ""}`,
 				part: task?.part,
 				overallBand: fb.overall_band,
-				rubricScores: fb.rubric_scores,
-				strengths: fb.strengths,
-				improvements: fb.improvements,
-				rewrites: fb.rewrites,
+				criterionScores: fb.criterion_scores,
+				feedback: fb.feedback,
 				text: fb.text,
 				wordCount: fb.word_count,
 				prompt: task?.prompt,
@@ -133,19 +126,17 @@ export function useExamResultUi(
 				label: `Nói · Phần ${i + 1}${part ? ` (Part ${part.part})` : ""}`,
 				part: part?.part,
 				overallBand: fb.overall_band,
-				rubricScores: fb.rubric_scores,
-				strengths: fb.strengths,
-				improvements: fb.improvements,
+				criterionScores: fb.criterion_scores,
+				feedback: fb.feedback,
 				audioUrl: fb.audio_url,
 				transcript: fb.transcript,
-				pronunciationReport: fb.pronunciation_report,
 			}
 		})
 	}, [version, activeSkills, speaking_feedback])
 
 	return {
 		examTitle,
-		overallBand,
+		overallBand: overall_band,
 		level,
 		scores,
 		activeSkills,
@@ -153,8 +144,6 @@ export function useExamResultUi(
 		mcqParts,
 		writingSections,
 		speakingSections,
-		writingRubric: rubrics.writing?.criteria,
-		speakingRubric: rubrics.speaking?.criteria,
 	}
 }
 

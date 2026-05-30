@@ -6,6 +6,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'session_id',
@@ -41,5 +42,11 @@ class PracticeSpeakingSubmission extends BaseModel
     public function speakingTask(): BelongsTo
     {
         return $this->belongsTo(PracticeSpeakingTask::class, 'task_ref_id');
+    }
+
+    public function assessmentAttempt(): HasOne
+    {
+        return $this->hasOne(AssessmentAttempt::class, 'source_id')
+            ->where('source_type', 'practice');
     }
 }

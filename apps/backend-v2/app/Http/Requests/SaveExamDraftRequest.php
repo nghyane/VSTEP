@@ -29,7 +29,7 @@ final class SaveExamDraftRequest extends FormRequest
 
             'speaking_marks' => ['present', 'array'],
             'speaking_marks.*.part_id' => ['required', 'uuid'],
-            'speaking_marks.*.audio_url' => ['nullable', 'url'],
+            'speaking_marks.*.audio_url' => ['nullable', 'string', 'max:500'],
             'speaking_marks.*.duration_seconds' => ['nullable', 'integer', 'min:1'],
         ];
     }

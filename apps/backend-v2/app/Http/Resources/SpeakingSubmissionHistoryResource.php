@@ -15,11 +15,15 @@ final class SpeakingSubmissionHistoryResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $result = $this->resource->assessmentAttempt?->result;
+
         return [
             'id' => $this->resource->id,
             'submitted_at' => $this->resource->submitted_at,
             'duration_seconds' => $this->resource->duration_seconds,
             'task_ref_id' => $this->resource->task_ref_id,
+            'overall_band' => $result?->overall_band,
+            'grading_status' => $result !== null ? 'ready' : 'pending',
         ];
     }
 }

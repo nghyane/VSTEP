@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useMutation } from "@tanstack/react-query";
 import { Audio } from "expo-av";
-import { resolveAssetUrl } from "@/lib/asset-url";
+import { resolvePlayableAudioUrl } from "@/lib/asset-url";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
@@ -139,10 +139,12 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
       return;
     }
     setAudioError(null);
-    const audioUrl = resolveAssetUrl(exercise.audioUrl);
     let s: Audio.Sound | null = null;
+    let cancelled = false;
     (async () => {
       try {
+        const audioUrl = await resolvePlayableAudioUrl(exercise.audioUrl);
+        if (cancelled) return;
         await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
         const { sound: loaded } = await Audio.Sound.createAsync(
           { uri: audioUrl },
@@ -169,7 +171,10 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
         setAudioError("Không tải được audio. Vui lòng thử lại sau.");
       }
     })();
-    return () => { s?.unloadAsync().catch(() => undefined); };
+    return () => {
+      cancelled = true;
+      s?.unloadAsync().catch(() => undefined);
+    };
   }, [exercise.audioUrl]);
 
   async function togglePlay() {
@@ -314,6 +319,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
             answeredCount={session.answeredCount}
             total={questions.length}
             submitting={session.submitting}
+            submitError={session.submitError}
             accentColor={COLOR}
             onSubmit={() => session.submit()}
             c={c}

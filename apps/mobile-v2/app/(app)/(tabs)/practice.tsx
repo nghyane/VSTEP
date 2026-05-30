@@ -8,20 +8,28 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { GameIcon } from "@/components/GameIcon";
 import { Mascot } from "@/components/Mascot";
-import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { RecommendationSection } from "@/features/practice/RecommendationSection";
+import { useThemeColors, spacing, radius, fontSize, fontFamily, depthNeutral } from "@/theme";
 
 const SKILLS = [
-  { key: "listening", label: "Nghe", color: "#1CB0F6" },
-  { key: "reading", label: "Đọc", color: "#7850C8" },
-  { key: "writing", label: "Viết", color: "#58CC02" },
-  { key: "speaking", label: "Nói", color: "#FFC800" },
+  { key: "listening", label: "Nghe" },
+  { key: "reading", label: "Đọc" },
+  { key: "writing", label: "Viết" },
+  { key: "speaking", label: "Nói" },
 ] as const;
 
 export default function PracticeHubScreen() {
   const c = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const skillColors = {
+    listening: c.skillListening,
+    reading: c.skillReading,
+    writing: c.skillWriting,
+    speaking: c.skillSpeaking,
+  } as const;
   const fadeAnims = useRef([
+    new Animated.Value(0),
     new Animated.Value(0),
     new Animated.Value(0),
     new Animated.Value(0),
@@ -37,7 +45,7 @@ export default function PracticeHubScreen() {
         useNativeDriver: true,
       }).start();
     });
-  }, []);
+  }, [fadeAnims]);
 
   function animStyle(index: number) {
     return {
@@ -65,8 +73,12 @@ export default function PracticeHubScreen() {
       </Animated.View>
 
       <Animated.View style={animStyle(1)}>
+        <RecommendationSection />
+      </Animated.View>
+
+      <Animated.View style={animStyle(2)}>
         <HapticTouchable
-          style={[styles.branchCard, { backgroundColor: c.card }]}
+          style={[styles.branchCard, depthNeutral, { backgroundColor: c.card }]}
           activeOpacity={1}
         >
           <View style={styles.branchHeader}>
@@ -96,9 +108,9 @@ export default function PracticeHubScreen() {
         </HapticTouchable>
       </Animated.View>
 
-      <Animated.View style={animStyle(2)}>
+      <Animated.View style={animStyle(3)}>
         <HapticTouchable
-          style={[styles.branchCard, { backgroundColor: c.card }]}
+          style={[styles.branchCard, depthNeutral, { backgroundColor: c.card }]}
           activeOpacity={1}
         >
           <View style={styles.branchHeader}>
@@ -118,21 +130,24 @@ export default function PracticeHubScreen() {
           </View>
 
           <View style={styles.chipRow}>
-            {SKILLS.map((skill) => (
-              <View key={skill.key} style={[styles.skillChip, { backgroundColor: skill.color + "15" }]}>
-                <Ionicons
-                  name={
-                    skill.key === "listening" ? "headset-outline"
-                    : skill.key === "reading" ? "book-outline"
-                    : skill.key === "writing" ? "create-outline"
-                    : "mic-outline"
-                  }
-                  size={14}
-                  color={skill.color}
-                />
-                <Text style={[styles.skillChipText, { color: skill.color }]}>{skill.label}</Text>
-              </View>
-            ))}
+            {SKILLS.map((skill) => {
+              const color = skillColors[skill.key];
+              return (
+                <View key={skill.key} style={[styles.skillChip, { backgroundColor: color + "15" }]}>
+                  <Ionicons
+                    name={
+                      skill.key === "listening" ? "headset-outline"
+                      : skill.key === "reading" ? "book-outline"
+                      : skill.key === "writing" ? "create-outline"
+                      : "mic-outline"
+                    }
+                    size={14}
+                    color={color}
+                  />
+                  <Text style={[styles.skillChipText, { color }]}>{skill.label}</Text>
+                </View>
+              );
+            })}
           </View>
 
           <DepthButton variant="info" fullWidth style={{ marginTop: spacing.sm }} onPress={() => router.push("/(app)/practice/skills" as any)}>
@@ -141,8 +156,8 @@ export default function PracticeHubScreen() {
         </HapticTouchable>
       </Animated.View>
 
-      <Animated.View style={animStyle(3)}>
-        <View style={[styles.resultsCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
+      <Animated.View style={animStyle(4)}>
+        <View style={[styles.resultsCard, depthNeutral, { backgroundColor: c.card }]}>
           <HapticTouchable
             scalePress
             onPress={() => router.push("/(app)/practice/results" as any)}
@@ -205,7 +220,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"], gap: spacing.xl },
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs, marginBottom: spacing.md, lineHeight: 20 },
-  branchCard: { borderWidth: 2, borderBottomWidth: 4, borderColor: "#E5E5E5", borderBottomColor: "#CACACA", borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.lg },
+  branchCard: { borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.lg },
   branchHeader: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   branchIconWrap: { width: 52, height: 52, borderRadius: radius.xl, alignItems: "center", justifyContent: "center" },
   branchTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.bold },
@@ -220,8 +235,6 @@ const styles = StyleSheet.create({
   skillChip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: spacing.base, paddingVertical: spacing.sm, borderRadius: radius.full },
   skillChipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
   resultsCard: {
-    borderWidth: 2,
-    borderBottomWidth: 4,
     borderRadius: radius.xl,
     padding: spacing.base,
     flexDirection: "row",

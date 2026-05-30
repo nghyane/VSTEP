@@ -1,12 +1,17 @@
 import { CheckCircleOutlined, EyeOutlined, MinusCircleOutlined } from "@ant-design/icons"
-import { Link, createFileRoute } from "@tanstack/react-router"
-import { Button, Empty, Flex, Result, Select, Table, Tag } from "antd"
 import { useQuery } from "@tanstack/react-query"
+import { createFileRoute, Link, redirect } from "@tanstack/react-router"
+import { Button, Empty, Flex, Result, Select, Table, Tag } from "antd"
+import { PageHeader } from "#/components/PageHeader"
 import { rubricListQuery } from "#/features/admin-grading/queries"
 import type { GradingRubric } from "#/features/admin-grading/types"
-import { PageHeader } from "#/components/PageHeader"
+import { useAuth } from "#/lib/auth"
 
 export const Route = createFileRoute("/_app/grading/")({
+	beforeLoad: () => {
+		const user = useAuth.getState().user
+		if (!user || user.role !== "admin") throw redirect({ to: "/" })
+	},
 	validateSearch: (search: Record<string, unknown>) => ({
 		page: Number(search.page) || 1,
 		skill: (search.skill as string) || null,
@@ -37,9 +42,7 @@ function GradingListPage() {
 			dataIndex: "skill",
 			width: 120,
 			render: (s: string) => (
-				<Tag color={s === "writing" ? "blue" : "purple"}>
-					{s === "writing" ? "Writing" : "Speaking"}
-				</Tag>
+				<Tag color={s === "writing" ? "blue" : "purple"}>{s === "writing" ? "Writing" : "Speaking"}</Tag>
 			),
 		},
 		{ title: "Tên", dataIndex: "name" },
@@ -57,9 +60,13 @@ function GradingListPage() {
 			width: 120,
 			render: (v: boolean) =>
 				v ? (
-					<Tag icon={<CheckCircleOutlined />} color="success">Active</Tag>
+					<Tag icon={<CheckCircleOutlined />} color="success">
+						Active
+					</Tag>
 				) : (
-					<Tag icon={<MinusCircleOutlined />} color="default">Inactive</Tag>
+					<Tag icon={<MinusCircleOutlined />} color="default">
+						Inactive
+					</Tag>
 				),
 		},
 		{
@@ -67,7 +74,9 @@ function GradingListPage() {
 			width: 80,
 			render: (_: unknown, r: GradingRubric) => (
 				<Link to="/grading/$rubricId" params={{ rubricId: r.id }}>
-					<Button type="link" icon={<EyeOutlined />}>Xem</Button>
+					<Button type="link" icon={<EyeOutlined />}>
+						Xem
+					</Button>
 				</Link>
 			),
 		},
@@ -75,7 +84,7 @@ function GradingListPage() {
 
 	return (
 		<Flex vertical gap={16}>
-			<PageHeader title="Tiêu chí chấm điểm" description="Rubric chấm điểm Writing & Speaking (read-only)" />
+			<PageHeader title="Tiêu chí chấm điểm" subtitle="Rubric chấm điểm Writing & Speaking (read-only)" />
 			<Flex gap={12}>
 				<Select
 					placeholder="Kỹ năng"
@@ -105,7 +114,14 @@ function GradingListPage() {
 				dataSource={data?.data}
 				rowKey="id"
 				columns={columns}
-				locale={{ emptyText: <Empty description="Chưa có tiêu chí chấm điểm nào. Hãy chạy seeder để tạo dữ liệu mẫu." image={Empty.PRESENTED_IMAGE_SIMPLE} /> }}
+				locale={{
+					emptyText: (
+						<Empty
+							description="Chưa có tiêu chí chấm điểm nào. Hãy chạy seeder để tạo dữ liệu mẫu."
+							image={Empty.PRESENTED_IMAGE_SIMPLE}
+						/>
+					),
+				}}
 				pagination={{
 					current: data?.meta?.current_page ?? 1,
 					pageSize: data?.meta?.per_page ?? 20,

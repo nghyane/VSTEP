@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Enums\GradingJobStatus;
+use App\Assessment\Enums\AssessmentJobStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Practice\DrillAttemptRequest;
 use App\Http\Requests\Practice\StartSessionRequest;
@@ -16,6 +16,8 @@ use App\Http\Resources\SpeakingSubmissionHistoryResource;
 use App\Http\Resources\SpeakingTaskDetailResource;
 use App\Http\Resources\SpeakingTaskSummaryResource;
 use App\Models\PracticeSession;
+use App\Models\PracticeSpeakingSubmission;
+use App\Services\PracticeGradingResultService;
 use App\Services\PracticeSessionService;
 use App\Services\SpeakingPracticeService;
 use Illuminate\Http\JsonResponse;
@@ -28,6 +30,7 @@ final class SpeakingPracticeController extends Controller
     public function __construct(
         private readonly SpeakingPracticeService $speakingService,
         private readonly PracticeSessionService $sessionService,
+        private readonly PracticeGradingResultService $gradingResultService,
     ) {}
 
     public function listDrills(Request $request): JsonResponse
@@ -76,6 +79,13 @@ final class SpeakingPracticeController extends Controller
         return response()->json(['data' => SpeakingTaskDetailResource::make($task)]);
     }
 
+    public function result(Request $request, PracticeSpeakingSubmission $submission): JsonResponse
+    {
+        return response()->json(
+            $this->gradingResultService->speaking($request->profile(), $submission),
+        );
+    }
+
     public function startDrillSession(StartSessionRequest $request): JsonResponse
     {
         $session = $this->speakingService->startDrillSession(
@@ -122,7 +132,7 @@ final class SpeakingPracticeController extends Controller
 
         return response()->json(['data' => [
             'submission_id' => $submission->id,
-            'grading_status' => GradingJobStatus::Pending->value,
+            'grading_status' => AssessmentJobStatus::Pending->value,
         ]]);
     }
 }

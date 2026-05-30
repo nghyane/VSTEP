@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useReducer, useRef } from "react";
-import { api } from "@/lib/api";
+import { api, getApiErrorMessage } from "@/lib/api";
 
 // ── Types (mirror frontend-v3, camelCase via api.ts) ──
 
@@ -33,12 +33,6 @@ export interface ExerciseDetail {
 export interface SubmitResult {
   score: number; total: number;
   items: { questionId: string; isCorrect: boolean; correctIndex: number; explanation: string }[];
-}
-
-export interface SupportResult {
-  coinsSpent: number;
-  balanceAfter: number;
-  supportLevelsUsed: { level: number; usedAt: string }[];
 }
 
 export interface ReadingExercise {
@@ -78,10 +72,20 @@ export interface WritingPromptDetail {
   prompt: string; minWords: number; maxWords: number;
   requiredPoints: string[]; sentenceStarters: string[];
   keywords: string[]; sampleAnswer: string | null;
-  sampleMarkers: { criterion: string; band: number; description: string }[];
+  sampleMarkers: WritingSampleMarker[];
   outlineSections: WritingOutlineSection[];
   templateSections: WritingTemplateSection[];
   estimatedMinutes: number | null;
+}
+
+export interface WritingSampleMarker {
+  id: string;
+  match: string;
+  occurrence: number;
+  side: string;
+  color: "yellow" | "blue" | "pink" | string;
+  label: string;
+  detail: string | null;
 }
 
 export interface WritingHistoryItem {
@@ -254,12 +258,70 @@ export interface PresignUploadResponse {
   audioKey: string;
 }
 
-export async function presignUpload(context: "speaking" | "exam_speaking" = "speaking") {
-  return api.post<PresignUploadResponse>("/api/v1/audio/presign-upload", { context });
+export interface AudioUploadMeta {
+  contentType: string;
+  extension: string;
+}
+
+export interface TranscribeAudioResponse {
+  transcript: string;
+  confidence: number;
+  durationMs: number;
+}
+
+export function audioUploadMetaFromUri(uri: string): AudioUploadMeta {
+  const clean = uri.split("?")[0] ?? uri;
+  const ext = clean.includes(".") ? clean.split(".").pop()?.toLowerCase() : null;
+  const extension = ext && /^[a-z0-9]{2,8}$/.test(ext) ? ext : "m4a";
+  const contentType = (() => {
+    switch (extension) {
+      case "webm":
+        return "audio/webm";
+      case "ogg":
+      case "opus":
+        return "audio/ogg";
+      case "wav":
+        return "audio/wav";
+      case "mp3":
+      case "mpeg":
+        return "audio/mpeg";
+      case "mp4":
+      case "m4a":
+      case "aac":
+      default:
+        return "audio/mp4";
+    }
+  })();
+
+  return { contentType, extension };
+}
+
+export async function presignUpload(
+  context: "speaking" | "exam_speaking" = "speaking",
+  meta: AudioUploadMeta = { contentType: "audio/webm", extension: "webm" },
+) {
+  return api.post<PresignUploadResponse>("/api/v1/audio/presign-upload", {
+    context,
+    contentType: meta.contentType,
+    extension: meta.extension,
+  });
 }
 
 export async function presignDownload(audioKey: string) {
   return api.post<{ downloadUrl: string }>("/api/v1/audio/presign-download", { audioKey });
+}
+
+export async function transcribeAudioFile(audioUri: string, language = "en-US") {
+  const meta = audioUploadMetaFromUri(audioUri);
+  const form = new FormData();
+  form.append("language", language);
+  form.append("audio", {
+    uri: audioUri,
+    name: `speech.${meta.extension}`,
+    type: meta.contentType,
+  } as unknown as Blob);
+
+  return api.postForm<TranscribeAudioResponse>("/api/v1/audio/transcribe", form);
 }
 
 export interface McqProgress {
@@ -494,8 +556,12 @@ export function useMcqSession(
     answers: state.answers,
     result: state.result,
     submitting: mutation.isPending,
+    submitError: mutation.error ? getApiErrorMessage(mutation.error) : null,
     answeredCount: Object.keys(state.answers).length,
-    select: (questionId: string, index: number) => dispatch({ type: "select", questionId, index }),
+    select: (questionId: string, index: number) => {
+      mutation.reset();
+      dispatch({ type: "select", questionId, index });
+    },
     submit: () => mutation.mutate(),
   };
 }
@@ -585,24 +651,6 @@ export async function submitSpeakingSession(sessionId: string, audioUrl: string,
   );
 }
 
-export async function requestSupport(
-  skill: "listening" | "reading",
-  sessionId: string,
-  level: number,
-) {
-  return api.post<SupportResult>(
-    `/api/v1/practice/${skill}/sessions/${sessionId}/support`,
-    { level },
-  );
-}
-
-export async function requestWritingSupport(sessionId: string, level: number) {
-  return api.post<SupportResult>(
-    `/api/v1/practice/writing/sessions/${sessionId}/support`,
-    { level },
-  );
-}
-
 // ── Writing history ──
 
 export interface WritingHistoryResponse {
@@ -658,18 +706,5 @@ export function useSpeakingGradingResult(submissionId: string) {
       ),
     refetchInterval: (q) => (q.state.data?.overallBand != null ? false : 5000),
     retry: false,
-  });
-}
-
-// ── Writing support ──
-
-export function useWritingSupportMutation(sessionId: string) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ level }: { level: number }) =>
-      requestWritingSupport(sessionId, level),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["practice", "writing", "history"] });
-    },
   });
 }

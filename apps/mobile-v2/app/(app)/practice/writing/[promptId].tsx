@@ -1,7 +1,8 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -21,7 +22,6 @@ import * as Haptics from "expo-haptics";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
-import { PassageWordView } from "@/components/PassageWordView";
 import { WritingReviewSheet } from "@/components/WritingReviewSheet";
 import { WritingWordProgress } from "@/components/WritingWordProgress";
 import {
@@ -29,7 +29,9 @@ import {
   startWritingSession,
   submitWritingSession,
   type WritingPromptDetail,
+  type WritingSampleMarker,
 } from "@/hooks/use-practice";
+import { getApiErrorMessage } from "@/lib/api";
 import { translateText } from "@/lib/translate";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
@@ -89,6 +91,11 @@ export default function WritingExerciseScreen() {
           >
             {startMutation.isPending ? "Đang bắt đầu..." : "Bắt đầu viết"}
           </DepthButton>
+          {startMutation.error ? (
+            <Text style={[s.inlineError, { color: c.destructive }]}>
+              Không thể bắt đầu bài viết: {getApiErrorMessage(startMutation.error)}
+            </Text>
+          ) : null}
         </View>
       </View>
     );
@@ -118,8 +125,10 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
   const [selection, setSelection] = useState({ start: 0, end: 0 });
   const [submitted, setSubmitted] = useState<{ submissionId: string; wordCount: number } | null>(null);
   const [showReview, setShowReview] = useState(false);
-  const [translateMode, setTranslateMode] = useState(false);
   const [showSample, setShowSample] = useState(false);
+  const [promptTr, setPromptTr] = useState<string | null>(null);
+  const [promptTrLoading, setPromptTrLoading] = useState(false);
+  const [promptTrError, setPromptTrError] = useState(false);
   const [sampleTr, setSampleTr] = useState<string | null>(null);
   const [sampleTrLoading, setSampleTrLoading] = useState(false);
   const [sampleTrError, setSampleTrError] = useState(false);
@@ -159,6 +168,21 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
 
   // Toggle sample answer translation — fetch on first open, cache result.
   // If translateText returns original (API fail / same lang), still show it so user isn't left wondering.
+  function togglePromptTr() {
+    if (promptTr) {
+      setPromptTr(null);
+      setPromptTrError(false);
+      return;
+    }
+    if (promptTrLoading) return;
+    setPromptTrLoading(true);
+    setPromptTrError(false);
+    translateText(detail.prompt, "en", "vi")
+      .then((res) => setPromptTr(res ?? ""))
+      .catch(() => setPromptTrError(true))
+      .finally(() => setPromptTrLoading(false));
+  }
+
   function toggleSampleTr() {
     if (sampleTr) {
       setSampleTr(null);
@@ -226,27 +250,30 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
             <DepthCard style={s.promptCard}>
               <View style={s.promptHeader}>
                 <Text style={[s.promptLabel, { color: COLOR }]}>Đề bài — Task {detail.part}</Text>
-                <HapticTouchable onPress={() => setTranslateMode(!translateMode)} style={s.dictToggle}>
+                <HapticTouchable onPress={togglePromptTr} style={s.dictToggle}>
                   <Text
                     style={[
                       s.dictBtn,
                       {
-                        color: translateMode ? "#FFF" : c.subtle,
-                        backgroundColor: translateMode ? COLOR : "transparent",
-                        borderColor: translateMode ? COLOR : c.muted,
+                        color: promptTr || promptTrError ? "#FFF" : c.subtle,
+                        backgroundColor: promptTr || promptTrError ? COLOR : "transparent",
+                        borderColor: promptTr || promptTrError ? COLOR : c.muted,
                       },
                     ]}
                   >
-                    Từ điển
+                    {promptTrLoading ? "..." : promptTr ? "Ẩn dịch" : "Dịch"}
                   </Text>
                 </HapticTouchable>
               </View>
-              <PassageWordView
-                passage={detail.prompt}
-                wordTapMode={translateMode}
-                accentColor={COLOR}
-                c={c}
-              />
+              <Text style={[s.promptText, { color: c.foreground }]}>{detail.prompt}</Text>
+              {promptTr ? (
+                <View style={[s.transBlock, { borderLeftColor: COLOR + "60" }]}>
+                  <Text style={[s.transLabel, { color: COLOR }]}>Dịch</Text>
+                  <Text style={[s.transText, { color: c.mutedForeground }]}>{promptTr}</Text>
+                </View>
+              ) : promptTrError ? (
+                <Text style={[s.transText, { color: c.destructive }]}>Không thể dịch. Thử lại sau.</Text>
+              ) : null}
 
               {hasKeywords && (
                 <View style={s.keywordsSection}>
@@ -314,7 +341,10 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
                 ref={inputRef}
                 style={[s.editor, { color: c.foreground }]}
                 value={text}
-                onChangeText={setText}
+                onChangeText={(next) => {
+                  if (submitMutation.error) submitMutation.reset();
+                  setText(next);
+                }}
                 onSelectionChange={handleSelectionChange}
                 selection={selection}
                 placeholder="Viết bài của bạn ở đây..."
@@ -325,57 +355,23 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
               />
             </DepthCard>
 
-            {/* Sample answer — collapsed by default, expandable with translation toggle */}
+            {/* Sample answer */}
             {hasSample && detail.sampleAnswer && (
-              <DepthCard style={[s.sampleCard, { backgroundColor: c.muted }]}>
+              <DepthCard style={[s.sampleCard, { backgroundColor: c.card }]}>
                 <View style={s.promptHeader}>
-                  <Text style={[s.sampleLabel, { color: c.mutedForeground }]}>Bài mẫu tham khảo</Text>
-                  <View style={s.sampleActions}>
-                    <HapticTouchable onPress={() => setShowSample(!showSample)} style={s.dictToggle}>
-                      <Text
-                        style={[
-                          s.dictBtn,
-                          {
-                            color: showSample ? "#FFF" : c.subtle,
-                            backgroundColor: showSample ? COLOR : "transparent",
-                            borderColor: showSample ? COLOR : c.muted,
-                          },
-                        ]}
-                      >
-                        {showSample ? "Ẩn" : "Xem"}
-                      </Text>
-                    </HapticTouchable>
+                  <View style={s.sampleTitleRow}>
+                    <Ionicons name="book" size={18} color={COLOR} />
+                    <Text style={[s.sampleLabel, { color: c.foreground }]}>Bài mẫu và chỉ dẫn</Text>
                   </View>
+                  <HapticTouchable onPress={() => setShowSample(true)} style={s.dictToggle}>
+                    <Text style={[s.dictBtn, { color: "#FFF", backgroundColor: COLOR, borderColor: COLOR }]}>
+                      Xem
+                    </Text>
+                  </HapticTouchable>
                 </View>
-                {showSample && (
-                  <>
-                    <Text style={[s.sampleText, { color: c.foreground }]}>{detail.sampleAnswer}</Text>
-                    <View style={s.sampleActions}>
-                      <HapticTouchable onPress={toggleSampleTr} style={s.dictToggle}>
-                        <Text
-                          style={[
-                            s.dictBtn,
-                            {
-                              color: sampleTr || sampleTrError ? "#FFF" : c.subtle,
-                              backgroundColor: sampleTr || sampleTrError ? COLOR : "transparent",
-                              borderColor: sampleTr || sampleTrError ? COLOR : c.muted,
-                            },
-                          ]}
-                        >
-                          {sampleTrLoading ? "..." : sampleTr ? "Ẩn dịch" : "Dịch"}
-                        </Text>
-                      </HapticTouchable>
-                    </View>
-                    {sampleTr ? (
-                      <View style={[s.transBlock, { borderLeftColor: COLOR + "60" }]}>
-                        <Text style={[s.transLabel, { color: COLOR }]}>Dịch</Text>
-                        <Text style={[s.transText, { color: c.mutedForeground }]}>{sampleTr}</Text>
-                      </View>
-                    ) : sampleTrError ? (
-                      <Text style={[s.transText, { color: c.destructive }]}>Không thể dịch. Thử lại sau.</Text>
-                    ) : null}
-                  </>
-                )}
+                <Text style={[s.sampleHint, { color: c.mutedForeground }]}>
+                  Xem bài mẫu, các đoạn được tô màu và giải thích cách dùng cấu trúc.
+                </Text>
               </DepthCard>
             )}
           </>
@@ -395,8 +391,27 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
           >
             {submitMutation.isPending ? "Đang nộp..." : "Nộp bài"}
           </DepthButton>
+          {submitMutation.error ? (
+            <Text style={[s.inlineError, { color: c.destructive }]}>
+              Không thể nộp bài: {getApiErrorMessage(submitMutation.error)}
+            </Text>
+          ) : null}
         </View>
       )}
+
+      {hasSample && detail.sampleAnswer ? (
+        <WritingSampleModal
+          visible={showSample}
+          answer={detail.sampleAnswer}
+          markers={detail.sampleMarkers}
+          translation={sampleTr}
+          translationLoading={sampleTrLoading}
+          translationError={sampleTrError}
+          onToggleTranslation={toggleSampleTr}
+          onClose={() => setShowSample(false)}
+          c={c}
+        />
+      ) : null}
 
       {/* Inline grading sheet — polls every 5s via useWritingGradingResult */}
       {submitted ? (
@@ -408,6 +423,164 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
       ) : null}
     </KeyboardAvoidingView>
   );
+}
+
+interface SampleSegment {
+  text: string;
+  marker: WritingSampleMarker | null;
+}
+
+function WritingSampleModal({
+  visible,
+  answer,
+  markers,
+  translation,
+  translationLoading,
+  translationError,
+  onToggleTranslation,
+  onClose,
+  c,
+}: {
+  visible: boolean;
+  answer: string;
+  markers: WritingSampleMarker[];
+  translation: string | null;
+  translationLoading: boolean;
+  translationError: boolean;
+  onToggleTranslation: () => void;
+  onClose: () => void;
+  c: ReturnType<typeof useThemeColors>;
+}) {
+  const segments = useMemo(() => buildSampleSegments(answer, markers), [answer, markers]);
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={[s.modalRoot, { backgroundColor: c.background }]}>
+        <View style={[s.modalHeader, { borderBottomColor: c.borderLight, backgroundColor: c.surface }]}>
+          <View>
+            <Text style={[s.modalEyebrow, { color: COLOR }]}>Bài mẫu</Text>
+            <Text style={[s.modalTitle, { color: c.foreground }]}>Cấu trúc và chỉ dẫn</Text>
+          </View>
+          <HapticTouchable onPress={onClose} style={s.closeBtn}>
+            <Ionicons name="close" size={22} color={c.foreground} />
+          </HapticTouchable>
+        </View>
+
+        <ScrollView contentContainerStyle={s.modalScroll} showsVerticalScrollIndicator={false}>
+          <DepthCard style={[s.sampleAnswerCard, { backgroundColor: c.card }]}>
+            <Text style={[s.sampleText, { color: c.foreground }]}>
+              {segments.map((segment, index) => {
+                if (!segment.marker) return <Text key={index}>{segment.text}</Text>;
+                return (
+                  <Text
+                    key={index}
+                    style={[
+                      s.sampleHighlight,
+                      {
+                        backgroundColor: markerColor(segment.marker.color) + "33",
+                        color: c.foreground,
+                      },
+                    ]}
+                  >
+                    {segment.text}
+                  </Text>
+                );
+              })}
+            </Text>
+          </DepthCard>
+
+          {markers.length > 0 ? (
+            <View style={s.markerList}>
+              {markers.map((marker) => (
+                <View key={marker.id} style={[s.markerCard, { backgroundColor: c.card, borderColor: c.border }]}>
+                  <View style={[s.markerDot, { backgroundColor: markerColor(marker.color) }]} />
+                  <View style={s.markerCopy}>
+                    <Text style={[s.markerLabel, { color: c.foreground }]}>{marker.label}</Text>
+                    {marker.detail ? (
+                      <Text style={[s.markerDetail, { color: c.mutedForeground }]}>{marker.detail}</Text>
+                    ) : null}
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          <DepthCard style={[s.sampleCard, { backgroundColor: c.card }]}>
+            <View style={s.promptHeader}>
+              <Text style={[s.sampleLabel, { color: c.foreground }]}>Dịch bài mẫu</Text>
+              <HapticTouchable onPress={onToggleTranslation} style={s.dictToggle}>
+                <Text
+                  style={[
+                    s.dictBtn,
+                    {
+                      color: translation || translationError ? "#FFF" : c.subtle,
+                      backgroundColor: translation || translationError ? COLOR : "transparent",
+                      borderColor: translation || translationError ? COLOR : c.muted,
+                    },
+                  ]}
+                >
+                  {translationLoading ? "..." : translation ? "Ẩn dịch" : "Dịch"}
+                </Text>
+              </HapticTouchable>
+            </View>
+            {translation ? (
+              <View style={[s.transBlock, { borderLeftColor: COLOR + "60" }]}>
+                <Text style={[s.transLabel, { color: COLOR }]}>Dịch</Text>
+                <Text style={[s.transText, { color: c.mutedForeground }]}>{translation}</Text>
+              </View>
+            ) : translationError ? (
+              <Text style={[s.transText, { color: c.destructive }]}>Không thể dịch. Thử lại sau.</Text>
+            ) : null}
+          </DepthCard>
+        </ScrollView>
+      </View>
+    </Modal>
+  );
+}
+
+function markerColor(color: string) {
+  switch (color) {
+    case "blue":
+      return "#60A5FA";
+    case "pink":
+      return "#F472B6";
+    case "yellow":
+      return "#FACC15";
+    default:
+      return COLOR;
+  }
+}
+
+function buildSampleSegments(answer: string, markers: WritingSampleMarker[]): SampleSegment[] {
+  if (markers.length === 0) return [{ text: answer, marker: null }];
+
+  const ranges: { start: number; end: number; marker: WritingSampleMarker }[] = [];
+  for (const marker of markers) {
+    let idx = -1;
+    let occurrence = 0;
+    const target = marker.occurrence || 1;
+    let searchFrom = 0;
+    while (occurrence < target) {
+      idx = answer.indexOf(marker.match, searchFrom);
+      if (idx === -1) break;
+      occurrence += 1;
+      searchFrom = idx + 1;
+    }
+    if (idx !== -1) ranges.push({ start: idx, end: idx + marker.match.length, marker });
+  }
+
+  ranges.sort((a, b) => a.start - b.start);
+
+  const result: SampleSegment[] = [];
+  let cursor = 0;
+  for (const range of ranges) {
+    if (range.start < cursor) continue;
+    if (range.start > cursor) result.push({ text: answer.slice(cursor, range.start), marker: null });
+    result.push({ text: answer.slice(range.start, range.end), marker: range.marker });
+    cursor = range.end;
+  }
+  if (cursor < answer.length) result.push({ text: answer.slice(cursor), marker: null });
+  return result;
 }
 
 const s = StyleSheet.create({
@@ -434,6 +607,7 @@ const s = StyleSheet.create({
   previewTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold, textAlign: "center", paddingHorizontal: spacing.xl },
   previewMeta: { fontSize: fontSize.sm, marginTop: spacing.sm },
   previewNote: { fontSize: fontSize.xs, marginTop: spacing.xs },
+  inlineError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, textAlign: "center", marginTop: spacing.sm },
   scroll: { padding: spacing.xl, gap: spacing.lg },
   resultCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.sm },
   resultTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
@@ -441,6 +615,7 @@ const s = StyleSheet.create({
   promptCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
   promptHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   promptLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
+  promptText: { fontSize: fontSize.sm, lineHeight: 22, fontFamily: fontFamily.medium },
   dictToggle: { padding: spacing.xs },
   dictBtn: {
     fontSize: 10,
@@ -463,8 +638,11 @@ const s = StyleSheet.create({
   editorCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, minHeight: 280 },
   editor: { fontSize: fontSize.sm, lineHeight: 22, minHeight: 240 },
   sampleCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
+  sampleTitleRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, flex: 1 },
   sampleLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
-  sampleText: { fontSize: fontSize.sm, lineHeight: 22 },
+  sampleHint: { fontSize: fontSize.xs, lineHeight: 18 },
+  sampleText: { fontSize: fontSize.sm, lineHeight: 28 },
+  sampleHighlight: { borderRadius: 4 },
   sampleActions: { flexDirection: "row", gap: spacing.xs },
   transBlock: {
     marginTop: spacing.sm,
@@ -485,4 +663,30 @@ const s = StyleSheet.create({
     lineHeight: 20,
   },
   footer: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, borderTopWidth: 1 },
+  modalRoot: { flex: 1 },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+  },
+  modalEyebrow: { fontSize: 10, fontFamily: fontFamily.extraBold, textTransform: "uppercase", letterSpacing: 1 },
+  modalTitle: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold },
+  modalScroll: { padding: spacing.xl, gap: spacing.lg, paddingBottom: spacing["3xl"] },
+  sampleAnswerCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg },
+  markerList: { gap: spacing.sm },
+  markerCard: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    borderWidth: 2,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+  },
+  markerDot: { width: 10, height: 10, borderRadius: 5, marginTop: 4 },
+  markerCopy: { flex: 1, gap: 2 },
+  markerLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
+  markerDetail: { fontSize: fontSize.xs, lineHeight: 18 },
 });

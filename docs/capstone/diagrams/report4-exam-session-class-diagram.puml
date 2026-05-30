@@ -1,0 +1,37 @@
+@startuml
+!theme plain
+title Mock Exam Session Class Diagram
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+left to right direction
+
+class ExamSessionController
+class ExamSessionService
+class ExamVersion
+class ExamSession
+class ExamSessionDraft
+class ExamMcqAnswer
+class ExamWritingSubmission
+class ExamSpeakingSubmission
+class ExamScoringService
+class AssessmentSubmissionService
+class ProgressService
+class WalletService
+
+ExamSessionController ..> ExamSessionService
+ExamSessionService ..> ExamVersion
+ExamSessionService ..> ExamSession
+ExamSessionService ..> ExamSessionDraft
+ExamSessionService ..> ExamMcqAnswer
+ExamSessionService ..> ExamWritingSubmission
+ExamSessionService ..> ExamSpeakingSubmission
+ExamSessionService ..> ExamScoringService : grade MCQ
+ExamSessionService ..> AssessmentSubmissionService : submit writing/speaking assessment
+ExamSessionService ..> WalletService : charge exam coins
+ExamSessionService ..> ProgressService : record completion
+ExamVersion "1" -- "many" ExamSession
+ExamSession "1" -- "many" ExamMcqAnswer
+ExamSession "1" -- "0..2" ExamWritingSubmission
+ExamSession "1" -- "0..3" ExamSpeakingSubmission
+ExamSession "1" -- "0..1" ExamSessionDraft
+@enduml

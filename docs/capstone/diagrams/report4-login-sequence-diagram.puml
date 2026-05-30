@@ -1,0 +1,32 @@
+@startuml
+!theme plain
+title Login Sequence Diagram
+
+actor Learner
+participant "Login Screen" as UI
+participant "AuthController" as Controller
+participant "AuthService" as Service
+participant "JWTAuth" as JWTAuth
+participant "TokenService" as TokenService
+database "User" as User
+database "Profile" as Profile
+database "RefreshToken" as RefreshToken
+
+Learner -> UI : Enter email/password
+UI -> Controller : POST /auth/login
+Controller -> Service : login(credentials)
+Service -> JWTAuth : attempt(email, password)
+JWTAuth -> User : verify credentials
+User --> JWTAuth : user record
+JWTAuth --> Service : authenticated user
+Service -> Service : check account status
+Service -> TokenService : issueTokens(user)
+TokenService -> RefreshToken : create refresh token
+RefreshToken --> TokenService : token record
+Service -> Profile : load active profile
+Profile --> Service : profile data
+Service --> Controller : access token + refresh token + user profile
+Controller --> UI : 200 OK
+UI --> Learner : Show home screen
+
+@enduml

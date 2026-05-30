@@ -5,32 +5,31 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentProvider;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseEnrollmentOrder;
 use App\Models\Profile;
+use App\Services\Payment\OrderNotFoundAfterValidation;
+use App\Services\Payment\PaymentGatewayRegistry;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Course enrollment order — mock VND payment.
+ * Course enrollment order lifecycle with payment gateway integration.
  *
- * Phase 1 (mock):
- * - create order → status=pending
- * - confirm() → mark paid, create enrollment via CourseService
- *
- * Phase 2 (real gateway):
- * - create order → redirect to gateway
- * - webhook callback → confirm()
+ * Flow:
+ * - createOrder() → creates pending order and returns payment_url
+ * - handleCallback() → validates gateway callback and creates enrollment
  */
 final class CourseOrderService
 {
     public function __construct(
         private readonly CourseService $courseService,
-        private readonly NotificationService $notificationService,
+        private readonly PaymentGatewayRegistry $gateways,
     ) {}
 
     /**
@@ -39,7 +38,8 @@ final class CourseOrderService
     public function createOrder(
         Profile $profile,
         Course $course,
-        string $paymentProvider = 'mock',
+        PaymentProvider $provider,
+        ?string $returnUrl = null,
     ): CourseEnrollmentOrder {
         if (! $course->is_published) {
             throw ValidationException::withMessages(['course' => ['Khóa học đang đóng ghi danh.']]);
@@ -74,39 +74,77 @@ final class CourseOrderService
         }
 
         $amount = $course->price_vnd;
+        $gateway = $this->gateways->get($provider);
+        $expiryMinutes = (int) config('payment.order_expiry_minutes', 15);
 
         try {
-            return CourseEnrollmentOrder::create([
-                'profile_id' => $profile->id,
-                'course_id' => $course->id,
-                'amount_vnd' => $amount,
-                'status' => OrderStatus::Pending,
-                'payment_provider' => $paymentProvider,
-                'provider_ref' => $paymentProvider === 'mock'
-                    ? 'mock_'.Str::random(16)
-                    : null,
-            ]);
+            return DB::transaction(function () use ($profile, $course, $provider, $amount, $gateway, $expiryMinutes, $returnUrl) {
+                $order = CourseEnrollmentOrder::create([
+                    'order_code' => $this->nextOrderCode(),
+                    'profile_id' => $profile->id,
+                    'course_id' => $course->id,
+                    'amount_vnd' => $amount,
+                    'status' => OrderStatus::Pending,
+                    'payment_provider' => $provider->value,
+                    'expires_at' => now()->addMinutes($expiryMinutes),
+                ]);
+
+                $paymentReturnUrl = $returnUrl ?? config('app.frontend_url')."/courses/return?order={$order->id}";
+                $cancelUrl = config('app.frontend_url')."/courses/{$course->id}";
+                $response = $gateway->createPayment($order, $paymentReturnUrl, $cancelUrl);
+
+                $order->update([
+                    'payment_url' => $response->paymentUrl,
+                    'provider_ref' => $response->gatewayTransactionId,
+                    'gateway_transaction_id' => $response->gatewayTransactionId,
+                    'gateway_response' => $response->rawResponse,
+                ]);
+
+                return $order;
+            });
         } catch (UniqueConstraintViolationException) {
             throw ValidationException::withMessages(['course' => ['Bạn đang có đơn thanh toán chờ xác nhận cho khóa học này.']]);
         }
     }
 
-    /**
-     * Confirm payment: create enrollment + credit bonus coins.
-     * Idempotent: nếu đã paid → return order không duplicate.
-     * $commitmentSignature: SVG do FE signature pad sinh, null nếu thiếu (BE
-     * không enforce non-null vì admin manual enroll cũng đi qua flow khác).
-     */
-    public function confirm(CourseEnrollmentOrder $order, ?string $commitmentSignature = null): CourseEnrollmentOrder
+    /** Handle webhook callback from payment gateway. */
+    public function handleCallback(PaymentProvider $provider, array $data): CourseEnrollmentOrder
     {
-        return DB::transaction(function () use ($order, $commitmentSignature) {
+        $gateway = $this->gateways->get($provider);
+        $result = $gateway->validateCallback($data);
+
+        if (! $result->success) {
+            $this->markFailed($result->orderCode, $result->rawData);
+            Log::warning('Course payment callback failed', [
+                'provider' => $provider->value,
+                'order_code' => $result->orderCode,
+                'reason' => $result->failureReason,
+            ]);
+
+            throw new \RuntimeException($result->failureReason ?? 'Payment failed');
+        }
+
+        return $this->confirmByOrderCode(
+            $result->orderCode,
+            $result->gatewayTransactionId,
+            $result->rawData,
+        );
+    }
+
+    /** Confirm payment: create enrollment + credit bonus coins atomically. */
+    public function confirmByOrderCode(
+        int $orderCode,
+        string $gatewayTransactionId,
+        ?array $rawData,
+    ): CourseEnrollmentOrder {
+        return DB::transaction(function () use ($orderCode, $gatewayTransactionId, $rawData) {
             $locked = CourseEnrollmentOrder::query()
-                ->whereKey($order->id)
+                ->where('order_code', $orderCode)
                 ->lockForUpdate()
                 ->first();
 
             if ($locked === null) {
-                throw new \RuntimeException('Order not found during confirm.');
+                throw new OrderNotFoundAfterValidation($orderCode);
             }
 
             if ($locked->isPaid()) {
@@ -128,6 +166,9 @@ final class CourseOrderService
                 $locked->update([
                     'status' => OrderStatus::Paid,
                     'paid_at' => now(),
+                    'gateway_transaction_id' => $gatewayTransactionId,
+                    'gateway_response' => $rawData,
+                    'callback_received_at' => now(),
                 ]);
 
                 return $locked;
@@ -138,17 +179,40 @@ final class CourseOrderService
                 profile: $locked->profile,
                 course: $locked->course,
                 creditBonus: true,
-                commitmentSignature: $commitmentSignature,
             );
 
             // Mark order paid
             $locked->update([
                 'status' => OrderStatus::Paid,
                 'paid_at' => now(),
+                'gateway_transaction_id' => $gatewayTransactionId,
+                'gateway_response' => $rawData,
+                'callback_received_at' => now(),
             ]);
 
             return $locked;
         });
+    }
+
+    private function markFailed(int $orderCode, ?array $rawData): void
+    {
+        $order = CourseEnrollmentOrder::query()
+            ->where('order_code', $orderCode)
+            ->where('status', OrderStatus::Pending)
+            ->first();
+
+        if ($order !== null) {
+            $order->update([
+                'status' => OrderStatus::Failed,
+                'gateway_response' => $rawData,
+                'callback_received_at' => now(),
+            ]);
+        }
+    }
+
+    private function nextOrderCode(): int
+    {
+        return ((int) now()->getPreciseTimestamp(3) * 10) + 2;
     }
 
     public function getOrder(string $orderId): CourseEnrollmentOrder

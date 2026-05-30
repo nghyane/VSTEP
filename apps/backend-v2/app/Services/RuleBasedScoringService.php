@@ -22,6 +22,16 @@ final class RuleBasedScoringService
         'as a result', 'in contrast', 'meanwhile', 'similarly',
     ];
 
+    /** Salutation patterns for letter/email (VSTEP Part 1). */
+    private const SALUTATION_PATTERNS = [
+        '/^(dear|hi|hello|to|dearest|greetings)\b/mi',
+    ];
+
+    /** Closing patterns for letter/email (VSTEP Part 1). */
+    private const CLOSING_PATTERNS = [
+        '/(?:sincerely|yours truly|yours faithfully|best regards|kind regards|regards|yours|warmly|cheers|take care|best|love|thanks)[,\s]*$/mi',
+    ];
+
     /**
      * @param  array<int,array<string,mixed>>  $languageToolErrors
      * @return array{metrics: array<string,mixed>, flags: string[]}
@@ -51,6 +61,11 @@ final class RuleBasedScoringService
 
         $grammarErrors = array_filter($errors, fn ($e) => Str::contains(Str::lower($e['category'] ?? ''), 'grammar'));
         $grammarErrorCount = count($grammarErrors);
+        $spellingErrors = array_filter($errors, fn ($e) => Str::contains(Str::lower($e['category'] ?? ''), 'typo')
+            || Str::contains(Str::lower($e['category'] ?? ''), 'spelling'));
+        $spellingErrorCount = count($spellingErrors);
+        $punctuationErrors = array_filter($errors, fn ($e) => Str::contains(Str::lower($e['category'] ?? ''), 'punctuation'));
+        $punctuationErrorCount = count($punctuationErrors);
         $totalErrorCount = count($errors);
         $errorsPerSentence = $totalErrorCount / $sentenceCount;
 
@@ -74,6 +89,13 @@ final class RuleBasedScoringService
         // Complex vocabulary count (academic/formal words)
         $complexVocabCount = $this->countComplexVocab($textLower);
 
+        // Letter format detection (VSTEP Part 1)
+        $hasSalutation = $this->hasSalutation($text);
+        $hasClosing = $this->hasClosing($text);
+
+        // Tone/register signals (formal vs informal)
+        $toneSignals = $this->detectToneSignals($textLower);
+
         return [
             'word_count' => $wordCount,
             'sentence_count' => $sentenceCount,
@@ -88,6 +110,11 @@ final class RuleBasedScoringService
             'total_error_count' => $totalErrorCount,
             'errors_per_sentence' => round($errorsPerSentence, 2),
             'linking_word_count' => $linkingCount,
+            'spelling_error_count' => $spellingErrorCount,
+            'punctuation_error_count' => $punctuationErrorCount,
+            'has_salutation' => $hasSalutation,
+            'has_closing' => $hasClosing,
+            'tone_signals' => $toneSignals,
         ];
     }
 
@@ -152,5 +179,77 @@ final class RuleBasedScoringService
         }
 
         return $count;
+    }
+
+    /**
+     * Detect letter/email salutation (VSTEP Part 1).
+     */
+    private function hasSalutation(string $text): bool
+    {
+        foreach (self::SALUTATION_PATTERNS as $pattern) {
+            if (preg_match($pattern, $text)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Detect letter/email closing phrase (VSTEP Part 1).
+     */
+    private function hasClosing(string $text): bool
+    {
+        foreach (self::CLOSING_PATTERNS as $pattern) {
+            if (preg_match($pattern, $text)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Detect tone/register signals in text.
+     *
+     * @return array{formal_count: int, informal_count: int, informal_words: list<string>}
+     */
+    private function detectToneSignals(string $text): array
+    {
+        $informalWords = [
+            'gonna', 'wanna', 'gotta', 'kinda', 'sorta', 'dunno', 'lemme', 'gimme',
+            'cool', 'awesome', 'stuff', 'guys', 'dude', 'yeah', 'nah', 'okay', 'ok',
+            'lots', 'a lot of', 'big deal', 'super', 'really really', 'so so',
+            'btw', 'lol', 'omg', 'idk', 'imo', 'tbh', 'thx', 'pls', 'u', 'ur',
+            'cuz', 'cause', 'til', 'tho', 'thru',
+        ];
+
+        $formalWords = [
+            'furthermore', 'moreover', 'consequently', 'nevertheless', 'accordingly',
+            'therefore', 'thus', 'hence', 'whereas', 'notwithstanding', 'hereby',
+            'pursuant', 'regarding', 'concerning', 'in accordance', 'in regard to',
+        ];
+
+        $informalCount = 0;
+        $foundInformal = [];
+        foreach ($informalWords as $word) {
+            if (str_contains($text, $word)) {
+                $informalCount++;
+                $foundInformal[] = $word;
+            }
+        }
+
+        $formalCount = 0;
+        foreach ($formalWords as $word) {
+            if (str_contains($text, $word)) {
+                $formalCount++;
+            }
+        }
+
+        return [
+            'formal_count' => $formalCount,
+            'informal_count' => $informalCount,
+            'informal_words' => $foundInformal,
+        ];
     }
 }

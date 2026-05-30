@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Assessment\Services\AssessmentIntakeService;
 use App\Models\PracticeSession;
 use App\Models\PracticeWritingPrompt;
 use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
-use App\Services\Grading\GradingService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +18,7 @@ final class WritingPracticeService
 {
     public function __construct(
         private readonly PracticeSessionService $sessionService,
-        private readonly GradingService $gradingService,
+        private readonly AssessmentIntakeService $assessments,
     ) {}
 
     /** @return Collection<int,PracticeWritingPrompt> */
@@ -50,10 +50,13 @@ final class WritingPracticeService
         return $this->sessionService->start($profile, 'writing', $prompt);
     }
 
+    /**
+     * @return array{submission: PracticeWritingSubmission, job_id: string}
+     */
     public function submit(
         PracticeSession $session,
         string $text,
-    ): PracticeWritingSubmission {
+    ): array {
         if ($session->module !== 'writing') {
             throw ValidationException::withMessages([
                 'session' => ['Session module is not writing.'],
@@ -90,10 +93,9 @@ final class WritingPracticeService
 
             $this->sessionService->complete($locked);
 
-            // Enqueue inside transaction — defer dispatch to DB::afterCommit
-            $this->gradingService->enqueue('practice_writing', $submission->id);
+            $job = $this->assessments->submitPracticeWriting($submission);
 
-            return $submission;
+            return ['submission' => $submission, 'job_id' => $job->id];
         });
 
         return $submission;
@@ -103,7 +105,7 @@ final class WritingPracticeService
     {
         return PracticeWritingSubmission::query()
             ->where('profile_id', $profile->id)
-            ->with(['prompt:id,slug,title,part', 'activeGradingResult'])
+            ->with(['prompt:id,slug,title,part', 'assessmentAttempt.result'])
             ->when($part !== null, fn ($q) => $q->whereHas(
                 'prompt', fn ($q) => $q->where('part', $part),
             ))

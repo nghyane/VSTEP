@@ -290,12 +290,12 @@ function reducer(state: ExamState, action: ExamAction): ExamState {
         writingAnswers: new Map(Object.entries(action.draft.writingAnswers)),
         speakingAnswers: new Map(
           Object.entries(action.draft.speakingMarks)
-            .filter(([, audioUrl]) => audioUrl.length > 0)
-            .map(([partId, audioUrl]) => [partId, { partId, audioUrl, durationSeconds: 0 }]),
+            .map(([partId, mark]) => localDraftSpeakingAnswer(partId, mark))
+            .filter((entry): entry is [string, SpeakingAnswer] => entry !== null),
         ),
         speakingDone: new Set(
           Object.entries(action.draft.speakingMarks)
-            .filter(([, audioUrl]) => audioUrl.length > 0)
+            .filter(([, mark]) => localDraftSpeakingAudioUrl(mark).length > 0)
             .map(([partId]) => partId),
         ),
       };
@@ -308,6 +308,17 @@ function reducer(state: ExamState, action: ExamAction): ExamState {
     case "SUBMITTED": return { ...state, phase: "submitted" };
     default: return state;
   }
+}
+
+function localDraftSpeakingAudioUrl(mark: ExamDraft["speakingMarks"][string]): string {
+  return typeof mark === "string" ? mark : mark.audioUrl ?? "";
+}
+
+function localDraftSpeakingAnswer(partId: string, mark: ExamDraft["speakingMarks"][string]): [string, SpeakingAnswer] | null {
+  const audioUrl = localDraftSpeakingAudioUrl(mark);
+  if (!audioUrl) return null;
+  const durationSeconds = typeof mark === "string" ? 1 : Math.max(1, mark.durationSeconds ?? 1);
+  return [partId, { partId, audioUrl, durationSeconds }];
 }
 
 function buildMcqPayload(
@@ -335,7 +346,7 @@ function toExamDraft(session: ExamSessionData, draft: ExamServerDraft): ExamDraf
       draft.writingAnswers.map((w) => [w.taskId, w.text]),
     ),
     speakingMarks: Object.fromEntries(
-      draft.speakingMarks.map((s) => [s.partId, s.audioUrl ?? ""]),
+      draft.speakingMarks.map((s) => [s.partId, { audioUrl: s.audioUrl ?? "", durationSeconds: Math.max(1, s.durationSeconds ?? 1) }]),
     ),
     savedAt: draft.savedAt,
   };
@@ -349,7 +360,7 @@ function buildDraft(session: ExamSessionData, state: ExamState): ExamDraft {
     mcqAnswers: Object.fromEntries(state.mcqAnswers),
     writingAnswers: Object.fromEntries(state.writingAnswers),
     speakingMarks: Object.fromEntries(
-      Array.from(state.speakingAnswers.entries()).map(([k, v]) => [k, v.audioUrl ?? ""]),
+      Array.from(state.speakingAnswers.entries()).map(([k, v]) => [k, { audioUrl: v.audioUrl ?? "", durationSeconds: Math.max(1, v.durationSeconds) }]),
     ),
     savedAt: new Date().toISOString(),
   };

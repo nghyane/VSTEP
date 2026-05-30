@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { Link, useNavigate } from "@tanstack/react-router"
 import { useEffect, useMemo, useState } from "react"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
@@ -38,8 +38,8 @@ function computeDuration(detail: ExamDetail, selected: Set<SkillKey>): number {
 export function BottomActionBar({ detail, selected }: Props) {
 	const navigate = useNavigate()
 	const qc = useQueryClient()
-	const { data: walletData } = useQuery(walletBalanceQuery)
-	const { data: configData } = useQuery(appConfigQuery)
+	const { data: walletData } = useSuspenseQuery(walletBalanceQuery)
+	const { data: configData } = useSuspenseQuery(appConfigQuery)
 	const { data: mySessionsData } = useQuery(mySessionsQuery)
 
 	// Per-exam: tìm session active còn hạn của ĐÚNG đề này. BE cho phép nhiều active song song
@@ -61,11 +61,12 @@ export function BottomActionBar({ detail, selected }: Props) {
 	const [confirmReset, setConfirmReset] = useState(false)
 	const [showTopup, setShowTopup] = useState(false)
 
-	const fullCost = configData?.data.pricing.exam.full_test_cost_coins ?? 25
-	const perSkillCost = configData?.data.pricing.exam.custom_per_skill_coins ?? 8
-
 	const isFullTest = selected.size === 0
-	const cost = computeCost(selected, fullCost, perSkillCost)
+	const cost = computeCost(
+		selected,
+		configData.data.pricing.exam.full_test_cost_coins,
+		configData.data.pricing.exam.custom_per_skill_coins,
+	)
 	const naturalMinutes = computeDuration(detail, selected)
 	const maxMinutes = naturalMinutes * 3
 
@@ -78,8 +79,8 @@ export function BottomActionBar({ detail, selected }: Props) {
 	}, [naturalMinutes])
 	const clampedDuration = Math.max(naturalMinutes, Math.min(maxMinutes, duration))
 
-	const balance = walletData?.data.balance ?? null
-	const insufficient = balance !== null && balance < cost
+	const balance = walletData.data.balance
+	const insufficient = balance < cost
 
 	// fill % relative to the [natural, max] range
 	const fillPct =

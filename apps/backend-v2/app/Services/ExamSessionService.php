@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Assessment\Services\AssessmentIntakeService;
 use App\DTOs\ExamSubmitResult;
 use App\Enums\CoinTransactionType;
 use App\Enums\ExamSessionStatus;
@@ -17,8 +18,6 @@ use App\Models\ExamVersion;
 use App\Models\ExamWritingSubmission;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
-use App\Models\SystemConfig;
-use App\Services\Grading\GradingService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -31,8 +30,9 @@ final class ExamSessionService
     public function __construct(
         private readonly WalletService $walletService,
         private readonly ExamScoringService $scoringService,
-        private readonly GradingService $gradingService,
+        private readonly AssessmentIntakeService $assessments,
         private readonly ProgressService $progressService,
+        private readonly EconomyConfigService $economyConfig,
     ) {}
 
     /** @return Collection<int,Exam> */
@@ -230,11 +230,11 @@ final class ExamSessionService
                     'word_count' => $w['word_count'],
                     'submitted_at' => now(),
                 ]);
-                $job = $this->gradingService->enqueue('exam_writing', $submission->id);
+                $job = $this->assessments->submitExamWriting($submission);
                 $writingJobs[] = [
                     'submission_id' => $submission->id,
                     'job_id' => $job->id,
-                    'status' => $job->status,
+                    'status' => $job->status->value,
                 ];
             }
 
@@ -249,11 +249,11 @@ final class ExamSessionService
                     'duration_seconds' => $s['duration_seconds'],
                     'submitted_at' => now(),
                 ]);
-                $job = $this->gradingService->enqueue('exam_speaking', $submission->id);
+                $job = $this->assessments->submitExamSpeaking($submission);
                 $speakingJobs[] = [
                     'submission_id' => $submission->id,
                     'job_id' => $job->id,
-                    'status' => $job->status,
+                    'status' => $job->status->value,
                 ];
             }
 
@@ -273,10 +273,10 @@ final class ExamSessionService
     {
         $allSkills = ['listening', 'reading', 'writing', 'speaking'];
         if (count(array_intersect($skills, $allSkills)) === 4) {
-            return (int) (SystemConfig::get('exam.full_test_cost_coins') ?? 25);
+            return $this->economyConfig->examFullTestCost();
         }
-        $perSkill = (int) (SystemConfig::get('exam.custom_per_skill_coins') ?? 8);
-        $fullCost = (int) (SystemConfig::get('exam.full_test_cost_coins') ?? 25);
+        $perSkill = $this->economyConfig->examCustomPerSkillCost();
+        $fullCost = $this->economyConfig->examFullTestCost();
 
         return min($fullCost, $perSkill * count($skills));
     }

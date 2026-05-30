@@ -15,14 +15,17 @@ export interface TopupPackage {
 
 export interface TopupOrder {
   id: string;
+  orderCode: number;
   profileId: string;
   packageId: string;
   amountVnd: number;
   coinsToCredit: number;
-  status: "pending" | "paid" | "failed" | "cancelled";
+  status: "pending" | "paid" | "failed" | "cancelled" | "expired";
   paymentProvider: string;
+  paymentUrl: string | null;
   providerRef: string | null;
   paidAt: string | null;
+  expiresAt: string | null;
   createdAt: string;
 }
 

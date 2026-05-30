@@ -61,6 +61,25 @@ export class ApiError extends Error {
   }
 }
 
+export function getApiErrorMessage(error: unknown): string {
+  if (error instanceof ApiError) {
+    const body = error.body;
+    if (body && typeof body === "object") {
+      const rec = body as Record<string, unknown>;
+      if (typeof rec.message === "string") return rec.message;
+      if (rec.errors && typeof rec.errors === "object") {
+        const first = Object.values(rec.errors as Record<string, unknown>)[0];
+        if (Array.isArray(first) && typeof first[0] === "string") return first[0];
+        if (typeof first === "string") return first;
+      }
+    }
+    return error.message;
+  }
+
+  if (error instanceof Error) return error.message;
+  return "Đã có lỗi xảy ra. Vui lòng thử lại.";
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -83,6 +102,45 @@ async function request<T>(
   if (res.status === 401 && !isRetry) {
     const refreshed = await tryRefresh();
     if (refreshed) return request<T>(method, path, body, true);
+    throw new ApiError(401, "UNAUTHORIZED", null);
+  }
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    let parsed: unknown = null;
+    if (text) {
+      try {
+        parsed = toCamelCase(JSON.parse(text));
+      } catch {
+        parsed = null;
+      }
+    }
+    throw new ApiError(res.status, text, parsed);
+  }
+
+  const json: unknown = await res.json().catch(() => ({}));
+  return toCamelCase<T>(unwrapData(json));
+}
+
+async function requestForm<T>(
+  method: string,
+  path: string,
+  body: FormData,
+  isRetry = false,
+): Promise<T> {
+  const token = await getAccessToken();
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method,
+    headers,
+    body,
+  });
+
+  if (res.status === 401 && !isRetry) {
+    const refreshed = await tryRefresh();
+    if (refreshed) return requestForm<T>(method, path, body, true);
     throw new ApiError(401, "UNAUTHORIZED", null);
   }
 
@@ -175,6 +233,7 @@ export async function refreshSession(): Promise<RefreshSessionResult> {
 export const api = {
   get: <T>(path: string) => request<T>("GET", path),
   post: <T>(path: string, body?: unknown) => request<T>("POST", path, body),
+  postForm: <T>(path: string, body: FormData) => requestForm<T>("POST", path, body),
   put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body),
   patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, body),
   delete: <T>(path: string) => request<T>("DELETE", path),
@@ -189,8 +248,16 @@ export async function loginApi(email: string, password: string) {
     body: JSON.stringify({ email, password }),
   });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({})) as Record<string, unknown>;
-    throw new Error((err.message as string) ?? "Login failed");
+    const text = await res.text().catch(() => "");
+    let parsed: unknown = null;
+    if (text) {
+      try {
+        parsed = toCamelCase(JSON.parse(text));
+      } catch {
+        parsed = null;
+      }
+    }
+    throw new ApiError(res.status, text || "Login failed", parsed);
   }
   const json: unknown = await res.json();
   return toCamelCase<{
@@ -229,6 +296,11 @@ export async function registerApi(
     profile: Profile | null;
     onboardingBonus?: { amount: number; granted: boolean };
   }>(unwrapData(json));
+}
+
+
+export async function googleLoginApi(idToken: string) {
+  return api.post<import("@/types/api").GoogleLoginResponse>("/api/v1/auth/google", { idToken });
 }
 
 export async function completeOnboardingApi(nickname: string, targetLevel: string, targetDeadline: string) {

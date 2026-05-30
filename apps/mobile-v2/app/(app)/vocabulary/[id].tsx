@@ -1,22 +1,92 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
-import { GameIcon } from "@/components/GameIcon";
-import { useVocabTopicDetail, type WordWithState } from "@/hooks/use-vocab";
-import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { HapticTouchable } from "@/components/HapticTouchable";
+import { canBuildFillBlank, type PracticeMode } from "@/features/vocab/use-practice-session";
+import { useVocabTopicDetail, type FsrsState, type WordWithState } from "@/hooks/use-vocab";
+import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
+
+interface ModeOption {
+  mode: PracticeMode;
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  subtitle: string;
+  available: boolean;
+}
+
+type Bucket = "new" | "learning" | "known";
+type WordFilter = "all" | Bucket;
+
+const WORD_FILTERS: { key: WordFilter; label: string }[] = [
+  { key: "all", label: "Tất cả" },
+  { key: "new", label: "Mới" },
+  { key: "learning", label: "Đang học" },
+  { key: "known", label: "Đã thuộc" },
+];
 
 export default function VocabTopicDetailScreen() {
   const c = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data, isLoading } = useVocabTopicDetail(id ?? "");
+  const topicId = id ?? "";
+  const { data, isLoading } = useVocabTopicDetail(topicId);
+  const words = data?.words ?? [];
+  const hasFillBlank = canBuildFillBlank(words);
+  const [selectedMode, setSelectedMode] = useState<PracticeMode>("flashcard");
+
+  const modeOptions = useMemo<ModeOption[]>(
+    () => [
+      {
+        mode: "flashcard",
+        icon: "albums-outline",
+        title: "Thẻ flashcard",
+        subtitle: "Lật thẻ + nhắc lại cách quãng",
+        available: words.length > 0,
+      },
+      {
+        mode: "typing",
+        icon: "create-outline",
+        title: "Gõ từ",
+        subtitle: "Gõ tiếng Anh từ trí nhớ",
+        available: words.length > 0,
+      },
+      {
+        mode: "listen",
+        icon: "headset-outline",
+        title: "Nghe",
+        subtitle: "Nghe và nhớ lại từ",
+        available: words.length > 0,
+      },
+      {
+        mode: "reverse",
+        icon: "swap-horizontal-outline",
+        title: "Đảo ngược",
+        subtitle: "Xem nghĩa, nhớ lại từ",
+        available: words.length > 0,
+      },
+      {
+        mode: "fill_blank",
+        icon: "remove-outline",
+        title: "Điền chỗ trống",
+        subtitle: hasFillBlank ? "Điền từ vào câu" : "Cần ví dụ để tạo câu điền từ",
+        available: hasFillBlank,
+      },
+      {
+        mode: "mixed",
+        icon: "shuffle-outline",
+        title: "Hỗn hợp",
+        subtitle: "Ngẫu nhiên, tối đa thách thức",
+        available: words.length > 0,
+      },
+    ],
+    [hasFillBlank, words.length],
+  );
 
   if (isLoading || !data) {
     return (
@@ -26,28 +96,25 @@ export default function VocabTopicDetailScreen() {
     );
   }
 
-  const { topic, words } = data;
-  const exercises = data.exercises;
-  const newCount = words.filter((w) => w.state.kind === "new").length;
-  const learnedCount = words.length - newCount;
+  const { topic } = data;
+  const learnedCount = words.filter((entry) => bucket(entry.state) === "known").length;
   const progress = words.length > 0 ? learnedCount / words.length : 0;
-
-  const mcqCount = exercises.filter((e) => e.kind === "mcq").length;
-  const fillCount = exercises.filter((e) => e.kind === "fill_blank").length;
-  const wordFormCount = exercises.filter((e) => e.kind === "word_form").length;
+  const selectedAvailable = modeOptions.some((option) => option.mode === selectedMode && option.available);
 
   return (
     <ScrollView
       style={[s.root, { backgroundColor: c.background }]}
-      contentContainerStyle={[s.scroll, { paddingTop: insets.top + spacing.xl }]}
+      contentContainerStyle={[
+        s.scroll,
+        { paddingTop: insets.top + spacing.lg, paddingBottom: insets.bottom + spacing["3xl"] },
+      ]}
       showsVerticalScrollIndicator={false}
     >
       <HapticTouchable onPress={() => router.back()} style={s.backRow}>
-        <Ionicons name="arrow-back" size={20} color={c.foreground} />
+        <Ionicons name="arrow-back" size={22} color={c.foreground} />
         <Text style={[s.backText, { color: c.foreground }]}>Quay lại</Text>
       </HapticTouchable>
 
-      {/* Topic Hero */}
       <DepthCard style={s.heroCard}>
         <View style={[s.levelBadge, { backgroundColor: c.primaryTint }]}>
           <Text style={[s.levelText, { color: c.primary }]}>{topic.level}</Text>
@@ -56,121 +123,148 @@ export default function VocabTopicDetailScreen() {
         {topic.description ? (
           <Text style={[s.heroDesc, { color: c.mutedForeground }]}>{topic.description}</Text>
         ) : null}
-
         <View style={s.progressRow}>
           <View style={[s.progressTrack, { backgroundColor: c.muted }]}>
             <View style={[s.progressFill, { backgroundColor: c.primary, width: `${progress * 100}%` }]} />
           </View>
-          <Text style={[s.progressText, { color: c.subtle }]}>{learnedCount}/{words.length}</Text>
+          <Text style={[s.progressText, { color: c.subtle }]}>
+            {learnedCount}/{words.length}
+          </Text>
         </View>
-
         <DepthButton
           fullWidth
-          onPress={() => router.push(`/(app)/vocabulary/${id}/flashcard` as any)}
+          disabled={!selectedAvailable}
+          onPress={() => router.push(`/(app)/vocabulary/${topicId}/flashcard?mode=${selectedMode}` as never)}
         >
-          {`Học Flashcard · ${words.length} từ`}
+          Bắt đầu luyện tập
         </DepthButton>
       </DepthCard>
 
-      {/* Bài tập bổ trợ */}
-      {exercises.length > 0 ? (
-        <View style={s.section}>
-          <Text style={[s.sectionLabel, { color: c.foreground }]}>Bài tập bổ trợ</Text>
-          <View style={s.modeGrid}>
+      <View style={s.section}>
+        <Text style={[s.sectionLabel, { color: c.foreground }]}>Chế độ luyện tập</Text>
+        <Text style={[s.sectionSub, { color: c.mutedForeground }]}>Chọn cách bạn muốn luyện từ trong chủ đề này.</Text>
+        <View style={s.modeList}>
+          {modeOptions.map((option) => (
             <ExerciseMode
-              icon="check"
-              title="Trắc nghiệm"
-              desc={mcqCount > 0 ? `${mcqCount} câu` : "Chọn đáp án"}
-              color={c.info}
-              onPress={() => router.push(`/(app)/vocabulary/${id}/exercise?kind=mcq` as any)}
+              key={option.mode}
+              option={option}
+              selected={selectedMode === option.mode}
+              onPress={() => {
+                if (option.available) setSelectedMode(option.mode);
+              }}
             />
-            <ExerciseMode
-              icon="pencil"
-              title="Điền từ"
-              desc={fillCount > 0 ? `${fillCount} câu` : "Điền chỗ trống"}
-              color={c.skillWriting}
-              onPress={() => router.push(`/(app)/vocabulary/${id}/exercise?kind=fill_blank` as any)}
-            />
-            <ExerciseMode
-              icon="book"
-              title="Biến đổi"
-              desc={wordFormCount > 0 ? `${wordFormCount} câu` : "Chia dạng từ"}
-              color={c.skillReading}
-              onPress={() => router.push(`/(app)/vocabulary/${id}/exercise?kind=word_form` as any)}
-            />
-          </View>
+          ))}
         </View>
-      ) : null}
+      </View>
 
-      {/* Word list (collapsible) */}
       <WordListSection words={words} />
-
-      <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
   );
 }
 
-function ExerciseMode({ icon, title, desc, color, onPress }: {
-  icon: "check" | "pencil" | "book"; title: string; desc: string; color: string; onPress: () => void;
+function ExerciseMode({
+  option,
+  selected,
+  onPress,
+}: {
+  option: ModeOption;
+  selected: boolean;
+  onPress: () => void;
 }) {
   const c = useThemeColors();
+  const disabled = !option.available;
+
   return (
     <HapticTouchable
-      style={[s.modeCard, { borderColor: c.border, borderBottomColor: c.border }]}
       onPress={onPress}
+      disabled={disabled}
       activeOpacity={0.85}
+      style={[
+        s.modeCard,
+        {
+          borderColor: selected ? c.primary : c.border,
+          borderBottomColor: selected ? c.primaryDark : c.border,
+          backgroundColor: selected ? c.primaryTint : c.surface,
+          opacity: disabled ? 0.45 : 1,
+        },
+      ]}
     >
-      <View style={[s.modeIconWrap, { backgroundColor: color + "15" }]}>
-        <GameIcon name={icon} size={22} />
+      <View style={[s.modeIconWrap, { backgroundColor: selected ? c.surface : c.muted }]}>
+        <Ionicons name={option.icon} size={20} color={selected ? c.primary : c.mutedForeground} />
       </View>
-      <Text style={[s.modeTitle, { color: c.foreground }]}>{title}</Text>
-      <Text style={[s.modeDesc, { color: c.mutedForeground }]}>{desc}</Text>
+      <View style={s.modeCopy}>
+        <Text style={[s.modeTitle, { color: selected ? c.primary : c.foreground }]}>{option.title}</Text>
+        <Text style={[s.modeDesc, { color: c.mutedForeground }]} numberOfLines={1}>
+          {option.subtitle}
+        </Text>
+      </View>
+      <View style={[s.radioOuter, { borderColor: selected ? c.primary : c.border }]}>
+        {selected ? <View style={[s.radioInner, { backgroundColor: c.primary }]} /> : null}
+      </View>
     </HapticTouchable>
   );
 }
 
-function stateBadge(state: WordWithState["state"]): { text: string; bg: string; fg: string } {
-  if (state.kind === "new") return { text: "Mới", bg: "#DDF4FF", fg: "#1CB0F6" };
-  if (state.kind === "learning" || state.kind === "relearning") return { text: "Đang học", bg: "#FFF0DC", fg: "#FF9B00" };
-  const r = state.retrievability;
-  const pct = `${Math.round(r * 100)}%`;
-  if (r >= 0.9) return { text: pct, bg: "#E6F8D4", fg: "#58CC02" };
-  if (r >= 0.7) return { text: pct, bg: "#FFF0DC", fg: "#FF9B00" };
-  return { text: pct, bg: "#FFE6E4", fg: "#EA4335" };
-}
-
 function WordListSection({ words }: { words: WordWithState[] }) {
   const c = useThemeColors();
-  const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState<WordFilter>("all");
+  const counts = useMemo(() => countByBucket(words), [words]);
+  const filtered = filter === "all" ? words : words.filter((entry) => bucket(entry.state) === filter);
 
   return (
-    <DepthCard style={s.wordCard}>
-      <HapticTouchable style={s.wordHeader} onPress={() => setOpen(!open)}>
-        <View style={s.wordHeaderLeft}>
-          <Text style={[s.wordHeaderTitle, { color: c.foreground }]}>Từ vựng trong chủ đề</Text>
-          <Text style={[s.wordHeaderCount, { color: c.subtle }]}>{words.length} từ</Text>
-        </View>
-        <Ionicons name={open ? "chevron-up" : "chevron-down"} size={16} color={c.subtle} />
-      </HapticTouchable>
+    <DepthCard padding={0} style={s.wordCard}>
+      <View style={s.wordHeader}>
+        <Text style={[s.wordHeaderTitle, { color: c.foreground }]}>
+          Từ vựng <Text style={{ color: c.subtle }}>· {words.length}</Text>
+        </Text>
+      </View>
+      <View style={s.wordFilterRow}>
+        {WORD_FILTERS.map((item) => {
+          const active = filter === item.key;
+          const count = item.key === "all" ? words.length : counts[item.key];
+          return (
+            <HapticTouchable
+              key={item.key}
+              onPress={() => setFilter(item.key)}
+              style={[
+                s.wordFilter,
+                {
+                  borderColor: active ? c.primary : c.border,
+                  backgroundColor: active ? c.primaryTint : c.background,
+                },
+              ]}
+            >
+              <Text style={[s.wordFilterText, { color: active ? c.primary : c.mutedForeground }]}>
+                {item.label} {count}
+              </Text>
+            </HapticTouchable>
+          );
+        })}
+      </View>
 
-      {open ? (
+      {filtered.length === 0 ? (
+        <Text style={[s.emptyWords, { color: c.mutedForeground }]}>Không có từ phù hợp.</Text>
+      ) : (
         <View style={[s.wordBody, { borderTopColor: c.border }]}>
-          {words.map(({ word: w, state }) => {
+          {filtered.map(({ word, state }) => {
             const badge = stateBadge(state);
             return (
-              <View key={w.id} style={[s.wordRow, { borderBottomColor: c.borderLight }]}>
-                <View style={{ flex: 1 }}>
+              <View key={word.id} style={[s.wordRow, { borderBottomColor: c.borderLight }]}>
+                <View style={s.wordCopy}>
                   <View style={s.wordTopRow}>
-                    <Text style={[s.wordText, { color: c.foreground }]}>{w.word}</Text>
-                    {w.phonetic ? <Text style={[s.wordPhonetic, { color: c.subtle }]}>{w.phonetic}</Text> : null}
-                    {w.partOfSpeech ? (
+                    <Text style={[s.wordText, { color: c.foreground }]} numberOfLines={1}>
+                      {word.word}
+                    </Text>
+                    {word.partOfSpeech ? (
                       <View style={[s.posPill, { backgroundColor: c.muted }]}>
-                        <Text style={[s.posText, { color: c.mutedForeground }]}>{w.partOfSpeech}</Text>
+                        <Text style={[s.posText, { color: c.mutedForeground }]}>{word.partOfSpeech}</Text>
                       </View>
                     ) : null}
                   </View>
-                  <Text style={[s.wordDef, { color: c.mutedForeground }]}>{w.definition}</Text>
-                  {w.example ? <Text style={[s.wordExample, { color: c.subtle }]}>{`"${w.example}"`}</Text> : null}
+                  {word.phonetic ? <Text style={[s.wordPhonetic, { color: c.subtle }]}>{word.phonetic}</Text> : null}
+                  <Text style={[s.wordDef, { color: c.mutedForeground }]} numberOfLines={2}>
+                    {word.definition}
+                  </Text>
                 </View>
                 <View style={[s.badge, { backgroundColor: badge.bg }]}>
                   <Text style={[s.badgeText, { color: badge.fg }]}>{badge.text}</Text>
@@ -179,19 +273,37 @@ function WordListSection({ words }: { words: WordWithState[] }) {
             );
           })}
         </View>
-      ) : null}
+      )}
     </DepthCard>
   );
+}
+
+function countByBucket(words: WordWithState[]): Record<Bucket, number> {
+  const counts: Record<Bucket, number> = { new: 0, learning: 0, known: 0 };
+  for (const entry of words) counts[bucket(entry.state)] += 1;
+  return counts;
+}
+
+function bucket(state: FsrsState): Bucket {
+  if (state.kind === "new") return "new";
+  if (state.kind === "learning" || state.kind === "relearning") return "learning";
+  return state.retrievability >= 0.85 ? "known" : "learning";
+}
+
+function stateBadge(state: FsrsState): { text: string; bg: string; fg: string } {
+  const value = bucket(state);
+  if (value === "new") return { text: "Mới", bg: "#DDF4FF", fg: "#1CB0F6" };
+  if (value === "known") return { text: "Đã thuộc", bg: "#E6F8D4", fg: "#58CC02" };
+  return { text: "Đang học", bg: "#FFF0DC", fg: "#FF9B00" };
 }
 
 const s = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  scroll: { paddingHorizontal: spacing.xl, gap: spacing.lg, paddingBottom: spacing["3xl"] },
+  scroll: { paddingHorizontal: spacing.lg, gap: spacing.lg },
   backRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   backText: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
-
-  heroCard: { alignItems: "center", gap: spacing.md, padding: spacing.xl },
+  heroCard: { alignItems: "center", gap: spacing.md, padding: spacing.lg },
   levelBadge: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full },
   levelText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   heroTitle: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold, textAlign: "center" },
@@ -200,29 +312,59 @@ const s = StyleSheet.create({
   progressTrack: { flex: 1, height: 8, borderRadius: radius.full, overflow: "hidden" },
   progressFill: { height: 8, borderRadius: radius.full },
   progressText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
-
   section: { gap: spacing.sm },
   sectionLabel: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
-  modeGrid: { flexDirection: "row", gap: spacing.sm },
-  modeCard: { flex: 1, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.base, gap: spacing.sm, alignItems: "flex-start" },
-  modeIconWrap: { width: 40, height: 40, borderRadius: radius.lg, alignItems: "center", justifyContent: "center" },
+  sectionSub: { fontSize: fontSize.sm, lineHeight: 20 },
+  modeList: { gap: spacing.sm },
+  modeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.xl,
+    padding: spacing.base,
+    gap: spacing.md,
+  },
+  modeIconWrap: {
+    width: 42,
+    height: 42,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modeCopy: { flex: 1, gap: 2 },
   modeTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   modeDesc: { fontSize: 11, lineHeight: 16 },
-
-  wordCard: { padding: 0, overflow: "hidden" },
-  wordHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: spacing.lg },
-  wordHeaderLeft: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
-  wordHeaderTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
-  wordHeaderCount: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  radioOuter: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  radioInner: { width: 8, height: 8, borderRadius: 4 },
+  wordCard: { overflow: "hidden" },
+  wordHeader: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
+  wordHeaderTitle: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold },
+  wordFilterRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, padding: spacing.lg },
+  wordFilter: {
+    borderWidth: 2,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+  },
+  wordFilterText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  emptyWords: { textAlign: "center", paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, fontSize: fontSize.sm },
   wordBody: { borderTopWidth: 1 },
-  wordRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.base, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderBottomWidth: 1 },
+  wordRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+  },
+  wordCopy: { flex: 1, minWidth: 0 },
   wordTopRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginBottom: 2 },
-  wordText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
-  wordPhonetic: { fontSize: fontSize.xs },
+  wordText: { flexShrink: 1, fontSize: fontSize.sm, fontFamily: fontFamily.extraBold },
+  wordPhonetic: { fontSize: fontSize.xs, marginBottom: 2 },
+  wordDef: { fontSize: fontSize.sm, lineHeight: 20 },
   posPill: { paddingHorizontal: spacing.xs, paddingVertical: 1, borderRadius: radius.sm },
   posText: { fontSize: 10, fontFamily: fontFamily.medium },
-  wordDef: { fontSize: fontSize.sm, lineHeight: 20 },
-  wordExample: { fontSize: fontSize.xs, fontStyle: "italic", marginTop: 2 },
   badge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   badgeText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
 });

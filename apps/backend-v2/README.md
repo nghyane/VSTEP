@@ -13,7 +13,47 @@ Laravel 13 API for the VSTEP exam practice platform. This app owns the API contr
 - Laravel AI for grading workflows
 - Cloudflare R2/S3-compatible audio storage
 
-## Local setup
+## Docker local setup
+
+Recommended on Windows because it does not require local PHP or Composer.
+
+```bash
+docker compose -f docker-compose.dev.yml up -d --build backend
+docker compose -f docker-compose.dev.yml logs -f backend
+```
+
+The compose file starts PostgreSQL, Redis, installs Composer dependencies, creates `.env` when missing, generates `APP_KEY`, runs migrations, seeds demo data, and starts Octane at `http://localhost:8000`.
+
+Verify:
+
+```bash
+curl http://localhost:8000/api/v1/health
+```
+
+Run Horizon when queue jobs are needed:
+
+```bash
+docker compose -f docker-compose.dev.yml up -d horizon
+```
+
+Useful container commands:
+
+```bash
+docker compose -f docker-compose.dev.yml exec backend php artisan route:list --path=api/v1
+docker compose -f docker-compose.dev.yml exec backend php artisan test
+docker compose -f docker-compose.dev.yml down
+docker compose -f docker-compose.dev.yml down -v
+```
+
+Demo accounts seeded locally use password `password`:
+
+- `learner@vstep.test`
+- `learner2@vstep.test`
+- `teacher@vstep.test`
+- `staff@vstep.test`
+- `admin@vstep.test`
+
+## Local setup without Docker
 
 ```bash
 composer install

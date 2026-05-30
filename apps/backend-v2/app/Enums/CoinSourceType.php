@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Enums;
 
 use App\Models\CourseEnrollment;
+use App\Models\PracticeFeedbackRequest;
 use App\Models\PracticeSession;
 use App\Models\Profile;
 use App\Models\ProfileStreakClaim;
@@ -20,6 +21,7 @@ enum CoinSourceType: string
     case PromoCode = 'promo_code';
     case CourseEnrollment = 'course_enrollment';
     case PracticeSession = 'practice_session';
+    case PracticeFeedbackRequest = 'practice_feedback_request';
     case Profile = 'profile';
     case StreakClaim = 'profile_streak_claim';
     case TeacherBooking = 'teacher_booking';
@@ -31,6 +33,7 @@ enum CoinSourceType: string
         PromoCode::class => self::PromoCode,
         CourseEnrollment::class => self::CourseEnrollment,
         PracticeSession::class => self::PracticeSession,
+        PracticeFeedbackRequest::class => self::PracticeFeedbackRequest,
         Profile::class => self::Profile,
         ProfileStreakClaim::class => self::StreakClaim,
         TeacherBooking::class => self::TeacherBooking,

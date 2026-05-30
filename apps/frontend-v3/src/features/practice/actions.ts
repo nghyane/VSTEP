@@ -101,3 +101,18 @@ export async function getPronunciationReview(original: string, transcript: strin
 		.post("practice/speaking/pronunciation-review", { json: { original, transcript } })
 		.json<ApiResponse<PronunciationReview>>()
 }
+
+export interface RequestFeedbackResponse {
+	submission_id: string
+	status: string
+	channel: string
+	event: string
+	cost_coins: number
+	charged: boolean
+}
+
+export async function requestWritingFeedback(submissionId: string) {
+	return api
+		.post(`practice/writing/submissions/${submissionId}/feedback`)
+		.json<ApiResponse<RequestFeedbackResponse>>()
+}

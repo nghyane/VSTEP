@@ -1,15 +1,22 @@
 == WRITING TASK ==
 {{ $promptText }}
 
+== TASK TYPE ==
+@if(($part ?? 2) === 1)
+VSTEP Task 1 — Letter/Email (target: ~120 words). Semi-formal/informal register acceptable.
+@else
+VSTEP Task 2 — Essay (target: ~250 words). Formal academic register expected.
+@endif
+
 == STUDENT RESPONSE ({{ $wordCount }} words) ==
 {{ $text }}
 
 == PRE-COMPUTED METRICS ==
-- Word count: {{ $metrics['word_count'] }}
-- Sentence count: {{ $metrics['sentence_count'] }}
-- Paragraph count: {{ $metrics['paragraph_count'] }}
-- Linking words found: {{ $metrics['linking_word_count'] }}
-- Unique word ratio: {{ $metrics['unique_ratio'] }}
+- Word count: {{ $metrics['word_count'] ?? 'N/A' }}
+- Sentence count: {{ $metrics['sentence_count'] ?? 'N/A' }}
+- Paragraph count: {{ $metrics['paragraph_count'] ?? 'N/A' }}
+- Linking words found: {{ $metrics['linking_word_count'] ?? 'N/A' }}
+- Unique word ratio: {{ $metrics['unique_ratio'] ?? 'N/A' }}
 
 @if(count($grammarErrors) > 0)
 == DETECTED GRAMMAR ISSUES ==

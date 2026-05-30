@@ -14,7 +14,7 @@ export function ClassesContent() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("explore");
-  const { data, isLoading } = useCourses();
+  const { data, isLoading, isError } = useCourses();
 
   const courses = data?.data ?? [];
   const enrolledIds = new Set(data?.enrolledCourseIds ?? []);
@@ -39,6 +39,8 @@ export function ClassesContent() {
 
         {isLoading ? (
           <CenterMessage title="Đang tải..." />
+        ) : isError ? (
+          <CenterMessage title="Không thể tải khóa học. Kiểm tra kết nối và thử lại." />
         ) : list.length === 0 ? (
           <EmptyState tab={tab} onExplore={() => setTab("explore")} />
         ) : (

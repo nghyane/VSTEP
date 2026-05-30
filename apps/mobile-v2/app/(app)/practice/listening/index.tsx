@@ -66,7 +66,7 @@ export default function ListeningListScreen() {
         </View>
       )}
 
-      {!isLoading && PARTS.map(({ part, label, desc }) => {
+      {!isLoading && !isError && PARTS.map(({ part, label, desc }) => {
         const list = grouped.get(part) ?? [];
         return (
           <View key={part}>
@@ -125,7 +125,7 @@ export default function ListeningListScreen() {
         );
       })}
 
-      {!isLoading && exercises?.length === 0 && (
+      {!isLoading && !isError && exercises?.length === 0 && (
         <MascotEmpty mascot="think" title="Chưa có bài nghe" subtitle="Nội dung đang được cập nhật." />
       )}
 

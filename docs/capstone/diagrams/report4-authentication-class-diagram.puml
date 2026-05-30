@@ -1,0 +1,28 @@
+@startuml
+!theme plain
+title Authentication & Profile Class Diagram
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle folder
+left to right direction
+
+class AuthController
+class AuthService
+class TokenService
+class GoogleTokenVerifier
+class ProfileService
+class User
+class Profile
+class RefreshToken
+
+AuthController ..> AuthService
+AuthService ..> TokenService
+AuthService ..> GoogleTokenVerifier
+AuthService ..> ProfileService
+AuthService ..> User
+AuthService ..> Profile
+ProfileService ..> Profile
+TokenService ..> RefreshToken
+User "1" -- "many" Profile
+User "1" -- "many" RefreshToken
+@enduml

@@ -1,0 +1,68 @@
+@startuml
+!theme plain
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+
+title VSTEP Platform - System Architecture
+
+actor "Learner" as Learner
+actor "Admin / Teacher" as Admin
+
+node "Client Layer" {
+  component "Learner Web App\nReact + TanStack" as Web #D6EAF8
+  component "Mobile App\nExpo / React Native" as Mobile #D6EAF8
+  component "Admin App\nReact" as AdminApp #D6EAF8
+}
+
+node "Backend Layer" {
+  component "Laravel API\nControllers + Services" as Api #D5F5E3
+  queue "Queue Workers\nAssessment Jobs" as Queue #FCF3CF
+  component "Assessment Engine\nRubrics + Strategies" as Assessment #E8DAEF
+  component "Payment Gateway Registry" as PaymentRegistry #FADBD8
+}
+
+database "PostgreSQL\nApplication Database" as Db #FDEBD0
+cloud "Media Storage\nAudio / Images" as Media #EBF5FB
+
+cloud "External Services" {
+  component "Google OAuth" as Google #F2F3F4
+  component "PayOS / VNPay" as PayProvider #F2F3F4
+  component "Grammar API" as Grammar #F2F3F4
+  component "Speech-to-Text /\nPronunciation Signals" as Speech #F2F3F4
+  component "LLM Provider" as Llm #F2F3F4
+}
+
+Learner --> Web
+Learner --> Mobile
+Admin --> AdminApp
+
+Web --> Api : HTTPS / JSON API
+Mobile --> Api : HTTPS / JSON API
+AdminApp --> Api : HTTPS / JSON API
+
+Api --> Db : Eloquent / Query Builder
+Api --> Media : upload / signed URL
+Api --> Google : identity verification
+Api --> PaymentRegistry : create payment / callback verify
+PaymentRegistry --> PayProvider : gateway API
+
+Api --> Queue : dispatch assessment job
+Queue --> Assessment : process attempt
+Assessment --> Grammar : grammar signals
+Assessment --> Speech : transcript and pronunciation signals
+Assessment --> Llm : structured feedback support
+Assessment --> Db : evidence + result
+
+PayProvider --> Api : payment callback
+Api --> Web : status / result payload
+Api --> Mobile : status / result payload
+
+legend right
+  Solid arrow = runtime call or data flow
+  Assessment Engine is the only Writing/Speaking scoring path
+endlegend
+
+@enduml

@@ -173,6 +173,10 @@ final class AiClientManager implements AiClient
             throw new RuntimeException("AI service [{$service}] has no model configured");
         }
 
+        if (str_contains($modelName, '.')) {
+            throw new RuntimeException("Model name [{$modelName}] must not contain dots — use hyphens instead.");
+        }
+
         $modelConfig = config("ai.models.{$modelName}");
         if (! is_array($modelConfig)) {
             throw new RuntimeException("AI model [{$modelName}] is not configured");

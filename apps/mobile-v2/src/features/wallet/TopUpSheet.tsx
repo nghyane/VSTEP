@@ -1,16 +1,15 @@
 // TopUpSheet — BottomSheet to select a topup package and purchase
-import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, Alert, AppState, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { BottomSheet } from "@/components/BottomSheet";
 import { DepthButton } from "@/components/DepthButton";
 import { GameIcon } from "@/components/GameIcon";
 import { HapticTouchable } from "@/components/HapticTouchable";
-import { useTopupPackages, useWalletBalance, walletBalanceQuery } from "@/features/wallet/queries";
-import { syncCoins } from "@/features/coin/coin-store";
-import { api } from "@/lib/api";
-import type { TopupPackage, TopupOrder } from "@/features/wallet/types";
+import { syncWalletBalanceCache, useTopupPackages, useWalletBalance } from "@/features/wallet/queries";
+import { api, getApiErrorMessage } from "@/lib/api";
+import type { TopupPackage, TopupOrder, WalletBalance } from "@/features/wallet/types";
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
 
 interface Props {
@@ -27,8 +26,10 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
   const packages = useMemo(() => data ?? [], [data]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
+  const [checkingPayment, setCheckingPayment] = useState(false);
+  const [pendingOrder, setPendingOrder] = useState<{ id: string; coins: number } | null>(null);
 
-  const currentBalance = balanceData?.balance ?? 0;
+  const balance = balanceData?.balance ?? 0;
 
   useEffect(() => {
     if (packages.length > 0 && !selectedId) {
@@ -39,25 +40,62 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
 
   const selected = packages.find((p) => p.id === selectedId) ?? null;
 
+  const checkPendingPayment = useCallback(async () => {
+    if (!pendingOrder || checkingPayment) return;
+    setCheckingPayment(true);
+    try {
+      const order = await api.get<TopupOrder>(`/api/v1/wallet/topup/${pendingOrder.id}/status`);
+      if (order.status === "paid") {
+        const balance = await api.get<WalletBalance>("/api/v1/wallet/balance");
+        syncWalletBalanceCache(queryClient, balance.balance, balance.lastTransactionAt);
+        void queryClient.invalidateQueries({ queryKey: ["wallet"] });
+        setPendingOrder(null);
+        onClose();
+        setTimeout(() => onSuccess(order.coinsToCredit || pendingOrder.coins, balance.balance), 250);
+        return;
+      }
+
+      if (order.status === "failed" || order.status === "cancelled" || order.status === "expired") {
+        setPendingOrder(null);
+        Alert.alert("Thanh toán chưa hoàn tất", "Giao dịch đã bị hủy, thất bại hoặc hết hạn. Bạn có thể tạo giao dịch mới.");
+        return;
+      }
+
+      Alert.alert("Đang chờ thanh toán", "Hệ thống chưa ghi nhận thanh toán. Nếu bạn vừa thanh toán xong, vui lòng chờ vài giây rồi kiểm tra lại.");
+    } catch (error) {
+      Alert.alert("Chưa kiểm tra được thanh toán", getApiErrorMessage(error));
+    } finally {
+      setCheckingPayment(false);
+    }
+  }, [checkingPayment, onClose, onSuccess, pendingOrder, queryClient]);
+
+  useEffect(() => {
+    if (!pendingOrder) return;
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") void checkPendingPayment();
+    });
+    return () => subscription.remove();
+  }, [checkPendingPayment, pendingOrder]);
+
   async function handleBuy() {
     if (!selected || buying) return;
     setBuying(true);
     try {
       const order = await api.post<TopupOrder>("/api/v1/wallet/topup", {
         packageId: selected.id,
-        paymentProvider: "mock",
+        paymentProvider: "payos",
       });
-      await api.post<TopupOrder>(`/api/v1/wallet/topup/${order.id}/confirm`);
-      // Invalidate balance query so CoinButton + wallet screen refetch
-      void queryClient.invalidateQueries({ queryKey: walletBalanceQuery.queryKey });
-      void queryClient.invalidateQueries({ queryKey: ["wallet", "transactions"] });
-      const newBalance = currentBalance + selected.totalCoins;
-      syncCoins(newBalance);
+
+      if (!order.paymentUrl) {
+        Alert.alert("Chưa tạo được thanh toán", "Cổng thanh toán chưa trả về đường dẫn thanh toán. Vui lòng thử lại.");
+        return;
+      }
+
+      setPendingOrder({ id: order.id, coins: order.coinsToCredit || selected.totalCoins });
+      await Linking.openURL(order.paymentUrl);
       onClose();
-      // Show success popup after sheet close animation
-      setTimeout(() => onSuccess(selected.totalCoins, newBalance), 250);
-    } catch {
-      // Global error handler shows toast
+    } catch (error) {
+      Alert.alert("Không thể nạp xu", getApiErrorMessage(error));
     } finally {
       setBuying(false);
     }
@@ -77,6 +115,7 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
         </View>
 
         <View style={styles.benefits}>
+          <BenefitRow icon="target" text={`Số dư hiện tại: ${formatNumber(balance)} xu`} c={c} />
           <BenefitRow icon="target" text="Luyện tập & thi thử không giới hạn" c={c} />
           <BenefitRow icon="pencil" text="Chấm điểm + nhận xét AI chi tiết" c={c} />
           <BenefitRow icon="lightning" text="Tặng thêm xu theo streak học tập" c={c} />
@@ -99,7 +138,15 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
           </View>
         )}
 
-        {selected ? (
+        {pendingOrder ? (
+          <View style={[styles.pendingCard, { backgroundColor: c.infoTint, borderColor: c.info }]}>
+            <Text style={[styles.pendingTitle, { color: c.foreground }]}>Đã mở cổng thanh toán</Text>
+            <Text style={[styles.pendingText, { color: c.subtle }]}>Sau khi thanh toán xong, quay lại app để số dư được cập nhật tự động.</Text>
+            <DepthButton variant="primary" fullWidth onPress={checkPendingPayment} disabled={checkingPayment}>
+              {checkingPayment ? "Đang kiểm tra..." : "Kiểm tra thanh toán"}
+            </DepthButton>
+          </View>
+        ) : selected ? (
           <DepthButton
             variant="coin"
             fullWidth
@@ -196,6 +243,9 @@ const styles = StyleSheet.create({
   benefitIcon: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   benefitText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold, flex: 1 },
   emptyText: { fontSize: fontSize.sm, textAlign: "center", paddingVertical: spacing.xl },
+  pendingCard: { borderWidth: 1, borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm },
+  pendingTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.extraBold },
+  pendingText: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, lineHeight: 18 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
   packCard: {
     width: "48%",

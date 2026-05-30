@@ -6,9 +6,9 @@ namespace App\Services\Payment;
 
 use App\Contracts\PaymentGateway;
 use App\Enums\PaymentProvider;
-use App\Models\WalletTopupOrder;
 use App\ValueObjects\CallbackValidationResult;
 use App\ValueObjects\PaymentGatewayResponse;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -42,7 +42,7 @@ final class PayOsGateway implements PaymentGateway
     }
 
     public function createPayment(
-        WalletTopupOrder $order,
+        Model $order,
         string $returnUrl,
         string $cancelUrl,
     ): PaymentGatewayResponse {
@@ -175,7 +175,7 @@ final class PayOsGateway implements PaymentGateway
     /**
      * PayOS description limited to ~9 chars for non-linked bank accounts.
      */
-    private function makeDescription(WalletTopupOrder $order): string
+    private function makeDescription(Model $order): string
     {
         return 'VSTEP'.$order->order_code;
     }

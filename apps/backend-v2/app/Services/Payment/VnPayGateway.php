@@ -6,9 +6,9 @@ namespace App\Services\Payment;
 
 use App\Contracts\PaymentGateway;
 use App\Enums\PaymentProvider;
-use App\Models\WalletTopupOrder;
 use App\ValueObjects\CallbackValidationResult;
 use App\ValueObjects\PaymentGatewayResponse;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * VNPay gateway — stub for future integration.
@@ -21,7 +21,7 @@ final class VnPayGateway implements PaymentGateway
     }
 
     public function createPayment(
-        WalletTopupOrder $order,
+        Model $order,
         string $returnUrl,
         string $cancelUrl,
     ): PaymentGatewayResponse {

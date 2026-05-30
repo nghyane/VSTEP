@@ -13,7 +13,7 @@ interface Props {
 
 export function SpeakingResult({ submissionId }: Props) {
 	const { data, isLoading } = useQuery({
-		...speakingResultQuery("practice_speaking", submissionId),
+		...speakingResultQuery(submissionId),
 		refetchInterval: (query) => (query.state.data?.data ? false : 3000),
 	})
 	const result = data?.data
@@ -69,13 +69,22 @@ export function SpeakingResult({ submissionId }: Props) {
 
 			<div className="card p-6 space-y-3">
 				<p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">Rubric</p>
-				{Object.entries(result.rubric_scores).map(([key, score]) => (
-					<RubricBar key={key} label={label(key)} score={score} max={max(key)} color={COLOR} />
+				{result.criterion_scores.map((criterion) => (
+					<RubricBar
+						key={criterion.key}
+						label={label(criterion.key)}
+						score={criterion.score}
+						max={max(criterion.key)}
+						color={COLOR}
+					/>
 				))}
 			</div>
 
 			<div className="card p-6">
-				<FeedbackSection strengths={result.strengths} improvements={result.improvements} />
+				<FeedbackSection
+					strengths={result.feedback?.strengths ?? []}
+					improvements={result.feedback?.improvements ?? result.feedback?.evidenceNotes ?? []}
+				/>
 			</div>
 
 			{result.transcript && (

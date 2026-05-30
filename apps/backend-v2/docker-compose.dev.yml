@@ -1,0 +1,117 @@
+name: vstep_backend_v2
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: vstep
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d vstep"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build: .
+    volumes:
+      - .:/app
+      - backend_vendor:/app/vendor
+    command: >
+      sh -c "
+        set -e
+        if [ ! -f .env ]; then cp .env.example .env; fi
+        composer install --optimize-autoloader --quiet
+        if ! grep -q '^APP_KEY=base64:' .env; then php artisan key:generate --force; fi
+        if ! grep -q '^JWT_SECRET=' .env; then echo '' >> .env && echo 'JWT_SECRET=vstep-dev-jwt-secret-change-in-production' >> .env; fi
+        if grep -q '^JWT_SECRET=$' .env; then sed -i 's/^JWT_SECRET=$/JWT_SECRET=vstep-dev-jwt-secret-change-in-production/' .env; fi
+        php artisan migrate --force
+        php artisan db:seed --force --no-interaction
+        php artisan storage:link 2>/dev/null || true
+        php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --workers=auto --max-requests=500
+      "
+    ports:
+      - "8000:8000"
+    environment:
+      APP_NAME: VSTEP
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8000
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: vstep
+      DB_USERNAME: user
+      DB_PASSWORD: password
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      GOOGLE_CLIENT_ID: 644444548899-q6kldv6576f2gjoccrm3i3s9sqlbetce.apps.googleusercontent.com
+      CORS_ALLOWED_ORIGINS: "*"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  horizon:
+    build: .
+    volumes:
+      - .:/app
+      - backend_vendor:/app/vendor
+    command: >
+      sh -c "
+        set -e
+        if [ ! -f .env ]; then cp .env.example .env; fi
+        composer install --optimize-autoloader --quiet
+        php artisan horizon
+      "
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: vstep
+      DB_USERNAME: user
+      DB_PASSWORD: password
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      REDIS_CLIENT: phpredis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      GOOGLE_CLIENT_ID: 644444548899-q6kldv6576f2gjoccrm3i3s9sqlbetce.apps.googleusercontent.com
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  backend_vendor:
