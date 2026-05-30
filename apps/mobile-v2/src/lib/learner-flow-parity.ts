@@ -465,7 +465,7 @@ export const learnerFlowParity: LearnerFlowParityItem[] = [
       "GET /api/v1/wallet/transactions",
       "GET /api/v1/wallet/topup-packages",
       "POST /api/v1/wallet/topup",
-      "POST /api/v1/wallet/topup/{orderId}/confirm",
+      "GET /api/v1/wallet/topup/{orderId}/status",
       "POST /api/v1/wallet/promo-redeem",
     ],
     status: "done",

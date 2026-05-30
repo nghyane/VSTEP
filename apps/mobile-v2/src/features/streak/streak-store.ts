@@ -1,7 +1,8 @@
 // Streak store — backend-backed learner activity streak + milestone rewards
 import { useSyncExternalStore } from "react";
 import { api } from "@/lib/api";
-import { syncCoins } from "@/features/coin/coin-store";
+import { queryClient } from "@/lib/query-client";
+import { syncWalletBalanceCache } from "@/features/wallet/queries";
 
 export interface StreakMilestone {
   days: number;
@@ -83,7 +84,9 @@ export function incrementTodayProgress() {
 
 export async function claimMilestone(days: number) {
   const res = await api.post<ClaimMilestoneResponse>(`/api/v1/streak/milestones/${days}/claim`);
-  syncCoins(res.balanceAfter);
+  syncWalletBalanceCache(queryClient, res.balanceAfter, res.claimedAt);
+  void queryClient.invalidateQueries({ queryKey: ["wallet"] });
+  void queryClient.invalidateQueries({ queryKey: ["streak"] });
   setState({
     ...state,
     milestones: state.milestones.map((m) =>
