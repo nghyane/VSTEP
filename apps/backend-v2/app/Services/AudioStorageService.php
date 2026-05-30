@@ -32,13 +32,19 @@ final class AudioStorageService
      *
      * @return array{upload_url: string, audio_key: string}
      */
-    public function presignUpload(string $profileId, string $context = 'speaking'): array
+    public function presignUpload(string $profileId, string $context = 'speaking', string $contentType = 'audio/webm', string $extension = 'webm'): array
     {
+        $extension = ltrim(strtolower($extension), '.');
+        if (! preg_match('/^[a-z0-9]{2,8}$/', $extension)) {
+            $extension = 'webm';
+        }
+
         $key = sprintf(
-            'audio/%s/%s/%s.webm',
+            'audio/%s/%s/%s.%s',
             $context,
             $profileId,
             Str::ulid(),
+            $extension,
         );
 
         $disk = Storage::disk('s3');
@@ -50,7 +56,7 @@ final class AudioStorageService
         $cmd = $client->getCommand('PutObject', [
             'Bucket' => $bucket,
             'Key' => $key,
-            'ContentType' => 'audio/webm',
+            'ContentType' => $contentType,
         ]);
 
         $presigned = $client->createPresignedRequest(

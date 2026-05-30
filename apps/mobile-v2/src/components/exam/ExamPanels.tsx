@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
-import { resolveAssetUrl } from "@/lib/asset-url";
+import { resolvePlayableAudioUrl } from "@/lib/asset-url";
 import { HighlightablePassage } from "@/components/HighlightablePassage";
 import { useLogListeningPlayed } from "@/hooks/use-exam-session";
 import { useThemeColors, spacing, radius, fontSize, fontFamily, colors as themeColors } from "@/theme";
@@ -57,13 +57,14 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
   useEffect(() => {
     if (!section?.audioUrl) return;
     setAudioError(null);
-    const audioUrl = resolveAssetUrl(section.audioUrl);
     const sectionId = section.id;
     const hasNextSection = sectionInPartIdx < (activeGroup?.sections.length ?? 0) - 1;
     let snd: Audio.Sound | null = null;
     let cancelled = false;
     (async () => {
       try {
+        const audioUrl = await resolvePlayableAudioUrl(section.audioUrl);
+        if (cancelled) return;
         await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
         const { sound: loaded } = await Audio.Sound.createAsync(
           { uri: audioUrl },
@@ -137,7 +138,7 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
         c={c}
       />
       {partGroups.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.sectionTabs, { borderBottomColor: c.borderLight }]} contentContainerStyle={s.sectionTabsContent}>
           {partGroups.map((group, i) => {
             const answered = group.sections.reduce((sum, sec) => sum + sec.items.filter((it) => answers.has(it.id)).length, 0);
             const total = group.sections.reduce((sum, sec) => sum + sec.items.length, 0);
@@ -235,7 +236,7 @@ export function ReadingPanel({ passages, answers, onAnswer, c, insets }: Reading
   return (
     <View style={{ flex: 1 }}>
       {passages.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.sectionTabs, { borderBottomColor: c.borderLight }]} contentContainerStyle={s.sectionTabsContent}>
           {passages.map((p, i) => (
             <TouchableOpacity key={p.id} onPress={() => setPassageIdx(i)} style={[s.sectionTab, { borderBottomColor: i === passageIdx ? color : "transparent" }]}>
               <Text style={[s.sectionTabText, { color: i === passageIdx ? color : c.mutedForeground }]}>Part {p.part}</Text>
@@ -288,7 +289,7 @@ export function WritingPanel({ tasks, answers, onAnswer, c, insets }: WritingPan
   return (
     <ScrollView contentContainerStyle={[s.panelScroll, { paddingBottom: insets.bottom + 80 }]} keyboardShouldPersistTaps="handled">
       {tasks.length > 1 && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.sectionTabs}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.sectionTabs, { borderBottomColor: c.borderLight }]} contentContainerStyle={s.sectionTabsContent}>
           {tasks.map((t, i) => (
             <TouchableOpacity key={t.id} onPress={() => setTaskIdx(i)} style={[s.sectionTab, { borderBottomColor: i === taskIdx ? color : "transparent" }]}>
               <Text style={[s.sectionTabText, { color: i === taskIdx ? color : c.mutedForeground }]}>Task {t.part}</Text>
@@ -353,8 +354,9 @@ function McqCard({ item, index, selected, onSelect, color, c }: McqCardProps) {
 
 const s = StyleSheet.create({
   panelScroll: { padding: spacing.xl, gap: spacing.lg },
-  sectionTabs: { borderBottomWidth: 1, flexGrow: 0 },
-  sectionTab: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderBottomWidth: 2 },
+  sectionTabs: { borderBottomWidth: 1, flexGrow: 0, flexShrink: 0, maxHeight: 58 },
+  sectionTabsContent: { alignItems: "center", paddingHorizontal: spacing.sm, paddingRight: spacing.xl },
+  sectionTab: { minWidth: 108, alignItems: "center", paddingHorizontal: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 2 },
   sectionTabText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   toggleRow: { flexDirection: "row", borderBottomWidth: 1 },
   toggleBtn: { flex: 1, alignItems: "center", paddingVertical: spacing.md },

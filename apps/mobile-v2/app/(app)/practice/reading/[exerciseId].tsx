@@ -186,6 +186,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
             answeredCount={session.answeredCount}
             total={questions.length}
             submitting={session.submitting}
+            submitError={session.submitError}
             accentColor={COLOR}
             onSubmit={() => session.submit()}
             c={c}

@@ -74,7 +74,7 @@ export default function WritingListScreen() {
         </View>
       )}
 
-      {!isLoading && PARTS.map(({ part, label, desc }) => {
+      {!isLoading && !isError && PARTS.map(({ part, label, desc }) => {
         const list = grouped.get(part) ?? [];
         return (
           <View key={part}>
@@ -119,7 +119,7 @@ export default function WritingListScreen() {
         );
       })}
 
-      {!isLoading && prompts?.length === 0 && (
+      {!isLoading && !isError && prompts?.length === 0 && (
         <MascotEmpty mascot="think" title="Chưa có đề viết" subtitle="Nội dung đang được cập nhật." />
       )}
 

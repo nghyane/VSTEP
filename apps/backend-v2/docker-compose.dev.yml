@@ -1,6 +1,4 @@
-# Dev-only: postgres + redis + backend on localhost:8000
-# Usage: docker compose -f docker-compose.dev.yml up
-# Then run FE locally: cd apps/frontend-v3 && bun dev
+name: vstep_backend_v2
 
 services:
   postgres:
@@ -32,16 +30,21 @@ services:
       retries: 5
 
   backend:
-    build: ./apps/backend-v2
+    build: .
     volumes:
-      - ./apps/backend-v2:/app
+      - .:/app
       - backend_vendor:/app/vendor
     command: >
       sh -c "
-        composer install --optimize-autoloader --quiet &&
-        php artisan migrate --force &&
-        php artisan db:seed --force --no-interaction &&
-        php artisan storage:link 2>/dev/null;
+        set -e
+        if [ ! -f .env ]; then cp .env.example .env; fi
+        composer install --optimize-autoloader --quiet
+        if ! grep -q '^APP_KEY=base64:' .env; then php artisan key:generate --force; fi
+        if ! grep -q '^JWT_SECRET=' .env; then echo '' >> .env && echo 'JWT_SECRET=vstep-dev-jwt-secret-change-in-production' >> .env; fi
+        if grep -q '^JWT_SECRET=$' .env; then sed -i 's/^JWT_SECRET=$/JWT_SECRET=vstep-dev-jwt-secret-change-in-production/' .env; fi
+        php artisan migrate --force
+        php artisan db:seed --force --no-interaction
+        php artisan storage:link 2>/dev/null || true
         php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --workers=auto --max-requests=500
       "
     ports:
@@ -63,7 +66,6 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
-      JWT_SECRET: vstep-dev-jwt-secret-change-in-production
       GOOGLE_CLIENT_ID: 644444548899-q6kldv6576f2gjoccrm3i3s9sqlbetce.apps.googleusercontent.com
       CORS_ALLOWED_ORIGINS: "*"
     depends_on:
@@ -71,25 +73,22 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    develop:
-      watch:
-        - action: sync
-          path: ./apps/backend-v2/app
-          target: /app/app
-        - action: sync
-          path: ./apps/backend-v2/routes
-          target: /app/routes
-        - action: sync
-          path: ./apps/backend-v2/database
-          target: /app/database
-        - action: rebuild
-          path: ./apps/backend-v2/composer.json
 
   horizon:
-    build: ./apps/backend-v2
-    command: php artisan horizon
+    build: .
+    volumes:
+      - .:/app
+      - backend_vendor:/app/vendor
+    command: >
+      sh -c "
+        set -e
+        if [ ! -f .env ]; then cp .env.example .env; fi
+        composer install --optimize-autoloader --quiet
+        php artisan horizon
+      "
     environment:
       APP_ENV: local
+      APP_DEBUG: "true"
       DB_CONNECTION: pgsql
       DB_HOST: postgres
       DB_PORT: 5432
@@ -102,9 +101,14 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
-      JWT_SECRET: vstep-dev-jwt-secret-change-in-production
+      GOOGLE_CLIENT_ID: 644444548899-q6kldv6576f2gjoccrm3i3s9sqlbetce.apps.googleusercontent.com
     depends_on:
-      - backend
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_started
     restart: unless-stopped
 
 volumes:

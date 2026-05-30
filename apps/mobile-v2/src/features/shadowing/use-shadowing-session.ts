@@ -21,7 +21,7 @@ import type {
   ShadowingSegment,
 } from "@/features/shadowing/types";
 
-export type MicState = "idle" | "listening" | "speaking";
+export type MicState = "idle" | "listening" | "processing" | "speaking";
 
 interface SessionState {
   current: number;
@@ -112,6 +112,15 @@ export function useShadowingSession(lesson: ShadowingLessonDetail) {
     },
   });
 
+  useEffect(() => {
+    if (stt.state === "processing" && state.mic === "listening") {
+      dispatch({ type: "mic", state: "processing" });
+    }
+    if (stt.state === "idle" && state.mic === "processing") {
+      dispatch({ type: "mic", state: "idle" });
+    }
+  }, [stt.state, state.mic]);
+
   // ── TTS ──
   const speakSegment = useCallback((text: string) => {
     Speech.stop();
@@ -161,14 +170,16 @@ export function useShadowingSession(lesson: ShadowingLessonDetail) {
   const handleRecord = useCallback(async () => {
     if (!segment) return;
     if (state.mic === "listening") {
-      stt.stop();
+      dispatch({ type: "mic", state: "processing" });
+      void stt.stop();
       return;
     }
     if (state.mic !== "idle") return;
     Speech.stop();
     dispatch({ type: "empty-warning", value: false });
     dispatch({ type: "mic", state: "listening" });
-    await stt.start();
+    const started = await stt.start();
+    if (!started) dispatch({ type: "mic", state: "idle" });
   }, [segment, state.mic, stt]);
 
   const goTo = useCallback(
@@ -192,6 +203,7 @@ export function useShadowingSession(lesson: ShadowingLessonDetail) {
     mergedDone,
     persistedDone,
     emptyWarning: state.emptyWarning,
+    errorText: stt.error,
     handleListen,
     handleRecord,
     goTo,

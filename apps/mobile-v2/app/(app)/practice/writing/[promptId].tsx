@@ -30,6 +30,7 @@ import {
   submitWritingSession,
   type WritingPromptDetail,
 } from "@/hooks/use-practice";
+import { getApiErrorMessage } from "@/lib/api";
 import { translateText } from "@/lib/translate";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
@@ -89,6 +90,11 @@ export default function WritingExerciseScreen() {
           >
             {startMutation.isPending ? "Đang bắt đầu..." : "Bắt đầu viết"}
           </DepthButton>
+          {startMutation.error ? (
+            <Text style={[s.inlineError, { color: c.destructive }]}>
+              Không thể bắt đầu bài viết: {getApiErrorMessage(startMutation.error)}
+            </Text>
+          ) : null}
         </View>
       </View>
     );
@@ -314,7 +320,10 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
                 ref={inputRef}
                 style={[s.editor, { color: c.foreground }]}
                 value={text}
-                onChangeText={setText}
+                onChangeText={(next) => {
+                  if (submitMutation.error) submitMutation.reset();
+                  setText(next);
+                }}
                 onSelectionChange={handleSelectionChange}
                 selection={selection}
                 placeholder="Viết bài của bạn ở đây..."
@@ -395,6 +404,11 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
           >
             {submitMutation.isPending ? "Đang nộp..." : "Nộp bài"}
           </DepthButton>
+          {submitMutation.error ? (
+            <Text style={[s.inlineError, { color: c.destructive }]}>
+              Không thể nộp bài: {getApiErrorMessage(submitMutation.error)}
+            </Text>
+          ) : null}
         </View>
       )}
 
@@ -434,6 +448,7 @@ const s = StyleSheet.create({
   previewTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold, textAlign: "center", paddingHorizontal: spacing.xl },
   previewMeta: { fontSize: fontSize.sm, marginTop: spacing.sm },
   previewNote: { fontSize: fontSize.xs, marginTop: spacing.xs },
+  inlineError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, textAlign: "center", marginTop: spacing.sm },
   scroll: { padding: spacing.xl, gap: spacing.lg },
   resultCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.sm },
   resultTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },

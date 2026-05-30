@@ -72,9 +72,7 @@ export function TtsBar({
           />
         </View>
         <View style={ttsStyles.row}>
-          <Text style={[ttsStyles.label, { color: c.subtle }]}>
-            {playing ? "Đang đọc..." : "TTS — giọng đọc tổng hợp"}
-          </Text>
+          {playing ? <Text style={[ttsStyles.label, { color: c.subtle }]}>Đang đọc...</Text> : null}
         </View>
       </View>
     </View>

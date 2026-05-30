@@ -173,6 +173,7 @@ Route::prefix('v1')->group(function () {
         // Audio presigned URLs (R2).
         Route::post('/audio/presign-upload', [AudioController::class, 'presignUpload']);
         Route::post('/audio/presign-download', [AudioController::class, 'presignDownload']);
+        Route::post('/audio/transcribe', [AudioController::class, 'transcribe']);
 
         // Overview & progress.
         Route::get('/overview', [OverviewController::class, 'overview']);
