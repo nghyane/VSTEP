@@ -30,13 +30,19 @@ II. Release Package & User Guides
 
 3.3 Workflow 2: Admin manages system content, exams, users, and courses
 
-3.4 Workflow 3: Teacher manages teaching schedule, bookings, and leave requests
+3.4 Workflow 3: Staff supports content, exams, courses, leave requests, and user access
+
+3.5 Workflow 4: Teacher manages teaching schedule, bookings, and leave requests
+
+3.6 Workflow 5: Learner uses mobile application features
 
 ## I. Record of Changes
 
 | Date | A*M, D | In charge | Change Description |
 |---|---|---|---|
 | 31-May-26 | A | VSTEP Team | Init Report 6 - Software User Guides document |
+| 31-May-26 | M | VSTEP Team | Added staff workflow and complete staff-admin screenshot evidence |
+| 31-May-26 | M | VSTEP Team | Added mobile learner workflow and mobile screenshot evidence |
 
 *A - Added M - Modified D - Deleted*
 
@@ -51,7 +57,7 @@ II. Release Package & User Guides
 | 3 | Source Codes | Source code stored in the VSTEP repository, including `apps/backend-v2`, `apps/frontend-v3`, `apps/admin`, and `apps/mobile-v2`. |
 | 4 | Database Script(s) | Laravel migrations, seeders, factories, and database setup scripts stored in `apps/backend-v2/database`. |
 | 5 | Final Report Document | Capstone report documents and generated report deliverables stored under `docs/capstone/reports`. |
-| 6 | Test Cases Document | Test cases, manual test evidence, and screenshots for major learner, admin, and teacher workflows where applicable. |
+| 6 | Test Cases Document | Test cases, manual test evidence, and screenshots for major learner, admin, staff, and teacher workflows where applicable. |
 | 7 | Defects List | Defects recorded during implementation, testing, and review. |
 | 8 | Issues List | Technical issues, project issues, and resolved implementation notes recorded during development. |
 | 9 | Slide | Final presentation slides for project defense. |
@@ -239,14 +245,17 @@ Main user groups:
 | User Group | Main Functions |
 |---|---|
 | Learner | Register, login, practice skills, learn vocabulary and grammar, enroll in courses, book 1-1 slots, manage profile. |
-| Admin / Staff | Manage content, exams, rubrics, users, courses, schedules, enrollments, bookings, and system data. |
+| Admin | Manage content, exams, rubrics, users, courses, schedules, enrollments, bookings, and system data. |
+| Staff | Support assigned admin operations such as content review, exam and course monitoring, leave-request handling, and restricted user access. |
 | Teacher | View dashboard, manage teaching schedule, view bookings, and create leave requests. |
 
 Main workflows:
 
 1. Learner uses VSTEP practice and course features.
 2. Admin manages system content, exams, users, and courses.
-3. Teacher manages teaching schedule, bookings, and leave requests.
+3. Staff supports content, exams, courses, leave requests, and user access.
+4. Teacher manages teaching schedule, bookings, and leave requests.
+5. Learner uses mobile application features.
 
 ## 3.2 Workflow 1: Learner uses VSTEP practice and course features
 
@@ -470,7 +479,55 @@ Admin users can manage course records and related course operations.
 
 ![Edit booking meet URL](../../report6-screenshots/admin-course-management/26-course-bookings-edit-meet-url.png)
 
-## 3.4 Workflow 3: Teacher manages teaching schedule, bookings, and leave requests
+## 3.4 Workflow 3: Staff supports content, exams, courses, leave requests, and user access
+
+### Purpose
+
+This workflow guides staff users through the admin portal areas available for operational support. Staff users can review the dashboard, support learning-content maintenance, monitor exams and courses, handle leave-request information, and are restricted from unauthorized user-management actions.
+
+### Step 1: View staff dashboard
+
+After login, staff users are redirected to the staff-accessible admin dashboard.
+
+![Staff dashboard](../../report6-screenshots/staff-admin-20260531/01-staff-dashboard.png)
+
+### Step 2: Support vocabulary content
+
+Staff users can open vocabulary management to review and support vocabulary content operations.
+
+![Staff vocabulary management](../../report6-screenshots/staff-admin-20260531/02-staff-vocabulary.png)
+
+### Step 3: Support grammar content
+
+Staff users can open grammar management to review and support grammar content operations.
+
+![Staff grammar management](../../report6-screenshots/staff-admin-20260531/03-staff-grammar.png)
+
+### Step 4: Monitor exams
+
+Staff users can access exam management screens for operational exam review.
+
+![Staff exam management](../../report6-screenshots/staff-admin-20260531/04-staff-exams.png)
+
+### Step 5: Monitor courses
+
+Staff users can access course management screens to support course operations.
+
+![Staff course management](../../report6-screenshots/staff-admin-20260531/05-staff-courses.png)
+
+### Step 6: Review leave requests
+
+Staff users can review leave-request information from the admin portal.
+
+![Staff leave requests](../../report6-screenshots/staff-admin-20260531/06-staff-leave-requests.png)
+
+### Step 7: Confirm restricted user management access
+
+When staff users attempt to access unauthorized user-management functionality, the system redirects them away from the restricted area.
+
+![Staff user management redirected](../../report6-screenshots/staff-admin-20260531/07-staff-users-redirected.png)
+
+## 3.5 Workflow 4: Teacher manages teaching schedule, bookings, and leave requests
 
 ### Purpose
 
@@ -531,3 +588,147 @@ The form validates required date input.
 Teachers fill in the date and reason before sending the request.
 
 ![Teacher leave filled](../../report6-screenshots/13-teacher-flow/13-teacher-leave-create-filled.png)
+
+## 3.6 Workflow 5: Learner uses mobile application features
+
+### Purpose
+
+This workflow guides learners through the mobile application experience, including app startup, authentication, dashboard review, practice modules, exams, profile utilities, and course-related screens.
+
+### Step 1: Open mobile application
+
+Learners launch the mobile application from an Android emulator or mobile device after starting Expo.
+
+![Mobile installation screen 1](../../report6-screenshots/anh_mobile/00-installation/00-installation (1).jpg)
+
+![Mobile installation screen 2](../../report6-screenshots/anh_mobile/00-installation/00-installation (2).jpg)
+
+![Mobile installation screen 3](../../report6-screenshots/anh_mobile/00-installation/00-installation (3).jpg)
+
+### Step 2: Login or register on mobile
+
+Learners authenticate with an existing account or create a new account from the mobile authentication screens.
+
+![Mobile learner auth 1](../../report6-screenshots/anh_mobile/01-learner-auth/01-learner-auth (1).jpg)
+
+![Mobile learner auth 2](../../report6-screenshots/anh_mobile/01-learner-auth/01-learner-auth (2).jpg)
+
+### Step 3: Review mobile dashboard
+
+After login, learners can review dashboard information, learning shortcuts, and mobile navigation entries.
+
+![Mobile learner dashboard 1](../../report6-screenshots/anh_mobile/02-learner-dashboard/02-learner-dashboard (1).jpg)
+
+![Mobile learner dashboard 2](../../report6-screenshots/anh_mobile/02-learner-dashboard/02-learner-dashboard (2).jpg)
+
+![Mobile learner dashboard 3](../../report6-screenshots/anh_mobile/02-learner-dashboard/02-learner-dashboard (3).jpg)
+
+![Mobile learner dashboard 4](../../report6-screenshots/anh_mobile/02-learner-dashboard/02-learner-dashboard (4).jpg)
+
+![Mobile learner dashboard 5](../../report6-screenshots/anh_mobile/02-learner-dashboard/02-learner-dashboard (5).jpg)
+
+![Mobile learner dashboard 6](../../report6-screenshots/anh_mobile/02-learner-dashboard/02-learner-dashboard (6).jpg)
+
+### Step 4: Practice learning modules on mobile
+
+Learners can access practice modules and complete learning activities from the mobile practice area.
+
+![Mobile learner practice 1](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (1).jpg)
+
+![Mobile learner practice 2](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (2).jpg)
+
+![Mobile learner practice 3](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (3).jpg)
+
+![Mobile learner practice 4](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (4).jpg)
+
+![Mobile learner practice 5](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (5).jpg)
+
+![Mobile learner practice 6](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (6).jpg)
+
+![Mobile learner practice 7](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (7).jpg)
+
+![Mobile learner practice 8](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (8).jpg)
+
+![Mobile learner practice 9](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (9).jpg)
+
+![Mobile learner practice 10](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (10).jpg)
+
+![Mobile learner practice 11](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (11).jpg)
+
+![Mobile learner practice 12](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (12).jpg)
+
+![Mobile learner practice 13](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (13).jpg)
+
+![Mobile learner practice 14](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (14).jpg)
+
+![Mobile learner practice 15](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (15).jpg)
+
+![Mobile learner practice 16](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (16).jpg)
+
+![Mobile learner practice 17](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (17).jpg)
+
+![Mobile learner practice 18](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (18).jpg)
+
+![Mobile learner practice 19](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (19).jpg)
+
+![Mobile learner practice 20](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (20).jpg)
+
+![Mobile learner practice 21](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (21).jpg)
+
+![Mobile learner practice 22](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (22).jpg)
+
+![Mobile learner practice 23](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (23).jpg)
+
+![Mobile learner practice 24](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (24).jpg)
+
+![Mobile learner practice 25](../../report6-screenshots/anh_mobile/03-learner-practice/03-learner-practice (25).jpg)
+
+### Step 5: Take exams on mobile
+
+Learners can open exam screens and complete mobile exam interactions.
+
+![Mobile learner exam 1](../../report6-screenshots/anh_mobile/04-learner-exam/04-learner-exam (1).jpg)
+
+![Mobile learner exam 2](../../report6-screenshots/anh_mobile/04-learner-exam/04-learner-exam (2).jpg)
+
+![Mobile learner exam 3](../../report6-screenshots/anh_mobile/04-learner-exam/04-learner-exam (3).jpg)
+
+![Mobile learner exam 4](../../report6-screenshots/anh_mobile/04-learner-exam/04-learner-exam (4).jpg)
+
+![Mobile learner exam 5](../../report6-screenshots/anh_mobile/04-learner-exam/04-learner-exam (5).jpg)
+
+![Mobile learner exam 6](../../report6-screenshots/anh_mobile/04-learner-exam/04-learner-exam (6).jpg)
+
+![Mobile learner exam 7](../../report6-screenshots/anh_mobile/04-learner-exam/04-learner-exam (7).jpg)
+
+![Mobile learner exam 8](../../report6-screenshots/anh_mobile/04-learner-exam/04-learner-exam (8).jpg)
+
+![Mobile learner exam 9](../../report6-screenshots/anh_mobile/04-learner-exam/04-learner-exam (9).jpg)
+
+![Mobile learner exam 10](../../report6-screenshots/anh_mobile/04-learner-exam/04-learner-exam (10).jpg)
+
+### Step 6: Manage profile on mobile
+
+Learners can review and update account profile information from mobile screens.
+
+![Mobile learner profile 1](../../report6-screenshots/anh_mobile/05-learner-profile/05-learner-profile (1).jpg)
+
+![Mobile learner profile 2](../../report6-screenshots/anh_mobile/05-learner-profile/05-learner-profile (2).jpg)
+
+![Mobile learner profile 3](../../report6-screenshots/anh_mobile/05-learner-profile/05-learner-profile (3).jpg)
+
+![Mobile learner profile 4](../../report6-screenshots/anh_mobile/05-learner-profile/05-learner-profile (4).jpg)
+
+### Step 7: Use course flow on mobile
+
+Learners can browse course-related mobile screens and continue course learning activities.
+
+![Mobile learner course flow 1](../../report6-screenshots/anh_mobile/06-learner-course-flow/06-learner-course-flow (1).jpg)
+
+![Mobile learner course flow 2](../../report6-screenshots/anh_mobile/06-learner-course-flow/06-learner-course-flow (2).jpg)
+
+![Mobile learner course flow 3](../../report6-screenshots/anh_mobile/06-learner-course-flow/06-learner-course-flow (3).jpg)
+
+![Mobile learner course flow 4](../../report6-screenshots/anh_mobile/06-learner-course-flow/06-learner-course-flow (4).jpg)
+
+![Mobile learner course flow 5](../../report6-screenshots/anh_mobile/06-learner-course-flow/06-learner-course-flow (5).jpg)

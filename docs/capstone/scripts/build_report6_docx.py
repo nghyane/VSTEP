@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_TAB_ALIGNMENT, WD_TAB_LEADER
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
@@ -16,11 +16,29 @@ CAPSTONE = ROOT / "docs" / "capstone"
 TEMPLATE = CAPSTONE / "Template" / "Report6_Software User Guides.docx"
 SOURCE = CAPSTONE / "reports" / "report6-software-user-guides.md"
 DEFAULT_OUTPUT = CAPSTONE / "reports" / "report6-software-user-guides.docx"
+FALLBACK_TEMPLATE = CAPSTONE / "reports" / "report6-software-user-guides-final-v5.docx"
 PROJECT_TITLE = "An Adaptive VSTEP Preparation System with Comprehensive Skill Assessment and Personalized Learning Support"
 COVER_DATE = "- Ho Chi Minh, May 2026 -"
 
-IMAGE_RE = re.compile(r"!\[(?P<alt>[^\]]*)\]\((?P<path>[^)]+)\)")
+IMAGE_RE = re.compile(r"!\[(?P<alt>[^\]]*)\]\((?P<path>.+)\)")
 TABLE_HEADER_FILL = "FFE8E1"
+TOC_PAGE_NUMBERS = {
+    "I. Record of Changes": 3,
+    "II. Release Package & User Guides": 3,
+    "1. Deliverable Package": 3,
+    "2. Installation Guides": 4,
+    "2.1 System Requirements": 4,
+    "2.1.1 Hardware Requirements": 4,
+    "2.1.2 Software Requirements": 4,
+    "2.2 Installation Instruction": 5,
+    "3. User Manual": 9,
+    "3.1 Overview": 9,
+    "3.2 Workflow 1": 10,
+    "3.3 Workflow 2": 26,
+    "3.4 Workflow 3": 53,
+    "3.5 Workflow 4": 60,
+    "3.6 Workflow 5": 70,
+}
 
 
 def keep_template_cover(document: Document) -> None:
@@ -64,31 +82,42 @@ def replace_cover_date(document: Document) -> None:
             return
 
 
-def add_table_of_contents(document: Document) -> None:
+def extract_table_of_contents(source_lines: list[str]) -> list[str]:
+    try:
+        start = source_lines.index("## Table of Contents") + 1
+        end = source_lines.index("## I. Record of Changes")
+    except ValueError:
+        return []
+
+    entries: list[str] = []
+    for line in source_lines[start:end]:
+        entry = line.strip()
+        if not entry:
+            continue
+        workflow = re.match(r"^(3\.\d+ Workflow \d+):", entry)
+        entries.append(workflow.group(1) if workflow else entry)
+    return entries
+
+
+def add_table_of_contents(document: Document, entries: list[str]) -> None:
     title = document.add_paragraph()
     run = title.add_run("Table of Contents")
     run.bold = True
     run.font.size = Pt(14)
     run.font.color.rgb = RGBColor(0x2E, 0x74, 0xB5)
 
-    paragraph = document.add_paragraph()
-    run = paragraph.add_run()
-    fld_begin = OxmlElement("w:fldChar")
-    fld_begin.set(qn("w:fldCharType"), "begin")
-    instr = OxmlElement("w:instrText")
-    instr.set(qn("xml:space"), "preserve")
-    instr.text = 'TOC \\o "1-3" \\h \\z \\u'
-    fld_separate = OxmlElement("w:fldChar")
-    fld_separate.set(qn("w:fldCharType"), "separate")
-    fld_text = OxmlElement("w:t")
-    fld_text.text = "Right-click and update field."
-    fld_end = OxmlElement("w:fldChar")
-    fld_end.set(qn("w:fldCharType"), "end")
-    run._r.append(fld_begin)
-    run._r.append(instr)
-    run._r.append(fld_separate)
-    run._r.append(fld_text)
-    run._r.append(fld_end)
+    for entry in entries:
+        paragraph = document.add_paragraph()
+        paragraph.paragraph_format.tab_stops.add_tab_stop(
+            Inches(6.5), WD_TAB_ALIGNMENT.RIGHT, WD_TAB_LEADER.DOTS
+        )
+        if re.match(r"^[IVX]+\.\s+", entry):
+            paragraph.paragraph_format.left_indent = Inches(0)
+        elif re.match(r"^\d+\.\d+", entry):
+            paragraph.paragraph_format.left_indent = Inches(0.45)
+        elif re.match(r"^\d+\.\s+", entry):
+            paragraph.paragraph_format.left_indent = Inches(0.25)
+        paragraph.add_run(f"{entry}\t{TOC_PAGE_NUMBERS.get(entry, '')}")
     document.add_page_break()
 
 
@@ -164,7 +193,8 @@ def add_image(document: Document, markdown_dir: Path, alt: str, image_path: str)
     paragraph = document.add_paragraph()
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
     run = paragraph.add_run()
-    run.add_picture(str(resolved), width=Inches(6.2))
+    image_width = Inches(2.6) if "anh_mobile" in image_path else Inches(6.2)
+    run.add_picture(str(resolved), width=image_width)
 
     if alt:
         caption = document.add_paragraph()
@@ -237,14 +267,15 @@ def parse_table(lines: list[str], start: int) -> tuple[list[list[str]], int]:
 
 
 def build_docx(output: Path = DEFAULT_OUTPUT) -> None:
-    document = Document(str(TEMPLATE))
+    template = TEMPLATE if TEMPLATE.exists() else FALLBACK_TEMPLATE
+    document = Document(str(template))
     replace_cover_project_title(document)
     replace_cover_date(document)
     keep_template_cover(document)
-    add_table_of_contents(document)
 
     markdown_dir = SOURCE.parent
     source_lines = SOURCE.read_text(encoding="utf-8").splitlines()
+    add_table_of_contents(document, extract_table_of_contents(source_lines))
     try:
         start_index = source_lines.index("## I. Record of Changes")
     except ValueError:
