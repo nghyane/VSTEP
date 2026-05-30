@@ -1,0 +1,125 @@
+@startuml
+!theme plain
+left to right direction
+hide circle
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #555555
+
+title Exam Session and Assessment ERD
+
+entity "profiles" as profiles {
+  * id : uuid <<PK>>
+  --
+  account_id : uuid <<FK>>
+  target_level : varchar
+}
+
+entity "exams" as exams {
+  * id : uuid <<PK>>
+  --
+  slug : varchar
+  title : varchar
+  is_published : boolean
+}
+
+entity "exam_versions" as exam_versions {
+  * id : uuid <<PK>>
+  --
+  exam_id : uuid <<FK>>
+  version_number : int
+  is_active : boolean
+}
+
+entity "exam_sessions" as exam_sessions {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  exam_version_id : uuid <<FK>>
+  mode : varchar
+  status : varchar
+  submitted_at : timestamp
+}
+
+entity "exam_mcq_answers" as exam_mcq_answers {
+  * id : uuid <<PK>>
+  --
+  exam_session_id : uuid <<FK>>
+  item_ref_id : uuid
+  selected_index : int
+  is_correct : boolean
+}
+
+entity "exam_writing_submissions" as exam_writing {
+  * id : uuid <<PK>>
+  --
+  exam_session_id : uuid <<FK>>
+  writing_task_id : uuid <<FK>>
+  text : text
+  word_count : int
+}
+
+entity "exam_speaking_submissions" as exam_speaking {
+  * id : uuid <<PK>>
+  --
+  exam_session_id : uuid <<FK>>
+  speaking_part_id : uuid <<FK>>
+  audio_url : text
+  transcript : text
+}
+
+entity "assessment_rubrics" as rubrics {
+  * id : uuid <<PK>>
+  --
+  skill : varchar
+  task_type : varchar
+  criteria : jsonb
+  is_active : boolean
+}
+
+entity "assessment_attempts" as attempts {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  rubric_id : uuid <<FK>>
+  source_type : varchar
+  source_id : uuid
+  submitted_at : timestamp
+}
+
+entity "assessment_jobs" as jobs {
+  * id : uuid <<PK>>
+  --
+  attempt_id : uuid <<FK>>
+  status : varchar
+  completed_at : timestamp
+}
+
+entity "assessment_results" as results {
+  * id : uuid <<PK>>
+  --
+  attempt_id : uuid <<FK>>
+  rubric_id : uuid <<FK>>
+  criterion_scores : jsonb
+  overall_band : decimal
+}
+
+profiles ||--o{ exam_sessions : profile_id
+exams ||--o{ exam_versions : exam_id
+exam_versions ||--o{ exam_sessions : exam_version_id
+exam_sessions ||--o{ exam_mcq_answers : exam_session_id
+exam_sessions ||--o{ exam_writing : exam_session_id
+exam_sessions ||--o{ exam_speaking : exam_session_id
+
+profiles ||--o{ attempts : profile_id
+rubrics ||--o{ attempts : rubric_id
+attempts ||--|| jobs : attempt_id
+attempts ||--o| results : attempt_id
+rubrics ||--o{ results : rubric_id
+
+exam_writing ||..o{ attempts : source_id
+exam_speaking ||..o{ attempts : source_id
+
+@enduml

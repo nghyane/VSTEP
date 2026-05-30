@@ -1,0 +1,148 @@
+@startuml
+!theme plain
+left to right direction
+hide circle
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam ArrowColor #555555
+
+title Core, Wallet, Course and Payment ERD
+
+entity "users" as users {
+  * id : uuid <<PK>>
+  --
+  email : varchar
+  password : varchar
+  full_name : varchar
+  role : varchar
+}
+
+entity "profiles" as profiles {
+  * id : uuid <<PK>>
+  --
+  account_id : uuid <<FK>>
+  display_name : varchar
+  target_level : varchar
+}
+
+entity "refresh_tokens" as refresh_tokens {
+  * id : uuid <<PK>>
+  --
+  user_id : uuid <<FK>>
+  token_hash : varchar
+  expires_at : timestamp
+}
+
+entity "profile_onboarding_responses" as onboarding {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  answers : jsonb
+  version : int
+}
+
+entity "coin_transactions" as coin_transactions {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  amount : int
+  type : varchar
+  reference_type : varchar
+  reference_id : uuid
+}
+
+entity "wallet_topup_orders" as topup_orders {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  package_id : uuid <<FK>>
+  order_code : bigint
+  payment_url : text
+  status : varchar
+}
+
+entity "promo_codes" as promo_codes {
+  * id : uuid <<PK>>
+  --
+  code : varchar
+  reward_coins : int
+  starts_at : timestamp
+  expires_at : timestamp
+}
+
+entity "promo_code_redemptions" as promo_redemptions {
+  * id : uuid <<PK>>
+  --
+  promo_code_id : uuid <<FK>>
+  profile_id : uuid <<FK>>
+  redeemed_at : timestamp
+}
+
+entity "courses" as courses {
+  * id : uuid <<PK>>
+  --
+  teacher_id : uuid <<FK>>
+  title : varchar
+  price_vnd : bigint
+  max_slots : int
+  status : varchar
+}
+
+entity "course_enrollment_orders" as enrollment_orders {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  course_id : uuid <<FK>>
+  order_code : bigint
+  payment_url : text
+  status : varchar
+}
+
+entity "course_enrollments" as enrollments {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  course_id : uuid <<FK>>
+  status : varchar
+  enrolled_at : timestamp
+}
+
+entity "teacher_slots" as teacher_slots {
+  * id : uuid <<PK>>
+  --
+  teacher_id : uuid <<FK>>
+  course_id : uuid <<FK>>
+  starts_at : timestamp
+  ends_at : timestamp
+}
+
+entity "teacher_bookings" as teacher_bookings {
+  * id : uuid <<PK>>
+  --
+  profile_id : uuid <<FK>>
+  teacher_slot_id : uuid <<FK>>
+  status : varchar
+}
+
+users ||--o{ profiles : account_id
+users ||--o{ refresh_tokens : user_id
+profiles ||--o{ onboarding : profile_id
+
+profiles ||--o{ coin_transactions : profile_id
+profiles ||--o{ topup_orders : profile_id
+profiles ||--o{ promo_redemptions : profile_id
+promo_codes ||--o{ promo_redemptions : promo_code_id
+
+users ||--o{ courses : teacher_id
+courses ||--o{ enrollment_orders : course_id
+profiles ||--o{ enrollment_orders : profile_id
+courses ||--o{ enrollments : course_id
+profiles ||--o{ enrollments : profile_id
+courses ||--o{ teacher_slots : course_id
+users ||--o{ teacher_slots : teacher_id
+teacher_slots ||--o{ teacher_bookings : teacher_slot_id
+profiles ||--o{ teacher_bookings : profile_id
+
+@enduml
