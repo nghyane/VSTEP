@@ -38,6 +38,7 @@ opencode.json.*.bak
 *.tmp
 *.temp
 *.log
+.$*.bkp
 
 # Local AI/dev tooling folders
 docs/mobile-v2-fe-v3-handoff.md
