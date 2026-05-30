@@ -93,9 +93,9 @@ The package diagrams below describe the main packages and namespace-level depend
 
 ## 2. Database Design
 
-The database is designed around the main operational areas of the VSTEP Platform: identity and learner profiles, wallet and payment, course booking, practice submissions, exam sessions, assessment processing, progress tracking, and notifications.
+The database is designed around the main operational areas of the VSTEP Platform: identity and learner profiles, wallet and payment, course booking, practice activities, mock exam sessions, assessment processing, progress tracking, and notifications.
 
-For readability, the database relationship is presented as four subject-area ERDs. This keeps the diagram format close to the required table-and-relationship style while avoiding a single oversized diagram with unreadable crossing lines. The table descriptions after the diagrams provide the complete table inventory.
+The table relationships are presented as five subject-area ERDs. Each ERD uses table boxes with primary keys, foreign keys, and crow's-foot relationships. The diagrams are grouped by business area so that each figure can be read independently, while the table description list provides the complete database inventory.
 
 ![Identity, Wallet and Promotion ERD](../diagrams/report4-db-identity-wallet-erd.png)
 
@@ -109,9 +109,13 @@ For readability, the database relationship is presented as four subject-area ERD
 
 *Figure 4.8. Practice and Assessment ERD*
 
-![Exam Session and Assessment ERD](../diagrams/report4-db-exam-assessment-erd.png)
+![Exam Session ERD](../diagrams/report4-db-exam-assessment-erd.png)
 
-*Figure 4.9. Exam Session and Assessment ERD*
+*Figure 4.9. Exam Session ERD*
+
+![Assessment Processing ERD](../diagrams/report4-db-assessment-result-erd.png)
+
+*Figure 4.10. Assessment Processing ERD*
 
 ### Table Descriptions
 
@@ -125,12 +129,12 @@ For readability, the database relationship is presented as four subject-area ERD
 | 06 | `wallet_topup_orders` | Stores wallet top-up payment orders and gateway status.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `package_id` |
 | 07 | `promo_codes` | Stores promotional code rules and reward configuration.<br>Primary keys: `id`<br>Foreign keys: none |
 | 08 | `promo_code_redemptions` | Stores promo-code redemption history by learner profile.<br>Primary keys: `id`<br>Foreign keys: `promo_code_id`, `profile_id` |
-| 09 | `courses` | Stores teacher-led course definitions and enrollment constraints.<br>Primary keys: `id`<br>Foreign keys: `teacher_id` |
-| 10 | `course_enrollment_orders` | Stores course enrollment payment orders and gateway callback state.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `course_id` |
+| 09 | `courses` | Stores teacher-led course definitions, pricing, and enrollment constraints.<br>Primary keys: `id`<br>Foreign keys: `teacher_id` |
+| 10 | `course_enrollment_orders` | Stores course enrollment payment orders, payment URLs, and callback status.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `course_id` |
 | 11 | `course_enrollments` | Stores confirmed learner enrollments for courses.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `course_id` |
 | 12 | `teacher_slots` | Stores teacher availability slots for course booking.<br>Primary keys: `id`<br>Foreign keys: `teacher_id`, `course_id` |
 | 13 | `teacher_bookings` | Stores learner bookings against teacher slots.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `teacher_slot_id` |
-| 14 | `practice_sessions` | Stores listening/reading practice session state.<br>Primary keys: `id`<br>Foreign keys: `profile_id` |
+| 14 | `practice_sessions` | Stores listening and reading practice session state.<br>Primary keys: `id`<br>Foreign keys: `profile_id` |
 | 15 | `practice_mcq_answers` | Stores selected answers for objective practice questions.<br>Primary keys: `id`<br>Foreign keys: `practice_session_id` |
 | 16 | `practice_writing_submissions` | Stores learner writing practice submissions.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `prompt_id` |
 | 17 | `practice_speaking_submissions` | Stores learner speaking practice audio and transcript data.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `task_id` |
@@ -140,11 +144,11 @@ For readability, the database relationship is presented as four subject-area ERD
 | 21 | `exam_mcq_answers` | Stores listening/reading answers in mock exam sessions.<br>Primary keys: `id`<br>Foreign keys: `exam_session_id` |
 | 22 | `exam_writing_submissions` | Stores writing responses in mock exam sessions.<br>Primary keys: `id`<br>Foreign keys: `exam_session_id`, `writing_task_id` |
 | 23 | `exam_speaking_submissions` | Stores speaking responses in mock exam sessions.<br>Primary keys: `id`<br>Foreign keys: `exam_session_id`, `speaking_part_id` |
-| 24 | `assessment_rubrics` | Stores rubric criteria, evidence schema, and scoring policy.<br>Primary keys: `id`<br>Foreign keys: none |
+| 24 | `assessment_rubrics` | Stores assessment criteria, evidence schema, and scoring policy.<br>Primary keys: `id`<br>Foreign keys: none |
 | 25 | `assessment_attempts` | Stores normalized assessment attempts from practice or exam submissions.<br>Primary keys: `id`<br>Foreign keys: `profile_id`, `rubric_id` |
 | 26 | `assessment_jobs` | Stores asynchronous assessment processing state.<br>Primary keys: `id`<br>Foreign keys: `attempt_id` |
-| 27 | `assessment_evidence` | Stores extracted signals, evidence, and validation details.<br>Primary keys: `id`<br>Foreign keys: `attempt_id`, `rubric_id` |
-| 28 | `assessment_results` | Stores final criterion scores, overall band, trace, and feedback.<br>Primary keys: `id`<br>Foreign keys: `attempt_id`, `rubric_id` |
+| 27 | `assessment_evidence` | Stores assessment signals, source evidence, and validation details.<br>Primary keys: `id`<br>Foreign keys: `attempt_id`, `rubric_id` |
+| 28 | `assessment_results` | Stores final criterion scores, overall band, calculation trace, and feedback.<br>Primary keys: `id`<br>Foreign keys: `attempt_id`, `rubric_id` |
 | 29 | `profile_daily_activity` | Stores daily learning activity aggregates.<br>Primary keys: `id`<br>Foreign keys: `profile_id` |
 | 30 | `profile_streak_state` | Stores learner streak status and milestone progress.<br>Primary keys: `id`<br>Foreign keys: `profile_id` |
 | 31 | `notifications` | Stores learner-facing notification records.<br>Primary keys: `id`<br>Foreign keys: `profile_id` |
@@ -161,13 +165,13 @@ This function handles login, Google authentication, token issuing, refresh token
 
 ![Authentication & Profile Class Diagram](../diagrams/report4-authentication-class-diagram.png)
 
-*Figure 4.10. Authentication & Profile Class Diagram*
+*Figure 4.11. Authentication & Profile Class Diagram*
 
 #### 3.1.2 Login Sequence
 
 ![Login Sequence Diagram](../diagrams/report4-login-sequence-diagram.png)
 
-*Figure 4.11. Login Sequence Diagram*
+*Figure 4.12. Login Sequence Diagram*
 
 ### 3.2 Practice & Assessment Processing
 
@@ -177,13 +181,13 @@ This function handles learner writing/speaking practice submissions, paid feedba
 
 ![Practice & Assessment Class Diagram](../diagrams/report4-practice-assessment-class-diagram.png)
 
-*Figure 4.12. Practice & Assessment Class Diagram*
+*Figure 4.13. Practice & Assessment Class Diagram*
 
 #### 3.2.2 Practice Feedback Sequence
 
 ![Practice Feedback Sequence Diagram](../diagrams/report4-practice-feedback-sequence-diagram.png)
 
-*Figure 4.13. Practice Feedback Sequence Diagram*
+*Figure 4.14. Practice Feedback Sequence Diagram*
 
 ### 3.3 Mock Exam Session
 
@@ -193,13 +197,13 @@ This function handles VSTEP mock exam session creation, answer saving, draft per
 
 ![Mock Exam Session Class Diagram](../diagrams/report4-exam-session-class-diagram.png)
 
-*Figure 4.14. Mock Exam Session Class Diagram*
+*Figure 4.15. Mock Exam Session Class Diagram*
 
 #### 3.3.2 Exam Submission Sequence
 
 ![Mock Exam Submission Sequence Diagram](../diagrams/report4-exam-submission-sequence-diagram.png)
 
-*Figure 4.15. Mock Exam Submission Sequence Diagram*
+*Figure 4.16. Mock Exam Submission Sequence Diagram*
 
 ### 3.4 Course Booking & Payment
 
@@ -209,10 +213,10 @@ This function handles course enrollment orders, teacher slot booking, payment ga
 
 ![Course Booking & Payment Class Diagram](../diagrams/report4-course-booking-payment-class-diagram.png)
 
-*Figure 4.16. Course Booking & Payment Class Diagram*
+*Figure 4.17. Course Booking & Payment Class Diagram*
 
 #### 3.4.2 Course Enrollment Payment Sequence
 
 ![Course Enrollment Payment Sequence Diagram](../diagrams/report4-course-payment-sequence-diagram.png)
 
-*Figure 4.17. Course Enrollment Payment Sequence Diagram*
+*Figure 4.18. Course Enrollment Payment Sequence Diagram*
