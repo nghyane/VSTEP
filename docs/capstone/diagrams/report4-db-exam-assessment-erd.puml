@@ -8,7 +8,7 @@ skinparam linetype ortho
 skinparam classAttributeIconSize 0
 skinparam ArrowColor #555555
 
-title Exam Session and Assessment ERD
+title Exam Session ERD
 
 entity "profiles" as profiles {
   * id : uuid <<PK>>
@@ -70,56 +70,11 @@ entity "exam_speaking_submissions" as exam_speaking {
   transcript : text
 }
 
-entity "assessment_rubrics" as rubrics {
-  * id : uuid <<PK>>
-  --
-  skill : varchar
-  task_type : varchar
-  criteria : jsonb
-  is_active : boolean
-}
-
-entity "assessment_attempts" as attempts {
-  * id : uuid <<PK>>
-  --
-  profile_id : uuid <<FK>>
-  rubric_id : uuid <<FK>>
-  source_type : varchar
-  source_id : uuid
-  submitted_at : timestamp
-}
-
-entity "assessment_jobs" as jobs {
-  * id : uuid <<PK>>
-  --
-  attempt_id : uuid <<FK>>
-  status : varchar
-  completed_at : timestamp
-}
-
-entity "assessment_results" as results {
-  * id : uuid <<PK>>
-  --
-  attempt_id : uuid <<FK>>
-  rubric_id : uuid <<FK>>
-  criterion_scores : jsonb
-  overall_band : decimal
-}
-
-profiles ||--o{ exam_sessions
 exams ||--o{ exam_versions
 exam_versions ||--o{ exam_sessions
+profiles ||--o{ exam_sessions
 exam_sessions ||--o{ exam_mcq_answers
 exam_sessions ||--o{ exam_writing
 exam_sessions ||--o{ exam_speaking
-
-profiles ||--o{ attempts
-rubrics ||--o{ attempts
-attempts ||--|| jobs
-attempts ||--o| results
-rubrics ||--o{ results
-
-exam_writing ||..o{ attempts
-exam_speaking ||..o{ attempts
 
 @enduml
