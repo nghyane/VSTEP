@@ -267,8 +267,8 @@ final class DemoProgressSeeder extends Seeder
             'attempt_id' => $attempt->id,
             'rubric_id' => $rubric->id,
             'criterion_scores' => [
-                ['key' => 'task_fulfillment', 'score' => $band, 'weight' => 0.30],
-                ['key' => 'organization', 'score' => $band, 'weight' => 0.20],
+                ['key' => 'task_fulfillment', 'score' => $band, 'weight' => 0.25],
+                ['key' => 'organization', 'score' => $band, 'weight' => 0.25],
                 ['key' => 'vocabulary', 'score' => $band, 'weight' => 0.25],
                 ['key' => 'grammar', 'score' => $band, 'weight' => 0.25],
             ],

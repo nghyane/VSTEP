@@ -13,10 +13,12 @@ use Symfony\Component\Yaml\Yaml;
 final class AssessmentGoldenSampleRepository
 {
     private const ROOT = 'fixtures/writing_samples';
+
     private const CRITERIA = ['task_fulfillment', 'organization', 'grammar', 'vocabulary'];
+
     private const WEIGHTS = [
-        'task_fulfillment' => 0.30,
-        'organization' => 0.20,
+        'task_fulfillment' => 0.25,
+        'organization' => 0.25,
         'grammar' => 0.25,
         'vocabulary' => 0.25,
     ];
