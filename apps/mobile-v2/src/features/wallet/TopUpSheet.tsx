@@ -1,7 +1,8 @@
 // TopUpSheet — BottomSheet to select a topup package and purchase
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Alert, AppState, Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useQueryClient } from "@tanstack/react-query";
+import * as SecureStore from "expo-secure-store";
 
 import { BottomSheet } from "@/components/BottomSheet";
 import { DepthButton } from "@/components/DepthButton";
@@ -11,6 +12,14 @@ import { syncWalletBalanceCache, useTopupPackages, useWalletBalance } from "@/fe
 import { api, getApiErrorMessage } from "@/lib/api";
 import type { TopupPackage, TopupOrder, WalletBalance } from "@/features/wallet/types";
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
+
+const PENDING_TOPUP_ORDER_KEY = "wallet.pendingTopupOrder";
+const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/dashboard";
+
+interface PendingTopupOrder {
+  id: string;
+  coins: number;
+}
 
 interface Props {
   visible: boolean;
@@ -27,7 +36,9 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
   const [checkingPayment, setCheckingPayment] = useState(false);
-  const [pendingOrder, setPendingOrder] = useState<{ id: string; coins: number } | null>(null);
+  const [pendingOrder, setPendingOrder] = useState<PendingTopupOrder | null>(null);
+  const checkingPaymentRef = useRef(false);
+  const restoredPendingRef = useRef(false);
 
   const balance = balanceData?.balance ?? 0;
 
@@ -40,42 +51,68 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
 
   const selected = packages.find((p) => p.id === selectedId) ?? null;
 
-  const checkPendingPayment = useCallback(async () => {
-    if (!pendingOrder || checkingPayment) return;
-    setCheckingPayment(true);
+  const setChecking = useCallback((next: boolean) => {
+    checkingPaymentRef.current = next;
+    setCheckingPayment(next);
+  }, []);
+
+  const checkOrderPayment = useCallback(async (orderToCheck: PendingTopupOrder, notifyPending: boolean) => {
+    if (checkingPaymentRef.current) return;
+    setChecking(true);
     try {
-      const order = await api.get<TopupOrder>(`/api/v1/wallet/topup/${pendingOrder.id}/status`);
+      const order = await api.get<TopupOrder>(`/api/v1/wallet/topup/${orderToCheck.id}/status`);
       if (order.status === "paid") {
         const balance = await api.get<WalletBalance>("/api/v1/wallet/balance");
         syncWalletBalanceCache(queryClient, balance.balance, balance.lastTransactionAt);
         void queryClient.invalidateQueries({ queryKey: ["wallet"] });
+        await clearPendingTopupOrder();
         setPendingOrder(null);
         onClose();
-        setTimeout(() => onSuccess(order.coinsToCredit || pendingOrder.coins, balance.balance), 250);
+        setTimeout(() => onSuccess(order.coinsToCredit || orderToCheck.coins, balance.balance), 250);
         return;
       }
 
       if (order.status === "failed" || order.status === "cancelled" || order.status === "expired") {
+        await clearPendingTopupOrder();
         setPendingOrder(null);
         Alert.alert("Thanh toán chưa hoàn tất", "Giao dịch đã bị hủy, thất bại hoặc hết hạn. Bạn có thể tạo giao dịch mới.");
         return;
       }
 
-      Alert.alert("Đang chờ thanh toán", "Hệ thống chưa ghi nhận thanh toán. Nếu bạn vừa thanh toán xong, vui lòng chờ vài giây rồi kiểm tra lại.");
+      if (notifyPending) {
+        Alert.alert("Đang chờ thanh toán", "Hệ thống chưa ghi nhận thanh toán. Nếu bạn vừa thanh toán xong, vui lòng chờ vài giây rồi kiểm tra lại.");
+      }
     } catch (error) {
-      Alert.alert("Chưa kiểm tra được thanh toán", getApiErrorMessage(error));
+      if (notifyPending) Alert.alert("Chưa kiểm tra được thanh toán", getApiErrorMessage(error));
     } finally {
-      setCheckingPayment(false);
+      setChecking(false);
     }
-  }, [checkingPayment, onClose, onSuccess, pendingOrder, queryClient]);
+  }, [onClose, onSuccess, queryClient, setChecking]);
+
+  const checkPendingPayment = useCallback(async () => {
+    if (!pendingOrder) return;
+    await checkOrderPayment(pendingOrder, true);
+  }, [checkOrderPayment, pendingOrder]);
+
+  useEffect(() => {
+    if (restoredPendingRef.current) return;
+    restoredPendingRef.current = true;
+    let mounted = true;
+    loadPendingTopupOrder().then((order) => {
+      if (!mounted || !order) return;
+      setPendingOrder(order);
+      void checkOrderPayment(order, false);
+    }).catch(() => undefined);
+    return () => { mounted = false; };
+  }, [checkOrderPayment]);
 
   useEffect(() => {
     if (!pendingOrder) return;
     const subscription = AppState.addEventListener("change", (nextState) => {
-      if (nextState === "active") void checkPendingPayment();
+      if (nextState === "active") void checkOrderPayment(pendingOrder, false);
     });
     return () => subscription.remove();
-  }, [checkPendingPayment, pendingOrder]);
+  }, [checkOrderPayment, pendingOrder]);
 
   async function handleBuy() {
     if (!selected || buying) return;
@@ -84,6 +121,7 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
       const order = await api.post<TopupOrder>("/api/v1/wallet/topup", {
         packageId: selected.id,
         paymentProvider: "payos",
+        returnUrl: createTopupReturnUrl(),
       });
 
       if (!order.paymentUrl) {
@@ -91,7 +129,9 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
         return;
       }
 
-      setPendingOrder({ id: order.id, coins: order.coinsToCredit || selected.totalCoins });
+      const nextPendingOrder = { id: order.id, coins: order.coinsToCredit || selected.totalCoins };
+      await savePendingTopupOrder(nextPendingOrder);
+      setPendingOrder(nextPendingOrder);
       await Linking.openURL(order.paymentUrl);
       onClose();
     } catch (error) {
@@ -165,6 +205,32 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
       </ScrollView>
     </BottomSheet>
   );
+}
+
+function createTopupReturnUrl(): string {
+  const configured = process.env.EXPO_PUBLIC_PAYOS_RETURN_URL?.trim();
+  return configured || DEFAULT_PAYOS_RETURN_URL;
+}
+
+function isPendingTopupOrder(value: unknown): value is PendingTopupOrder {
+  if (!value || typeof value !== "object") return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.id === "string" && typeof record.coins === "number";
+}
+
+async function loadPendingTopupOrder(): Promise<PendingTopupOrder | null> {
+  const raw = await SecureStore.getItemAsync(PENDING_TOPUP_ORDER_KEY);
+  if (!raw) return null;
+  const parsed = JSON.parse(raw) as unknown;
+  return isPendingTopupOrder(parsed) ? parsed : null;
+}
+
+async function savePendingTopupOrder(order: PendingTopupOrder): Promise<void> {
+  await SecureStore.setItemAsync(PENDING_TOPUP_ORDER_KEY, JSON.stringify(order));
+}
+
+async function clearPendingTopupOrder(): Promise<void> {
+  await SecureStore.deleteItemAsync(PENDING_TOPUP_ORDER_KEY);
 }
 
 function PackCard({ pack, selected, onSelect }: { pack: TopupPackage; selected: boolean; onSelect: () => void }) {

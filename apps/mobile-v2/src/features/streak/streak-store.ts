@@ -44,7 +44,6 @@ let state: StreakState = {
   dailyGoal: 1,
   milestones: DEFAULT_MILESTONES,
 };
-let claimedSet: ReadonlySet<number> = new Set();
 
 const listeners = new Set<() => void>();
 
@@ -52,16 +51,7 @@ function notify() { listeners.forEach((l) => l()); }
 
 function setState(next: StreakState) {
   state = next;
-  claimedSet = new Set(next.milestones.filter((m) => m.claimed).map((m) => m.days));
   notify();
-}
-
-export function getDailyGoal() {
-  return state.dailyGoal;
-}
-
-export function getStreakMilestones() {
-  return state.milestones;
 }
 
 export async function loadStreakData() {
@@ -75,11 +65,6 @@ export async function loadStreakData() {
   } catch {
     // Keep cached/default streak state when API is unavailable.
   }
-}
-
-export function incrementTodayProgress() {
-  state = { ...state, todayProgress: state.todayProgress + 1 };
-  notify();
 }
 
 export async function claimMilestone(days: number) {
@@ -113,12 +98,5 @@ export function useStreakMilestones() {
   return useSyncExternalStore(
     (cb) => { listeners.add(cb); return () => listeners.delete(cb); },
     () => state.milestones,
-  );
-}
-
-export function useClaimedMilestones(): ReadonlySet<number> {
-  return useSyncExternalStore(
-    (cb) => { listeners.add(cb); return () => listeners.delete(cb); },
-    () => claimedSet,
   );
 }

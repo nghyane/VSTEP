@@ -77,7 +77,7 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
       if (__DEV__ && recorderError) {
         console.warn("Exam speaking recorder failed", recorderError);
       }
-      showRecordingNotice("Thiết bị hoặc bản chạy hiện tại chưa hỗ trợ ghi âm. Hãy thử lại trong development build.");
+      showRecordingNotice("Hãy kiểm tra quyền micro và thử ghi âm lại.");
     }
   }
 

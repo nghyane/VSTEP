@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "VSTEP",
-    "slug": "vstep-mobile-v2",
+    "slug": "aptis-mobile",
     "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +15,11 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.vstep.mobile.v2"
+      "bundleIdentifier": "com.vstep.mobile.v2",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Cho phep VSTEP su dung micro de luyen noi va ghi am bai speaking.",
+        "NSSpeechRecognitionUsageDescription": "Cho phep VSTEP nhan dien giong noi de luyen noi."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,7 +28,6 @@
       },
       "package": "com.vstep.mobile.v2",
       "softwareKeyboardLayoutMode": "pan",
-      "usesCleartextTraffic": true,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
@@ -35,7 +38,7 @@
       "expo-secure-store",
       "expo-system-ui",
       [
-        "expo-audio",
+        "expo-av",
         {
           "microphonePermission": "Cho phep VSTEP su dung micro de luyen noi va ghi am bai speaking."
         }
@@ -45,9 +48,14 @@
         {
           "microphonePermission": "Cho phep VSTEP su dung micro de luyen noi.",
           "speechRecognitionPermission": "Cho phep VSTEP nhan dien giong noi de luyen noi.",
-          "androidSpeechServicePackages": ["com.google.android.googlequicksearchbox"]
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
         }
-      ]
+      ],
+      "expo-font",
+      "expo-asset",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

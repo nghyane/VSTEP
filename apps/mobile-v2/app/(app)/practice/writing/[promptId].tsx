@@ -382,7 +382,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
         <View style={[s.footer, { paddingBottom: insets.bottom + spacing.base, borderTopColor: c.borderLight }]}>
           <DepthButton
             fullWidth
-            disabled={submitMutation.isPending || wc === 0}
+            disabled={submitMutation.isPending}
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               submitMutation.mutate();
@@ -489,21 +489,7 @@ function WritingSampleModal({
             </Text>
           </DepthCard>
 
-          {markers.length > 0 ? (
-            <View style={s.markerList}>
-              {markers.map((marker) => (
-                <View key={marker.id} style={[s.markerCard, { backgroundColor: c.card, borderColor: c.border }]}>
-                  <View style={[s.markerDot, { backgroundColor: markerColor(marker.color) }]} />
-                  <View style={s.markerCopy}>
-                    <Text style={[s.markerLabel, { color: c.foreground }]}>{marker.label}</Text>
-                    {marker.detail ? (
-                      <Text style={[s.markerDetail, { color: c.mutedForeground }]}>{marker.detail}</Text>
-                    ) : null}
-                  </View>
-                </View>
-              ))}
-            </View>
-          ) : null}
+          <SampleAnalysis markers={markers} c={c} />
 
           <DepthCard style={[s.sampleCard, { backgroundColor: c.card }]}>
             <View style={s.promptHeader}>
@@ -535,6 +521,43 @@ function WritingSampleModal({
         </ScrollView>
       </View>
     </Modal>
+  );
+}
+
+function SampleAnalysis({ markers, c }: { markers: WritingSampleMarker[]; c: ReturnType<typeof useThemeColors> }) {
+  return (
+    <DepthCard
+      style={[s.analysisCard, { backgroundColor: c.card }]}
+    >
+      <View style={s.analysisHeader}>
+        <Ionicons name="sparkles" size={18} color={COLOR} />
+        <View style={s.analysisHeaderCopy}>
+          <Text style={[s.sampleLabel, { color: c.foreground }]}>Phân tích bài mẫu</Text>
+          <Text style={[s.analysisSub, { color: c.mutedForeground }]}>Các điểm tô màu trong bài và lý do nên học.</Text>
+        </View>
+      </View>
+      {markers.length > 0 ? (
+        <View style={s.markerList}>
+          {markers.map((marker) => (
+            <View
+              key={marker.id}
+              style={[s.markerCard, { backgroundColor: c.surface, borderColor: c.border }]}
+            >
+              <View style={[s.markerDot, { backgroundColor: markerColor(marker.color) }]} />
+              <View style={s.markerCopy}>
+                <Text style={[s.markerLabel, { color: c.foreground }]}>{marker.label}</Text>
+                <Text style={[s.markerSnippet, { color: c.subtle }]}>{marker.match}</Text>
+                {marker.detail ? (
+                  <Text style={[s.markerDetail, { color: c.mutedForeground }]}>{marker.detail}</Text>
+                ) : null}
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : (
+        <Text style={[s.analysisEmpty, { color: c.mutedForeground }]}>Bài mẫu này chưa có dữ liệu phân tích chi tiết.</Text>
+      )}
+    </DepthCard>
   );
 }
 
@@ -676,6 +699,11 @@ const s = StyleSheet.create({
   modalTitle: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold },
   modalScroll: { padding: spacing.xl, gap: spacing.lg, paddingBottom: spacing["3xl"] },
   sampleAnswerCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg },
+  analysisCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
+  analysisHeader: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
+  analysisHeaderCopy: { flex: 1, gap: 2 },
+  analysisSub: { fontSize: fontSize.xs, lineHeight: 18 },
+  analysisEmpty: { fontSize: fontSize.xs, lineHeight: 18 },
   markerList: { gap: spacing.sm },
   markerCard: {
     flexDirection: "row",
@@ -688,5 +716,6 @@ const s = StyleSheet.create({
   markerDot: { width: 10, height: 10, borderRadius: 5, marginTop: 4 },
   markerCopy: { flex: 1, gap: 2 },
   markerLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
+  markerSnippet: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, lineHeight: 18 },
   markerDetail: { fontSize: fontSize.xs, lineHeight: 18 },
 });

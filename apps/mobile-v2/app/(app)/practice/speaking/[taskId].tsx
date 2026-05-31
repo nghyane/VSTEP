@@ -171,12 +171,16 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
       return submitSpeakingSession(sessionId, audioKey, Math.max(1, Math.ceil(elapsedMs / 1000)));
     },
     onSuccess: (res) => {
-      router.replace(`/(app)/grading/speaking/${res.submissionId}` as never);
+      router.replace({
+        pathname: "/(app)/grading/speaking/[submissionId]",
+        params: { submissionId: res.submissionId },
+      } as never);
     },
   });
 
   const handlePlayback = useCallback(async () => {
     if (!audioUri) return;
+
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true });
     await Audio.Sound.createAsync({ uri: audioUri }, { shouldPlay: true });
   }, [audioUri]);

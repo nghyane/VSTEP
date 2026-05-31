@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -117,10 +117,13 @@ function PracticeView({
   if (isFlipMode) {
     return (
       <>
-        <FlipCard
+        <PracticeFlipCard
+          item={item}
           flipped={flipped}
-          front={<PracticeFace item={item} side="front" />}
-          back={<PracticeFace item={item} side="back" />}
+          onToggle={() => {
+            if (flipped) session.hide();
+            else session.reveal();
+          }}
         />
         {flipped ? (
           <SrsRatingButtons disabled={session.submitting} onRate={session.rate} />
@@ -135,6 +138,61 @@ function PracticeView({
   }
 
   return <StaticPracticeView item={item} session={session} />;
+}
+
+function PracticeFlipCard({ item, flipped, onToggle }: { item: PracticeItem; flipped: boolean; onToggle: () => void }) {
+  return (
+    <FlipCard
+      flipped={flipped}
+      front={<PracticeFlipFace item={item} side="front" onPress={onToggle} />}
+      back={<PracticeFlipFace item={item} side="back" onPress={onToggle} />}
+    />
+  );
+}
+
+function PracticeFlipFace({
+  item,
+  side,
+  onPress,
+}: {
+  item: PracticeItem;
+  side: "front" | "back";
+  onPress: () => void;
+}) {
+  const c = useThemeColors();
+  const word = item.entry.word;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        s.flipFace,
+        {
+          backgroundColor: c.card,
+          borderColor: c.border,
+          borderBottomColor: "#CACACA",
+          opacity: pressed ? 0.96 : 1,
+        },
+      ]}
+    >
+      <View style={s.flipHeader}>
+        <View style={[s.modeBadge, { backgroundColor: c.background }]}>
+          <Text style={[s.modeBadgeText, { color: c.mutedForeground }]}>{MODE_LABEL[item.mode]}</Text>
+        </View>
+        <HapticTouchable
+          onPress={() => {
+            void speakWord(word.word);
+          }}
+          style={s.flipVolumeBtn}
+          hitSlop={8}
+        >
+          <Ionicons name="volume-medium-outline" size={20} color={c.mutedForeground} />
+        </HapticTouchable>
+      </View>
+      <PracticeFace item={item} side={side} />
+      <Text style={[s.hint, { color: c.subtle }]}>{side === "front" ? "Nhấn để lật thẻ" : "Nhấn để lật lại"}</Text>
+    </Pressable>
+  );
 }
 
 function StaticPracticeView({
@@ -242,9 +300,9 @@ function ListenPrompt({ word }: { word: VocabWord }) {
   const c = useThemeColors();
 
   useEffect(() => {
-    Speech.speak(word.word, { language: "en-US", rate: 0.9 });
+    void speakWord(word.word);
     return () => {
-      Speech.stop().catch(() => undefined);
+      void Speech.stop().catch(() => undefined);
     };
   }, [word.word]);
 
@@ -254,7 +312,7 @@ function ListenPrompt({ word }: { word: VocabWord }) {
       <HapticTouchable
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-          Speech.speak(word.word, { language: "en-US", rate: 0.9 });
+          void speakWord(word.word);
         }}
         style={[s.listenButton, { backgroundColor: c.primaryTint, borderColor: c.primary }]}
       >
@@ -263,6 +321,11 @@ function ListenPrompt({ word }: { word: VocabWord }) {
       <PartOfSpeech text={word.partOfSpeech} />
     </View>
   );
+}
+
+async function speakWord(word: string) {
+  await Speech.stop().catch(() => undefined);
+  Speech.speak(word, { language: "en-US", rate: 0.9 });
 }
 
 function InputBlock({
@@ -345,6 +408,16 @@ const s = StyleSheet.create({
     padding: spacing.lg,
   },
   answerCard: { gap: spacing.md, padding: spacing.lg },
+  flipFace: {
+    width: "100%",
+    minHeight: 360,
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius["2xl"],
+    padding: spacing.xl,
+  },
+  flipHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  flipVolumeBtn: { padding: spacing.xs },
   modeBadge: {
     alignSelf: "flex-start",
     paddingHorizontal: spacing.sm,
