@@ -6,6 +6,8 @@ namespace Tests\Feature\Auth;
 
 use App\Enums\CoinTransactionType;
 use App\Models\CoinTransaction;
+use App\Models\PracticeListeningExercise;
+use App\Models\PracticeListeningQuestion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -42,6 +44,7 @@ class RegisterTest extends TestCase
         $this->assertCount(1, $user->profiles);
         $profile = $user->profiles->first();
         $this->assertTrue($profile->is_initial_profile);
+        $this->assertSame($profile->id, $user->refresh()->active_profile_id);
 
         // Onboarding bonus 100 xu cấp tự động.
         $bonus = CoinTransaction::query()
@@ -51,6 +54,39 @@ class RegisterTest extends TestCase
         $this->assertNotNull($bonus);
         $this->assertSame(100, $bonus->delta);
         $this->assertSame(100, $bonus->balance_after);
+    }
+
+    public function test_registered_account_can_submit_with_initial_token(): void
+    {
+        $exercise = PracticeListeningExercise::factory()->create();
+        $question = PracticeListeningQuestion::factory()->create([
+            'exercise_id' => $exercise->id,
+            'correct_index' => 0,
+        ]);
+
+        $register = $this->postJson('/api/v1/auth/register', [
+            'email' => 'submitter@example.com',
+            'password' => 'Secret123',
+            'nickname' => 'submitter-b2',
+            'target_level' => 'B2',
+            'target_deadline' => now()->addMonths(6)->toDateString(),
+        ]);
+
+        $register->assertCreated();
+        $token = $register->json('data.access_token');
+
+        $start = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/listening/sessions', [
+                'exercise_id' => $exercise->id,
+            ]);
+        $start->assertCreated();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/practice/listening/sessions/{$start->json('data.id')}/submit", [
+                'answers' => [['question_id' => $question->id, 'selected_index' => 0]],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.score', 1);
     }
 
     public function test_register_rejects_duplicate_email(): void

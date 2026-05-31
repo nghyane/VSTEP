@@ -36,6 +36,7 @@ final class AuthService
             ]);
 
             $profile = $this->profileService->createInitialProfile($user, $profileData);
+            $this->persistActiveProfile($user, $profile);
 
             $accessToken = $this->tokenService->issueAccessToken($user, $profile);
             [, $plainToken] = $this->tokenService->createRefreshToken($user, null);
@@ -126,6 +127,7 @@ final class AuthService
 
         // Đọc active profile đã persist trước; fallback về default chỉ khi user chưa từng switch.
         $profile = $this->resolveActiveProfile($user);
+        $this->persistActiveProfile($user, $profile);
         $accessToken = $this->tokenService->issueAccessToken($user, $profile);
 
         return [

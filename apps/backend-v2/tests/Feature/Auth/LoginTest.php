@@ -40,6 +40,32 @@ class LoginTest extends TestCase
         $response->assertJsonPath('data.profile.id', $profile->id);
     }
 
+    public function test_refresh_persists_resolved_active_profile(): void
+    {
+        $user = User::factory()->create([
+            'email' => 'refresh@example.com',
+            'password' => Hash::make('secret123'),
+            'active_profile_id' => null,
+        ]);
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+
+        $login = $this->postJson('/api/v1/auth/login', [
+            'email' => 'refresh@example.com',
+            'password' => 'secret123',
+        ]);
+        $login->assertOk();
+
+        $user->update(['active_profile_id' => null]);
+
+        $this->postJson('/api/v1/auth/refresh', [
+            'refresh_token' => $login->json('data.refresh_token'),
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.profile.id', $profile->id);
+
+        $this->assertSame($profile->id, $user->refresh()->active_profile_id);
+    }
+
     public function test_password_login_does_not_require_google_client_id(): void
     {
         config(['services.google.client_id' => null]);
