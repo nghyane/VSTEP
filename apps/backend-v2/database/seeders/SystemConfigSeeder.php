@@ -44,6 +44,10 @@ class SystemConfigSeeder extends Seeder
         ];
 
         foreach ($defaults as $key => [$value, $description]) {
+            if (SystemConfig::query()->whereKey($key)->exists()) {
+                continue;
+            }
+
             SystemConfig::set($key, $value, $description);
         }
     }
