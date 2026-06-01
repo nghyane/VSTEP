@@ -75,6 +75,18 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Sync production compose file to VPS
+        uses: appleboy/scp-action@v1
+        with:
+          host: 5.223.87.142
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: docker-compose.yml
+          target: /opt/vstep
+          overwrite: true
+
       - name: Pull + recreate SPAs on VPS
         uses: appleboy/ssh-action@v1
         with:
