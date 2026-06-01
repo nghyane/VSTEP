@@ -1,6 +1,6 @@
 import { PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { Input as AntInput, App, Empty, Flex, Table } from "antd"
 import { useState } from "react"
 import { Button } from "#/components/Button"
@@ -18,6 +18,7 @@ import { adminTopupPackagesQuery } from "#/features/admin-topup/queries"
 import { TopupPackageForm } from "#/features/admin-topup/TopupPackageForm"
 import type { AdminTopupPackage } from "#/features/admin-topup/types"
 import { extractError } from "#/lib/api"
+import { useAuth } from "#/lib/auth"
 import { getTopupPackageColumns } from "./-topup-packages/columns"
 
 interface Search {
@@ -27,6 +28,10 @@ interface Search {
 }
 
 export const Route = createFileRoute("/_app/topup-packages/")({
+	beforeLoad: () => {
+		const user = useAuth.getState().user
+		if (!user || user.role !== "admin") throw redirect({ to: "/" })
+	},
 	validateSearch: (s: Record<string, unknown>): Search => ({
 		page: typeof s.page === "number" ? s.page : undefined,
 		q: typeof s.q === "string" ? s.q : undefined,

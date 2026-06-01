@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer } from "react";
+import { useEffect, useMemo, useReducer, useRef } from "react";
 
 import { useSrsReviewMutation, type WordWithState } from "@/hooks/use-vocab";
 import type { SrsRating } from "@/components/SrsRatingButtons";
@@ -27,6 +27,7 @@ type Action =
   | { type: "value"; value: string }
   | { type: "check"; correct: boolean }
   | { type: "reveal" }
+  | { type: "hide" }
   | { type: "advance"; requeue: PracticeItem | null };
 
 const INITIAL: State = {
@@ -70,10 +71,15 @@ export function usePracticeSession(words: WordWithState[], mode: PracticeMode, t
   const items = useMemo(() => buildPracticeItems(words, mode), [mode, words]);
   const [state, dispatch] = useReducer(reducer, INITIAL);
   const mutation = useSrsReviewMutation(topicId);
+  const sessionKey = `${topicId ?? ""}:${mode}`;
+  const sessionKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    dispatch({ type: "init", items });
-  }, [items]);
+    if (sessionKeyRef.current !== sessionKey || (items.length > 0 && state.queue.length === 0)) {
+      sessionKeyRef.current = sessionKey;
+      dispatch({ type: "init", items });
+    }
+  }, [items, sessionKey, state.queue.length]);
 
   const total = state.queue.length;
   const current = state.queue[state.index] ?? null;
@@ -86,6 +92,10 @@ export function usePracticeSession(words: WordWithState[], mode: PracticeMode, t
 
   function reveal() {
     dispatch({ type: "reveal" });
+  }
+
+  function hide() {
+    dispatch({ type: "hide" });
   }
 
   async function rate(rating: SrsRating) {
@@ -110,6 +120,7 @@ export function usePracticeSession(words: WordWithState[], mode: PracticeMode, t
     setValue: (value: string) => dispatch({ type: "value", value }),
     check,
     reveal,
+    hide,
     rate,
   };
 }
@@ -124,6 +135,8 @@ function reducer(state: State, action: Action): State {
       return { ...state, phase: "reveal", correct: action.correct };
     case "reveal":
       return { ...state, phase: "reveal" };
+    case "hide":
+      return { ...state, phase: "prompt" };
     case "advance":
       return {
         ...INITIAL,

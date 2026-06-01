@@ -12,9 +12,7 @@ import { saveTokens, clearTokens, getAccessToken, getRefreshToken } from "@/lib/
 import { refreshSession } from "@/lib/api";
 import { HapticsProvider } from "@/contexts/HapticsContext";
 import { WelcomeGiftModal } from "@/features/onboarding/WelcomeGiftModal";
-import { loadCoins } from "@/features/coin/coin-store";
 import { loadStreakData } from "@/features/streak/streak-store";
-import { loadNotifications } from "@/features/notification/notification-store";
 import type { AuthUser, Profile } from "@/types/api";
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -51,7 +49,7 @@ export default function RootLayout() {
           }
           setStatus("unauthenticated");
         }
-        await Promise.all([loadCoins(), loadStreakData(), loadNotifications()]).catch(() => undefined);
+        await loadStreakData().catch(() => undefined);
       } catch {
         setUser(null);
         setProfile(null);

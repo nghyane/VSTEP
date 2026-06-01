@@ -1,18 +1,19 @@
 // Promo redeem card — input mã quà tặng + popup chúc mừng khi nhận thành công
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { GameIcon } from "@/components/GameIcon";
 import { PromoRedeemSuccessPopup } from "@/features/wallet/PromoRedeemSuccessPopup";
-import { useRedeemPromo } from "@/features/wallet/queries";
-import { syncCoins } from "@/features/coin/coin-store";
+import { syncWalletBalanceCache, useRedeemPromo } from "@/features/wallet/queries";
 import { ApiError } from "@/lib/api";
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
 
 export function PromoRedeemCard() {
   const c = useThemeColors();
+  const queryClient = useQueryClient();
   const [code, setCode] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
   const [success, setSuccess] = useState<{ coins: number; balance: number } | null>(null);
@@ -27,8 +28,8 @@ export function PromoRedeemCard() {
       onSuccess: (data) => {
         setCode("");
         setFieldError(null);
+        syncWalletBalanceCache(queryClient, data.balanceAfter);
         setSuccess({ coins: data.coinsGranted, balance: data.balanceAfter });
-        syncCoins(data.balanceAfter);
       },
       onError: (err) => {
         let message = "Mã không hợp lệ hoặc đã hết hạn.";

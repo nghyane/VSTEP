@@ -14,6 +14,9 @@ export const Route = createFileRoute("/_app")({
 		if (user.role === "teacher" && !location.pathname.startsWith("/teacher")) {
 			throw redirect({ to: "/teacher" })
 		}
+		if (user.role !== "teacher" && location.pathname.startsWith("/teacher")) {
+			throw redirect({ to: "/" })
+		}
 	},
 	component: AppLayout,
 })
@@ -24,11 +27,11 @@ function AppLayout() {
 			<Sidebar />
 			<Layout>
 				<Topbar />
-			<Layout.Content style={{ padding: 24 }}>
-				<ErrorBoundary>
-					<Outlet />
-				</ErrorBoundary>
-			</Layout.Content>
+				<Layout.Content style={{ padding: 24 }}>
+					<ErrorBoundary>
+						<Outlet />
+					</ErrorBoundary>
+				</Layout.Content>
 			</Layout>
 		</Layout>
 	)

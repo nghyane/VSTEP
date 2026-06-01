@@ -17,8 +17,12 @@ import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
 
 const RUBRIC_LABELS: Record<string, string> = {
   taskAchievement: "Task Achievement",
+  taskFulfillment: "Task Fulfillment",
+  task_fulfillment: "Task Fulfillment",
   coherence: "Coherence & Cohesion",
+  organization: "Organization",
   lexical: "Lexical Resource",
+  vocabulary: "Lexical Resource",
   grammar: "Grammar Range & Accuracy",
 };
 
@@ -77,7 +81,7 @@ export function WritingReviewSheet({ visible, submissionId, onClose }: Props) {
                     key={key}
                     label={RUBRIC_LABELS[key] ?? key}
                     score={score}
-                    max={4}
+                    max={10}
                     color={accent}
                   />
                 ))}

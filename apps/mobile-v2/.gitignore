@@ -2,10 +2,13 @@ node_modules/
 .expo/
 dist/
 .env
+.easignore
 *.keystore
 *.p8
 *.p12
 *.mobileprovision
+credentials.json
+.eas-local-credentials/
 
 # Reference screenshots (local only)
 pic_copy/
