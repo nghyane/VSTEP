@@ -31,7 +31,7 @@ jobs:
             # but cheap.
             [ -f apps/backend-v2/.env ] && cp apps/backend-v2/.env apps/backend-v2/.env.deploy-backup
 
-            git pull origin main
+            git pull --no-rebase origin main
 
             if [ -f apps/backend-v2/.env.deploy-backup ]; then
               cp apps/backend-v2/.env.deploy-backup apps/backend-v2/.env
@@ -62,7 +62,7 @@ jobs:
               APP_KEY JWT_SECRET \
               AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_BUCKET AWS_ENDPOINT AWS_URL \
               AZURE_SPEECH_KEY AZURE_SPEECH_REGION \
-              BIFROST_URL BIFROST_API_KEY \
+              PACKY_URL PACKY_API_KEY \
               PAYOS_CLIENT_ID PAYOS_API_KEY PAYOS_CHECKSUM_KEY
             do
               if ! grep -Eq "^${key}=.+" apps/backend-v2/.env; then

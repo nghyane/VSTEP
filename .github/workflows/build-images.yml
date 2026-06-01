@@ -77,7 +77,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /opt/vstep
-            git pull origin main
+            git pull --no-rebase origin main
             docker compose -f docker-compose.yml --env-file .env pull frontend admin
             docker compose -f docker-compose.yml --env-file .env up -d --no-build frontend admin
             docker image prune -f
