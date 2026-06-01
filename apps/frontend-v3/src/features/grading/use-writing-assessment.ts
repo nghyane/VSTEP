@@ -45,6 +45,7 @@ export function useWritingAssessment({ attemptId }: Input) {
 		error: viewData?.error ?? errorMessage(view.error),
 		feedbackCost:
 			viewData?.feedback_request.cost_coins ?? configData.data.pricing.practice.feedback_cost_coins,
+		feedbackCanRequest: viewData?.feedback_request.can_request === true,
 		feedbackRequested: feedback.isSuccess || viewData?.feedback_request.requested === true,
 		feedbackPending: feedback.isPending,
 		feedbackError: errorMessage(feedback.error),

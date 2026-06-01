@@ -17,7 +17,7 @@ export function WritingSamplePanel({ answer, markers, onClose }: Props) {
 			onClick={onClose}
 		>
 			<div
-				className="w-full max-w-5xl max-h-[90vh] overflow-y-auto relative mx-4"
+				className="relative mx-4 max-h-[90vh] w-[calc(100vw-2rem)] max-w-7xl overflow-x-hidden overflow-y-auto"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<button

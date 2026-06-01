@@ -21,7 +21,7 @@ export interface AssessmentFeedback {
 	strengths?: string[]
 	improvements?: Array<Improvement | string>
 	warnings?: string[]
-	evidenceNotes?: string[]
+	evidenceNotes?: string[] | Record<string, InsightsEntry>
 	rewrites?: Array<Rewrite | string>
 }
 
