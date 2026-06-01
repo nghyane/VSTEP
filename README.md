@@ -7,12 +7,14 @@ Hệ thống luyện thi VSTEP với AI grading và adaptive learning.
 ```
 VSTEP/
 ├── apps/
-│   ├── backend-v2/  - PHP 8.4 · Laravel 13 (REST API + AI Grading Agent)
-│   ├── frontend/    - Vite + React 19 + TypeScript
-│   ├── mobile/      - Mobile app
-│   └── _deprecated/ - Old backend-v1 & grading-python (replaced)
-├── docs/            - Documentation, designs, specs
-└── scripts/         - Build scripts
+│   ├── backend-v2/    - PHP 8.4 · Laravel 13 (REST API + AI Grading Agent)
+│   ├── frontend-v3/   - bun · Vite 8 · React 19 (learner web)
+│   ├── admin/         - bun · Vite 8 · React 19 + Ant Design (staff portal)
+│   ├── mobile-v2/     - React Native + Expo Router (mobile)
+│   └── _deprecated/   - Old apps (frontend, frontend-v2, mobile, mockup,
+│                        nlp-sidecar, backend-v1, grading-python)
+├── docs/              - Documentation, designs, specs
+└── scripts/           - Build scripts
 ```
 
 ## 🚀 Development
@@ -23,9 +25,13 @@ cd apps/backend-v2
 php artisan serve        # API: http://localhost:8000
 php artisan horizon      # Queue worker
 
-# Frontend
-cd apps/frontend
+# Frontend (learner)
+cd apps/frontend-v3
 bun run dev              # App: http://localhost:5173
+
+# Admin
+cd apps/admin
+bun run dev              # App: http://localhost:5174
 ```
 
 ## 📚 Documentation
@@ -38,8 +44,8 @@ bun run dev              # App: http://localhost:5173
 | Dev | Scope | Stack | Responsibility |
 |-----|-------|-------|---------------|
 | Dev 1 | backend-v2 | Laravel 13 + laravel/ai | API, AI Grading Agent, Database |
-| Dev 2 | frontend | Vite + React 19 | Web UI |
-| Dev 3 | mobile | — | Mobile app |
+| Dev 2 | frontend-v3 + admin | bun · Vite 8 · React 19 | Web UI |
+| Dev 3 | mobile-v2 | React Native + Expo | Mobile app |
 | Dev 4 | — | — | QA & DevOps |
 
 ---

@@ -85,10 +85,10 @@ import { SkillIcon } from "#/components/SkillIcon"
 
 | Skill | Filename | Source | Size |
 |-------|----------|--------|------|
-| Listening (Nghe) | `headphones.png` | FE-v2 `apps/frontend-v2/public/icons/headphones.png` | 17.4 KB |
-| Reading (Đọc) | `book.png` | FE-v2 `apps/frontend-v2/public/icons/book.png` | 3.0 KB |
-| Speaking (Nói) | `microphone.png` | FE-v2 `apps/frontend-v2/public/icons/microphone.png` | 6.6 KB |
-| Writing (Viết) | `pencil.png` | FE-v2 `apps/frontend-v2/public/icons/pencil.png` | 4.3 KB |
+| Listening (Nghe) | `headphones.png` | FE-v2 `apps/_deprecated/frontend-v2/public/icons/headphones.png` | 17.4 KB |
+| Reading (Đọc) | `book.png` | FE-v2 `apps/_deprecated/frontend-v2/public/icons/book.png` | 3.0 KB |
+| Speaking (Nói) | `microphone.png` | FE-v2 `apps/_deprecated/frontend-v2/public/icons/microphone.png` | 6.6 KB |
+| Writing (Viết) | `pencil.png` | FE-v2 `apps/_deprecated/frontend-v2/public/icons/pencil.png` | 4.3 KB |
 
 **Note:** FE-v2 mix style cho 4 kỹ năng (headphones≈Plasticine, book≈Color, microphone≈Plasticine). FE-v3 copy y hệt (byte-by-byte match) để giữ visual consistency với FE-v2.
 

@@ -10,11 +10,10 @@ VSTEP exam practice platform with AI grading and adaptive learning. Capstone pro
 |-----|-------|------|-------|
 | **backend-v2** | PHP 8.4 · Laravel 13 · PostgreSQL · Redis | 8000 | `apps/backend-v2/` |
 | **frontend-v3** | bun · Vite 8 · React 19 · TanStack Router + Query v5 · Tailwind v4 · Biome · ky · Recharts | 5173 | `apps/frontend-v3/` |
-| **mockup** | UI source of truth (design reference) | -- | `apps/mockup/` |
-| **frontend-v2** | [LEGACY] TanStack Start + shadcn/ui | -- | `apps/frontend-v2/` |
-| **frontend** | [LEGACY] React 19 + Vite 7 | -- | `apps/frontend/` |
+| **admin** | bun · Vite 8 · React 19 + Ant Design 6 | -- | `apps/admin/` |
+| **mobile-v2** | React Native + Expo Router | -- | `apps/mobile-v2/` |
 
-> **Active development:** `frontend-v3`. Legacy `frontend-v2/` và `frontend/` không còn phát triển — chỉ dùng để tham khảo spec cũ khi cần.
+> **Deprecated** apps (moved to `apps/_deprecated/`): `frontend`, `frontend-v2`, `mobile`, `mockup`, `nlp-sidecar`, `backend-v1`, `grading-python`. Off-limits trừ khi user yêu cầu rõ.
 
 ## Commands
 
@@ -75,7 +74,7 @@ See `apps/backend-v2/AGENTS.md` for full Laravel conventions.
 **Wiki knowledge base (grep trước khi code):** [apps/frontend-v3/.agents/wiki/](apps/frontend-v3/.agents/wiki/).
 
 Stack: bun · Vite 8 · React 19 · TanStack Router + Query v5 · Tailwind v4 · Biome · ky · Recharts.
-UI source of truth: `apps/mockup/`. Không dùng shadcn/MUI — custom components theo design tokens.
+Design tokens: xem `src/styles.css` (CSS variables) + `lib/tokens.ts`. Không dùng shadcn/MUI — custom components.
 
 Xem chi tiết rules (state, code, data, layout, hard limits) trong `apps/frontend-v3/AGENTS.md`.
 

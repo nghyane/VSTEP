@@ -217,7 +217,7 @@ services:
   # NLP Sidecar — GECToR + CEFR Classifier (optional, phase 2)
   # Uncomment when models downloaded and accuracy verified.
   # nlp-sidecar:
-  #   build: ./apps/nlp-sidecar
+  #   build: ./apps/_deprecated/nlp-sidecar
   #   ports:
   #     - "8082:8000"
   #   environment:
