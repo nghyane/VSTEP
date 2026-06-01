@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router"
+import { useEffect, useState } from "react"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
+import { Icon } from "#/components/Icon"
 import { FeedbackSection, RewriteSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
 import type {
@@ -28,6 +30,7 @@ export interface WritingFeedbackAction {
 	pending: boolean
 	requested: boolean
 	error: string | null
+	generated: AssessmentFeedback | null
 	onRequest: () => void
 }
 
@@ -49,6 +52,12 @@ interface PendingProps {
 
 interface ErrorProps {
 	message: string | null
+}
+
+interface AIFeedbackPopupState {
+	feedback: AssessmentFeedback | null
+	pending: boolean
+	error: string | null
 }
 
 export function WritingAssessmentLayout({ view }: LayoutProps) {
@@ -205,38 +214,139 @@ function RubricPanel({ view }: LayoutProps) {
 }
 
 function FeedbackPanel({ view }: LayoutProps) {
+	const [showAiFeedback, setShowAiFeedback] = useState(false)
+	const feedback = view.feedback.generated ?? detailedAIFeedback(view.result.feedback)
+
+	useEffect(() => {
+		if (view.feedback.generated) setShowAiFeedback(true)
+	}, [view.feedback.generated])
+
 	return (
 		<div className="card p-6 space-y-4">
 			<FeedbackSection
 				strengths={view.result.feedback?.strengths ?? []}
 				improvements={feedbackImprovements(view.result.feedback)}
 			/>
-			<AIFeedbackButton action={view.feedback} />
+			<AIFeedbackButton
+				action={view.feedback}
+				hasFeedback={feedback !== null}
+				onOpen={() => setShowAiFeedback(true)}
+			/>
+			{showAiFeedback && (
+				<AIFeedbackPopup
+					state={{ feedback, pending: view.feedback.pending, error: view.feedback.error }}
+					onClose={() => setShowAiFeedback(false)}
+				/>
+			)}
 		</div>
 	)
 }
 
-function AIFeedbackButton({ action }: { action: WritingFeedbackAction }) {
+function AIFeedbackButton({
+	action,
+	hasFeedback,
+	onOpen,
+}: {
+	action: WritingFeedbackAction
+	hasFeedback: boolean
+	onOpen: () => void
+}) {
 	if (!action.canRequest) return null
+	const disabled = action.pending
+	const label = action.pending
+		? "Đang xử lý..."
+		: hasFeedback
+			? "Xem nhận xét AI"
+			: action.requested
+				? "Tải nhận xét AI"
+				: "Nhận xét từ AI"
+	const handleClick = () => {
+		onOpen()
+		if (!hasFeedback) action.onRequest()
+	}
 
 	return (
 		<div className="border-t-2 border-border pt-4">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<p className="text-xs text-subtle">
-					{action.requested ? "Đã yêu cầu nhận xét AI cho bài này." : `Tốn ${action.cost} xu.`}
+					{hasFeedback
+						? "Nhận xét AI đã được lưu trong kết quả."
+						: action.requested
+							? "Đã thanh toán, bấm để tải nhận xét AI."
+							: `Tốn ${action.cost} xu.`}
 				</p>
 				<button
 					type="button"
-					onClick={action.onRequest}
-					disabled={action.pending || action.requested}
+					onClick={handleClick}
+					disabled={disabled}
 					className="btn btn-primary px-5 py-2.5 text-sm disabled:opacity-50"
 				>
-					{action.pending ? "Đang xử lý..." : action.requested ? "Đã yêu cầu" : "Nhận xét từ AI"}
+					{label}
 				</button>
 			</div>
 			{action.error && <p className="mt-2 text-xs font-bold text-destructive">{action.error}</p>}
 		</div>
 	)
+}
+
+function AIFeedbackPopup({ state, onClose }: { state: AIFeedbackPopupState; onClose: () => void }) {
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+			<div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-6 shadow-xl animate-[popIn_0.25s_ease-out] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+				<div className="mb-2 flex items-center justify-between">
+					<h2 className="text-lg font-extrabold text-foreground">Nhận xét của AI</h2>
+					<button type="button" onClick={onClose} className="p-1 text-muted transition hover:text-foreground">
+						<Icon name="close" size="sm" />
+					</button>
+				</div>
+				<p className="mb-4 text-xs text-muted">AI phân tích bài viết và gợi ý cách cải thiện.</p>
+
+				{state.pending && (
+					<div className="py-8 text-center">
+						<div className="mb-3 flex justify-center gap-1.5">
+							<div className="size-2.5 rounded-full bg-skill-writing animate-[dotBounce_1.2s_ease-in-out_infinite]" />
+							<div
+								className="size-2.5 rounded-full bg-skill-writing animate-[dotBounce_1.2s_ease-in-out_infinite]"
+								style={{ animationDelay: "0.2s" }}
+							/>
+							<div
+								className="size-2.5 rounded-full bg-skill-writing animate-[dotBounce_1.2s_ease-in-out_infinite]"
+								style={{ animationDelay: "0.4s" }}
+							/>
+						</div>
+						<p className="text-sm font-bold text-muted">AI đang phân tích bài viết...</p>
+					</div>
+				)}
+
+				{!state.pending && state.error && (
+					<div className="py-6 text-center">
+						<p className="text-sm text-destructive">{state.error}</p>
+					</div>
+				)}
+
+				{!state.pending && !state.error && state.feedback && (
+					<div className="space-y-4">
+						<FeedbackSection
+							strengths={state.feedback.strengths ?? []}
+							improvements={feedbackImprovements(state.feedback)}
+						/>
+						{state.feedback.rewrites && state.feedback.rewrites.length > 0 && (
+							<RewriteSection rewrites={state.feedback.rewrites} />
+						)}
+					</div>
+				)}
+			</div>
+		</div>
+	)
+}
+
+function detailedAIFeedback(feedback: AssessmentFeedback | null): AssessmentFeedback | null {
+	if (!feedback) return null
+	const hasStrengths = (feedback.strengths?.length ?? 0) > 0
+	const hasImprovements = (feedback.improvements?.length ?? 0) > 0
+	const hasRewrites = (feedback.rewrites?.length ?? 0) > 0
+
+	return hasStrengths || hasImprovements || hasRewrites ? feedback : null
 }
 
 function feedbackImprovements(feedback: AssessmentFeedback | null): Array<Improvement | string> {

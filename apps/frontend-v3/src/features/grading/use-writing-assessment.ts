@@ -1,7 +1,11 @@
-import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
-import { appConfigQuery } from "#/features/exam/queries"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { assessmentViewQuery } from "#/features/grading/queries"
-import type { AssessmentView, GradingProgress, WritingGradingResult } from "#/features/grading/types"
+import type {
+	AssessmentFeedback,
+	AssessmentView,
+	GradingProgress,
+	WritingGradingResult,
+} from "#/features/grading/types"
 import { type ApiResponse, api } from "#/lib/api"
 
 interface Input {
@@ -13,11 +17,11 @@ interface RequestFeedbackResponse {
 	status: string
 	cost_coins: number
 	charged: boolean
+	feedback: AssessmentFeedback | null
 }
 
 export function useWritingAssessment({ attemptId }: Input) {
 	const queryClient = useQueryClient()
-	const { data: configData } = useSuspenseQuery(appConfigQuery)
 	const view = useQuery({
 		...assessmentViewQuery(attemptId),
 		refetchInterval: (query) => {
@@ -43,12 +47,12 @@ export function useWritingAssessment({ attemptId }: Input) {
 		context: viewData?.context ?? null,
 		progress: normalizeProgress(viewData?.progress),
 		error: viewData?.error ?? errorMessage(view.error),
-		feedbackCost:
-			viewData?.feedback_request.cost_coins ?? configData.data.pricing.practice.feedback_cost_coins,
+		feedbackCost: viewData?.feedback_request.cost_coins ?? 0,
 		feedbackCanRequest: viewData?.feedback_request.can_request === true,
 		feedbackRequested: feedback.isSuccess || viewData?.feedback_request.requested === true,
 		feedbackPending: feedback.isPending,
 		feedbackError: errorMessage(feedback.error),
+		feedbackGenerated: feedback.data?.data.feedback ?? null,
 		requestFeedback: () => feedback.mutate(),
 	}
 }

@@ -68,6 +68,7 @@ export function WritingGradingScreen({ prompt, submission, responseText }: Props
 								pending: assessment.feedbackPending,
 								requested: assessment.feedbackRequested,
 								error: assessment.feedbackError,
+								generated: assessment.feedbackGenerated,
 								onRequest: assessment.requestFeedback,
 							},
 						}}
