@@ -31,5 +31,5 @@ export async function uploadSpeakingAudio(
   const meta = audioMetaFromUri(audioUri);
   const presign = await presignUpload(context, meta);
   await uploadLocalAudioToPresignedUrl(audioUri, presign.uploadUrl, meta.contentType);
-  return { audioKey: presign.audioKey, meta };
+  return { audioKey: presign.audioKey, audioUrl: presign.audioUrl, meta };
 }

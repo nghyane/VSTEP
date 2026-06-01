@@ -14,6 +14,7 @@ import { CoinButton } from "@/features/coin/CoinButton";
 import { useWalletBalance } from "@/features/wallet/queries";
 import { useThemeColors, colors as themeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { formatNumber } from "@/lib/utils";
+import { getApiErrorMessage } from "@/lib/api";
 
 type SkillKey = "listening" | "reading" | "writing" | "speaking";
 
@@ -118,7 +119,7 @@ export default function ExamDetailScreen() {
 
   function startFreshSession() {
     const finalSkills = isFull ? availableSkills : Array.from(selectedSkills).sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b));
-    const factor = totalMinutes > 0 ? displayMinutes / totalMinutes : 1.0;
+    const factor = totalMinutes > 0 ? Math.max(1, displayMinutes / totalMinutes) : 1.0;
     const start = () => startMutation.mutate(
       { examId: id ?? "", mode: isFull ? "full" : "custom", selectedSkills: finalSkills, timeExtensionFactor: factor },
       { onSuccess: (res) => router.push(`/(app)/session/${res.sessionId}?examId=${id}` as never) },
@@ -278,6 +279,11 @@ export default function ExamDetailScreen() {
             ? "Đang tạo phiên thi..."
             : getStartLabel(insufficient, activeSameExam != null, isFull, coinCost)}
         </DepthButton>
+        {startMutation.error ? (
+          <Text style={[s.startError, { color: c.destructive }]}>
+            Không tạo được phiên thi: {getApiErrorMessage(startMutation.error)}
+          </Text>
+        ) : null}
       </View>
     </View>
   );
@@ -403,4 +409,5 @@ const s = StyleSheet.create({
   totalLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   totalValue: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
   bottomBar: { position: "absolute", bottom: 0, left: 0, right: 0, paddingHorizontal: spacing.lg, paddingTop: spacing.sm, borderTopWidth: 1 },
+  startError: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold, textAlign: "center", marginTop: spacing.xs },
 });

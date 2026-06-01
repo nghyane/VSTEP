@@ -287,6 +287,7 @@ interface PracticeGradingResultResponse {
 export interface PresignUploadResponse {
   uploadUrl: string;
   audioKey: string;
+  audioUrl: string;
 }
 
 export interface AudioUploadMeta {
@@ -675,10 +676,10 @@ export async function requestSpeakingPronunciationReview(original: string, trans
   );
 }
 
-export async function submitSpeakingSession(sessionId: string, audioUrl: string, durationSeconds: number) {
+export async function submitSpeakingSession(sessionId: string, audioKey: string, durationSeconds: number) {
   return api.post<{ submissionId: string; gradingStatus: string }>(
     `/api/v1/practice/speaking/vstep-sessions/${sessionId}/submit`,
-    { audioUrl, durationSeconds },
+    { audioKey, durationSeconds },
   );
 }
 

@@ -10,7 +10,8 @@ import type { ExamVersionSpeakingPart } from "@/types/api";
 
 interface SpeakingAnswer {
   partId: string;
-  audioUrl: string | null;
+  audioKey: string | null;
+  audioUrl?: string | null;
   durationSeconds: number;
 }
 
@@ -93,12 +94,12 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
     setRecordedSeconds(duration);
   }, [elapsedMs, setAudioUri, showRecordingNotice, stopRecorder]);
 
-  async function uploadAudio(): Promise<string | null> {
+  async function uploadAudio(): Promise<{ audioKey: string; audioUrl: string } | null> {
     if (!audioUri) return null;
     setUploading(true);
     try {
-      const { audioKey } = await uploadSpeakingAudio(audioUri, "exam_speaking");
-      return audioKey;
+      const { audioKey, audioUrl } = await uploadSpeakingAudio(audioUri, "exam_speaking");
+      return { audioKey, audioUrl };
     } catch (error) {
       if (__DEV__) {
         console.warn("Exam speaking upload failed", error);
@@ -110,13 +111,13 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
   }
 
   async function handleConfirmRecord() {
-    const audioKey = await uploadAudio();
-    if (!audioKey) {
+    const audio = await uploadAudio();
+    if (!audio) {
       Alert.alert("Chưa lưu được ghi âm", "Vui lòng kiểm tra mạng và thử lại.");
       return;
     }
     const duration = recordedSeconds || Math.max(1, Math.round((elapsedMs || 1000) / 1000));
-    const answer: SpeakingAnswer = { partId: part.id, audioUrl: audioKey, durationSeconds: duration };
+    const answer: SpeakingAnswer = { partId: part.id, audioKey: audio.audioKey, audioUrl: audio.audioUrl, durationSeconds: duration };
     onSetSpeakingAnswer(part.id, answer);
     onDone(part.id);
   }

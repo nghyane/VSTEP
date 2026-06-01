@@ -97,6 +97,10 @@ export function useConversationSession(scenarioId: string): UseConversationSessi
       speakTurn(res.aiTurn);
     },
     onError: (err) => {
+      if (err instanceof ApiError && err.status === 409) {
+        setErrorText(messageFromError(err, "Phiên hội thoại đã kết thúc."));
+        return;
+      }
       const kind = kindFromError(err);
       const fallback =
         kind === "service-down"
