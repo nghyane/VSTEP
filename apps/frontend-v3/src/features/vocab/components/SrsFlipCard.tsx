@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react"
 import { Icon } from "#/components/Icon"
 import type { VocabWord } from "#/features/vocab/types"
 import { useIpa } from "#/lib/phonemize"
@@ -11,24 +10,11 @@ interface Props {
 }
 
 export function SrsFlipCard({ word, flipped, onFlip }: Props) {
-	const [prevWord, setPrevWord] = useState(word.id)
-	const [animateFlip, setAnimateFlip] = useState(flipped)
 	const ipa = useIpa(word.word, word.phonetic)
-
-	useEffect(() => {
-		if (word.id !== prevWord) {
-			setAnimateFlip(false)
-			setPrevWord(word.id)
-		}
-	}, [word.id, prevWord])
-
-	useEffect(() => {
-		setAnimateFlip(flipped)
-	}, [flipped])
 
 	return (
 		<div className="flip-scene w-full max-w-xl mx-auto">
-			<div className={cn("flip-inner", animateFlip && "flipped")}>
+			<div key={word.id} className={cn("flip-inner", flipped && "flipped")}>
 				<div className="flip-face">
 					<FlipButton onClick={onFlip} label="Lật thẻ">
 						<FlipHeader word={word.word} />
