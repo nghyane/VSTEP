@@ -46,6 +46,23 @@ export interface CourseWithRelations extends Course {
 	schedule_items: CourseScheduleItem[]
 }
 
+export type PaymentProvider = "payos" | "vnpay"
+export type OrderStatus = "pending" | "paid" | "failed" | "cancelled" | "expired"
+
+export interface EnrollmentOrder {
+	id: string
+	order_code: number
+	course_id: string
+	course_title: string | null
+	amount_vnd: number
+	status: OrderStatus
+	payment_provider: PaymentProvider
+	payment_url: string | null
+	paid_at: string | null
+	expires_at: string | null
+	created_at: string
+}
+
 export interface CourseDetail {
 	course: CourseWithRelations
 	sold_slots: number

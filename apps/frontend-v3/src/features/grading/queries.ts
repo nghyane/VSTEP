@@ -1,15 +1,11 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { RubricMeta, SpeakingGradingResult, WritingGradingResult } from "#/features/grading/types"
+import type { AssessmentView, RubricMeta, SpeakingGradingResult } from "#/features/grading/types"
 import { type ApiResponse, api } from "#/lib/api"
 
-/** Load practice writing result by submission — used for history/rubric display. */
-export const writingResultQuery = (submissionId: string) =>
+export const assessmentViewQuery = (attemptId: string) =>
 	queryOptions({
-		queryKey: ["practice", "writing", "result", submissionId],
-		queryFn: () =>
-			api
-				.get(`practice/writing/submissions/${submissionId}/result`)
-				.json<ApiResponse<WritingGradingResult | null> & { rubric?: RubricMeta }>(),
+		queryKey: ["assessment-attempts", attemptId, "view"],
+		queryFn: () => api.get(`assessment-attempts/${attemptId}/view`).json<ApiResponse<AssessmentView>>(),
 	})
 
 /** Load practice speaking result by submission — used for history/rubric display. */

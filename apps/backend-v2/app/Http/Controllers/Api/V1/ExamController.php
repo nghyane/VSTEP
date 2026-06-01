@@ -253,6 +253,7 @@ final class ExamController extends Controller
 
             return [
                 'submission_id' => $submission->id,
+                'attempt_id' => $submission->assessmentAttempt?->id,
                 'task_id' => $submission->task_id,
                 'word_count' => $submission->word_count,
                 'text' => $submission->text,
@@ -268,6 +269,7 @@ final class ExamController extends Controller
 
             return [
                 'submission_id' => $submission->id,
+                'attempt_id' => $submission->assessmentAttempt?->id,
                 'part_id' => $submission->part_id,
                 'audio_url' => $submission->audio_url,
                 'transcript' => $submission->transcript,

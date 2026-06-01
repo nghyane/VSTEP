@@ -10,6 +10,7 @@ use App\Models\PracticeSpeakingTask;
 use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SpeakingPracticeTest extends TestCase
@@ -80,6 +81,10 @@ class SpeakingPracticeTest extends TestCase
         $user = User::factory()->create();
         Profile::factory()->initial()->forAccount($user)->create();
         $task = PracticeSpeakingTask::factory()->create();
+        $profile = Profile::query()->where('account_id', $user->id)->firstOrFail();
+        $audioKey = "audio/practice_speaking/{$profile->id}/test.webm";
+        Storage::fake('s3');
+        Storage::disk('s3')->put($audioKey, 'fake audio');
 
         $token = $this->tokenFor($user);
         $sessionId = $this->withHeader('Authorization', "Bearer {$token}")
@@ -89,7 +94,7 @@ class SpeakingPracticeTest extends TestCase
 
         $submit = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson("/api/v1/practice/speaking/vstep-sessions/{$sessionId}/submit", [
-                'audio_url' => 'audio/speaking/test.webm',
+                'audio_key' => $audioKey,
                 'duration_seconds' => 90,
             ]);
         $submit->assertOk();
@@ -99,7 +104,6 @@ class SpeakingPracticeTest extends TestCase
             'session_id' => $sessionId,
             'task_ref_type' => 'practice_speaking_task',
         ]);
-        $profile = Profile::query()->where('account_id', $user->id)->firstOrFail();
         $this->assertDatabaseHas('assessment_attempts', [
             'profile_id' => $profile->id,
             'source_type' => 'practice',

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ScrollArea } from "#/components/ScrollArea"
+import { uploadExamSpeakingAudio } from "#/features/exam/actions"
 import type { ExamVersionSpeakingPart } from "#/features/exam/types"
 import { useVoiceRecorder } from "#/features/practice/use-voice-recorder"
 import { cn } from "#/lib/utils"
@@ -16,7 +17,7 @@ interface FooterAction {
 interface Props {
 	parts: ExamVersionSpeakingPart[]
 	speakingDone: Set<string>
-	onMarkDone: (partId: string) => void
+	onMarkDone: (partId: string, audioKey: string, audioUrl: string, durationSeconds: number) => void
 	onUnmarkDone: (partId: string) => void
 	footer: FooterAction
 }
@@ -181,20 +182,42 @@ function PartContent({ part }: { part: ExamVersionSpeakingPart }) {
 interface PartRecorderProps {
 	part: ExamVersionSpeakingPart
 	isDone: boolean
-	onDone: (partId: string) => void
+	onDone: (partId: string, audioKey: string, audioUrl: string, durationSeconds: number) => void
 	onUndone: (partId: string) => void
 }
 
 function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 	const recorder = useVoiceRecorder(part.speaking_seconds)
 	const typeLabel = PART_TYPE_LABEL[part.type] ?? part.type
+	const [isUploading, setIsUploading] = useState(false)
+	const [uploadError, setUploadError] = useState<string | null>(null)
 
-	const handleFinish = useCallback(() => {
+	const handleStop = useCallback(() => {
 		recorder.stop()
-		onDone(part.id)
-	}, [recorder, onDone, part.id])
+	}, [recorder])
+
+	const handleConfirm = useCallback(async () => {
+		if (!recorder.audioBlob) {
+			setUploadError("Không tìm thấy bản ghi âm. Vui lòng ghi lại.")
+			return
+		}
+		setIsUploading(true)
+		setUploadError(null)
+		try {
+			const audio = await uploadExamSpeakingAudio(recorder.audioBlob)
+			const durationSeconds = Math.max(1, Math.round(recorder.elapsedMs / 1000))
+			onDone(part.id, audio.audio_key, audio.audio_url, durationSeconds)
+		} catch (error) {
+			setUploadError(
+				error instanceof Error ? error.message : "Không upload được bản ghi âm. Vui lòng thử lại.",
+			)
+		} finally {
+			setIsUploading(false)
+		}
+	}, [recorder.audioBlob, recorder.elapsedMs, onDone, part.id])
 
 	const handleRedo = useCallback(() => {
+		setUploadError(null)
 		recorder.reset()
 		onUndone(part.id)
 	}, [recorder, onUndone, part.id])
@@ -370,7 +393,7 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 								{recorder.state === "recording" && (
 									<button
 										type="button"
-										onClick={handleFinish}
+										onClick={handleStop}
 										className="flex items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-destructive/70 bg-destructive px-6 py-2.5 text-sm font-extrabold text-white transition-all active:translate-y-[2px] active:border-b-2 hover:brightness-105"
 									>
 										<span className="size-2.5 rounded-sm bg-white" />
@@ -382,11 +405,17 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 										<button
 											type="button"
 											onClick={recorder.reset}
+											disabled={isUploading}
 											className="rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-5 py-2.5 text-sm font-extrabold text-muted transition-all active:translate-y-[2px] active:border-b-2 hover:border-primary/40 hover:text-foreground"
 										>
 											Ghi lại
 										</button>
-										<button type="button" onClick={handleFinish} className="btn btn-primary">
+										<button
+											type="button"
+											onClick={handleConfirm}
+											disabled={isUploading}
+											className="btn btn-primary disabled:opacity-60"
+										>
 											<svg
 												viewBox="0 0 16 16"
 												className="size-4"
@@ -398,7 +427,7 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 											>
 												<polyline points="2,8 6,12 14,4" />
 											</svg>
-											Xác nhận
+											{isUploading ? "Đang upload…" : "Xác nhận"}
 										</button>
 									</>
 								)}
@@ -407,6 +436,7 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 							{recorder.error && (
 								<p className="text-center text-xs font-bold text-destructive">{recorder.error}</p>
 							)}
+							{uploadError && <p className="text-center text-xs font-bold text-destructive">{uploadError}</p>}
 						</div>
 					)}
 				</div>

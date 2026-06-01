@@ -11,11 +11,13 @@ use App\Models\ExamVersionListeningItem;
 use App\Models\ExamVersionListeningSection;
 use App\Models\ExamVersionReadingItem;
 use App\Models\ExamVersionReadingPassage;
+use App\Models\ExamVersionSpeakingPart;
 use App\Models\ExamVersionWritingTask;
 use App\Models\Profile;
 use App\Models\User;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ExamSessionTest extends TestCase
@@ -109,6 +111,36 @@ class ExamSessionTest extends TestCase
             ->postJson("/api/v1/exam-sessions/{$sessionId}/submit")->assertStatus(422);
     }
 
+    public function test_submit_speaking_uses_audio_key_and_stores_public_url(): void
+    {
+        [$user, $profile, $exam] = $this->seedExam();
+        $part = ExamVersionSpeakingPart::query()->firstOrFail();
+        $audioKey = "audio/exam_speaking/{$profile->id}/part-1.webm";
+        Storage::fake('s3');
+        Storage::disk('s3')->put($audioKey, 'fake audio');
+
+        $token = $this->tokenFor($user);
+        $sessionId = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/exams/{$exam->id}/sessions", ['mode' => 'full'])
+            ->json('data.session_id');
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/exam-sessions/{$sessionId}/submit", [
+                'speaking_answers' => [[
+                    'part_id' => $part->id,
+                    'audio_key' => $audioKey,
+                    'duration_seconds' => 60,
+                ]],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.speaking_jobs.0.status', 'pending');
+
+        $this->assertDatabaseHas('exam_speaking_submissions', [
+            'session_id' => $sessionId,
+            'audio_key' => $audioKey,
+        ]);
+    }
+
     private function seedExam(): array
     {
         $user = User::factory()->create();
@@ -141,6 +173,15 @@ class ExamSessionTest extends TestCase
         ExamVersionWritingTask::create([
             'exam_version_id' => $version->id, 'part' => 1, 'task_type' => 'letter',
             'duration_minutes' => 20, 'prompt' => 'Write...', 'min_words' => 100,
+        ]);
+        ExamVersionSpeakingPart::create([
+            'exam_version_id' => $version->id,
+            'part' => 1,
+            'type' => 'social',
+            'duration_minutes' => 5,
+            'speaking_seconds' => 60,
+            'content' => ['questions' => ['Introduce yourself.']],
+            'display_order' => 0,
         ]);
 
         return [$user, $profile, $exam, $version];

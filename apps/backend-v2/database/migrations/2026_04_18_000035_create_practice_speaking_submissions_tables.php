@@ -7,7 +7,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Speaking submission — audio_url + transcript (filled sau STT ở Slice 8).
+ * Speaking submission — audio_key for R2/STT, audio_url for public playback.
  * task_ref_type ∈ (practice_speaking_drill, practice_speaking_task).
  */
 return new class extends Migration
@@ -22,7 +22,8 @@ return new class extends Migration
             $table->foreignUuid('profile_id')->constrained()->cascadeOnDelete();
             $table->string('task_ref_type', 30);
             $table->uuid('task_ref_id');
-            $table->string('audio_url', 500);
+            $table->string('audio_key', 500);
+            $table->string('audio_url', 1000);
             $table->smallInteger('duration_seconds');
             $table->longText('transcript')->nullable();
             $table->timestamp('submitted_at');

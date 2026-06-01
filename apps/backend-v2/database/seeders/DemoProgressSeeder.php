@@ -267,8 +267,8 @@ final class DemoProgressSeeder extends Seeder
             'attempt_id' => $attempt->id,
             'rubric_id' => $rubric->id,
             'criterion_scores' => [
-                ['key' => 'task_fulfillment', 'score' => $band, 'weight' => 0.30],
-                ['key' => 'organization', 'score' => $band, 'weight' => 0.20],
+                ['key' => 'task_fulfillment', 'score' => $band, 'weight' => 0.25],
+                ['key' => 'organization', 'score' => $band, 'weight' => 0.25],
                 ['key' => 'vocabulary', 'score' => $band, 'weight' => 0.25],
                 ['key' => 'grammar', 'score' => $band, 'weight' => 0.25],
             ],
@@ -280,16 +280,18 @@ final class DemoProgressSeeder extends Seeder
 
     private function seedSpeakingResult(string $sessionId, string $profileId, string $partId, \DateTimeInterface $submittedAt, float $band): void
     {
+        $audioKey = 'audio/exam_speaking/'.$profileId.'/demo-'.uniqid().'.mp3';
+        $audioUrl = 'https://demo.vstep.test/'.$audioKey;
         $submission = ExamSpeakingSubmission::create([
             'session_id' => $sessionId,
             'profile_id' => $profileId,
             'part_id' => $partId,
-            'audio_url' => '',
+            'audio_key' => $audioKey,
+            'audio_url' => $audioUrl,
             'duration_seconds' => rand(60, 180),
             'transcript' => 'Seed speaking transcript.',
             'submitted_at' => $submittedAt,
         ]);
-        $submission->update(['audio_url' => 'https://demo.vstep.test/audio/'.$submission->id.'.mp3']);
 
         $rubric = $this->rubric(AssessmentTaskType::SpeakingPart1Personal);
         $attempt = AssessmentAttempt::create([
@@ -300,7 +302,11 @@ final class DemoProgressSeeder extends Seeder
             'source_type' => AssessmentSourceType::Exam,
             'source_id' => $submission->id,
             'prompt' => ['requirements' => ['Demo speaking task']],
-            'response_payload' => ['audio_url' => $submission->audio_url, 'metadata' => ['duration_seconds' => $submission->duration_seconds]],
+            'response_payload' => [
+                'audio_key' => $submission->audio_key,
+                'audio_url' => $submission->audio_url,
+                'metadata' => ['duration_seconds' => $submission->duration_seconds],
+            ],
             'submitted_at' => $submittedAt,
         ]);
 

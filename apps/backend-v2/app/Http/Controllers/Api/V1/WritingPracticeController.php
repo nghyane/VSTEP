@@ -12,8 +12,6 @@ use App\Http\Resources\WritingPromptDetailResource;
 use App\Http\Resources\WritingPromptSummaryResource;
 use App\Http\Resources\WritingSubmissionHistoryResource;
 use App\Models\PracticeSession;
-use App\Models\PracticeWritingSubmission;
-use App\Services\PracticeGradingResultService;
 use App\Services\PracticeSessionService;
 use App\Services\WritingPracticeService;
 use Illuminate\Http\JsonResponse;
@@ -26,7 +24,6 @@ final class WritingPracticeController extends Controller
     public function __construct(
         private readonly WritingPracticeService $writingService,
         private readonly PracticeSessionService $sessionService,
-        private readonly PracticeGradingResultService $gradingResultService,
     ) {}
 
     public function listPrompts(Request $request): JsonResponse
@@ -54,13 +51,6 @@ final class WritingPracticeController extends Controller
         )]);
     }
 
-    public function result(Request $request, PracticeWritingSubmission $submission): JsonResponse
-    {
-        return response()->json(
-            $this->gradingResultService->writing($request->profile(), $submission),
-        );
-    }
-
     public function startSession(StartSessionRequest $request): JsonResponse
     {
         $session = $this->writingService->startSession(
@@ -83,6 +73,7 @@ final class WritingPracticeController extends Controller
 
         return response()->json(['data' => [
             'submission_id' => $result['submission']->id,
+            'attempt_id' => $result['attempt_id'],
             'job_id' => $result['job_id'],
             'word_count' => $result['submission']->word_count,
             'submitted_at' => $result['submission']->submitted_at,

@@ -42,10 +42,13 @@ class ActiveProfile
             abort(403, 'Active profile not found.');
         }
 
-        if ($profile->account_id !== $request->user()?->id) {
+        $user = $request->user();
+
+        if ($profile->account_id !== $user?->id) {
             abort(403, 'Active profile does not belong to authenticated user.');
         }
 
+        $user->setAttribute('active_profile_id', $profile->id);
         $request->attributes->set('active_profile', $profile);
 
         return $next($request);

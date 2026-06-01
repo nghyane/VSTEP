@@ -26,7 +26,7 @@ export function Header({ title, backTo }: Props) {
 
 	const balance = walletData ? walletData.data.balance : null
 	const streakInfo = streakData?.data ?? null
-	const streak = streakInfo ? streakInfo.current_streak : null
+	const streak = streakInfo ? streakInfo.current : null
 	const unread = unreadData ? unreadData.data.count : 0
 	const initial = profile.nickname.charAt(0).toUpperCase()
 	const [topupOpen, setTopupOpen] = useState(false)

@@ -26,7 +26,7 @@ final class AudioController extends Controller
     public function presignUpload(Request $request): JsonResponse
     {
         $request->validate([
-            'context' => ['nullable', 'string', 'in:speaking,exam_speaking'],
+            'context' => ['required', 'string', 'in:practice_speaking,exam_speaking'],
             'content_type' => ['nullable', 'string', 'max:100'],
             'extension' => ['nullable', 'string', 'max:12'],
         ]);
@@ -34,7 +34,7 @@ final class AudioController extends Controller
         $profile = $request->profile();
         $result = $this->audioService->presignUpload(
             $profile->id,
-            $request->input('context', 'speaking'),
+            $request->input('context'),
             $request->input('content_type', 'audio/webm'),
             $request->input('extension', 'webm'),
         );

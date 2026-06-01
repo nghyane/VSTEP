@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'profile_id',
     'task_ref_type',
     'task_ref_id',
+    'audio_key',
     'audio_url',
     'duration_seconds',
     'transcript',

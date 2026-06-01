@@ -1,4 +1,5 @@
 export type SkillKey = "listening" | "reading" | "writing" | "speaking"
+export type SkillScores = Record<SkillKey, number | null>
 
 export interface AppConfig {
 	wallet: {
@@ -152,7 +153,7 @@ export interface WritingAnswerPayload {
 
 export interface SpeakingAnswerPayload {
 	part_id: string
-	audio_url: string
+	audio_key: string
 	duration_seconds: number
 }
 
@@ -174,6 +175,7 @@ export interface ExamDraftWriting {
 
 export interface ExamDraftSpeakingMark {
 	part_id: string
+	audio_key?: string | null
 	audio_url?: string | null
 	duration_seconds?: number | null
 }
@@ -228,6 +230,7 @@ import type { AssessmentFeedback, CriterionScore } from "#/features/grading/type
 
 export interface WritingFeedbackItem {
 	submission_id: string
+	attempt_id: string | null
 	task_id: string
 	word_count: number
 	text: string
@@ -239,6 +242,7 @@ export interface WritingFeedbackItem {
 
 export interface SpeakingFeedbackItem {
 	submission_id: string
+	attempt_id: string | null
 	part_id: string
 	audio_url: string | null
 	transcript: string | null
@@ -250,7 +254,7 @@ export interface SpeakingFeedbackItem {
 
 export interface SessionResultsData {
 	session: ExamSessionSummary
-	scores: unknown
+	scores: SkillScores
 	overall_band: number | null
 	level: string
 	/** Aggregate MCQ: score (đã chấm) / total (số câu trong scope, câu không đáp tính sai). */

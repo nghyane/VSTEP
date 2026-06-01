@@ -49,6 +49,23 @@ export interface SubmitResult {
 	session: PracticeSession
 }
 
+export interface ExerciseFeedbackPayload {
+	content_type: string
+	content_id: string
+	rating: number
+	comment?: string
+}
+
+export interface ExerciseFeedback {
+	id: string
+	content_type: string
+	content_id: string
+	rating: number
+	comment: string | null
+	created_at: string
+	updated_at: string
+}
+
 export interface ReadingExercise {
 	id: string
 	slug: string
@@ -105,6 +122,7 @@ export interface SampleMarker {
 
 export interface WritingSubmission {
 	submission_id: string
+	attempt_id: string
 	job_id: string
 	word_count: number
 	submitted_at: string
@@ -161,6 +179,7 @@ export interface ShadowingLessonDetail {
 
 export interface WritingHistoryItem {
 	id: string
+	attempt_id: string
 	submitted_at: string
 	word_count: number
 	prompt: { id: string; slug: string; title: string; part: number } | null

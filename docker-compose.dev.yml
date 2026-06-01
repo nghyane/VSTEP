@@ -33,6 +33,8 @@ services:
 
   backend:
     build: ./apps/backend-v2
+    env_file:
+      - ./apps/backend-v2/.env
     volumes:
       - ./apps/backend-v2:/app
       - backend_vendor:/app/vendor
@@ -87,6 +89,8 @@ services:
 
   horizon:
     build: ./apps/backend-v2
+    env_file:
+      - ./apps/backend-v2/.env
     command: php artisan horizon
     environment:
       APP_ENV: local

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { writingHistoryQuery } from "#/features/practice/queries"
+import type { WritingHistoryItem } from "#/features/practice/types"
 import { formatShortDate } from "#/lib/utils"
 
 export function GradingHistory() {
@@ -23,22 +24,30 @@ export function GradingHistory() {
 			{items.map((w) => (
 				<Link
 					key={w.id}
-					to="/grading/writing/$submissionId"
-					params={{ submissionId: w.id }}
+					to="/grading/assessment/$attemptId"
+					params={{ attemptId: w.attempt_id }}
 					className="card-interactive flex items-center gap-4 p-4"
 				>
-					<span className="w-8 h-8 rounded-lg bg-skill-writing/10 text-skill-writing flex items-center justify-center text-xs font-bold shrink-0">
-						W
-					</span>
-					<div className="flex-1 min-w-0">
-						<p className="font-bold text-sm text-foreground truncate">{w.prompt?.title ?? "Bài viết"}</p>
-						<p className="text-xs text-muted mt-0.5">
-							{formatShortDate(w.submitted_at)} · {w.word_count} từ
-						</p>
-					</div>
-					<span className="text-xs font-bold text-skill-writing shrink-0">Xem điểm →</span>
+					<HistoryRow item={w} />
 				</Link>
 			))}
 		</div>
+	)
+}
+
+function HistoryRow({ item }: { item: WritingHistoryItem }) {
+	return (
+		<>
+			<span className="w-8 h-8 rounded-lg bg-skill-writing/10 text-skill-writing flex items-center justify-center text-xs font-bold shrink-0">
+				W
+			</span>
+			<div className="flex-1 min-w-0">
+				<p className="font-bold text-sm text-foreground truncate">{item.prompt?.title ?? "Bài viết"}</p>
+				<p className="text-xs text-muted mt-0.5">
+					{formatShortDate(item.submitted_at)} · {item.word_count} từ
+				</p>
+			</div>
+			<span className="text-xs font-bold text-skill-writing shrink-0">Xem điểm →</span>
+		</>
 	)
 }

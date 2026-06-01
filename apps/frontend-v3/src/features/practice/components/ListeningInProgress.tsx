@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router"
 import { useState } from "react"
 import { Icon } from "#/components/Icon"
 import { AudioBar } from "#/features/practice/components/AudioBar"
+import { ExerciseFeedbackCard } from "#/features/practice/components/ExerciseFeedbackCard"
 import { QuestionList } from "#/features/practice/components/QuestionList"
 import { QuestionNav } from "#/features/practice/components/QuestionNav"
 import { Subtitle } from "#/features/practice/components/Subtitle"
@@ -113,6 +114,9 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 								>
 									Về danh sách
 								</Link>
+							</div>
+							<div className="mx-auto mt-5 max-w-md">
+								<ExerciseFeedbackCard contentType="practice_listening_exercise" contentId={exercise.id} />
 							</div>
 						</div>
 					)}

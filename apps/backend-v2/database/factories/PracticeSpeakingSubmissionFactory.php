@@ -22,7 +22,8 @@ class PracticeSpeakingSubmissionFactory extends Factory
             'profile_id' => Profile::factory(),
             'task_ref_type' => 'practice_speaking_task',
             'task_ref_id' => PracticeSpeakingTask::factory(),
-            'audio_url' => 'r2://test-audio-'.uniqid().'.webm',
+            'audio_key' => 'audio/practice_speaking/test-profile/test-audio-'.uniqid().'.webm',
+            'audio_url' => 'https://demo.vstep.test/audio/test-audio-'.uniqid().'.webm',
             'duration_seconds' => 30,
             'submitted_at' => now(),
         ];

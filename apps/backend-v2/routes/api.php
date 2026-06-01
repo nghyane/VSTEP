@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\Admin;
+use App\Http\Controllers\Api\V1\AssessmentAttemptController;
 use App\Http\Controllers\Api\V1\AssessmentJobController;
 use App\Http\Controllers\Api\V1\AudioController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -23,7 +24,6 @@ use App\Http\Controllers\Api\V1\SpeakingFeedbackController;
 use App\Http\Controllers\Api\V1\SpeakingPracticeController;
 use App\Http\Controllers\Api\V1\VocabController;
 use App\Http\Controllers\Api\V1\WalletController;
-use App\Http\Controllers\Api\V1\WritingFeedbackController;
 use App\Http\Controllers\Api\V1\WritingPracticeController;
 use Illuminate\Support\Facades\Route;
 
@@ -104,12 +104,12 @@ Route::prefix('v1')->group(function () {
         Route::get('/practice/writing/prompts', [WritingPracticeController::class, 'listPrompts']);
         Route::get('/practice/writing/prompts/{id}', [WritingPracticeController::class, 'showPrompt']);
         Route::get('/practice/writing/history', [WritingPracticeController::class, 'history']);
-        Route::get('/practice/writing/submissions/{submission}/result', [WritingPracticeController::class, 'result'])->whereUuid('submission');
         Route::post('/practice/writing/sessions', [WritingPracticeController::class, 'startSession']);
         Route::post('/practice/writing/sessions/{practice_session}/submit', [WritingPracticeController::class, 'submit']);
-        Route::post('/practice/writing/submissions/{submission}/feedback', [WritingFeedbackController::class, 'generate'])->whereUuid('submission');
 
         Route::get('/assessment-jobs/{assessment_job}', [AssessmentJobController::class, 'show'])->whereUuid('assessment_job');
+        Route::get('/assessment-attempts/{assessment_attempt}/view', [AssessmentAttemptController::class, 'show'])->whereUuid('assessment_attempt');
+        Route::post('/assessment-attempts/{assessment_attempt}/feedback', [AssessmentAttemptController::class, 'requestFeedback'])->whereUuid('assessment_attempt');
 
         // Practice Speaking — drill + VSTEP.
         Route::get('/practice/speaking/drills', [SpeakingPracticeController::class, 'listDrills']);

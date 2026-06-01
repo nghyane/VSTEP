@@ -51,7 +51,7 @@ final class WritingPracticeService
     }
 
     /**
-     * @return array{submission: PracticeWritingSubmission, job_id: string}
+     * @return array{submission: PracticeWritingSubmission, attempt_id: string, job_id: string}
      */
     public function submit(
         PracticeSession $session,
@@ -95,7 +95,7 @@ final class WritingPracticeService
 
             $job = $this->assessments->submitPracticeWriting($submission);
 
-            return ['submission' => $submission, 'job_id' => $job->id];
+            return ['submission' => $submission, 'attempt_id' => $job->attempt_id, 'job_id' => $job->id];
         });
 
         return $submission;

@@ -6,6 +6,7 @@ export interface VoiceRecorder {
 	state: RecorderState
 	elapsedMs: number
 	audioUrl: string | null
+	audioBlob: Blob | null
 	error: string | null
 	analyser: AnalyserNode | null
 	start: () => Promise<void>
@@ -17,6 +18,7 @@ export function useVoiceRecorder(maxSeconds: number): VoiceRecorder {
 	const [state, setState] = useState<RecorderState>("idle")
 	const [elapsedMs, setElapsedMs] = useState(0)
 	const [audioUrl, setAudioUrl] = useState<string | null>(null)
+	const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
 
@@ -77,6 +79,7 @@ export function useVoiceRecorder(maxSeconds: number): VoiceRecorder {
 			recorder.onstop = () => {
 				const blob = new Blob(chunksRef.current, { type: "audio/webm" })
 				if (audioUrl) URL.revokeObjectURL(audioUrl)
+				setAudioBlob(blob)
 				setAudioUrl(URL.createObjectURL(blob))
 				setState("stopped")
 			}
@@ -111,6 +114,7 @@ export function useVoiceRecorder(maxSeconds: number): VoiceRecorder {
 		recorderRef.current = null
 		setElapsedMs(0)
 		setAudioUrl(null)
+		setAudioBlob(null)
 		setError(null)
 		setState("idle")
 	}, [audioUrl, stop])
@@ -130,5 +134,5 @@ export function useVoiceRecorder(maxSeconds: number): VoiceRecorder {
 		}
 	}, [audioUrl])
 
-	return { state, elapsedMs, audioUrl, error, analyser, start, stop, reset }
+	return { state, elapsedMs, audioUrl, audioBlob, error, analyser, start, stop, reset }
 }

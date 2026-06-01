@@ -79,7 +79,7 @@ export function selectNextAction(raw: ApiResponse<OverviewData>) {
 	if (chart) {
 		let minGap = Number.POSITIVE_INFINITY
 		for (const s of skills) {
-			const score = (chart as Record<string, number | null>)[s.key] ?? 0
+			const score = chart[s.key] ?? 0
 			const gap = (score ?? 0) - targetBand
 			if (gap < minGap) {
 				minGap = gap

@@ -55,6 +55,7 @@ final readonly class AssessmentIntakeService
             sourceType: AssessmentSourceType::Practice,
             sourceId: $submission->id,
             prompt: ['part' => $task->part, 'content' => $task->content],
+            audioKey: $submission->audio_key,
             audioUrl: $submission->audio_url,
             metadata: ['duration_seconds' => $submission->duration_seconds],
         ));
@@ -91,6 +92,7 @@ final readonly class AssessmentIntakeService
             sourceId: $submission->id,
             prompt: ['part' => $part->part, 'content' => $part->content, 'type' => $part->type],
             requirements: $part->requirements ?? [],
+            audioKey: $submission->audio_key,
             audioUrl: $submission->audio_url,
             metadata: ['duration_seconds' => $submission->duration_seconds],
         ));

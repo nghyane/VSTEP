@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import { Icon } from "#/components/Icon"
+import { ExerciseFeedbackCard } from "#/features/practice/components/ExerciseFeedbackCard"
 import { QuestionList } from "#/features/practice/components/QuestionList"
 import { QuestionNav } from "#/features/practice/components/QuestionNav"
 import { TranslateSelection } from "#/features/practice/components/TranslateSelection"
@@ -50,6 +51,9 @@ export function ReadingInProgress({ detail, session }: Props) {
 								>
 									Về danh sách
 								</Link>
+							</div>
+							<div className="mx-auto mt-5 max-w-md">
+								<ExerciseFeedbackCard contentType="practice_reading_exercise" contentId={exercise.id} />
 							</div>
 						</div>
 					)}

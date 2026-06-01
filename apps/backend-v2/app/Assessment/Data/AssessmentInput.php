@@ -24,6 +24,7 @@ final readonly class AssessmentInput
         public array $prompt = [],
         public array $requirements = [],
         public ?string $text = null,
+        public ?string $audioKey = null,
         public ?string $audioUrl = null,
         public array $metadata = [],
     ) {}

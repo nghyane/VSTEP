@@ -575,6 +575,7 @@ function ActiveExamRoom({
 	)
 
 	const totalDurationMinutes = activeSkills.reduce((sum, sk) => sum + skillDurationMinutes[sk], 0)
+	const speakingDone = useMemo(() => new Set(state.speakingAnswers.keys()), [state.speakingAnswers])
 
 	// Cảnh báo khi user cố đóng tab / refresh / bấm back browser trong lúc làm bài.
 	useEffect(() => {
@@ -609,7 +610,7 @@ function ActiveExamRoom({
 		}
 		if (currentSkill === "speaking") {
 			return {
-				count: version.speaking_parts.length - state.speakingDone.size,
+				count: version.speaking_parts.length - state.speakingAnswers.size,
 				unit: "phần chưa ghi âm",
 			}
 		}
@@ -749,7 +750,7 @@ function ActiveExamRoom({
 				{currentSkill === "speaking" && (
 					<SpeakingPanel
 						parts={version.speaking_parts}
-						speakingDone={state.speakingDone}
+						speakingDone={speakingDone}
 						onMarkDone={handleMarkSpeakingDone}
 						onUnmarkDone={handleUnmarkSpeakingDone}
 						footer={{

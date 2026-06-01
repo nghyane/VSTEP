@@ -22,6 +22,7 @@ final class SpeakingPracticeService
     public function __construct(
         private readonly PracticeSessionService $sessionService,
         private readonly AssessmentIntakeService $assessments,
+        private readonly AudioStorageService $audioStorage,
     ) {}
 
     /** @return Collection<int,PracticeSpeakingDrill> */
@@ -139,7 +140,7 @@ final class SpeakingPracticeService
 
     public function submitVstepPractice(
         PracticeSession $session,
-        string $audioUrl,
+        string $audioKey,
         int $durationSeconds,
     ): PracticeSpeakingSubmission {
         if ($session->module !== 'speaking_vstep_practice') {
@@ -153,7 +154,7 @@ final class SpeakingPracticeService
             ]);
         }
 
-        return DB::transaction(function () use ($session, $audioUrl, $durationSeconds) {
+        return DB::transaction(function () use ($session, $audioKey, $durationSeconds) {
             $locked = PracticeSession::query()
                 ->whereKey($session->id)
                 ->lockForUpdate()
@@ -165,12 +166,19 @@ final class SpeakingPracticeService
                 ]);
             }
 
+            $this->audioStorage->assertOwnedUploadedAudio(
+                $locked->profile_id,
+                $audioKey,
+                'practice_speaking',
+            );
+
             $submission = PracticeSpeakingSubmission::create([
                 'session_id' => $locked->id,
                 'profile_id' => $locked->profile_id,
                 'task_ref_type' => 'practice_speaking_task',
                 'task_ref_id' => $locked->content_ref_id,
-                'audio_url' => $audioUrl,
+                'audio_key' => $audioKey,
+                'audio_url' => $this->audioStorage->publicUrl($audioKey),
                 'duration_seconds' => $durationSeconds,
                 'submitted_at' => now(),
             ]);

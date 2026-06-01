@@ -8,6 +8,7 @@ use App\Models\PracticeListeningExercise;
 use App\Models\PracticeListeningQuestion;
 use App\Models\Profile;
 use App\Models\User;
+use App\Services\TokenService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -91,6 +92,31 @@ class ListeningPracticeTest extends TestCase
 
         // Session ended_at set
         $submit->assertJsonPath('data.session.module', 'listening');
+    }
+
+    public function test_submit_uses_active_profile_from_token_when_user_row_is_not_persisted(): void
+    {
+        $user = User::factory()->create(['active_profile_id' => null]);
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+        $exercise = PracticeListeningExercise::factory()->create();
+        $question = PracticeListeningQuestion::factory()->create([
+            'exercise_id' => $exercise->id,
+            'correct_index' => 0,
+        ]);
+        $token = app(TokenService::class)->issueAccessToken($user, $profile);
+
+        $start = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/listening/sessions', [
+                'exercise_id' => $exercise->id,
+            ]);
+        $start->assertCreated();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/practice/listening/sessions/{$start->json('data.id')}/submit", [
+                'answers' => [['question_id' => $question->id, 'selected_index' => 0]],
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.score', 1);
     }
 
     public function test_submit_rejects_already_submitted(): void

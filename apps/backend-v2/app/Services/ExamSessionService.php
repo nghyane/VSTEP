@@ -33,6 +33,7 @@ final class ExamSessionService
         private readonly AssessmentIntakeService $assessments,
         private readonly ProgressService $progressService,
         private readonly EconomyConfigService $economyConfig,
+        private readonly AudioStorageService $audioStorage,
     ) {}
 
     /** @return Collection<int,Exam> */
@@ -140,7 +141,7 @@ final class ExamSessionService
      *
      * @param  array<int,array{item_ref_type:string,item_ref_id:string,selected_index:int}>  $mcqAnswers
      * @param  array<int,array{task_id:string,text:string,word_count:int}>  $writingAnswers
-     * @param  array<int,array{part_id:string,audio_url:string,duration_seconds:int}>  $speakingAnswers
+     * @param  array<int,array{part_id:string,audio_key:string,duration_seconds:int}>  $speakingAnswers
      */
     public function submit(
         Profile $profile,
@@ -233,6 +234,7 @@ final class ExamSessionService
                 $job = $this->assessments->submitExamWriting($submission);
                 $writingJobs[] = [
                     'submission_id' => $submission->id,
+                    'attempt_id' => $job->attempt_id,
                     'job_id' => $job->id,
                     'status' => $job->status->value,
                 ];
@@ -241,17 +243,24 @@ final class ExamSessionService
             // ── 3. Speaking submissions + grading jobs ──
             $speakingJobs = [];
             foreach ($speakingAnswers as $s) {
+                $this->audioStorage->assertOwnedUploadedAudio(
+                    $session->profile_id,
+                    $s['audio_key'],
+                    'exam_speaking',
+                );
                 $submission = ExamSpeakingSubmission::create([
                     'session_id' => $session->id,
                     'profile_id' => $session->profile_id,
                     'part_id' => $s['part_id'],
-                    'audio_url' => $s['audio_url'],
+                    'audio_key' => $s['audio_key'],
+                    'audio_url' => $this->audioStorage->publicUrl($s['audio_key']),
                     'duration_seconds' => $s['duration_seconds'],
                     'submitted_at' => now(),
                 ]);
                 $job = $this->assessments->submitExamSpeaking($submission);
                 $speakingJobs[] = [
                     'submission_id' => $submission->id,
+                    'attempt_id' => $job->attempt_id,
                     'job_id' => $job->id,
                     'status' => $job->status->value,
                 ];
@@ -318,7 +327,7 @@ final class ExamSessionService
      *   skill_idx:int,
      *   mcq_answers:list<array{item_ref_type:string,item_ref_id:string,selected_index:int}>,
      *   writing_answers:list<array{task_id:string,text:string}>,
-     *   speaking_marks:list<array{part_id:string,audio_url?:?string,duration_seconds?:?int}>,
+     *   speaking_marks:list<array{part_id:string,audio_key?:?string,audio_url?:?string,duration_seconds?:?int}>,
      * }  $payload
      */
     public function saveDraft(Profile $profile, ExamSession $session, array $payload): ExamSessionDraft

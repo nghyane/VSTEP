@@ -33,8 +33,8 @@ final class AssessmentRubricSeeder extends Seeder
     {
         if ($taskType->skill()->value === 'writing') {
             return [
-                ['key' => 'task_fulfillment', 'label' => 'Task Fulfillment', 'weight' => 0.30],
-                ['key' => 'organization', 'label' => 'Organization', 'weight' => 0.20],
+                ['key' => 'task_fulfillment', 'label' => 'Task Fulfillment', 'weight' => 0.25],
+                ['key' => 'organization', 'label' => 'Organization', 'weight' => 0.25],
                 ['key' => 'grammar', 'label' => 'Grammar', 'weight' => 0.25],
                 ['key' => 'vocabulary', 'label' => 'Vocabulary', 'weight' => 0.25],
             ];
