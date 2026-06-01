@@ -174,11 +174,32 @@ export function pickEnglishVoice(): SpeechSynthesisVoice | undefined {
 	})[0]
 }
 
+export function pickBoundaryEnglishVoice(): SpeechSynthesisVoice | undefined {
+	const voices = loadVoices()
+	const en = voices.filter((v) => v.lang.startsWith("en"))
+	if (en.length === 0) return undefined
+
+	const local = en.filter((v) => v.localService)
+	const nonGoogle = en.filter((v) => !v.name.includes("Google"))
+	const candidates = local.length > 0 ? local : nonGoogle.length > 0 ? nonGoogle : en
+
+	return [...candidates].sort((a, b) => {
+		const usA = a.lang === "en-US" ? 0 : 1
+		const usB = b.lang === "en-US" ? 0 : 1
+		if (usA !== usB) return usA - usB
+		const ra = rankVoice(a.name)
+		const rb = rankVoice(b.name)
+		if (ra !== rb) return ra - rb
+		return a.name.localeCompare(b.name)
+	})[0]
+}
+
 interface SpeakOptions {
 	rate?: number
 	voice?: SpeechSynthesisVoice
 	onEnd?: () => void
 	onBoundary?: (charIndex: number) => void
+	boundaryFallback?: boolean
 	/** Skip synth.cancel() before speaking */
 	skipCancel?: boolean
 }
@@ -203,6 +224,7 @@ function attachBoundaryTracking(
 	text: string,
 	filler: string,
 	onBoundary: ((charIndex: number) => void) | undefined,
+	useFallback: boolean,
 ): () => void {
 	if (!onBoundary) return () => {}
 	const starts = wordStartIndexes(text)
@@ -218,7 +240,7 @@ function attachBoundaryTracking(
 		lastCharIndex = charIndex
 		onBoundary(charIndex)
 	}
-	if (starts.length > 0) {
+	if (useFallback && starts.length > 0) {
 		let wordIndex = 0
 		emit(starts[0])
 		fallbackTimer = window.setInterval(() => {
@@ -231,7 +253,7 @@ function attachBoundaryTracking(
 		}, boundaryFallbackMs(u.rate))
 	}
 	u.onboundary = (e) => {
-		if (e.name !== "word" || e.charIndex < filler.length) return
+		if (e.charIndex < filler.length) return
 		cleanup()
 		emit(e.charIndex - filler.length)
 	}
@@ -299,7 +321,13 @@ export function speak(text: string, opts: SpeakOptions = {}) {
 		u.lang = "en-US"
 		u.rate = opts.rate ?? 1
 		if (v) u.voice = v
-		const boundaryCleanup = attachBoundaryTracking(u, text, filler, opts.onBoundary)
+		const boundaryCleanup = attachBoundaryTracking(
+			u,
+			text,
+			filler,
+			opts.onBoundary,
+			opts.boundaryFallback ?? true,
+		)
 		attachSpeechCleanup(u, synth, boundaryCleanup, opts.onEnd)
 		synth.speak(u)
 	}

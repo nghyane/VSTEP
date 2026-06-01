@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router"
+import { useState } from "react"
 import { Icon } from "#/components/Icon"
+import { HighlightablePassage, PassageSpeechControl } from "#/features/exam/components/HighlightablePassage"
 import { ExerciseFeedbackCard } from "#/features/practice/components/ExerciseFeedbackCard"
 import { QuestionList } from "#/features/practice/components/QuestionList"
 import { QuestionNav } from "#/features/practice/components/QuestionNav"
@@ -14,6 +16,7 @@ interface Props {
 
 export function ReadingInProgress({ detail, session }: Props) {
 	const { exercise, questions } = detail
+	const [activeCharIndex, setActiveCharIndex] = useState<number | null>(null)
 
 	return (
 		<div className="flex flex-col h-screen bg-background">
@@ -61,19 +64,23 @@ export function ReadingInProgress({ detail, session }: Props) {
 					{/* Two-column: passage + questions */}
 					<div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
 						{/* Passage */}
-						<TranslateSelection>
-							<div className="card p-6 self-start lg:sticky lg:top-6">
-								<p className="text-xs font-bold text-skill-reading uppercase tracking-wide mb-2">
-									Part {exercise.part}
-								</p>
-								<h2 className="font-bold text-lg text-foreground mb-4">{exercise.title}</h2>
-								<div className="text-sm leading-relaxed text-foreground/90 space-y-3">
-									{exercise.passage.split(/\n\n+/).map((para, i) => (
-										<p key={`p-${i}`}>{para}</p>
-									))}
+						<div className="card p-6 self-start lg:sticky lg:top-6">
+							<TranslateSelection>
+								<div className="mb-2 flex items-center justify-between gap-3">
+									<p className="text-xs font-bold text-skill-reading uppercase tracking-wide">
+										Part {exercise.part}
+									</p>
+									<PassageSpeechControl text={exercise.passage} onActiveCharChange={setActiveCharIndex} />
 								</div>
-							</div>
-						</TranslateSelection>
+								<h2 className="font-bold text-lg text-foreground mb-4">{exercise.title}</h2>
+								<HighlightablePassage
+									text={exercise.passage}
+									passageId={exercise.id}
+									activeCharIndex={activeCharIndex}
+									className="text-sm leading-relaxed text-foreground/90"
+								/>
+							</TranslateSelection>
+						</div>
 
 						{/* Questions */}
 						<QuestionList

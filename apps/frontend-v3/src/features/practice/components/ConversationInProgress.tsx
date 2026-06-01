@@ -13,6 +13,7 @@ import { extractFirstName, getAvatarUrl } from "#/lib/avatar"
 import { useToast } from "#/lib/toast"
 import { tokens } from "#/lib/tokens"
 import {
+	pickBoundaryEnglishVoice,
 	pickEnglishVoice,
 	shortVoiceName,
 	speak,
@@ -37,7 +38,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	const [turns, setTurns] = useState<ConversationTurn[]>(session.turns)
 	const [mic, setMic] = useState<MicState>("idle")
 	const [elapsed, setElapsed] = useState(0)
-	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickEnglishVoice())
+	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickBoundaryEnglishVoice())
 	const aiName = voice ? extractFirstName(shortVoiceName(voice.name)) : scenario.character_name
 	const [sessionState, setSessionState] = useState<SessionState>("active")
 	const [showReview, setShowReview] = useState(false)
@@ -55,7 +56,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	useEffect(() => {
 		if (voice) return
 		const load = () => {
-			const v = pickEnglishVoice()
+			const v = pickBoundaryEnglishVoice() ?? pickEnglishVoice()
 			if (v) setVoice(v)
 		}
 		window.speechSynthesis?.addEventListener("voiceschanged", load)
@@ -76,6 +77,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 			speak(firstAi.text, {
 				rate: 0.9,
 				voice,
+				boundaryFallback: false,
 				onBoundary: (ci) => setSpeakingCharIndex(ci),
 				onEnd: () => {
 					setMic("idle")
@@ -133,6 +135,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 					speak(res.data.ai_turn.text, {
 						rate: 0.9,
 						voice,
+						boundaryFallback: false,
 						onBoundary: (ci) => setSpeakingCharIndex(ci),
 						onEnd: () => {
 							setMic("idle")
