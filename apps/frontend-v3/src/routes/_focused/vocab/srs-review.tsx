@@ -54,7 +54,7 @@ function SrsReviewPage() {
 				<div className="w-full max-w-lg space-y-4">
 					{s.current && (
 						<>
-							<SrsFlipCard word={s.current.word} flipped={s.revealed} onFlip={s.reveal} />
+							<SrsFlipCard word={s.current.word} flipped={s.revealed} onFlip={s.flip} />
 							{s.revealed && <SrsRatingButtons disabled={s.submitting} onRate={s.rate} />}
 						</>
 					)}

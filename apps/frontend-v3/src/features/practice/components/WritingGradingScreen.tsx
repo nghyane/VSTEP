@@ -64,6 +64,7 @@ export function WritingGradingScreen({ prompt, submission, responseText }: Props
 							context,
 							feedback: {
 								cost: assessment.feedbackCost,
+								canRequest: assessment.feedbackCanRequest,
 								pending: assessment.feedbackPending,
 								requested: assessment.feedbackRequested,
 								error: assessment.feedbackError,

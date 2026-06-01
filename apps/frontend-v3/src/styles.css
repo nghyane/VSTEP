@@ -368,24 +368,39 @@
 	/* ─── Flip card (vocab practice) ─── */
 	.flip-scene {
 		perspective: 1400px;
+		overflow: visible;
 	}
 	.flip-inner {
+		display: grid;
 		position: relative;
 		width: 100%;
 		transform-style: preserve-3d;
-		transition: transform 0.55s cubic-bezier(0.4, 0.05, 0.2, 1);
-	}
-	.flip-inner.flipped {
-		transform: rotateY(180deg);
+		-webkit-transform-style: preserve-3d;
 	}
 	.flip-face {
+		grid-area: 1 / 1;
 		backface-visibility: hidden;
 		-webkit-backface-visibility: hidden;
+		transform: rotateY(0deg);
+		transform-origin: center center;
+		transform-style: preserve-3d;
+		-webkit-transform-style: preserve-3d;
+		transition: transform 0.42s cubic-bezier(0.2, 0.8, 0.2, 1);
+		will-change: transform;
+	}
+	.flip-inner.flipped .flip-face:not(.flip-face-back) {
+		transform: rotateY(-180deg);
 	}
 	.flip-face-back {
-		position: absolute;
-		inset: 0;
 		transform: rotateY(180deg);
+	}
+	.flip-inner.flipped .flip-face-back {
+		transform: rotateY(0deg);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.flip-face {
+			transition-duration: 0.01ms;
+		}
 	}
 
 	/* ─── Schedule grid cells (course detail) ─── */

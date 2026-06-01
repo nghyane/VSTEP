@@ -37,6 +37,7 @@ export function WritingResult({ attemptId }: Props) {
 					: null,
 				feedback: {
 					cost: assessment.feedbackCost,
+					canRequest: assessment.feedbackCanRequest,
 					pending: assessment.feedbackPending,
 					requested: assessment.feedbackRequested,
 					error: assessment.feedbackError,

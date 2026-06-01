@@ -1,9 +1,14 @@
 import { Link } from "@tanstack/react-router"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
-import { StaticIcon } from "#/components/Icon"
 import { FeedbackSection, RewriteSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
-import type { GradingProgress, RubricMeta, WritingGradingResult } from "#/features/grading/types"
+import type {
+	AssessmentFeedback,
+	GradingProgress,
+	Improvement,
+	RubricMeta,
+	WritingGradingResult,
+} from "#/features/grading/types"
 import { formatShortDate, round } from "#/lib/utils"
 
 const COLOR = "var(--color-skill-writing)"
@@ -19,6 +24,7 @@ export interface WritingAssessmentContext {
 
 export interface WritingFeedbackAction {
 	cost: number
+	canRequest: boolean
 	pending: boolean
 	requested: boolean
 	error: string | null
@@ -51,11 +57,10 @@ export function WritingAssessmentLayout({ view }: LayoutProps) {
 			<aside className="space-y-4 lg:sticky lg:top-6">
 				<ScoreSummary view={view} />
 				<ContextCard context={view.context} />
-				<FeedbackUnlockCard action={view.feedback} hasFeedback={view.result.feedback !== null} />
 			</aside>
 			<section className="space-y-4">
 				<RubricPanel view={view} />
-				<FeedbackPanel result={view.result} />
+				<FeedbackPanel view={view} />
 				<RewritePanel result={view.result} />
 			</section>
 		</div>
@@ -182,46 +187,6 @@ function ContextMeta({ context }: { context: WritingAssessmentContext }) {
 	)
 }
 
-function FeedbackUnlockCard({
-	action,
-	hasFeedback,
-}: {
-	action: WritingFeedbackAction
-	hasFeedback: boolean
-}) {
-	if (hasFeedback) {
-		return (
-			<div className="rounded-(--radius-card) border-2 border-b-4 border-success/30 bg-success-tint p-4">
-				<p className="text-sm font-bold text-success">Feedback đã sẵn sàng</p>
-				<p className="text-xs text-subtle mt-1">Xem nhận xét chi tiết ở cột bên phải.</p>
-			</div>
-		)
-	}
-
-	return (
-		<div className="card p-5 space-y-3">
-			<div className="flex items-center gap-3">
-				<span className="size-10 rounded-full border-2 border-coin/30 bg-coin-tint flex items-center justify-center">
-					<StaticIcon name="coin" size="sm" />
-				</span>
-				<div>
-					<p className="text-sm font-bold text-foreground">Mở khóa feedback chi tiết</p>
-					<p className="text-xs text-subtle">{action.cost} xu/lần</p>
-				</div>
-			</div>
-			<button
-				type="button"
-				onClick={action.onRequest}
-				disabled={action.pending || action.requested}
-				className="btn btn-primary w-full py-2.5 text-sm disabled:opacity-50"
-			>
-				{action.pending ? "Đang xử lý..." : action.requested ? "Đã yêu cầu" : "Yêu cầu AI đánh giá"}
-			</button>
-			{action.error && <p className="text-xs font-bold text-destructive">{action.error}</p>}
-		</div>
-	)
-}
-
 function RubricPanel({ view }: LayoutProps) {
 	return (
 		<div className="card p-6 space-y-3">
@@ -239,21 +204,62 @@ function RubricPanel({ view }: LayoutProps) {
 	)
 }
 
-function FeedbackPanel({ result }: { result: WritingGradingResult }) {
+function FeedbackPanel({ view }: LayoutProps) {
 	return (
-		<div className="card p-6">
+		<div className="card p-6 space-y-4">
 			<FeedbackSection
-				strengths={result.feedback?.strengths ?? []}
-				improvements={result.feedback?.improvements ?? result.feedback?.evidenceNotes ?? []}
+				strengths={view.result.feedback?.strengths ?? []}
+				improvements={feedbackImprovements(view.result.feedback)}
 			/>
+			<AIFeedbackButton action={view.feedback} />
 		</div>
 	)
 }
 
+function AIFeedbackButton({ action }: { action: WritingFeedbackAction }) {
+	if (!action.canRequest) return null
+
+	return (
+		<div className="border-t-2 border-border pt-4">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+				<p className="text-xs text-subtle">
+					{action.requested ? "Đã yêu cầu nhận xét AI cho bài này." : `Tốn ${action.cost} xu.`}
+				</p>
+				<button
+					type="button"
+					onClick={action.onRequest}
+					disabled={action.pending || action.requested}
+					className="btn btn-primary px-5 py-2.5 text-sm disabled:opacity-50"
+				>
+					{action.pending ? "Đang xử lý..." : action.requested ? "Đã yêu cầu" : "Nhận xét từ AI"}
+				</button>
+			</div>
+			{action.error && <p className="mt-2 text-xs font-bold text-destructive">{action.error}</p>}
+		</div>
+	)
+}
+
+function feedbackImprovements(feedback: AssessmentFeedback | null): Array<Improvement | string> {
+	const improvements = feedback?.improvements ?? []
+	if (improvements.length > 0) return improvements
+
+	const evidenceNotes = feedback?.evidenceNotes
+	if (!evidenceNotes) return []
+	if (Array.isArray(evidenceNotes)) return evidenceNotes
+
+	return Object.values(evidenceNotes).map((entry) => ({
+		message: entry.label,
+		explanation: entry.detail,
+	}))
+}
+
 function RewritePanel({ result }: { result: WritingGradingResult }) {
+	const rewrites = result.feedback?.rewrites ?? []
+	if (rewrites.length === 0) return null
+
 	return (
 		<div className="card p-6">
-			<RewriteSection rewrites={result.feedback?.rewrites ?? []} />
+			<RewriteSection rewrites={rewrites} />
 		</div>
 	)
 }

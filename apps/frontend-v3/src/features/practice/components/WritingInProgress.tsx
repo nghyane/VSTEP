@@ -117,9 +117,8 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 								<button
 									type="button"
 									onClick={() => setShowSample(true)}
-									className="flex items-center gap-1.5 text-xs font-bold text-skill-writing hover:underline transition"
+									className="text-xs font-bold text-skill-writing hover:underline transition"
 								>
-									<Icon name="book" size="xs" />
 									Xem bài mẫu
 								</button>
 							)}
