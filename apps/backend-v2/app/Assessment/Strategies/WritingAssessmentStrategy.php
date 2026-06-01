@@ -113,22 +113,35 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
     {
         $part = (int) ($rubric->task_type->value === 'writing_task_1_letter' ? 1 : 2);
         $metrics = $signals->vocabulary;
+        $scoringRubric = $this->rubricResolver->active('writing');
 
         $scores = [
-            'grammar' => $this->formula->grammar($signals->syntax, (int) $metrics['grammar_error_count'], (int) $metrics['sentence_count'], (int) ($metrics['punctuation_error_count'] ?? 0)),
+            'grammar' => $this->formula->grammar(
+                $signals->syntax,
+                (int) $metrics['grammar_error_count'],
+                (int) $metrics['sentence_count'],
+                (int) ($metrics['punctuation_error_count'] ?? 0),
+            ),
             'vocabulary' => $this->formula->vocabulary($metrics),
             'task_fulfillment' => $this->formula->taskFulfillment($evidence->task, $part),
-            'organization' => $this->formula->organization((int) $metrics['paragraph_count'], (int) $metrics['linking_word_count'], (int) $metrics['sentence_count'], (float) ($metrics['sentence_variety'] ?? 0), $part, (bool) $signals->writingFormat['has_salutation'], (bool) $signals->writingFormat['has_closing']),
+            'organization' => $this->formula->organization(
+                (int) $metrics['paragraph_count'],
+                (int) $metrics['linking_word_count'],
+                (int) $metrics['sentence_count'],
+                (float) ($metrics['sentence_variety'] ?? 0),
+                $part,
+                (bool) $signals->writingFormat['has_salutation'],
+                (bool) $signals->writingFormat['has_closing'],
+            ),
         ];
 
-        $legacyRubric = $this->rubricResolver->active('writing');
-        $capped = $this->formula->applyTfCap($scores, $legacyRubric);
+        $capped = $this->formula->applyTfCap($scores, $scoringRubric);
         $scores = $capped['rubricScores'];
 
         return new ScoreBag(
             criterionScores: $this->criterionScores($scores, $rubric),
-            overallBand: $capped['overallBand'],
-            calculationTrace: ['formula' => 'vstep_writing', 'rubric_id' => $legacyRubric->id],
+            overallBand: $this->overallBand($scores, $rubric),
+            calculationTrace: ['formula' => 'vstep_writing', 'rubric_id' => $scoringRubric->id],
         );
     }
 
@@ -154,6 +167,23 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
             new CriterionScore(CriterionKey::Grammar, $scores['grammar'], $weights['grammar']),
             new CriterionScore(CriterionKey::Vocabulary, $scores['vocabulary'], $weights['vocabulary']),
         ];
+    }
+
+    /** @param array<string,float> $scores */
+    private function overallBand(array $scores, AssessmentRubric $rubric): float
+    {
+        $weights = $this->weights($rubric);
+        $totalWeight = array_sum($weights);
+        if ($totalWeight <= 0) {
+            return 0.0;
+        }
+
+        $weightedSum = 0.0;
+        foreach ($weights as $key => $weight) {
+            $weightedSum += ($scores[$key] ?? 0.0) * $weight;
+        }
+
+        return round(($weightedSum / $totalWeight) * 2) / 2;
     }
 
     /** @return array<string,float> */
