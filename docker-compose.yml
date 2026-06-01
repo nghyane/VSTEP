@@ -105,6 +105,7 @@ services:
       FILESYSTEM_DISK: s3
       AWS_DEFAULT_REGION: auto
       AWS_USE_PATH_STYLE_ENDPOINT: "true"
+      LANGUAGETOOL_URL: http://languagetool:8010
       CORS_ALLOWED_ORIGINS: "*"
     networks:
       - default
@@ -196,6 +197,10 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: ""
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-644444548899-q6kldv6576f2gjoccrm3i3s9sqlbetce.apps.googleusercontent.com}
+      FILESYSTEM_DISK: s3
+      AWS_DEFAULT_REGION: auto
+      AWS_USE_PATH_STYLE_ENDPOINT: "true"
+      LANGUAGETOOL_URL: http://languagetool:8010
     depends_on:
       backend:
         condition: service_started
