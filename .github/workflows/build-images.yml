@@ -77,6 +77,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /opt/vstep
+            git config user.email "deploy@vstepgo.com"
+            git config user.name "VSTEP Deploy"
             git pull --no-rebase origin main
             docker compose -f docker-compose.yml --env-file .env pull frontend admin
             docker compose -f docker-compose.yml --env-file .env up -d --no-build frontend admin
