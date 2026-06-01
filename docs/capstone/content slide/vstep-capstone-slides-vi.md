@@ -1,5 +1,9 @@
 # Nội dung trình bày Capstone VSTEP — Tiếng Việt
 
+Định hướng chỉnh sửa theo góp ý: nói nhanh phần bối cảnh quen thuộc, làm rõ vấn đề thực tế, nhấn mạnh cơ chế chấm điểm do code/formula kiểm soát, không để AI quyết định điểm cuối, để thuật toán Anki/FSRS ở phần "See detail", và trình bày demo workflow bằng diagram.
+
+---
+
 ## Slide 1 — Tiêu đề
 
 **Phần:** Mở đầu
@@ -8,11 +12,14 @@
 
 **An Adaptive VSTEP Preparation System with Comprehensive Skill Assessment and Personalized Learning Support**
 
-- Mã đề tài: SP26SE146
+- Tên tiếng Việt: Hệ thống luyện thi VSTEP thích ứng với đánh giá toàn diện kỹ năng và hỗ trợ học tập cá nhân hóa
+- Mã đề tài: SP26SE145
 - Nhóm: GSP26SE63
-- Loại phần mềm: Web Application + Mobile App + Admin Portal
-- GVHD học thuật: Lâm Hữu Khánh Phương
-- GVHD doanh nghiệp: Trần Trọng Huỳnh
+- Loại phần mềm: Web Application + Mobile App
+
+**Lời nói ngắn:**
+
+Kính chào hội đồng. Nhóm em xin trình bày hệ thống luyện thi VSTEP thích ứng, tập trung vào đánh giá bốn kỹ năng, phản hồi nhanh và gợi ý học tập cá nhân hóa.
 
 ---
 
@@ -22,98 +29,115 @@
 
 **Nội dung:**
 
-**Team Members**
+- Hoàng Văn Anh Nghĩa — SE172605 — Team Leader
+- Nguyễn Minh Khôi — SE172625 — Developer
+- Nguyễn Nhật Phát — SE172607 — Developer
+- Nguyễn Trần Tấn Phát — SE173198 — Developer
 
-- Hoàng Văn Anh Nghĩa — SE172605 — Trưởng nhóm / Backend Developer
-- Nguyễn Minh Khôi — SE172625 — Mobile Developer
-- Nguyễn Nhật Phát — SE172607 — Frontend Developer
-- Nguyễn Trần Tấn Phát — SE173198 — Frontend Developer
+**Lời nói ngắn:**
+
+Đây là các thành viên tham gia phát triển hệ thống. Sau phần giới thiệu nhanh, nhóm em xin đi thẳng vào bối cảnh, vấn đề, giải pháp và demo.
 
 ---
 
-## Slide 3 — Mục lục
+## Slide 3 — Agenda và chiến lược trình bày
 
 **Phần:** Mở đầu
 
 **Nội dung:**
 
-**Table of Contents**
+1. VSTEP context và cấu trúc đề thi
+2. Vấn đề hiện tại của người học
+3. Giải pháp và tính năng chính
+4. Cơ chế chấm điểm Writing/Speaking
+5. Anki/Spaced Repetition cho từ vựng
+6. Kiến trúc, công nghệ và demo
+7. Kết quả, giới hạn và kết luận
 
-1. Context
-2. Problems
-3. Actors
-4. Main Features by Actors
-5. System Architecture
-6. Technology
-7. Demo Workflow 1, 2, 3
-8. Differentiation
-9. Achievements
-10. Limitations
-11. Conclusion
-12. Thank You
+**Lời nói ngắn:**
+
+Do thời gian bảo vệ có giới hạn, nhóm em sẽ trình bày ngắn các phần lý thuyết quen thuộc và tập trung nhiều hơn vào cơ chế chấm điểm cùng demo workflow diagram.
 
 ---
 
-## Slide 4 — Context
+## Slide 4 — Context: Vì sao VSTEP quan trọng?
 
 **Phần:** Context
 
 **Nội dung:**
 
-**Context**
+- VSTEP là kỳ thi đánh giá năng lực tiếng Anh phổ biến tại Việt Nam.
+- Được dùng cho đầu ra của một số trường đại học.
+- Được dùng cho đầu vào/điều kiện của một số chương trình sau đại học.
+- Được dùng cho nhu cầu chứng chỉ và phát triển nghề nghiệp.
+- Người học cần chuẩn bị đồng thời bốn kỹ năng: Listening, Reading, Writing, Speaking.
 
-Phần này giới thiệu lý do vì sao việc luyện thi VSTEP quan trọng và vì sao người học cần một nền tảng số để hỗ trợ luyện tập, đánh giá và cải thiện năng lực.
+**Lời nói ngắn:**
+
+VSTEP không chỉ là một bài thi tiếng Anh thông thường mà còn liên quan trực tiếp đến tốt nghiệp, học sau đại học và chứng chỉ nghề nghiệp. Vì vậy nhu cầu luyện thi VSTEP là thực tế và có số lượng người học ổn định.
 
 ---
 
-## Slide 5 — Vì sao VSTEP quan trọng?
+## Slide 5 — Cấu trúc đề thi VSTEP và thang điểm
 
 **Phần:** Context
 
 **Nội dung:**
 
-**Why VSTEP Matters**
+| Kỹ năng | Cấu trúc tổng quan | Cách chấm trong hệ thống |
+|---|---|---|
+| Listening | Nghe và chọn đáp án | Chấm tự động bằng answer key |
+| Reading | Đọc hiểu, MCQ | Chấm tự động bằng answer key |
+| Writing | Task 1 thư/email, Task 2 essay | Chấm theo rubric/formula |
+| Speaking | 3 phần nói | Chấm theo rubric/formula + speech signals |
 
-- VSTEP là một yêu cầu năng lực tiếng Anh quan trọng tại Việt Nam.
-- VSTEP được sử dụng cho yêu cầu tốt nghiệp đại học.
-- VSTEP cũng được dùng cho chương trình sau đại học và chứng chỉ nghề nghiệp.
-- Bài thi bao gồm bốn kỹ năng: Listening, Reading, Writing và Speaking.
-- Người học cần một phương pháp luyện tập có định hướng thay vì chỉ dùng tài liệu tĩnh.
-- Writing và Speaking cần phản hồi chi tiết theo tiêu chí chấm điểm.
+- Band nội bộ: thang 0-10, làm tròn 0.5.
+- Mục tiêu slide: giới thiệu nhanh, không đi quá sâu vào học thuật.
 
----
+**Lời nói ngắn:**
 
-## Slide 6 — Cấu trúc bài thi VSTEP
-
-**Phần:** Context
-
-**Nội dung:**
-
-**VSTEP Test Structure**
-
-- Listening: 3 phần, 35 câu hỏi.
-- Reading: 4 bài đọc, 40 câu hỏi.
-- Writing: Task 1 thư/email (tối thiểu 120 từ, khoảng 20 phút); Task 2 essay (tối thiểu 250 từ, khoảng 40 phút).
-- Speaking: 3 phần, được đánh giá theo rubric và tín hiệu giọng nói.
-- Listening và Reading có thể chấm tự động bằng đáp án.
-- Writing và Speaking cần đánh giá theo rubric và phản hồi chi tiết.
-- Quy đổi band nội bộ: dưới 4.0 = chưa đạt B1; 4.0-5.5 = B1; 6.0-8.0 = B2; 8.5-10.0 = C1.
+VSTEP gồm bốn kỹ năng. Với Listening và Reading, hệ thống có thể chấm trực tiếp bằng đáp án. Với Writing và Speaking, điểm cần dựa trên tiêu chí và công thức chấm, nên đây là phần nhóm em tập trung xử lý kỹ hơn.
 
 ---
 
-## Slide 7 — Problems
+## Slide 6 — Problem: Thực trạng luyện thi hiện nay
 
 **Phần:** Problems
 
 **Nội dung:**
 
-**Current Learner Problems**
+- Nhiều trung tâm/lớp luyện thi chủ yếu bán khóa học và tài liệu.
+- Tài liệu thường phân tán: file Word, PDF, bài đăng Facebook, Google Drive.
+- Người học luyện đề nhiều nhưng thiếu lộ trình cải thiện kỹ năng.
+- Writing/Speaking thường thiếu phản hồi nhanh, chi tiết và nhất quán theo tiêu chí.
+- Người học khó biết: mình yếu kỹ năng nào, tiêu chí nào, nên học gì tiếp theo.
 
-- Tài liệu học bị phân tán ở PDF, Word, Facebook, Google Drive và nhiều website khác nhau.
-- Có nhiều mock test, nhưng người học nhận được ít hướng dẫn để cải thiện.
-- Phản hồi cho Writing và Speaking thường chung chung, chậm hoặc không dựa trên rubric.
-- Người học không biết rõ kỹ năng hoặc tiêu chí nào đang yếu.
-- Việc theo dõi tiến bộ dài hạn theo từng kỹ năng còn khó khăn.
+**Lời nói ngắn:**
+
+Vấn đề chính không phải là thiếu tài liệu, mà là thiếu một hệ thống có cấu trúc. Người học có thể làm rất nhiều đề, nhưng sau đó vẫn không biết mình yếu ở đâu và cần luyện gì để cải thiện.
+
+---
+
+## Slide 7 — Product Positioning: Giải pháp của nhóm
+
+**Phần:** Solution
+
+**Nội dung:**
+
+Hệ thống của nhóm hướng đến một vòng học tập liên tục:
+
+**Practice -> Scoring -> Feedback -> Recommendation -> Review -> Progress Tracking**
+
+- Luyện tập bốn kỹ năng theo định dạng VSTEP.
+- Đánh giá Writing/Speaking bằng rubric và công thức do hệ thống kiểm soát.
+- AI hỗ trợ trích xuất bằng chứng và tạo feedback, không quyết định điểm cuối.
+- Gợi ý học tập theo skill gap.
+- Ôn từ vựng bằng spaced repetition.
+- Theo dõi tiến độ trực quan.
+
+**Lời nói ngắn:**
+
+Điểm khác biệt của hệ thống là không dừng ở việc làm đề và xem điểm. Hệ thống biến kết quả thành phản hồi, gợi ý học tập và theo dõi tiến bộ để người học có hướng cải thiện rõ ràng.
 
 ---
 
@@ -123,355 +147,499 @@ Phần này giới thiệu lý do vì sao việc luyện thi VSTEP quan trọng 
 
 **Nội dung:**
 
-**System Actors**
+- **Learner:** luyện tập, làm mock test, xem điểm, feedback, learning path và ôn từ vựng.
+- **Teacher/Instructor:** theo dõi, hỗ trợ định hướng học tập, quản lý lịch/session khi cần.
+- **Staff:** quản lý nội dung học tập, đề thi, khóa học và vận hành.
+- **Admin:** quản lý người dùng, vai trò, cấu hình, thanh toán/khuyến mãi và thống kê.
 
-- Learner: luyện kỹ năng, làm mock test, nhận phản hồi, theo dõi gợi ý học tập và ôn từ vựng.
-- Teacher: hỗ trợ người học, theo dõi lịch đặt/lịch dạy và đưa ra định hướng khi cần.
-- Staff: quản lý khóa học, lịch học, nội dung, đề thi và hoạt động vận hành.
-- Admin: quản lý người dùng, vai trò, cấu hình hệ thống, thanh toán, khuyến mãi, đề thi và thống kê.
+**Lời nói ngắn:**
+
+Learner là actor trung tâm. Các actor còn lại hỗ trợ vận hành, quản lý nội dung và hỗ trợ quá trình học tập.
 
 ---
 
 ## Slide 9 — Main Features by Actors
 
-**Phần:** Main Features by Actors
+**Phần:** Main Features
 
 **Nội dung:**
 
-**Main Features by Actors**
+| Actor | Chức năng chính |
+|---|---|
+| Learner | Practice Listening/Reading/Writing/Speaking, Mock Test, Assessment Result, Progress, Learning Path, Vocabulary Review |
+| Teacher | Course/session support, lịch dạy, hỗ trợ học viên |
+| Staff | Content management, question bank, exam/practice content |
+| Admin | User/role management, system configuration, payment/promotion, reports |
 
-**Learner**
+**Lời nói ngắn:**
 
-- Luyện tập bốn kỹ năng và làm mock test.
-- Xem điểm số, phản hồi, tiến độ và gợi ý học tập.
-- Ôn từ vựng bằng spaced repetition.
-
-**Teacher**
-
-- Xem lịch giảng dạy và lịch đặt của học viên.
-- Hỗ trợ tiến độ học tập và đưa ra định hướng học tập.
-
-**Staff**
-
-- Quản lý khóa học, lịch học, nội dung, đề thi và vận hành.
-
-**Admin**
-
-- Quản lý người dùng, vai trò, cấu hình hệ thống, thanh toán, khuyến mãi và thống kê.
+Các chức năng được chia theo vai trò. Trong phần demo, nhóm em sẽ tập trung vào learner flow vì đây là luồng thể hiện rõ nhất giá trị sản phẩm.
 
 ---
 
 ## Slide 10 — Learner Flow
 
-**Phần:** Main Features by Actors
+**Phần:** Main Features
 
 **Nội dung:**
 
-**Learner Flow**
+1. Đăng nhập
+2. Chọn bài luyện hoặc mock test
+3. Nộp bài làm
+4. Hệ thống chấm điểm
+5. Xem feedback và điểm theo tiêu chí
+6. Nhận gợi ý học tập
+7. Ôn tập và theo dõi tiến độ
 
-Luồng học tập của người học gồm:
+**Lời nói ngắn:**
 
-1. Login
-2. Practice / Mock Test
-3. Assessment
-4. Feedback
-5. Recommendation
-6. Review
-7. Progress Tracking
-
-Luồng này cho thấy hệ thống kết nối quá trình luyện tập, đánh giá, phản hồi và cải thiện liên tục.
+Đây là luồng sử dụng chính của người học. Nhóm em sẽ dùng luồng này để demo thay vì trình bày quá nhiều lý thuyết.
 
 ---
 
-## Slide 11 — System Architecture
+## Slide 11 — Nguyên tắc chấm điểm cốt lõi
 
-**Phần:** System Architecture
+**Phần:** Scoring Core
 
 **Nội dung:**
 
-**System Architecture**
+**Không để AI quyết định điểm cuối cùng.**
 
-Phần này trình bày kiến trúc kỹ thuật chính của hệ thống, bao gồm các ứng dụng client, backend services, domain modules, external integrations và xử lý dữ liệu.
+- Rubric, trọng số và tham số được cấu hình trong hệ thống.
+- Code/formula parser tính điểm dựa trên công thức cố định.
+- AI chỉ hỗ trợ:
+  - trích xuất bằng chứng nội dung,
+  - nhận diện mức độ liên quan,
+  - hỗ trợ tạo feedback dễ hiểu.
+- Các chỉ số đầu vào được đo/đếm bằng code, speech service hoặc language tools.
+- Điểm cuối được tính bởi formula và được làm tròn theo rule của hệ thống.
+
+**Lời nói ngắn:**
+
+Đây là điểm nhóm em muốn nhấn mạnh. Hệ thống không hỏi AI "bài này mấy điểm". AI chỉ là công cụ hỗ trợ phân tích. Điểm cuối cùng được kiểm soát bởi code và công thức chấm của nhóm.
 
 ---
 
-## Slide 12 — System Overview
+## Slide 12 — Nguồn tiêu chí và cách chuẩn hóa rubric
 
-**Phần:** System Architecture
+**Phần:** Scoring Core
 
 **Nội dung:**
 
-**System Overview**
+- Cấu trúc tiêu chí bám theo định dạng và hướng đánh giá VSTEP.
+- Áp dụng cho ngữ cảnh luyện thi VSTEP tại Việt Nam.
+- Rubric được chuẩn hóa thành các tiêu chí, trọng số và tham số có thể cấu hình.
+- Automated thresholds là calibration nội bộ để đảm bảo hệ thống chấm nhất quán trong phạm vi luyện tập.
+- Official score vẫn cần giám khảo/đơn vị có thẩm quyền xác nhận.
 
-- Các ứng dụng client gồm Learner Web App, Mobile App và Admin App.
-- Backend API xử lý xác thực, phân quyền, kiểm tra dữ liệu, luật nghiệp vụ và service workflows.
-- Domain services gồm Practice & Exam, Assessment Engine, Learning và Course & Payment.
-- External integrations gồm AI Service, Speech Service và PayOS.
-- Backend kết nối các client applications với domain services và external providers.
+**Lời nói ngắn:**
+
+Nhóm em dùng tiêu chí VSTEP làm căn cứ thiết kế rubric. Tuy nhiên hệ thống là công cụ luyện tập, nên các ngưỡng tự động là phần nhóm em chuẩn hóa để tạo feedback nhất quán, không thay thế điểm chính thức.
 
 ---
 
-## Slide 13 — Backend and Data Processing
+## Slide 13 — Scoring Pipeline
 
-**Phần:** System Architecture
+**Phần:** Scoring Core
 
 **Nội dung:**
 
-**Backend and Data Processing**
+**Input -> Feature Extraction -> Criterion Scores -> Formula -> Final Band -> Feedback**
 
-- Backend tuân theo pattern: Controller -> FormRequest -> Service -> Model -> Resource.
-- Business logic được xử lý trong service layer.
-- Các tác vụ đánh giá Writing và Speaking được xử lý bất đồng bộ.
-- PostgreSQL lưu users, profiles, practice sessions, exams, submissions và assessment results.
-- Redis và Horizon hỗ trợ xử lý background jobs.
-- Object storage lưu audio Speaking và các media files.
+1. Người học nộp bài viết hoặc audio.
+2. Hệ thống trích xuất chỉ số: số từ, câu, đoạn, linking words, lỗi, transcript, speaking rate, pause count, pronunciation score...
+3. Công thức tính điểm từng tiêu chí.
+4. Công thức tổng hợp điểm cuối theo trọng số.
+5. Guardrails kiểm tra bài bất thường.
+6. AI tạo feedback dựa trên điểm và bằng chứng.
+
+**Lời nói ngắn:**
+
+Pipeline này cho thấy AI nằm sau phần tính điểm, không đứng ở vị trí quyết định điểm. Điểm được sinh ra từ các tiêu chí và chỉ số định lượng.
 
 ---
 
-## Slide 14 — Technology Stack
+## Slide 14 — Writing Scoring Formula
+
+**Phần:** Scoring Core
+
+**Nội dung:**
+
+| Tiêu chí | Trọng số | Tín hiệu đầu vào |
+|---|---:|---|
+| Task Fulfillment | 25% | points covered, points required, depth factor, examples, clear position, irrelevant content, word count |
+| Organization | 25% | paragraph count, linking words, sentence count, sentence variety, salutation/closing với Task 1 |
+| Grammar | 25% | grammar structure count, grammar errors, sentence count, punctuation errors |
+| Vocabulary | 25% | unique ratio, average word length, readability, CEFR/advanced ratio, spelling errors |
+
+**Công thức tổng:**
+
+`final_band = round_to_0_5(weighted_mean(criteria_scores))`
+
+**Guardrail nội bộ:**
+
+`Task Fulfillment <= avg(Grammar, Vocabulary, Organization) * tf_cap_ratio`
+
+**Lời nói ngắn:**
+
+Writing được chia thành bốn tiêu chí, mỗi tiêu chí có trọng số 25%. Điểm cuối là weighted mean và làm tròn 0.5. Ngoài ra có rule giới hạn Task Fulfillment để tránh trường hợp nội dung có vẻ đúng nhưng ngữ pháp, từ vựng, bố cục quá yếu vẫn bị chấm cao bất hợp lý.
+
+---
+
+## Slide 15 — Speaking Scoring Formula
+
+**Phần:** Scoring Core
+
+**Nội dung:**
+
+| Tiêu chí | Trọng số | Tín hiệu đầu vào |
+|---|---:|---|
+| Grammar | 20% | grammar structure count, language errors, sentence count |
+| Vocabulary | 20% | unique ratio, word length, readability, complex vocabulary |
+| Fluency | 20% | speaking rate, pause count, word count |
+| Discourse Management | 20% | linking words, sentence variety, content relevance factor |
+| Pronunciation | 20% | pronunciation score từ speech service |
+
+**Công thức tổng:**
+
+`final_band = round_to_0_5(weighted_mean(criteria_scores))`
+
+**Lời nói ngắn:**
+
+Speaking cũng không để AI tự chấm điểm cuối. Hệ thống dùng transcript, chỉ số giọng nói, độ trôi chảy và pronunciation signal để tính từng tiêu chí. AI chỉ hỗ trợ content relevance trong phạm vi kiểm soát.
+
+---
+
+## Slide 16 — Guardrails cho bài bất thường
+
+**Phần:** Scoring Core
+
+**Nội dung:**
+
+Hệ thống cần tránh chấm cao cho các trường hợp:
+
+- Lạc đề.
+- Quá ngắn.
+- Copy lại đề.
+- Lặp/spam nội dung.
+- Không phải tiếng Anh.
+- Audio rỗng hoặc transcript không đủ dữ liệu.
+
+**Cách xử lý:**
+
+- Content cap giới hạn điểm tổng khi content score thấp.
+- Short essay cap giới hạn điểm Task Fulfillment khi số từ quá thấp.
+- Evidence-based feedback giải thích vì sao bị giới hạn điểm.
+
+**Lời nói ngắn:**
+
+Phần guardrail rất quan trọng vì nếu chỉ nhìn hình thức hoặc để AI tự nhận xét, hệ thống có thể chấm cao cho bài bất thường. Nhóm em có rule để giới hạn điểm trong các trường hợp này.
+
+---
+
+## Slide 17 — Vocabulary Review: Anki/Spaced Repetition
+
+**Phần:** Learning Support
+
+**Nội dung:**
+
+- Hệ thống hỗ trợ học từ vựng bằng spaced repetition theo hướng Anki/FSRS.
+- Người học có thể ôn từ bằng flashcard, gõ từ, nghe và đảo chiều nghĩa.
+- Mỗi từ có trạng thái học tập: new, learning, review, relearning.
+- Hệ thống lưu difficulty, stability, lapse count, due date và lịch sử ôn tập.
+- Khi trả lời đúng: interval được giãn ra.
+- Khi trả lời sai: từ quay lại quá trình học/relearning.
+
+**See detail:** [Phụ lục A — Chi tiết Anki/FSRS](#phu-luc-a--chi-tiet-ankifsrs)
+
+**Lời nói ngắn:**
+
+Thuật toán spaced repetition không phải điểm mới về mặt học thuật, nên nhóm em chỉ trình bày ngắn. Nếu hội đồng hỏi sâu, nhóm em sẽ mở phần phụ lục để giải thích chi tiết hơn.
+
+---
+
+## Slide 18 — System Architecture Overview
+
+**Phần:** Architecture
+
+**Nội dung:**
+
+- **Client apps:** Learner Web App, Mobile App, Admin Portal.
+- **Backend API:** authentication, authorization, validation, business logic, assessment workflow.
+- **Domain modules:** Practice, Mock Test, Assessment, Learning Path, Vocabulary, Course, Payment, Notification, Content Management.
+- **Data layer:** PostgreSQL, Redis/Queue, object storage cho audio/media.
+- **External services:** AI service, speech service, payment service.
+
+**Lời nói ngắn:**
+
+Kiến trúc hệ thống được chia thành client, backend, domain modules, data layer và external services. Backend là nơi kiểm soát business logic và công thức chấm điểm.
+
+---
+
+## Slide 19 — Technology Snapshot
 
 **Phần:** Technology
 
 **Nội dung:**
 
-**Technology Stack**
+- Backend: Laravel/PHP, queue/background jobs cho assessment.
+- Database/Queue: PostgreSQL, Redis.
+- Web/Admin: React, TypeScript.
+- Mobile: React Native/Expo.
+- AI/Speech: dùng như service hỗ trợ trích xuất tín hiệu, transcript và feedback.
+- Deployment: Docker-based services, reverse proxy, CI/CD.
 
-- Backend: PHP 8.3, Laravel 13, Laravel Octane + FrankenPHP, Laravel Horizon, JWT Auth (php-open-source-saver/jwt-auth), Laravel AI 0.4.
-- Database và Queue: PostgreSQL và Redis.
-- Learner Web (frontend-v3): React 19.2, TypeScript 5.8, Vite 8, TanStack Query 5.99, TanStack Router 1.168, Tailwind CSS 4, Recharts 3.8.
-- Admin Portal: React 19.2, TypeScript 5.8, Vite 8, TanStack Query 5.99, TanStack Router 1.168, Ant Design 6, Recharts 3.8.
-- Mobile: Expo SDK 54, React Native 0.81, Expo Router 6, TanStack Query 5.62, Expo SecureStore, Expo Speech Recognition.
-- External integrations: dịch vụ AI, dịch vụ giọng nói, cổng thanh toán PayOS, Google Sign-In, lưu trữ đối tượng tương thích S3.
+**Lời nói ngắn:**
 
----
-
-## Slide 15 — CI/CD and Deployment
-
-**Phần:** Technology
-
-**Nội dung:**
-
-**CI/CD and Deployment**
-
-- GitHub Actions chạy quy trình triển khai.
-- Application images được đẩy lên GitHub Container Registry.
-- Hệ thống được triển khai lên VPS.
-- Traefik được dùng làm reverse proxy.
-- Runtime services gồm Backend API, PostgreSQL, Redis/Horizon và LanguageTool.
+Phần công nghệ nhóm em xin trình bày ngắn. Điểm cần nhấn mạnh là các tác vụ nặng như chấm Writing/Speaking được xử lý bất đồng bộ để không làm chậm trải nghiệm người dùng.
 
 ---
 
-## Slide 16 — Demo Workflow 1: Practice Submission
+## Slide 20 — Demo Workflow Plan
 
-**Phần:** Demo Workflow 1, 2, 3
+**Phần:** Demo Workflow Diagram
 
 **Nội dung:**
 
-**Demo Workflow 1 — Practice Submission**
+Nhóm em trình bày demo workflow bằng diagram theo ba luồng. Đây là phần minh họa quy trình trên slide, không phải demo live trên web:
 
-1. Người học đăng nhập.
-2. Người học chọn bài luyện Writing hoặc Speaking.
-3. Người học nộp bài viết hoặc audio Speaking.
-4. Backend kiểm tra dữ liệu và tạo assessment attempt.
-5. Tác vụ đánh giá nặng được đưa vào background job.
+1. **Workflow 1:** Learner Practice Submission.
+2. **Workflow 2:** Assessment Result và rubric feedback.
+3. **Workflow 3:** Learning Path, Progress Tracking và Vocabulary Review.
 
-**Mục tiêu demo:** cho thấy cách bài luyện của người học được chuyển thành dữ liệu đầu vào có cấu trúc cho quá trình đánh giá.
+**Thông điệp workflow:**
+
+`Practice -> Scoring -> Feedback -> Improvement`
+
+**Lời nói ngắn:**
+
+Sau khi đã trình bày cơ chế chính, nhóm em xin chuyển sang các workflow diagram để hội đồng thấy rõ dữ liệu đi qua hệ thống như thế nào.
 
 ---
 
-## Slide 17 — Demo Workflow 2: Assessment Result / Mock Test Result
+## Slide 21 — Demo Workflow 1: Practice Submission
 
-**Phần:** Demo Workflow 1, 2, 3
+**Phần:** Demo Workflow Diagram
 
 **Nội dung:**
 
-**Demo Workflow 2 — Assessment Result / Mock Test Result**
+Diagram nên thể hiện:
 
-- Người học xem overall band score (thang 0-10).
-- Người học xem điểm theo từng tiêu chí.
-- Người học xem điểm mạnh và gợi ý cải thiện do rubric sinh ra.
-- Listening và Reading được chấm đồng bộ bằng đáp án.
-- Writing và Speaking được chấm bất đồng bộ bằng assessment jobs theo cơ chế nhiều lớp:
-  1. Điểm thành phần theo tiêu chí (Writing: 4 tiêu chí; Speaking: 5 tiêu chí) trên thang 0-10.
-  2. Công thức tham chiếu trọng số đều cho Writing: TF 25% + Organization 25% + Grammar 25% + Vocabulary 25% (chỉ hiển thị).
-  3. Giới hạn Task-Fulfillment (TF <= trung bình(Grammar, Vocabulary, Organization) x tf_cap_ratio) để tránh nội dung lấn át.
-  4. Giới hạn nội dung cho ca bất thường: lạc đề, quá ngắn, copy đề, lặp/spam, không phải tiếng Anh.
-  5. Tín hiệu phụ theo tiêu chí (punctuation cho grammar, spelling cho vocabulary, tone/register cho task fulfillment).
-- Kết quả giải thích cách điểm được tạo ra thông qua rubric formulas, trọng số và bằng chứng.
+1. Đăng nhập bằng tài khoản learner.
+2. Chọn bài luyện Writing hoặc Speaking.
+3. Làm bài/nộp audio.
+4. Backend validate dữ liệu.
+5. Tạo assessment attempt.
+6. Đưa tác vụ chấm điểm vào background job nếu cần.
 
-**Lưu ý Speaking:** band Speaking dùng chấm tất định cho Grammar, Vocabulary, Fluency và Pronunciation; Discourse Management được điều chỉnh bởi content factor từ LLM.
+**Mục tiêu:** cho thấy hệ thống tiếp nhận bài làm và chuẩn bị dữ liệu cho assessment pipeline.
+
+**Lời nói ngắn:**
+
+Workflow đầu tiên tập trung vào luồng nộp bài. Điểm chính là mọi bài làm đều được lưu thành assessment attempt rõ ràng để phục vụ chấm điểm, feedback và theo dõi tiến độ.
 
 ---
 
-## Slide 18 — Công thức chấm điểm Writing
+## Slide 22 — Demo Workflow 2: Assessment Result
 
-**Phần:** Demo Workflow 1, 2, 3
+**Phần:** Demo Workflow Diagram
 
 **Nội dung:**
 
-**Writing Scoring Formula**
+Diagram nên thể hiện:
 
-**Công thức tham chiếu trọng số đều (chỉ hiển thị):**
-- Task Fulfillment: 25%
-- Organization: 25%
-- Grammar: 25%
-- Vocabulary: 25%
+- Assessment attempt được xử lý.
+- Feature extraction tạo các chỉ số đầu vào.
+- Formula tính criterion scores.
+- Weighted formula tính final band.
+- Feedback/evidence được sinh cho learner.
+- Learner xem overall band, criterion scores và feedback.
 
-**Cơ chế chấm nhiều lớp (code trong apps/backend-v2/app/Services/Grading/):**
-- Bước 1: Điểm thành phần theo tiêu chí (0-10 mỗi cái) qua WritingScoringFormula.
-- Bước 2: Giới hạn Task-Fulfillment - TF <= trung bình(grammar, vocabulary, organization) x tf_cap_ratio.
-- Bước 3: Band tổng có trọng số từ DB rubric (GradingRubric::computeOverallBand).
-- Bước 4: Giới hạn nội dung cho ca bất thường (lạc đề, quá ngắn, copy, spam, không phải tiếng Anh) qua ContentCapPolicy.
+**Mục tiêu:** chứng minh hệ thống có scoring transparency.
 
-**Tín hiệu phụ theo tiêu chí (cấu hình trong DB rubric, không có fallback):**
-- Grammar: số lỗi punctuation.
-- Vocabulary: số lỗi spelling.
-- Task Fulfillment: tone/register (chỉ Part 2).
+**Lời nói ngắn:**
 
-**Band cuối:** 0-10, làm tròn đến 0.5 gần nhất. AI chỉ cung cấp bằng chứng và content relevance; band cuối được code tính tất định.
+Workflow này làm rõ điểm tổng, điểm từng tiêu chí và feedback được tạo như thế nào. Nếu hội đồng hỏi về điểm số, nhóm em sẽ quay lại công thức ở slide 14 và 15 để giải thích.
 
 ---
 
-## Slide 19 — Demo Workflow 3: Learning Path and Vocabulary Review
+## Slide 23 — Demo Workflow 3: Learning Path và Vocabulary Review
 
-**Phần:** Demo Workflow 1, 2, 3
+**Phần:** Demo Workflow Diagram
 
 **Nội dung:**
 
-**Demo Workflow 3 — Learning Path and Vocabulary Review**
+Diagram nên thể hiện:
 
-- Hệ thống phân tích kỹ năng yếu và tiêu chí yếu từ kết quả đánh giá.
-- Learning Path bao phủ 6 chiều: vocabulary, grammar, writing, speaking, listening, reading.
-- Ngưỡng kỹ năng yếu: band dưới 5.0 sẽ kích hoạt gợi ý.
-- Ví dụ: Grammar score thấp dẫn đến đề xuất luyện grammar và Writing tasks liên quan.
-- Ôn từ vựng dùng FSRS v6 spaced repetition (các trường: difficulty, stability, lapses, due_at, last_review_at).
-- Trạng thái: new -> learning -> review -> (re)learning với các bước học kiểu Anki.
-- Trả lời đúng: stability tăng, interval giãn ra.
-- Trả lời sai: đếm lapse, kích hoạt relearning steps, interval rút ngắn.
+1. Assessment result cập nhật progress dashboard.
+2. Hệ thống xác định kỹ năng/tiêu chí yếu.
+3. Learning path đề xuất nội dung luyện tiếp.
+4. Vocabulary review lấy các từ đến hạn ôn.
+5. Learner review vocabulary.
+6. Spaced repetition cập nhật due date/interval.
+
+**Mục tiêu:** chứng minh hệ thống biến điểm số thành hành động học tập tiếp theo.
+
+**Lời nói ngắn:**
+
+Luồng này thể hiện phần adaptive support của hệ thống. Người học không chỉ biết điểm, mà còn biết mình nên luyện phần nào tiếp theo.
 
 ---
 
-## Slide 20 — Demo Scenario
+## Slide 24 — Differentiation
 
-**Phần:** Demo Workflow 1, 2, 3
-
-**Nội dung:**
-
-**Demo Scenario**
-
-Luồng demo dự kiến:
-
-1. Login as learner.
-2. Submit Writing Task 2.
-3. View overall score and criterion scores.
-4. View feedback.
-5. Check learning path.
-6. Review vocabulary.
-
-**Mục tiêu demo:** Practice -> Scoring -> Improvement.
-
----
-
-## Slide 21 — Differentiation
-
-**Phần:** Differentiation
+**Phần:** Different
 
 **Nội dung:**
 
-**Differentiation**
-
-| Existing Test Websites | Our System |
+| Hiện trạng | Hệ thống của nhóm |
 |---|---|
-| Test-focused | Practice + improvement-focused |
-| Mostly answer-key scoring | Rubric/formula-based scoring for Writing/Speaking |
-| Limited personalization | Skill-gap recommendation |
-| Weak progress tracking | Progress dashboard |
-| Limited feedback | Criterion scores + actionable feedback |
+| Luyện đề/tài liệu phân tán | Nền tảng có cấu trúc luyện tập |
+| Chủ yếu xem đáp án | Feedback theo tiêu chí |
+| Writing/Speaking khó phản hồi nhanh | Rubric/formula-based assessment |
+| Ít cá nhân hóa | Skill-gap recommendation |
+| Ít theo dõi dài hạn | Progress dashboard |
+| AI dễ bị hiểu là tự chấm | AI chỉ hỗ trợ, code tính điểm cuối |
 
-Hệ thống không chỉ cho người học biết kết quả, mà còn giải thích điểm yếu và đề xuất nội dung cần luyện tiếp theo.
+**Lời nói ngắn:**
+
+Khác biệt chính là hệ thống không chỉ cung cấp đề thi, mà cung cấp một quá trình luyện tập có dữ liệu, có phản hồi và có định hướng cải thiện.
 
 ---
 
-## Slide 22 — Achievements: Product
+## Slide 25 — Achievements
 
 **Phần:** Achievements
 
 **Nội dung:**
 
-**Achievements — Product**
+- Hoàn thành nền tảng Web/Mobile/Admin và Backend API.
+- Triển khai practice và mock test cho bốn kỹ năng.
+- Triển khai rubric-based assessment cho Writing và Speaking.
+- Tách rõ vai trò của AI và formula scoring.
+- Triển khai progress tracking, learning path và vocabulary review.
+- Có background jobs cho tác vụ assessment nặng.
+- Chuẩn bị tài liệu, source code và deployment package.
 
-- Đã triển khai nền tảng multi-client gồm Learner Web App, Mobile App, Admin App và Backend API.
-- Đã triển khai authentication, profile, practice, mock tests, assessment và progress tracking.
-- Đã triển khai vocabulary review, course support, booking, wallet/payment, notifications và content management support.
-- Đã triển khai rubric-based Writing and Speaking assessment.
-  - AI chỉ hỗ trợ trích bằng chứng và content relevance.
-  - Band cuối do code tính tất định theo công thức rubric (AI không chấm điểm cuối).
-- Đã triển khai asynchronous grading jobs và chuẩn bị Docker-based deployment.
+**Lời nói ngắn:**
 
----
-
-## Slide 23 — Achievements: Validation and Delivery
-
-**Phần:** Achievements
-
-**Nội dung:**
-
-**Achievements — Validation and Delivery**
-
-- Assessment validation được tách thành hai nhóm độc lập.
-- Benchmark (Cambridge/FCE có nguồn): 9/9 khớp với band CEFR dự kiến.
-- Guardrail (ca bất thường kiểu VSTEP): 5/5 xử lý an toàn.
-  - Lạc đề.
-  - Quá ngắn.
-  - Copy đề.
-  - Lặp/spam.
-  - Không phải tiếng Anh.
-- Hai nhóm cố ý tách riêng: benchmark đo tính nhất quán band điểm, guardrail chứng minh hệ thống không chấm cao cho ca bất thường.
-- Đã hoàn thành capstone reports, design documentation, testing documentation, user guide, final report, source code và deployment package.
+Kết quả quan trọng nhất là nhóm em đã hoàn thành được vòng học tập chính từ luyện tập, chấm điểm, phản hồi đến gợi ý học tiếp theo.
 
 ---
 
-## Slide 24 — Limitations
+## Slide 26 — Limitations
 
 **Phần:** Limitations
 
 **Nội dung:**
 
-**Limitations**
-
-- Hệ thống hiện tại chỉ hỗ trợ định dạng VSTEP B1-C1.
-- Chấm điểm tự động cho Writing và Speaking là công cụ hỗ trợ luyện tập, không thay thế giám khảo chính thức.
-- Hệ thống phụ thuộc vào external AI và speech-processing services.
+- Hệ thống hiện chỉ tập trung vào VSTEP B1-C1.
+- Chưa hỗ trợ IELTS/TOEFL/TOEIC.
+- Automated Writing/Speaking scoring chỉ là công cụ hỗ trợ luyện tập, không thay thế giám khảo chính thức.
+- Phụ thuộc external AI và speech-processing services.
 - Dynamic adaptive difficulty cho toàn bộ bài luyện là hướng phát triển tương lai.
-- Teacher-assigned individual modules là hướng phát triển tương lai.
-- Machine-learning predictive analytics và large-scale official validation là hướng phát triển tương lai.
+- Predictive analytics và validation quy mô lớn là hướng phát triển tương lai.
+
+**Lời nói ngắn:**
+
+Nhóm em xác định rõ giới hạn của hệ thống. Đặc biệt, điểm tự động phục vụ luyện tập và phản hồi, không được xem là điểm chính thức thay thế hội đồng chấm.
 
 ---
 
-## Slide 25 — Conclusion
+## Slide 27 — Conclusion
 
 **Phần:** Conclusion
 
 **Nội dung:**
 
-**Conclusion**
-
-Adaptive VSTEP Preparation System giúp người học trả lời ba câu hỏi quan trọng:
+Hệ thống giúp người học trả lời ba câu hỏi:
 
 1. Trình độ hiện tại của tôi là gì?
-2. Kỹ năng và tiêu chí nào của tôi đang yếu?
-3. Tôi nên luyện tập gì tiếp theo?
+2. Tôi đang yếu kỹ năng hoặc tiêu chí nào?
+3. Tôi nên luyện gì tiếp theo?
 
-Giá trị cốt lõi của hệ thống là kết nối luyện tập bốn kỹ năng, phản hồi theo rubric, gợi ý học tập cá nhân hóa, ôn từ vựng và theo dõi tiến độ thành một vòng cải thiện liên tục.
+Giá trị cốt lõi:
+
+**4-skill practice + formula-controlled assessment + rubric feedback + learning recommendation + spaced repetition + progress tracking**
+
+**Lời nói ngắn:**
+
+Tóm lại, hệ thống hướng tới việc biến quá trình luyện thi VSTEP thành một vòng cải thiện liên tục, có dữ liệu và có định hướng cá nhân hóa cho người học.
 
 ---
 
-## Slide 26 — Thank You
+## Slide 28 — Thank You
 
-**Phần:** Thank You
+**Phần:** Closing
 
 **Nội dung:**
 
-**Thanks for listening!**
+**Thank you for listening!**
 
 **Q&A**
+
+**Lời nói ngắn:**
+
+Phần trình bày của nhóm em đến đây là kết thúc. Nhóm em xin cảm ơn hội đồng và sẵn sàng trả lời câu hỏi.
+
+---
+
+<a id="phu-luc-a--chi-tiet-ankifsrs"></a>
+
+# Phụ lục A — Chi tiết Anki/FSRS
+
+**Mục đích:** chỉ mở khi hội đồng hỏi sâu về thuật toán spaced repetition.
+
+**Nội dung:**
+
+- Mỗi vocabulary item có các trạng thái học tập: new, learning, review, relearning.
+- Các tham số chính:
+  - `difficulty`: độ khó của thẻ đối với người học.
+  - `stability`: độ ổn định ghi nhớ.
+  - `lapses`: số lần quên/sai.
+  - `due_at`: thời điểm cần ôn lại.
+  - `last_review_at`: lần ôn gần nhất.
+- Sau mỗi lần review, hệ thống cập nhật trạng thái và due date.
+- Trả lời tốt làm tăng stability và kéo dài interval.
+- Trả lời sai làm tăng lapse, giảm interval và có thể chuyển về relearning.
+
+**Cách nói nếu bị hỏi:**
+
+Hệ thống áp dụng hướng spaced repetition giống Anki/FSRS để tối ưu thời điểm ôn từ. Đây không phải đóng góp thuật toán mới của nhóm, mà là phần ứng dụng vào vocabulary review trong hệ thống luyện thi VSTEP.
+
+---
+
+# Phụ lục B — Công thức chấm điểm chi tiết hơn
+
+**Mục đích:** dùng khi hội đồng hỏi sâu về logic chấm điểm.
+
+## B1. Tổng hợp điểm theo trọng số
+
+```text
+weighted_sum = sum(criteria_score_i / 10 * weight_i)
+total_weight = sum(weight_i)
+raw_band = weighted_sum / total_weight * 10
+final_band = round(raw_band * 2) / 2
+```
+
+## B2. Writing Task Fulfillment cap
+
+```text
+tf_cap = avg(grammar, vocabulary, organization) * tf_cap_ratio
+task_fulfillment = min(task_fulfillment, round_to_0_5(tf_cap))
+```
+
+## B3. Ví dụ tín hiệu đầu vào
+
+| Nhóm tín hiệu | Ví dụ |
+|---|---|
+| Text length | word count, sentence count, paragraph count |
+| Language quality | grammar errors, punctuation errors, spelling errors |
+| Organization | linking words, sentence variety, salutation/closing |
+| Vocabulary | unique ratio, CEFR weighted average, advanced ratio |
+| Speaking | transcript, speaking rate, pause count, pronunciation score |
+| Content | points covered, relevance factor, irrelevant content flag |
+
+**Cách nói nếu bị hỏi:**
+
+AI có thể hỗ trợ trích xuất một số bằng chứng nội dung, nhưng công thức tổng hợp và điểm cuối được chạy bởi code của hệ thống, có trọng số và guardrail rõ ràng.
