@@ -5,6 +5,7 @@ import type {
 	McqDetailItem,
 	SessionResultsData,
 	SkillKey,
+	SkillScores,
 } from "#/features/exam/types"
 import type { AssessmentFeedback, CriterionScore, RubricCriteriaMeta } from "#/features/grading/types"
 
@@ -12,7 +13,7 @@ export interface ExamResultUi {
 	examTitle: string
 	overallBand: number | null
 	level: string
-	scores: unknown
+	scores: SkillScores
 	activeSkills: SkillKey[]
 	hasPending: boolean
 	mcqParts: McqPart[]

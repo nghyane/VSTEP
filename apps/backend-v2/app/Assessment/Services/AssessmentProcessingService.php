@@ -110,6 +110,7 @@ final readonly class AssessmentProcessingService
             prompt: $attempt->prompt,
             requirements: $attempt->prompt['requirements'] ?? [],
             text: $response['text'] ?? null,
+            audioKey: $response['audio_key'] ?? null,
             audioUrl: $response['audio_url'] ?? null,
             metadata: $response['metadata'] ?? [],
         );

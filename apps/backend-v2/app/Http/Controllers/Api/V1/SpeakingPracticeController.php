@@ -127,7 +127,7 @@ final class SpeakingPracticeController extends Controller
         Gate::authorize('submit', $practiceSession);
         $submission = $this->speakingService->submitVstepPractice(
             $practiceSession,
-            $request->validated('audio_url'), (int) $request->validated('duration_seconds'),
+            $request->validated('audio_key'), (int) $request->validated('duration_seconds'),
         );
 
         return response()->json(['data' => [

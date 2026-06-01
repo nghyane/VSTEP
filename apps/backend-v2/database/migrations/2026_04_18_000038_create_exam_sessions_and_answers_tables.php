@@ -64,7 +64,8 @@ return new class extends Migration
             $table->foreignUuid('session_id')->constrained('exam_sessions')->cascadeOnDelete();
             $table->foreignUuid('profile_id')->constrained()->cascadeOnDelete();
             $table->foreignUuid('part_id')->constrained('exam_version_speaking_parts')->restrictOnDelete();
-            $table->string('audio_url', 500);
+            $table->string('audio_key', 500);
+            $table->string('audio_url', 1000);
             $table->smallInteger('duration_seconds');
             $table->longText('transcript')->nullable();
             $table->timestamp('submitted_at');

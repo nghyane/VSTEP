@@ -47,6 +47,7 @@ final class PracticeGradingResultService
         }
 
         return [
+            'attempt_id' => $attempt->id,
             'data' => $attempt->result === null ? null : [
                 'overall_band' => $attempt->result->overall_band,
                 'criterion_scores' => $attempt->result->criterion_scores,

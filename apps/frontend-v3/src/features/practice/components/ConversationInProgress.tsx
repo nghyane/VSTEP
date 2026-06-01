@@ -375,7 +375,6 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 						<ConversationTurnView
 							key={t.id}
 							turn={t}
-							scenario={scenario}
 							aiName={aiName}
 							isSpeaking={speakingTurnId === t.id}
 							highlightCharIndex={speakingTurnId === t.id ? speakingCharIndex : -1}

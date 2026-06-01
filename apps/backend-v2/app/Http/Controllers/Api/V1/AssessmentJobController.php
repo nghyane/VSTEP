@@ -21,6 +21,7 @@ final class AssessmentJobController extends Controller
         }
 
         $data = [
+            'attempt_id' => $assessmentJob->attempt_id,
             'status' => $assessmentJob->status->value,
             'progress' => $assessmentJob->progress ?? [],
         ];

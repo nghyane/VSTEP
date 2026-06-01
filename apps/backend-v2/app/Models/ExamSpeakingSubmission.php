@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
     'session_id',
     'profile_id',
     'part_id',
+    'audio_key',
     'audio_url',
     'duration_seconds',
     'transcript',

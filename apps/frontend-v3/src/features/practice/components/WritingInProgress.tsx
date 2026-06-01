@@ -49,13 +49,7 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 	)
 
 	if (submission) {
-		return (
-			<WritingGradingScreen
-				prompt={prompt}
-				submissionId={submission.submission_id}
-				jobId={submission.job_id}
-			/>
-		)
+		return <WritingGradingScreen prompt={prompt} submission={submission} responseText={text} />
 	}
 
 	return (

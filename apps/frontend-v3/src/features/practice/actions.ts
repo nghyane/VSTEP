@@ -1,6 +1,8 @@
 import type {
 	ConversationSessionDetail,
 	ConversationTurn,
+	ExerciseFeedback,
+	ExerciseFeedbackPayload,
 	PracticeSession,
 	SubmitResult,
 	WritingSubmission,
@@ -35,6 +37,10 @@ export async function submitReadingSession(
 	return api
 		.post(`practice/reading/sessions/${sessionId}/submit`, { json: { answers } })
 		.json<ApiResponse<SubmitResult>>()
+}
+
+export async function submitExerciseFeedback(payload: ExerciseFeedbackPayload) {
+	return api.post("feedback", { json: payload }).json<ApiResponse<ExerciseFeedback>>()
 }
 
 export async function startWritingSession(exerciseId: string) {
@@ -100,19 +106,4 @@ export async function getPronunciationReview(original: string, transcript: strin
 	return api
 		.post("practice/speaking/pronunciation-review", { json: { original, transcript } })
 		.json<ApiResponse<PronunciationReview>>()
-}
-
-export interface RequestFeedbackResponse {
-	submission_id: string
-	status: string
-	channel: string
-	event: string
-	cost_coins: number
-	charged: boolean
-}
-
-export async function requestWritingFeedback(submissionId: string) {
-	return api
-		.post(`practice/writing/submissions/${submissionId}/feedback`)
-		.json<ApiResponse<RequestFeedbackResponse>>()
 }

@@ -17,8 +17,8 @@ export function WritingHistory() {
 				{items.map((item) => (
 					<Link
 						key={item.id}
-						to="/grading/writing/$submissionId"
-						params={{ submissionId: item.id }}
+						to="/grading/assessment/$attemptId"
+						params={{ attemptId: item.attempt_id }}
 						className="card-interactive flex items-center gap-4 p-4"
 					>
 						<div className="flex-1 min-w-0">

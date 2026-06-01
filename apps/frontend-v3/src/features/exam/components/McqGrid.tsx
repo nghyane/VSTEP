@@ -3,7 +3,7 @@ import type { ExamVersionMcqItem, McqDetailItem } from "#/features/exam/types"
 const LETTER = ["A", "B", "C", "D"] as const
 
 interface Props {
-	items: ExamVersionMcqItem[]
+	items: Array<Pick<ExamVersionMcqItem, "id" | "display_order">>
 	detailMap: Map<string, McqDetailItem>
 }
 

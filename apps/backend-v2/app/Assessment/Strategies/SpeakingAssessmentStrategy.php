@@ -35,12 +35,12 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
 
     public function collectSignals(AssessmentInput $input): SignalBag
     {
-        $audioUrl = $input->audioUrl ?? '';
-        if ($audioUrl === '') {
-            throw new AssessmentFailedException('Speaking assessment requires audio_url.');
+        $audioKey = $input->audioKey ?? '';
+        if ($audioKey === '') {
+            throw new AssessmentFailedException('Speaking assessment requires audio_key.');
         }
 
-        $stt = $this->transcribe($audioUrl);
+        $stt = $this->transcribe($audioKey);
         $transcript = (string) $stt['text'];
         if ($transcript === '') {
             throw new AssessmentFailedException('Speech-to-text returned empty transcript.');
@@ -155,9 +155,9 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
     }
 
     /** @return array<string,mixed> */
-    private function transcribe(string $audioUrl): array
+    private function transcribe(string $audioKey): array
     {
-        $result = $this->stt->transcribeFromStorage($audioUrl, $this->audio);
+        $result = $this->stt->transcribeFromStorage($audioKey, $this->audio);
 
         if ($result === null) {
             throw new AssessmentFailedException('Speech-to-text transcription failed.');

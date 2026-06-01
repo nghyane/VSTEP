@@ -19,6 +19,7 @@ final class WritingSubmissionHistoryResource extends JsonResource
 
         return [
             'id' => $this->resource->id,
+            'attempt_id' => $this->resource->assessmentAttempt?->id,
             'submitted_at' => $this->resource->submitted_at,
             'word_count' => $this->resource->word_count,
             'overall_band' => $result?->overall_band,

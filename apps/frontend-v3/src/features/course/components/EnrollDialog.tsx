@@ -1,13 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { HTTPError } from "ky"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { ScrollArea } from "#/components/ScrollArea"
-import { enrollCourse } from "#/features/course/actions"
+import { createEnrollmentOrder } from "#/features/course/actions"
 import { EnrollFailurePopup } from "#/features/course/components/EnrollFailurePopup"
-import { EnrollSuccessPopup } from "#/features/course/components/EnrollSuccessPopup"
-import { SignaturePadField, type SignaturePadFieldRef } from "#/features/course/components/SignaturePadField"
 import type { CourseWithRelations } from "#/features/course/types"
 import { useSession } from "#/lib/auth"
 import { formatNumber, formatVnd } from "#/lib/utils"
@@ -18,37 +16,31 @@ interface Props {
 	course: CourseWithRelations
 }
 
-type Phase = "form" | "success" | "failure"
+type Phase = "form" | "failure"
 
 /**
- * 3-phase modal:
+ * 2-phase modal:
  *  - "form": tóm tắt giá + cam kết kỷ luật + checkbox agree → user thanh toán
- *  - "success": EnrollSuccessPopup (mascot vui + confetti)
  *  - "failure": EnrollFailurePopup (mascot buồn + retry)
  */
 export function EnrollDialog({ open, onClose, course }: Props) {
 	const { profile } = useSession()
 	const [agreed, setAgreed] = useState(false)
-	const [signatureEmpty, setSignatureEmpty] = useState(true)
-	const signatureRef = useRef<SignaturePadFieldRef>(null)
 	const [phase, setPhase] = useState<Phase>("form")
 	const [errorMessage, setErrorMessage] = useState<string | undefined>()
 	const queryClient = useQueryClient()
 	const enroll = useMutation({
-		mutationFn: () => {
-			const svg = signatureRef.current?.getSvg()
-			if (!svg) throw new Error("Vui lòng ký xác nhận cam kết trước khi thanh toán.")
-			return enrollCourse(course.id, svg)
-		},
-		onSuccess: () => {
-			// KHÔNG invalidate ngay — sẽ làm parent ($courseId) refetch → enrolled=true
-			// → EnrollCard unmount → EnrollDialog unmount → SuccessPopup chưa kịp hiện.
-			// Defer tới lúc user đóng popup (xem handleSuccessClose).
-			setPhase("success")
+		mutationFn: () => createEnrollmentOrder(course.id),
+		onSuccess: (order) => {
+			if (order.payment_url) {
+				window.location.href = order.payment_url
+				return
+			}
+			setErrorMessage("Không tạo được liên kết thanh toán. Vui lòng thử lại.")
+			setPhase("failure")
 		},
 		onError: async (e: unknown) => {
-			// 2 nguồn lỗi: (a) local throw "Vui lòng ký..." → dùng e.message trực tiếp;
-			// (b) HTTPError từ BE (422 v.v.) → đọc body.message để hiện tiếng Việt thay
+			// HTTPError từ BE (422 v.v.) → đọc body.message để hiện tiếng Việt thay
 			// vì raw ky error "Request failed with status code 422".
 			if (e instanceof HTTPError) {
 				const body = (await e.response
@@ -63,12 +55,6 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 		},
 	})
 
-	const handleSuccessClose = () => {
-		queryClient.invalidateQueries({ queryKey: ["courses"] })
-		queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] })
-		onClose()
-	}
-
 	useEffect(() => {
 		if (!open) return
 		const onKey = (e: KeyboardEvent) => {
@@ -81,7 +67,6 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 	useEffect(() => {
 		if (!open) {
 			setAgreed(false)
-			setSignatureEmpty(true)
 			setPhase("form")
 			setErrorMessage(undefined)
 		}
@@ -89,24 +74,16 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 
 	if (!open || typeof document === "undefined") return null
 
-	if (phase === "success") {
-		return (
-			<EnrollSuccessPopup
-				open
-				courseTitle={course.title}
-				bonusCoins={course.bonus_coins}
-				onClose={handleSuccessClose}
-			/>
-		)
-	}
-
 	if (phase === "failure") {
 		return (
 			<EnrollFailurePopup
 				open
 				message={errorMessage}
 				loading={enroll.isPending}
-				onClose={onClose}
+				onClose={() => {
+					queryClient.invalidateQueries({ queryKey: ["courses"] })
+					onClose()
+				}}
 				onRetry={() => enroll.mutate()}
 			/>
 		)
@@ -230,13 +207,7 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 								<input
 									type="checkbox"
 									checked={agreed}
-									onChange={(e) => {
-										setAgreed(e.target.checked)
-										if (!e.target.checked) {
-											signatureRef.current?.clear()
-											setSignatureEmpty(true)
-										}
-									}}
+									onChange={(e) => setAgreed(e.target.checked)}
 									disabled={enroll.isPending}
 									className="mt-0.5 size-4 shrink-0 cursor-pointer accent-primary"
 								/>
@@ -244,19 +215,6 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 									Tôi đã đọc và đồng ý với điều khoản kỷ luật của khóa học.
 								</span>
 							</label>
-
-							{agreed && (
-								<div className="space-y-2 animate-[slideIn_0.18s_ease-out]">
-									<p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-foreground">
-										Ký xác nhận
-									</p>
-									<SignaturePadField
-										ref={signatureRef}
-										disabled={enroll.isPending}
-										onChange={setSignatureEmpty}
-									/>
-								</div>
-							)}
 						</div>
 
 						<div className="flex justify-end gap-2.5">
@@ -271,10 +229,12 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 							<button
 								type="button"
 								onClick={() => enroll.mutate()}
-								disabled={!agreed || signatureEmpty || enroll.isPending}
+								disabled={!agreed || enroll.isPending}
 								className="btn btn-primary text-sm disabled:cursor-not-allowed disabled:opacity-50"
 							>
-								{enroll.isPending ? "Đang xử lý…" : `Thanh toán ${formatVnd(course.price_vnd)}`}
+								{enroll.isPending
+									? "Đang chuyển đến cổng thanh toán…"
+									: `Thanh toán ${formatVnd(course.price_vnd)}`}
 							</button>
 						</div>
 					</div>

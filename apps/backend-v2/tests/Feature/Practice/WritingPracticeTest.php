@@ -70,6 +70,7 @@ class WritingPracticeTest extends TestCase
             ]);
         $submit->assertOk();
         $submit->assertJsonPath('data.word_count', 11);
+        $submit->assertJsonStructure(['data' => ['attempt_id', 'job_id']]);
 
         $this->assertDatabaseHas('practice_writing_submissions', [
             'profile_id' => $profile->id,
@@ -105,10 +106,11 @@ class WritingPracticeTest extends TestCase
     public function test_paid_feedback_charges_once_and_is_idempotent(): void
     {
         [$user, $submission] = $this->gradedWritingSubmission();
+        $attempt = $submission->assessmentAttempt()->firstOrFail();
         $token = $this->tokenFor($user);
 
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/practice/writing/submissions/{$submission->id}/feedback")
+            ->postJson("/api/v1/assessment-attempts/{$attempt->id}/feedback")
             ->assertAccepted()
             ->assertJsonPath('data.status', 'ready')
             ->assertJsonPath('data.cost_coins', 1)
@@ -121,22 +123,59 @@ class WritingPracticeTest extends TestCase
         ]);
 
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/practice/writing/submissions/{$submission->id}/feedback")
+            ->postJson("/api/v1/assessment-attempts/{$attempt->id}/feedback")
             ->assertAccepted()
             ->assertJsonPath('data.charged', false);
 
         $this->assertSame(1, PracticeFeedbackRequest::query()->where('submission_id', $submission->id)->count());
     }
 
+    public function test_assessment_view_returns_normalized_writing_result(): void
+    {
+        [$user, $submission] = $this->gradedWritingSubmission();
+        $attempt = $submission->assessmentAttempt()->firstOrFail();
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/assessment-attempts/{$attempt->id}/view")
+            ->assertOk()
+            ->assertJsonPath('data.attempt_id', $attempt->id)
+            ->assertJsonPath('data.source.type', 'practice_writing')
+            ->assertJsonPath('data.context.skill', 'writing')
+            ->assertJsonPath('data.context.word_count', 6)
+            ->assertJsonPath('data.rubric.max_score', 10)
+            ->assertJsonPath('data.result.overall_band', 6)
+            ->assertJsonPath('data.feedback_request.can_request', true);
+    }
+
+    public function test_assessment_view_feedback_endpoint_charges_once(): void
+    {
+        [$user, $submission] = $this->gradedWritingSubmission();
+        $attempt = $submission->assessmentAttempt()->firstOrFail();
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/assessment-attempts/{$attempt->id}/feedback")
+            ->assertAccepted()
+            ->assertJsonPath('data.status', 'ready')
+            ->assertJsonPath('data.charged', true);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/assessment-attempts/{$attempt->id}/feedback")
+            ->assertAccepted()
+            ->assertJsonPath('data.charged', false);
+    }
+
     public function test_paid_feedback_rejects_non_owner(): void
     {
         [, $submission] = $this->gradedWritingSubmission();
+        $attempt = $submission->assessmentAttempt()->firstOrFail();
         $intruder = User::factory()->create();
         Profile::factory()->initial()->forAccount($intruder)->create();
         $token = $this->tokenFor($intruder);
 
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/practice/writing/submissions/{$submission->id}/feedback")
+            ->postJson("/api/v1/assessment-attempts/{$attempt->id}/feedback")
             ->assertForbidden();
     }
 

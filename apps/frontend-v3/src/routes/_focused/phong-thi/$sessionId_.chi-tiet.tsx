@@ -297,7 +297,18 @@ function WritingFeedbackBlock({
 					{task ? <span className="ml-2 text-xs font-medium text-muted">Part {task.part}</span> : null}
 				</p>
 				{feedback.overall_band !== null ? (
-					<BandPill band={feedback.overall_band} color={color} />
+					<div className="flex items-center gap-2">
+						<BandPill band={feedback.overall_band} color={color} />
+						{feedback.attempt_id && (
+							<Link
+								to="/grading/assessment/$attemptId"
+								params={{ attemptId: feedback.attempt_id }}
+								className="text-xs font-bold text-skill-writing hover:underline"
+							>
+								Chi tiết →
+							</Link>
+						)}
+					</div>
 				) : (
 					<span className="text-xs font-bold text-warning">AI đang chấm…</span>
 				)}

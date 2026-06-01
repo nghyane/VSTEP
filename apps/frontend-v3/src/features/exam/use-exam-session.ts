@@ -10,6 +10,7 @@ import type {
 	ExamVersionWritingTask,
 	McqAnswerPayload,
 	SkillKey,
+	SpeakingAnswerPayload,
 	SubmitSessionPayload,
 	SubmitSessionResult,
 	WritingAnswerPayload,
@@ -20,12 +21,18 @@ import { useToast } from "#/lib/toast"
 
 type ExamPhase = "device-check" | "active" | "expired" | "submitting" | "submitted"
 
+interface SpeakingRecording {
+	audioKey: string
+	audioUrl: string
+	durationSeconds: number
+}
+
 interface ExamState {
 	phase: ExamPhase
 	skillIdx: number
 	mcqAnswers: Map<string, number>
 	writingAnswers: Map<string, string>
-	speakingDone: Set<string>
+	speakingAnswers: Map<string, SpeakingRecording>
 	confirmSubmit: boolean
 	confirmNextSkill: boolean
 }
@@ -34,7 +41,13 @@ type ExamAction =
 	| { type: "START_EXAM" }
 	| { type: "ANSWER_MCQ"; itemId: string; selectedIndex: number }
 	| { type: "ANSWER_WRITING"; taskId: string; text: string }
-	| { type: "MARK_SPEAKING_DONE"; partId: string }
+	| {
+			type: "MARK_SPEAKING_DONE"
+			partId: string
+			audioKey: string
+			audioUrl: string
+			durationSeconds: number
+	  }
 	| { type: "UNMARK_SPEAKING_DONE"; partId: string }
 	| { type: "NEXT_SKILL" }
 	| { type: "SHOW_CONFIRM_SUBMIT" }
@@ -60,14 +73,18 @@ function examReducer(state: ExamState, action: ExamAction): ExamState {
 			return { ...state, writingAnswers: next }
 		}
 		case "MARK_SPEAKING_DONE": {
-			const next = new Set(state.speakingDone)
-			next.add(action.partId)
-			return { ...state, speakingDone: next }
+			const next = new Map(state.speakingAnswers)
+			next.set(action.partId, {
+				audioKey: action.audioKey,
+				audioUrl: action.audioUrl,
+				durationSeconds: action.durationSeconds,
+			})
+			return { ...state, speakingAnswers: next }
 		}
 		case "UNMARK_SPEAKING_DONE": {
-			const next = new Set(state.speakingDone)
+			const next = new Map(state.speakingAnswers)
 			next.delete(action.partId)
-			return { ...state, speakingDone: next }
+			return { ...state, speakingAnswers: next }
 		}
 		case "NEXT_SKILL":
 			return { ...state, skillIdx: state.skillIdx + 1, confirmNextSkill: false }
@@ -134,8 +151,7 @@ function buildMcqPayload(
 // User có thể thoát giữa chừng (đóng tab, crash, refresh). BE lưu draft snapshot
 // qua PUT /exam-sessions/{id}/draft (1 row/session). Reducer init đọc snapshot
 // đầu (initialDraft prop), effect debounce gọi mutation khi state thay đổi.
-// Speaking audio URL hiện tại không nằm trong reducer state → user vẫn phải ghi
-// âm lại sau khi resume; các phần khác được khôi phục đầy đủ.
+// Speaking stores audio_key for submit/STT and audio_url for public playback preview.
 
 const DRAFT_DEBOUNCE_MS = 1500
 
@@ -150,8 +166,44 @@ function buildDraftPayload(state: ExamState): ExamDraftPayload {
 			task_id: taskId,
 			text,
 		})),
-		speaking_marks: Array.from(state.speakingDone, (partId) => ({ part_id: partId })),
+		speaking_marks: Array.from(state.speakingAnswers, ([partId, answer]) => ({
+			part_id: partId,
+			audio_key: answer.audioKey,
+			audio_url: answer.audioUrl,
+			duration_seconds: answer.durationSeconds,
+		})),
 	}
+}
+
+function buildSpeakingPayload(answers: Map<string, SpeakingRecording>): SpeakingAnswerPayload[] {
+	return Array.from(answers, ([partId, answer]) => ({
+		part_id: partId,
+		audio_key: answer.audioKey,
+		duration_seconds: answer.durationSeconds,
+	}))
+}
+
+function buildInitialSpeakingAnswers(
+	marks: Array<{
+		part_id: string
+		audio_key?: string | null
+		audio_url?: string | null
+		duration_seconds?: number | null
+	}>,
+): Map<string, SpeakingRecording> {
+	const entries: Array<[string, SpeakingRecording]> = []
+	for (const mark of marks) {
+		if (!mark.audio_key || !mark.audio_url || !mark.duration_seconds) continue
+		entries.push([
+			mark.part_id,
+			{
+				audioKey: mark.audio_key,
+				audioUrl: mark.audio_url,
+				durationSeconds: mark.duration_seconds,
+			},
+		])
+	}
+	return new Map(entries)
 }
 
 // ─── Main hook ────────────────────────────────────────────────────────────────
@@ -188,7 +240,7 @@ export function useExamSession({
 			skillIdx: draft?.skill_idx ?? 0,
 			mcqAnswers: new Map((draft?.mcq_answers ?? []).map((m) => [m.item_ref_id, m.selected_index] as const)),
 			writingAnswers: new Map((draft?.writing_answers ?? []).map((w) => [w.task_id, w.text] as const)),
-			speakingDone: new Set((draft?.speaking_marks ?? []).map((s) => s.part_id)),
+			speakingAnswers: buildInitialSpeakingAnswers(draft?.speaking_marks ?? []),
 			confirmSubmit: false,
 			confirmNextSkill: false,
 		}
@@ -287,13 +339,17 @@ export function useExamSession({
 					})
 					.filter((x): x is WritingAnswerPayload => x !== null)
 			: []
-		submitMutation.mutate({ mcq_answers, writing_answers })
+		const speaking_answers = activeSkills.includes("speaking")
+			? buildSpeakingPayload(state.speakingAnswers)
+			: []
+		submitMutation.mutate({ mcq_answers, writing_answers, speaking_answers })
 	}, [
 		activeSkills,
 		listeningItems,
 		readingItems,
 		state.mcqAnswers,
 		state.phase,
+		state.speakingAnswers,
 		state.writingAnswers,
 		submitMutation,
 		writingTasks,
@@ -307,9 +363,12 @@ export function useExamSession({
 		dispatch({ type: "ANSWER_WRITING", taskId, text })
 	}, [])
 
-	const handleMarkSpeakingDone = useCallback((partId: string) => {
-		dispatch({ type: "MARK_SPEAKING_DONE", partId })
-	}, [])
+	const handleMarkSpeakingDone = useCallback(
+		(partId: string, audioKey: string, audioUrl: string, durationSeconds: number) => {
+			dispatch({ type: "MARK_SPEAKING_DONE", partId, audioKey, audioUrl, durationSeconds })
+		},
+		[],
+	)
 
 	const handleUnmarkSpeakingDone = useCallback((partId: string) => {
 		dispatch({ type: "UNMARK_SPEAKING_DONE", partId })
@@ -340,13 +399,17 @@ export function useExamSession({
 					})
 					.filter((x): x is WritingAnswerPayload => x !== null)
 			: []
-		submitMutation.mutate({ mcq_answers, writing_answers })
+		const speaking_answers = activeSkills.includes("speaking")
+			? buildSpeakingPayload(state.speakingAnswers)
+			: []
+		submitMutation.mutate({ mcq_answers, writing_answers, speaking_answers })
 	}, [
 		activeSkills,
 		listeningItems,
 		readingItems,
 		writingTasks,
 		state.mcqAnswers,
+		state.speakingAnswers,
 		state.writingAnswers,
 		submitMutation,
 	])

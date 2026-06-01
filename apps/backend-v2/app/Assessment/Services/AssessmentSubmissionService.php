@@ -35,6 +35,7 @@ final readonly class AssessmentSubmissionService
                 ],
                 'response_payload' => [
                     'text' => $input->text,
+                    'audio_key' => $input->audioKey,
                     'audio_url' => $input->audioUrl,
                     'metadata' => $input->metadata,
                 ],

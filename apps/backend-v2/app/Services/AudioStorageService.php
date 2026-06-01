@@ -7,17 +7,16 @@ namespace App\Services;
 use Aws\S3\S3Client;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Audio file storage via R2 (S3-compatible).
  *
  * Upload flow:
- * 1. Client calls POST /audio/presign → gets { upload_url, audio_key }
+ * 1. Client calls POST /audio/presign → gets { upload_url, audio_key, audio_url }
  * 2. Client PUTs file directly to upload_url (presigned)
  * 3. Client sends audio_key back in submission request
- * 4. Backend verifies key exists before accepting submission
- *
- * Download: presigned GET URL scoped per profile (15 min TTL).
+ * 4. Backend verifies key ownership/existence and derives public audio_url
  */
 final class AudioStorageService
 {
@@ -30,9 +29,9 @@ final class AudioStorageService
     /**
      * Generate presigned PUT URL for client upload.
      *
-     * @return array{upload_url: string, audio_key: string}
+     * @return array{upload_url: string, audio_key: string, audio_url: string}
      */
-    public function presignUpload(string $profileId, string $context = 'speaking', string $contentType = 'audio/webm', string $extension = 'webm'): array
+    public function presignUpload(string $profileId, string $context, string $contentType = 'audio/webm', string $extension = 'webm'): array
     {
         $extension = ltrim(strtolower($extension), '.');
         if (! preg_match('/^[a-z0-9]{2,8}$/', $extension)) {
@@ -67,6 +66,7 @@ final class AudioStorageService
         return [
             'upload_url' => (string) $presigned->getUri(),
             'audio_key' => $key,
+            'audio_url' => $this->publicUrl($key),
         ];
     }
 
@@ -132,10 +132,26 @@ final class AudioStorageService
     }
 
     /**
-     * Get full URL (non-presigned, for internal use).
+     * Public playback URL for learner-uploaded audio.
      */
-    public function url(string $audioKey): string
+    public function publicUrl(string $audioKey): string
     {
         return Storage::disk('s3')->url($audioKey);
+    }
+
+    public function assertOwnedUploadedAudio(string $profileId, string $audioKey, string $context): void
+    {
+        $prefix = sprintf('audio/%s/%s/', $context, $profileId);
+        if (! str_starts_with($audioKey, $prefix)) {
+            throw ValidationException::withMessages([
+                'audio_key' => ['Audio không thuộc hồ sơ hoặc ngữ cảnh hiện tại.'],
+            ]);
+        }
+
+        if (! $this->exists($audioKey)) {
+            throw ValidationException::withMessages([
+                'audio_key' => ['Không tìm thấy file audio đã upload. Vui lòng ghi âm lại.'],
+            ]);
+        }
     }
 }
