@@ -17,21 +17,25 @@ function daysUntil(deadline: string): number {
 
 export function EditProfileForm({ profile, onSubmit, onCancel }: Props) {
 	const form = useForm({
-		defaultValues: { nickname: profile.nickname, target_deadline: profile.target_deadline },
+		defaultValues: {
+			nickname: profile.nickname,
+			target_deadline: profile.target_deadline,
+		},
 		onSubmit: async ({ value }) => {
 			await onSubmit(value)
 		},
 	})
 
 	return (
-		<button
-			type="button"
-			aria-label="Đóng"
+		<div
+			role="presentation"
 			onClick={onCancel}
+			onKeyDown={(e) => e.key === "Escape" && onCancel()}
 			className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-[fadeIn_200ms_ease-out]"
 		>
 			<form
 				onClick={(e) => e.stopPropagation()}
+				onKeyDown={(e) => e.stopPropagation()}
 				onSubmit={(e) => {
 					e.preventDefault()
 					void form.handleSubmit()
@@ -57,7 +61,7 @@ export function EditProfileForm({ profile, onSubmit, onCancel }: Props) {
 							{profile.target_level}
 						</span>
 					</div>
-					<h3 className="font-extrabold text-xl text-foreground">Chỉnh sửa mục tiêu</h3>
+					<h3 className="font-extrabold text-xl text-foreground">Chỉnh sửa hồ sơ</h3>
 					<p className="text-xs text-subtle mt-1">Cập nhật thông tin lộ trình của bạn</p>
 				</div>
 
@@ -78,7 +82,6 @@ export function EditProfileForm({ profile, onSubmit, onCancel }: Props) {
 						)}
 					</form.Field>
 
-					{/* Deadline */}
 					<form.Field name="target_deadline">
 						{(field) => (
 							<FormField
@@ -100,7 +103,6 @@ export function EditProfileForm({ profile, onSubmit, onCancel }: Props) {
 						)}
 					</form.Field>
 
-					{/* Level (read-only) */}
 					<div className="bg-background rounded-(--radius-card) p-4 border-2 border-dashed border-border">
 						<p className="text-xs font-extrabold uppercase tracking-wider text-subtle mb-1">
 							Trình độ mục tiêu
@@ -126,7 +128,7 @@ export function EditProfileForm({ profile, onSubmit, onCancel }: Props) {
 					</div>
 				</div>
 			</form>
-		</button>
+		</div>
 	)
 }
 

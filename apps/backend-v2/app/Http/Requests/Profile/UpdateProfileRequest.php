@@ -24,19 +24,25 @@ final class UpdateProfileRequest extends FormRequest
         ];
     }
 
-    /**
-     * Reject changes to target_level after profile creation.
-     */
     public function withValidator($validator): void
     {
         $validator->after(function ($validator): void {
             $profile = $this->route('profile');
-            if ($profile instanceof Profile
-                && $this->has('target_level')
-                && $this->input('target_level') !== $profile->target_level) {
+            if (! $profile instanceof Profile) {
+                return;
+            }
+
+            if ($this->has('target_level') && $this->input('target_level') !== $profile->target_level) {
                 $validator->errors()->add(
                     'target_level',
                     'Target level is immutable. Create a new profile to change target.',
+                );
+            }
+
+            if ($this->has('entry_level') && $this->input('entry_level') !== $profile->entry_level) {
+                $validator->errors()->add(
+                    'entry_level',
+                    'Entry level is immutable. Create a new profile to change learning baseline.',
                 );
             }
         });

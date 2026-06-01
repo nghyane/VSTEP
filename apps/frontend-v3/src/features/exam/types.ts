@@ -1,22 +1,6 @@
 export type SkillKey = "listening" | "reading" | "writing" | "speaking"
 export type SkillScores = Record<SkillKey, number | null>
 
-export interface AppConfig {
-	wallet: {
-		onboarding_initial_coins: number
-	}
-	pricing: {
-		exam: {
-			full_test_cost_coins: number
-			custom_per_skill_coins: number
-			max_cost_coins: number
-		}
-		practice: {
-			feedback_cost_coins: number
-		}
-	}
-}
-
 export interface Exam {
 	id: string
 	slug: string

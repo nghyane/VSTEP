@@ -25,6 +25,7 @@ const NAMESPACE_LABELS: Record<string, string> = {
 	exam: "Đề thi (chi phí coin)",
 	support: "Hỗ trợ trong drill",
 	onboarding: "Onboarding",
+	profile: "Profile",
 }
 
 export function namespaceLabel(ns: string): string {
@@ -47,6 +48,7 @@ const KEY_LABELS: Record<string, string> = {
 	"exam.custom_per_skill_coins": "Xu/kỹ năng khi thi Custom VSTEP",
 	"support.level_costs": "Xu trừ khi bật gợi ý trong drill",
 	"onboarding.initial_coins": "Xu tặng khi tạo profile đầu tiên",
+	"profile.max_profiles_per_account": "Số hồ sơ tối đa mỗi tài khoản",
 }
 
 export function keyLabel(key: string): string {
@@ -80,6 +82,8 @@ const KEY_DESCRIPTIONS: Record<string, string> = {
 		'Số xu trừ khi học viên bật mức gợi ý trong drill. JSON dạng {level: cost}. VD {"1": 1, "2": 2} = level 1 trừ 1 xu, level 2 trừ 2 xu.',
 	"onboarding.initial_coins":
 		"Số xu hệ thống tự tặng vào ví khi học viên tạo profile đầu tiên (mỗi account chỉ nhận một lần duy nhất).",
+	"profile.max_profiles_per_account":
+		"Giới hạn số hồ sơ học tập mà một tài khoản học viên được tạo. Mỗi hồ sơ là một mục tiêu/lộ trình riêng; muốn đổi level mục tiêu thì tạo hồ sơ mới.",
 }
 
 export function keyDescription(key: string, fallback: string | null): string {

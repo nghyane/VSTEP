@@ -1,7 +1,9 @@
+import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
 import { Header } from "#/components/Header"
+import { appConfigQuery } from "#/features/config/queries"
 import { ChangePasswordDialog } from "#/features/profile/components/ChangePasswordDialog"
 import { CreateProfileForm } from "#/features/profile/components/CreateProfileForm"
 import { EditProfileForm } from "#/features/profile/components/EditProfileForm"
@@ -27,9 +29,12 @@ function daysUntil(deadline: string): number {
 function ProfilePage() {
 	const { edit } = Route.useSearch()
 	const p = useProfilePage(edit)
+	const config = useQuery(appConfigQuery)
 	const [showChangePassword, setShowChangePassword] = useState(false)
 
-	if (p.isLoading || !p.profiles) return <Header title="Hồ sơ" />
+	if (p.isLoading || config.isLoading || !p.profiles || !config.data) return <Header title="Hồ sơ" />
+	const maxProfiles = config.data.data.profile.max_profiles_per_account
+	const canCreateProfile = p.profiles.length < maxProfiles
 
 	return (
 		<>
@@ -38,7 +43,10 @@ function ProfilePage() {
 				{/* Profile selector — Netflix style */}
 				<section className="text-center">
 					<h3 className="font-extrabold text-2xl text-foreground mb-1">Mục tiêu của bạn</h3>
-					<p className="text-sm text-subtle mb-8">Mỗi mục tiêu là một lộ trình luyện tập riêng</p>
+					<p className="text-sm text-subtle mb-2">Mỗi mục tiêu là một lộ trình luyện tập riêng</p>
+					<p className="text-xs font-bold text-subtle mb-8">
+						{p.profiles.length}/{maxProfiles} hồ sơ
+					</p>
 
 					<div className="flex flex-wrap items-start justify-center gap-6">
 						{p.profiles.map((prof) => (
@@ -52,7 +60,7 @@ function ProfilePage() {
 						))}
 
 						{/* Add new */}
-						{!p.showCreate && (
+						{!p.showCreate && canCreateProfile && (
 							<button
 								type="button"
 								onClick={() => p.setShowCreate(true)}
@@ -67,6 +75,12 @@ function ProfilePage() {
 							</button>
 						)}
 					</div>
+					{!canCreateProfile && (
+						<p className="mt-6 text-xs font-bold text-subtle">
+							Bạn đã đạt giới hạn {maxProfiles} hồ sơ. Hãy xoá hồ sơ không dùng hoặc liên hệ hỗ trợ nếu cần
+							tạo thêm.
+						</p>
+					)}
 				</section>
 
 				{/* Forms */}

@@ -109,7 +109,7 @@ export function EditProfileSheet({ profile, onClose }: Props) {
             <View style={[s.avatarPreview, { backgroundColor: c.primary }]}>
               <Text style={s.avatarText}>{profile.nickname.charAt(0).toUpperCase()}</Text>
             </View>
-            <Text style={[s.title, { color: c.foreground }]}>Chỉnh sửa mục tiêu</Text>
+            <Text style={[s.title, { color: c.foreground }]}>Chỉnh sửa hồ sơ</Text>
             <Text style={[s.sub, { color: c.subtle }]}>Cập nhật thông tin lộ trình của bạn</Text>
           </View>
 
