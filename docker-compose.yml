@@ -63,20 +63,11 @@ services:
 
   # Laravel API
   backend:
-    build: ./apps/backend-v2
+    image: ghcr.io/${IMAGE_OWNER:-nghyane}/vstep-backend:${BACKEND_IMAGE_TAG:-main}
+    pull_policy: always
     env_file:
       - ./apps/backend-v2/.env
-    volumes:
-      - ./apps/backend-v2:/app
-      - backend_vendor:/app/vendor
-    command: >
-      sh -c "
-        composer install --no-dev --optimize-autoloader --quiet &&
-        php artisan migrate --force &&
-        php artisan db:seed --force &&
-        php artisan storage:link 2>/dev/null;
-        php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --workers=auto --max-requests=500
-      "
+    command: php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --workers=auto --max-requests=500
     expose:
       - "8000"
     labels:
@@ -117,23 +108,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    develop:
-      watch:
-        - action: sync
-          path: ./apps/backend-v2/app
-          target: /app/app
-        - action: sync
-          path: ./apps/backend-v2/routes
-          target: /app/routes
-        - action: sync
-          path: ./apps/backend-v2/database
-          target: /app/database
-        - action: rebuild
-          path: ./apps/backend-v2/composer.json
+    restart: unless-stopped
 
   # Frontend SPA — image built in CI (ghcr.io), VPS only pulls
   frontend:
-    image: ghcr.io/${IMAGE_OWNER:-nghyane}/vstep-frontend:${IMAGE_TAG:-main}
+    image: ghcr.io/${IMAGE_OWNER:-nghyane}/vstep-frontend:${FRONTEND_IMAGE_TAG:-main}
     pull_policy: always
     expose:
       - "80"
@@ -154,7 +133,7 @@ services:
 
   # Admin SPA — image built in CI (ghcr.io), VPS only pulls
   admin:
-    image: ghcr.io/${IMAGE_OWNER:-nghyane}/vstep-admin:${IMAGE_TAG:-main}
+    image: ghcr.io/${IMAGE_OWNER:-nghyane}/vstep-admin:${ADMIN_IMAGE_TAG:-main}
     pull_policy: always
     expose:
       - "80"
@@ -175,7 +154,8 @@ services:
 
   # Laravel Horizon — queue dashboard + worker management
   horizon:
-    build: ./apps/backend-v2
+    image: ghcr.io/${IMAGE_OWNER:-nghyane}/vstep-backend:${BACKEND_IMAGE_TAG:-main}
+    pull_policy: always
     env_file:
       - ./apps/backend-v2/.env
     command: php artisan horizon

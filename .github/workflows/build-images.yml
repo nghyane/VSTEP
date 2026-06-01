@@ -1,4 +1,4 @@
-name: Build SPA Images
+name: Build and Deploy App Images
 
 on:
   push:
@@ -6,7 +6,9 @@ on:
     paths:
       - 'apps/frontend-v3/**'
       - 'apps/admin/**'
+      - 'apps/backend-v2/**'
       - 'docker-compose.yml'
+      - 'docker-compose.override.yml'
       - '.github/workflows/build-images.yml'
   workflow_dispatch:
 
@@ -25,6 +27,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - app: backend
+            context: ./apps/backend-v2
+            image: vstep-backend
+            args: |
           - app: frontend
             context: ./apps/frontend-v3
             image: vstep-frontend
@@ -77,9 +83,59 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /opt/vstep
-            git config user.email "deploy@vstepgo.com"
-            git config user.name "VSTEP Deploy"
-            git pull --no-rebase origin main
-            docker compose -f docker-compose.yml --env-file .env pull frontend admin
-            docker compose -f docker-compose.yml --env-file .env up -d --no-build frontend admin
+
+            set_compose_env() {
+              key="$1"
+              value="$2"
+              if grep -q "^${key}=" .env; then
+                sed -i "s|^${key}=.*|${key}=${value}|" .env
+              else
+                printf '\n%s=%s\n' "$key" "$value" >> .env
+              fi
+            }
+
+            set_backend_env() {
+              key="$1"
+              value="$2"
+              if grep -q "^${key}=" apps/backend-v2/.env; then
+                sed -i "s|^${key}=.*|${key}=${value}|" apps/backend-v2/.env
+              else
+                printf '\n%s=%s\n' "$key" "$value" >> apps/backend-v2/.env
+              fi
+            }
+
+            tag=$(printf '%.7s' '${{ github.sha }}')
+            set_compose_env IMAGE_OWNER '${{ github.repository_owner }}'
+            set_compose_env BACKEND_IMAGE_TAG "$tag"
+            set_compose_env FRONTEND_IMAGE_TAG "$tag"
+            set_compose_env ADMIN_IMAGE_TAG "$tag"
+
+            set_backend_env FILESYSTEM_DISK s3
+            set_backend_env AWS_DEFAULT_REGION auto
+            set_backend_env AWS_BUCKET vstep
+            set_backend_env AWS_URL https://pub-2c7bac3350414b75b3766a5a511dc672.r2.dev
+            set_backend_env AWS_ENDPOINT https://11a58966d1289d0387eebba638a19cc3.r2.cloudflarestorage.com
+            set_backend_env AWS_USE_PATH_STYLE_ENDPOINT true
+
+            missing=""
+            for key in \
+              APP_KEY JWT_SECRET \
+              AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_BUCKET AWS_ENDPOINT AWS_URL \
+              AZURE_SPEECH_KEY AZURE_SPEECH_REGION \
+              PACKY_URL PACKY_API_KEY \
+              PAYOS_CLIENT_ID PAYOS_API_KEY PAYOS_CHECKSUM_KEY
+            do
+              if ! grep -Eq "^${key}=.+" apps/backend-v2/.env; then
+                missing="$missing $key"
+              fi
+            done
+
+            if [ -n "$missing" ]; then
+              echo "Missing required backend env:$missing" >&2
+              exit 1
+            fi
+
+            docker compose -f docker-compose.yml --env-file .env pull backend frontend admin
+            docker compose -f docker-compose.yml --env-file .env run --rm backend php artisan migrate --force
+            docker compose -f docker-compose.yml --env-file .env up -d backend horizon frontend admin
             docker image prune -f

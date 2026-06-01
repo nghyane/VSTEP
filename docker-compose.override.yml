@@ -23,6 +23,13 @@ services:
         VITE_API_URL: http://localhost:8000/api/v1
 
   backend:
+    image: vstep-backend:local
+    pull_policy: never
+    build:
+      context: ./apps/backend-v2
+    volumes:
+      - ./apps/backend-v2:/app
+      - backend_vendor:/app/vendor
     ports:
       - "8000:8000"
     environment:
@@ -40,8 +47,25 @@ services:
         php artisan storage:link 2>/dev/null;
         php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --workers=auto --max-requests=500
       "
+    develop:
+      watch:
+        - action: sync
+          path: ./apps/backend-v2/app
+          target: /app/app
+        - action: sync
+          path: ./apps/backend-v2/routes
+          target: /app/routes
+        - action: sync
+          path: ./apps/backend-v2/database
+          target: /app/database
+        - action: rebuild
+          path: ./apps/backend-v2/composer.json
 
   horizon:
+    image: vstep-backend:local
+    pull_policy: never
+    build:
+      context: ./apps/backend-v2
     environment:
       APP_ENV: local
       APP_DEBUG: "true"
