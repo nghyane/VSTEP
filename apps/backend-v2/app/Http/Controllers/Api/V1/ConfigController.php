@@ -6,12 +6,14 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Services\EconomyConfigService;
+use App\Services\ProfileConfigService;
 use Illuminate\Http\JsonResponse;
 
 final class ConfigController extends Controller
 {
     public function __construct(
         private readonly EconomyConfigService $economyConfig,
+        private readonly ProfileConfigService $profileConfig,
     ) {}
 
     public function show(): JsonResponse
@@ -23,6 +25,9 @@ final class ConfigController extends Controller
             'data' => [
                 'wallet' => [
                     'onboarding_initial_coins' => $this->economyConfig->onboardingInitialCoins(),
+                ],
+                'profile' => [
+                    'max_profiles_per_account' => $this->profileConfig->maxProfilesPerAccount(),
                 ],
                 'pricing' => [
                     'exam' => [

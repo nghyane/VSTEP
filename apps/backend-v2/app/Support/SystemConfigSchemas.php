@@ -52,6 +52,8 @@ final class SystemConfigSchemas
             'practice.feedback_cost_coins' => ['type' => 'number', 'min' => 1, 'max' => 10000, 'integer' => true],
 
             'onboarding.initial_coins' => ['type' => 'number', 'min' => 0, 'max' => 100000, 'integer' => true],
+
+            'profile.max_profiles_per_account' => ['type' => 'number', 'min' => 1, 'max' => 20, 'integer' => true],
         ];
     }
 

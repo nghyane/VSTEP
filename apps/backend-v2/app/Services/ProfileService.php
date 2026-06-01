@@ -32,7 +32,9 @@ use Illuminate\Validation\ValidationException;
  */
 final class ProfileService
 {
-    public const MAX_PROFILES_PER_USER = 5;
+    public function __construct(
+        private readonly ProfileConfigService $profileConfig,
+    ) {}
 
     /**
      * @param  array{nickname:string,target_level:string,target_deadline:string,entry_level?:string|null}  $data
@@ -68,6 +70,12 @@ final class ProfileService
         if (isset($data['target_level']) && $data['target_level'] !== $profile->target_level) {
             throw ValidationException::withMessages([
                 'target_level' => ['Target level is immutable. Create a new profile to change target.'],
+            ]);
+        }
+
+        if (array_key_exists('entry_level', $data) && $data['entry_level'] !== $profile->entry_level) {
+            throw ValidationException::withMessages([
+                'entry_level' => ['Entry level is immutable. Create a new profile to change learning baseline.'],
             ]);
         }
 
@@ -210,10 +218,11 @@ final class ProfileService
     private function assertProfileLimit(string $accountId): void
     {
         $count = Profile::query()->where('account_id', $accountId)->count();
+        $maxProfiles = $this->profileConfig->maxProfilesPerAccount();
 
-        if ($count >= self::MAX_PROFILES_PER_USER) {
+        if ($count >= $maxProfiles) {
             throw ValidationException::withMessages([
-                'profile' => ['Maximum of '.self::MAX_PROFILES_PER_USER.' profiles per account.'],
+                'profile' => ["Maximum of {$maxProfiles} profiles per account."],
             ]);
         }
     }

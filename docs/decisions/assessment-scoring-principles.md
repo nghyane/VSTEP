@@ -14,10 +14,12 @@ Hệ thống không gửi bài làm cho AI để hỏi trực tiếp “bài nà
 
 ### 2. Writing được tính theo rubric 4 tiêu chí
 
+Mỗi bài Writing Task 1 hoặc Task 2 được chấm trên thang 0-10 theo 4 tiêu chí trọng số bằng nhau:
+
 ```text
-Writing Score =
-Task Fulfillment × 30%
-+ Organization × 20%
+Writing task band =
+Task Fulfillment × 25%
++ Organization × 25%
 + Grammar × 25%
 + Vocabulary × 25%
 ```
@@ -28,6 +30,14 @@ Task Fulfillment × 30%
 | Organization | Số đoạn, từ nối, bố cục, mạch lạc |
 | Grammar | Lỗi ngữ pháp, số câu, độ đa dạng cấu trúc |
 | Vocabulary | Độ đa dạng từ, từ nâng cao, lỗi chính tả |
+
+Khi tính điểm kỹ năng Writing cho một đề thi đủ 2 task, dùng trọng số format VSTEP công khai:
+
+```text
+Final Writing band = round_half(Task 1 band × 1/3 + Task 2 band × 2/3)
+```
+
+Task 1 không bị hạ trần điểm. Task 1 và Task 2 đều có thể đạt 10/10; khác biệt nằm ở trọng số tổng hợp cuối cùng.
 
 ### 3. Speaking được tính theo rubric và tín hiệu nói
 
@@ -60,6 +70,12 @@ Nếu Task Fulfillment/Content Relevance quá thấp
 ### 5. Mỗi kết quả cần có trace giải thích
 
 Kết quả chấm cần lưu được điểm từng tiêu chí, trọng số, rule cap/penalty đã áp dụng, trace tính điểm và bằng chứng/tín hiệu đã dùng.
+
+### 6. Chỉ giữ một rubric stable cho mỗi productive skill
+
+Backend seed đúng một rubric active cho `writing` và một rubric active cho `speaking` để tránh drift giữa các version thử nghiệm.
+
+Các threshold tự động như số lỗi ngữ pháp, số đoạn, từ nối, CEFR vocabulary hoặc pronunciation provider score là calibration nội bộ của hệ thống. Không trình bày các threshold này như descriptor chính thức của Bộ GD&ĐT.
 
 ## Cách trình bày khi bảo vệ
 

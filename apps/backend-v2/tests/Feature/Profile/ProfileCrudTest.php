@@ -7,6 +7,7 @@ namespace Tests\Feature\Profile;
 use App\Enums\CoinTransactionType;
 use App\Models\CoinTransaction;
 use App\Models\Profile;
+use App\Models\SystemConfig;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -152,7 +153,7 @@ class ProfileCrudTest extends TestCase
     }
 
     // ═══════════════════════════════════════════════════════
-    // Profile limit: max 5 profiles per user
+    // Profile limit: admin-configurable max profiles per user
     // ═══════════════════════════════════════════════════════
 
     public function test_cannot_create_more_than_five_profiles(): void
@@ -174,6 +175,31 @@ class ProfileCrudTest extends TestCase
         $response = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson('/api/v1/profiles', [
                 'nickname' => 'profile-6',
+                'target_level' => 'B2',
+                'target_deadline' => now()->addYear()->toDateString(),
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['profile']);
+    }
+
+    public function test_profile_limit_uses_system_config(): void
+    {
+        SystemConfig::set('profile.max_profiles_per_account', 2);
+
+        $user = User::factory()->create();
+        Profile::factory()->initial()->forAccount($user)->create();
+        Profile::factory()->forAccount($user)->create(['nickname' => 'profile-2']);
+
+        $login = $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+        $token = $login->json('data.access_token');
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/profiles', [
+                'nickname' => 'profile-3',
                 'target_level' => 'B2',
                 'target_deadline' => now()->addYear()->toDateString(),
             ]);
@@ -205,6 +231,27 @@ class ProfileCrudTest extends TestCase
         $response->assertStatus(422);
         $response->assertJsonValidationErrors(['target_level']);
         $this->assertSame('B1', $profile->fresh()->target_level);
+    }
+
+    public function test_cannot_change_entry_level_after_create(): void
+    {
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create(['entry_level' => 'A2']);
+
+        $login = $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+        $token = $login->json('data.access_token');
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->patchJson("/api/v1/profiles/{$profile->id}", [
+                'entry_level' => 'B1',
+            ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors(['entry_level']);
+        $this->assertSame('A2', $profile->fresh()->entry_level);
     }
 
     // ═══════════════════════════════════════════════════════

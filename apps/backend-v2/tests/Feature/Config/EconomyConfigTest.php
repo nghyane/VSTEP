@@ -19,6 +19,7 @@ class EconomyConfigTest extends TestCase
 
         $response->assertOk();
         $response->assertJsonPath('data.wallet.onboarding_initial_coins', 100);
+        $response->assertJsonPath('data.profile.max_profiles_per_account', 5);
         $response->assertJsonPath('data.pricing.exam.full_test_cost_coins', 25);
         $response->assertJsonPath('data.pricing.exam.custom_per_skill_coins', 8);
         $response->assertJsonPath('data.pricing.exam.max_cost_coins', 25);
@@ -33,6 +34,7 @@ class EconomyConfigTest extends TestCase
 
         $this->assertSame(42, SystemConfig::get('exam.full_test_cost_coins'));
         $this->assertSame(1, SystemConfig::get('practice.feedback_cost_coins'));
+        $this->assertSame(5, SystemConfig::get('profile.max_profiles_per_account'));
 
         $this->getJson('/api/v1/config')
             ->assertOk()

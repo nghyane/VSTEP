@@ -6,157 +6,102 @@ namespace Database\Seeders;
 
 use App\Models\GradingRubric;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
- * Seed VSTEP grading rubrics + scoring policies.
+ * Seed one stable VSTEP grading rubric per productive skill.
  *
- * Source: Thông tư 23/2017/TT-BGDĐT, Phụ lục III.
- * Band descriptors from official VSTEP examiner guidelines (B1-C1),
- * scale 0–10 per Bộ GD&ĐT specification.
+ * Public VSTEP facts used here:
+ * - Writing Task 1 is a letter/email of at least 120 words and contributes 1/3
+ *   of the final Writing skill score.
+ * - Writing Task 2 is an essay of at least 250 words and contributes 2/3.
+ * - Speaking has three parts: social interaction, solution discussion, topic development.
  *
- * Immutable reference data. Re-running is safe (checks existing version).
+ * The scoring params below are internal automated-calibration rules for this app;
+ * they are not claimed to be official MOET examiner descriptors.
  */
 class GradingRubricSeeder extends Seeder
 {
+    private const PRODUCTIVE_SKILLS = ['writing', 'speaking'];
+
+    private const STABLE_VERSION = 1;
+
+    private const SCORING_FORMULA = 'equal_weighted_mean_rounded_half';
+
     public function run(): void
     {
-        $this->seedWritingRubric();
-        $this->seedSpeakingRubric();
+        DB::transaction(function (): void {
+            $this->deleteExistingRubrics(self::PRODUCTIVE_SKILLS);
+            $this->seedWritingRubric();
+            $this->seedSpeakingRubric();
+        });
+    }
+
+    /** @param list<string> $skills */
+    private function deleteExistingRubrics(array $skills): void
+    {
+        $ids = GradingRubric::query()->whereIn('skill', $skills)->pluck('id');
+
+        if ($ids->isNotEmpty()) {
+            DB::table('scoring_policies')->whereIn('rubric_id', $ids)->delete();
+        }
+
+        GradingRubric::query()->whereIn('skill', $skills)->delete();
     }
 
     private function seedWritingRubric(): void
     {
-        if (GradingRubric::where('skill', 'writing')->where('version', 11)->exists()) {
-            return;
-        }
-
-        GradingRubric::where('skill', 'writing')->where('is_active', true)->update(['is_active' => false]);
-
-        GradingRubric::create([
-            'skill' => 'writing',
-            'version' => 11,
-            'name' => 'VSTEP Writing Rubric v11',
-            'source_reference' => 'Thông tư 23/2017/TT-BGDĐT, Phụ lục III. '
-                .'v11: recalibrated thresholds per VSTEP band descriptors — grammar floor 4.0, vocab cap 8, TF multiplier 7.',
-            'criteria' => $this->writingCriteriaV6(),
-            'scoring_formula' => 'weighted_mean_rounded_half',
-            'is_active' => true,
-            'effective_from' => '2017-09-01',
-        ]);
+        $this->createRubric(
+            skill: 'writing',
+            name: 'VSTEP Writing Rubric Stable',
+            sourceReference: 'VSTEP.3-5 public test format: Task 1 letter/email >=120 words = 1/3, '
+                .'Task 2 essay >=250 words = 2/3. Four analytic criteria use equal weights because no '
+                .'public official criterion weights are available; scoring thresholds are internal calibration.',
+            criteria: $this->writingCriteria(),
+        );
     }
 
     private function seedSpeakingRubric(): void
     {
-        if (GradingRubric::where('skill', 'speaking')->where('version', 4)->exists()) {
-            return;
-        }
+        $this->createRubric(
+            skill: 'speaking',
+            name: 'VSTEP Speaking Rubric Stable',
+            sourceReference: 'VSTEP.3-5 public test format: Speaking has social interaction, solution discussion, '
+                .'and topic development. Criteria and automated thresholds are internal calibration for consistent '
+                .'practice feedback.',
+            criteria: $this->speakingCriteria(),
+        );
+    }
 
-        GradingRubric::where('skill', 'speaking')->where('is_active', true)->update(['is_active' => false]);
-
+    /** @param list<array<string,mixed>> $criteria */
+    private function createRubric(string $skill, string $name, string $sourceReference, array $criteria): void
+    {
         GradingRubric::create([
-            'skill' => 'speaking',
-            'version' => 4,
-            'name' => 'VSTEP Speaking Rubric v4',
-            'source_reference' => 'Thông tư 23/2017/TT-BGDĐT, Phụ lục III. '
-                .'v4: band descriptors + quantitative params for deterministic formula.',
-            'criteria' => $this->speakingCriteriaV3(),
-            'scoring_formula' => 'mean_rounded_half',
+            'skill' => $skill,
+            'version' => self::STABLE_VERSION,
+            'name' => $name,
+            'source_reference' => $sourceReference,
+            'criteria' => $criteria,
+            'scoring_formula' => self::SCORING_FORMULA,
             'is_active' => true,
             'effective_from' => '2017-09-01',
         ]);
     }
 
     /** @return list<array<string,mixed>> */
-    private function speakingCriteriaV3(): array
+    private function writingCriteria(): array
     {
         return [
-            $this->criterionV4('grammar', 'Grammar', 'Ngữ pháp', [
-                '10' => 'Uses flexibly and accurately a wide range of grammatical forms and hardly makes mistakes.',
-                '0' => 'Không có thông tin.',
+            $this->criterion('task_fulfillment', 'Task Fulfillment', 'Hoàn thành yêu cầu đề', [
+                '10' => 'Addresses the task fully with a clear purpose/position and well-developed relevant support.',
+                '8' => 'Addresses all main requirements; ideas are generally developed and relevant.',
+                '6' => 'Addresses the task but some parts are underdeveloped or only partly supported.',
+                '4' => 'Addresses only part of the task; development is limited or repetitive.',
+                '0' => 'No assessable response, or the response is off-topic.',
             ], [
-                'type' => 'structure_count',
-                'band_thresholds' => [0 => 5, 1 => 6, 3 => 7, 5 => 8, 6 => 9, 7 => 10],
-                'accuracy_factor' => 5,
-                'max_accuracy' => ['0-2' => 7, '3-4' => 9, '5+' => 10],
-            ]),
-            $this->criterionV4('vocabulary', 'Vocabulary', 'Từ vựng', [
-                '10' => 'Has a good command of broad vocabulary, including less common words, idiomatic expressions and collocations.',
-                '0' => 'Không có thông tin.',
-            ], [
-                'base' => 3,
-                'cap' => 9,
-                'unique_thresholds' => [
-                    ['threshold' => 0.45, 'bonus' => 1],
-                    ['threshold' => 0.55, 'bonus' => 2],
-                    ['threshold' => 0.65, 'bonus' => 3],
-                ],
-                'length_thresholds' => [
-                    ['threshold' => 4.5, 'bonus' => 1],
-                    ['threshold' => 5.5, 'bonus' => 2],
-                ],
-                'readability_thresholds' => [
-                    ['threshold' => 8, 'bonus' => 1],
-                    ['threshold' => 10, 'bonus' => 2],
-                ],
-                'complex_thresholds' => [
-                    ['threshold' => 2, 'bonus' => 1],
-                    ['threshold' => 5, 'bonus' => 2],
-                ],
-            ]),
-            $this->criterionV4('fluency', 'Fluency', 'Độ trôi chảy', [
-                '10' => 'Frequently produces extended stretches of language with very little hesitation.',
-                '0' => 'Không có thông tin.',
-            ], [
-                'base' => 3,
-                'cap' => 10,
-                'wpm_thresholds' => [
-                    ['threshold' => 60, 'bonus' => 1],
-                    ['threshold' => 90, 'bonus' => 2],
-                    ['threshold' => 120, 'bonus' => 3],
-                    ['threshold' => 150, 'bonus' => 4],
-                ],
-                'sentence_length_thresholds' => [
-                    ['threshold' => 8, 'bonus' => 1],
-                    ['threshold' => 12, 'bonus' => 2],
-                ],
-            ]),
-            $this->criterionV4('discourse_management', 'Discourse Management', 'Kiểm soát diễn ngôn', [
-                '10' => 'Coherently and easily develops ideas with elaborative details and some examples.',
-                '0' => 'Không có thông tin.',
-            ], [
-                'base' => 1,
-                'linking_factor' => 0.5,
-                'linking_cap' => 3,
-                'variety_thresholds' => [
-                    ['threshold' => 4, 'bonus' => 1],
-                    ['threshold' => 6, 'bonus' => 2],
-                ],
-            ]),
-            $this->criterionV4('pronunciation', 'Pronunciation', 'Phát âm', [
-                '10' => 'Is intelligible with individual sounds clearly articulated, sentence and word stress accurately placed.',
-                '0' => 'Không có thông tin.',
-            ], [
-                'type' => 'azure_scored',
-            ]),
-        ];
-    }
-
-    /** @return list<array<string,mixed>> */
-    private function writingCriteriaV4(): array
-    {
-        return [
-            $this->criterionV4('task_fulfillment', 'Task Fulfillment', 'Hoàn thành yêu cầu đề', [
-                '10' => 'Thực hiện đầy đủ các yêu cầu của đề. Trình bày rõ ràng quan điểm.',
-                '9' => 'Thực hiện vừa đủ các yêu cầu của đề. Có hệ thống ý tưởng liên quan.',
-                '8' => 'Thể hiện tất cả các đặc điểm tích cực của Band 7, nhưng không phải tất cả của Band 9.',
-                '7' => 'Đáp ứng tất cả yêu cầu. Thể hiện quan điểm rõ ràng.',
-                '6' => 'Đáp ứng tất cả yêu cầu nhưng một số phần chưa đầy đủ.',
-                '5' => 'Chỉ đáp ứng một phần yêu cầu đề bài.',
-                '0' => 'Không viết bài hoặc lạc đề hoàn toàn.',
-            ], [
-                'coverage_multiplier' => 8,
-                'task1_multiplier' => 6,
-                'position_bonus' => 1,
+                'coverage_multiplier' => 7,
+                'task1_multiplier' => 7,
+                'position_bonus' => 0.5,
                 'irrelevant_penalty' => 2,
                 'default_points_required' => 3,
                 'word_minimum_task1' => 120,
@@ -166,113 +111,8 @@ class GradingRubricSeeder extends Seeder
                     ['max_words' => 80, 'cap' => 4],
                     ['max_words' => 120, 'cap' => 6],
                 ],
-                '_sources' => [
-                    'coverage_multiplier' => '7 = full range (0→10) reserved for 0%→100% coverage. Scaling factor derived from VSTEP rubric: Band 0 "lạc đề", Band 5 "đáp ứng một phần", Band 10 "đầy đủ". Linear interpolation: 100% coverage × 7 + position_bonus(1) ≤ 8 (not 10 — reserves top 2 bands for exceptional quality beyond checklist).',
-                    'position_bonus' => '1 band for expressing a clear position/stance. VSTEP descriptors mention "thể hiện quan điểm rõ ràng" at Band 7+. Conservative bonus — position is expected, not exceptional.',
-                    'irrelevant_penalty' => '2 bands for off-topic content. Band 0-3 describes completely off-topic/memorized scripts. Strong penalty reflects rubric severity.',
-                    'default_points_required' => '3: typical VSTEP Task 2 has 3 requirements (opinion, reasons, examples). Used as fallback when not configured by admin.',
-                ],
-            ], 0.50),
-            $this->criterionV4('organization', 'Organization', 'Bố cục bài viết', [
-                '10' => 'Sử dụng công cụ liên kết mượt mà. Chia đoạn khéo léo.',
-                '0' => 'Không viết bài.',
-            ], [
-                'base' => 1,
-                'para_bonus' => [1 => 1, 2 => 3, 3 => 4],
-                'linking_factor' => 0.5,
-                'linking_density_factor' => 4,
-                'linking_cap' => 3,
-                'variety_thresholds' => [
-                    ['threshold' => 4, 'bonus' => 1],
-                    ['threshold' => 6, 'bonus' => 2],
-                ],
-                'compact_threshold' => 8,
-                'compact_penalty' => 1,
-                '_sources' => [
-                    'base' => '1: minimum score for any text with structure. VSTEP Band 1-2 describes "không thể hiện ý tưởng" → base=0. Band 3+ requires some organization → base=1.',
-                    'para_bonus' => '{1→1, 2→3, 3→4}: VSTEP descriptor "chia đoạn văn một cách khéo léo" (Band 10) vs "thông tin không viết dưới dạng đoạn văn" (Band 5). 2-paragraph = competent (bonus 3), 3+ = well-structured (bonus 4).',
-                    'linking_factor' => '0.5: each linking word adds 0.5 band. VSTEP Band 7 requires "sử dụng nhiều loại thiết bị gắn kết". 6 words × 0.5 = 3 bonus (capped). Calibrated from validation essays (avg 4-6 linking words for B2).',
-                    'linking_cap' => '3: prevents linking word spam. 6+ words = max bonus. Validation: Bài 10 (best) has 8 linking words → bonus 3 (not 4).',
-                    'variety_thresholds' => 'σ > 4 → 1, σ > 6 → 2. Sentence variety (std dev of lengths) indicates intentional rhythm. VSTEP Band 10: "natural flow". σ=4 typical for B1, σ=6 for B2. Calibrated from ULIS-VNU writing samples.',
-                    'compact_threshold' => '8 sentences in 1 paragraph = "wall of text". VSTEP Band 5: "các thông tin không viết dưới dạng đoạn văn". Penalty reflects lost organization points.',
-                    'compact_penalty' => '1: moderate penalty. Does not zero out the score — content may still be organized within the single paragraph.',
-                ],
-            ], 0.10),
-            $this->criterionV4('grammar', 'Grammar', 'Ngữ pháp', [
-                '10' => 'Sử dụng lượng lớn cấu trúc (6+ kiểu) tự nhiên, chính xác.',
-                '9' => 'Sử dụng lượng lớn cấu trúc (5+ kiểu). Hầu hết không mắc lỗi.',
-                '8' => 'Band 7 + thêm 1-2 kiểu nâng cao.',
-                '7' => 'Sử dụng đa dạng cấu trúc phức tạp (3-4 kiểu). Ít lỗi.',
-                '6' => 'Kết hợp cấu trúc đơn giản và phức tạp (1-2 kiểu).',
-                '5' => 'Chỉ cấu trúc đơn giản. Cố gắng phức tạp nhưng sai.',
-                '0' => 'Không viết bài.',
-            ], [
-                'type' => 'structure_count',
-                'band_thresholds' => [0 => 5, 1 => 6, 3 => 7, 5 => 8, 6 => 9, 7 => 10],
-                'accuracy_factor' => 5,
-                'max_accuracy' => ['0-2' => 7, '3-4' => 9, '5+' => 10],
-                '_sources' => [
-                    'type' => 'structure_count: complex structures detected by SyntaxAnalyzer (10 patterns: conditional, relative_clause, passive_voice, complex_conjunction, participle_phrase, inversion, cleft_sentence, subjunctive, comparative_correlative, causative).',
-                    'band_thresholds' => '0→5, 1→6, 3→7, 5→8, 6→9, 7→10. Derived from VSTEP grammar descriptors: Band 5 "chỉ cấu trúc đơn giản" → 0 types. Band 6 "kết hợp đơn giản + phức tạp (1-2 kiểu)" → 1-2 types. Band 7 "đa dạng cấu trúc phức tạp (3-4 kiểu)" → 3-4 types. Band 9 "lượng lớn cấu trúc (5+ kiểu)" → 5+ types.',
-                    'accuracy_factor' => '5: penalty multiplier for grammar errors. (errors/sentences) × 5. Calibrated: 1 error per 5 sentences → penalty=1 (minor). 1 error per sentence → penalty=5 (severe). Descriptor Band 7: "hầu hết không mắc lỗi", Band 5: "thường xuyên mắc lỗi".',
-                    'max_accuracy' => '0-2 types→7, 3-4→9, 5+→10. Accuracy without range is meaningless. Band 5 with 0 errors ≠ Band 9. Derived from VSTEP: "chỉ cấu trúc đơn giản + không lỗi" is Band 5-6, not Band 9-10. VSTEP explicitly weights RANGE over accuracy.',
-                ],
-            ], 0.25),
-            $this->criterionV4('vocabulary', 'Vocabulary', 'Từ vựng', [
-                '10' => 'Sử dụng lượng từ vựng lớn, collocations, idioms.',
-                '0' => 'Không viết bài.',
-            ], [
-                'base' => 3,
-                'cap' => 9,
-                'unique_thresholds' => [
-                    ['threshold' => 0.45, 'bonus' => 1],
-                    ['threshold' => 0.55, 'bonus' => 2],
-                    ['threshold' => 0.65, 'bonus' => 3],
-                ],
-                'length_thresholds' => [
-                    ['threshold' => 4.5, 'bonus' => 1],
-                    ['threshold' => 5.5, 'bonus' => 2],
-                ],
-                'readability_thresholds' => [
-                    ['threshold' => 8, 'bonus' => 1],
-                    ['threshold' => 10, 'bonus' => 2],
-                ],
-                'complex_thresholds' => [
-                    ['threshold' => 2, 'bonus' => 1],
-                    ['threshold' => 5, 'bonus' => 2],
-                ],
-                'cefr_thresholds' => [
-                    ['threshold' => 2.0, 'bonus' => 1],
-                    ['threshold' => 2.5, 'bonus' => 2],
-                    ['threshold' => 3.0, 'bonus' => 3],
-                    ['threshold' => 3.5, 'bonus' => 4],
-                    ['threshold' => 4.0, 'bonus' => 5],
-                ],
-                'advanced_thresholds' => [
-                    ['threshold' => 0.15, 'bonus' => 1],
-                    ['threshold' => 0.30, 'bonus' => 2],
-                ],
-                '_sources' => [
-                    'base' => '3: baseline vocabulary score for any text. VSTEP Band 3-4 describes "từ vựng cơ bản, lặp đi lặp lại". Base=3 allows 1 bonus → Band 4, 2 bonuses → Band 5, which matches descriptors.',
-                    'cap' => '8: vocabulary 9-10 requires exceptional range (collocations, idioms, less common words). These cannot be measured by unique_ratio+word_length alone. Cap ensures Band 9-10 requires LLM-level semantic judgment or additional features.',
-                    'unique_thresholds' => '0.45→1, 0.55→2, 0.65→3. Unique word ratio indicates lexical diversity. VSTEP: "lượng từ vựng hạn chế" (repetitive) vs "lượng từ vựng lớn". Ratio 0.45 typical for 120-word B1 essay, 0.55 for 200-word B2 essay, 0.65 for rich vocabulary. Calibrated from validation essays.',
-                    'length_thresholds' => '4.5→1, 5.5→2. Average word length correlates with vocabulary sophistication (longer words = more academic/specific vocabulary). Length 4.5 typical for B1 (common words), 5.5 for B2 (topic-specific vocabulary).',
-                ],
-            ], 0.15),
-        ];
-    }
-
-    /** @return list<array<string,mixed>> */
-    private function writingCriteriaV5(): array
-    {
-        $criteria = $this->writingCriteriaV4();
-
-        // Add sub_signals to each criterion (DB-configurable)
-        foreach ($criteria as &$criterion) {
-            $params = &$criterion['params'];
-
-            match ($criterion['key']) {
-                'task_fulfillment' => $params['sub_signals'] = [
+                'tf_cap_ratio' => 1.3,
+                'sub_signals' => [
                     'tone_register' => [
                         'enabled' => true,
                         'weight' => 1.0,
@@ -289,7 +129,38 @@ class GradingRubricSeeder extends Seeder
                         ],
                     ],
                 ],
-                'grammar' => $params['sub_signals'] = [
+            ], 0.25),
+            $this->criterion('organization', 'Organization', 'Bố cục bài viết', [
+                '10' => 'Ideas are logically organized with effective paragraphing and cohesive devices.',
+                '8' => 'Organization is clear; paragraphing and linking are generally effective.',
+                '6' => 'Overall organization is understandable, though links or paragraphing may be mechanical.',
+                '4' => 'Organization is weak; ideas may be listed or difficult to follow.',
+                '0' => 'No assessable organization.',
+            ], [
+                'base' => 1,
+                'para_bonus' => [1 => 1, 2 => 3, 3 => 4],
+                'linking_factor' => 0.5,
+                'linking_density_factor' => 4,
+                'linking_cap' => 3,
+                'variety_thresholds' => [
+                    ['threshold' => 4, 'bonus' => 1],
+                    ['threshold' => 6, 'bonus' => 2],
+                ],
+                'compact_threshold' => 8,
+                'compact_penalty' => 1,
+            ], 0.25),
+            $this->criterion('grammar', 'Grammar', 'Ngữ pháp', [
+                '10' => 'Uses a wide range of grammatical structures flexibly and accurately.',
+                '8' => 'Uses a good range of simple and complex structures with only occasional errors.',
+                '6' => 'Uses a mix of simple and some complex structures; errors are noticeable but meaning is clear.',
+                '4' => 'Uses mostly simple structures with frequent errors.',
+                '0' => 'No assessable grammar.',
+            ], [
+                'type' => 'structure_count',
+                'band_thresholds' => [0 => 4, 1 => 5, 2 => 5.5, 3 => 6, 4 => 7, 5 => 7.5, 7 => 9, 9 => 10],
+                'accuracy_factor' => 5,
+                'max_accuracy' => ['0-1' => 5, '2-3' => 6, '4-5' => 8, '6+' => 10],
+                'sub_signals' => [
                     'punctuation' => [
                         'enabled' => true,
                         'weight' => 1.0,
@@ -302,7 +173,44 @@ class GradingRubricSeeder extends Seeder
                         ],
                     ],
                 ],
-                'vocabulary' => $params['sub_signals'] = [
+            ], 0.25),
+            $this->criterion('vocabulary', 'Vocabulary', 'Từ vựng', [
+                '10' => 'Uses a wide, precise lexical range naturally for the topic.',
+                '8' => 'Uses varied topic vocabulary with generally appropriate word choice.',
+                '6' => 'Uses sufficient vocabulary for the task, with some repetition or imprecision.',
+                '4' => 'Uses basic, repetitive vocabulary; word-choice errors may affect clarity.',
+                '0' => 'No assessable vocabulary.',
+            ], [
+                'base' => 2,
+                'cap' => 10,
+                'unique_thresholds' => [
+                    ['threshold' => 0.50, 'bonus' => 1],
+                    ['threshold' => 0.60, 'bonus' => 2],
+                    ['threshold' => 0.70, 'bonus' => 3],
+                ],
+                'length_thresholds' => [
+                    ['threshold' => 5.0, 'bonus' => 1],
+                    ['threshold' => 6.0, 'bonus' => 2],
+                ],
+                'readability_thresholds' => [
+                    ['threshold' => 10, 'bonus' => 1],
+                    ['threshold' => 12, 'bonus' => 2],
+                ],
+                'complex_thresholds' => [
+                    ['threshold' => 2, 'bonus' => 1],
+                    ['threshold' => 5, 'bonus' => 2],
+                ],
+                'cefr_thresholds' => [
+                    ['threshold' => 2.5, 'bonus' => 1],
+                    ['threshold' => 3.0, 'bonus' => 2],
+                    ['threshold' => 3.5, 'bonus' => 3],
+                    ['threshold' => 4.0, 'bonus' => 4],
+                ],
+                'advanced_thresholds' => [
+                    ['threshold' => 0.20, 'bonus' => 1],
+                    ['threshold' => 0.35, 'bonus' => 2],
+                ],
+                'sub_signals' => [
                     'spelling' => [
                         'enabled' => true,
                         'weight' => 1.0,
@@ -315,73 +223,98 @@ class GradingRubricSeeder extends Seeder
                         ],
                     ],
                 ],
-                default => null,
-            };
-        }
-        unset($criterion, $params);
-
-        return $criteria;
+            ], 0.25),
+        ];
     }
 
     /** @return list<array<string,mixed>> */
-    private function writingCriteriaV6(): array
+    private function speakingCriteria(): array
     {
-        $criteria = $this->writingCriteriaV5();
-
-        foreach ($criteria as &$criterion) {
-            $params = &$criterion['params'];
-
-            match ($criterion['key']) {
-                'task_fulfillment' => $params = array_merge($params, [
-                    'coverage_multiplier' => 7,    // was 8: tighter range per VSTEP TF=50%
-                    'task1_multiplier' => 5,        // was 6: letters get lower ceiling
-                    'position_bonus' => 0.5,        // was 1: less weight on signals
-                    'tf_cap_ratio' => 1.3,          // TF ≤ avg(gram, vocab, org) × 1.3 — prevents TF from dominating weaker criteria
-                ]),
-                'grammar' => $params = array_merge($params, [
-                    'band_thresholds' => [0 => 4, 1 => 5, 2 => 5.5, 3 => 6, 4 => 7, 5 => 7.5, 7 => 9, 9 => 10],
-                    'max_accuracy' => ['0-1' => 5, '2-3' => 6, '4-5' => 8, '6+' => 10],
-                    // B1: 0-2 types, some errors → (4+5)/2=4.5 to (5.5+6)/2=5.75
-                    // B2: 3-5 types, few errors → (6+6)/2=6.0 to (7.5+8)/2=7.75
-                    // C1: 6+ types, rare errors → (7.5+10)/2=8.75 to (10+10)/2=10.0
-                ]),
-                'vocabulary' => $params = array_merge($params, [
-                    'base' => 2,                    // was 3
-                    'cap' => 8,                     // was 9
-                    'unique_thresholds' => [         // stricter
-                        ['threshold' => 0.50, 'bonus' => 1],
-                        ['threshold' => 0.60, 'bonus' => 2],
-                        ['threshold' => 0.70, 'bonus' => 3],
-                    ],
-                    'length_thresholds' => [         // stricter
-                        ['threshold' => 5.0, 'bonus' => 1],
-                        ['threshold' => 6.0, 'bonus' => 2],
-                    ],
-                    'readability_thresholds' => [    // stricter
-                        ['threshold' => 10, 'bonus' => 1],
-                        ['threshold' => 12, 'bonus' => 2],
-                    ],
-                    'cefr_thresholds' => [           // remove 2.0 level
-                        ['threshold' => 2.5, 'bonus' => 1],
-                        ['threshold' => 3.0, 'bonus' => 2],
-                        ['threshold' => 3.5, 'bonus' => 3],
-                        ['threshold' => 4.0, 'bonus' => 4],
-                    ],
-                    'advanced_thresholds' => [       // stricter
-                        ['threshold' => 0.20, 'bonus' => 1],
-                        ['threshold' => 0.35, 'bonus' => 2],
-                    ],
-                ]),
-                default => null,
-            };
-        }
-        unset($criterion, $params);
-
-        return $criteria;
+        return [
+            $this->criterion('grammar', 'Grammar', 'Ngữ pháp', [
+                '10' => 'Uses a wide range of grammatical forms flexibly and accurately.',
+                '8' => 'Uses a good range of structures with minor errors.',
+                '6' => 'Uses simple and some complex forms; errors are noticeable but communication continues.',
+                '4' => 'Uses limited structures with frequent errors.',
+                '0' => 'No assessable speech.',
+            ], [
+                'type' => 'structure_count',
+                'band_thresholds' => [0 => 5, 1 => 6, 3 => 7, 5 => 8, 6 => 9, 7 => 10],
+                'accuracy_factor' => 5,
+                'max_accuracy' => ['0-2' => 7, '3-4' => 9, '5+' => 10],
+            ], 0.20),
+            $this->criterion('vocabulary', 'Vocabulary', 'Từ vựng', [
+                '10' => 'Uses broad and precise vocabulary naturally for the speaking task.',
+                '8' => 'Uses varied vocabulary with generally appropriate word choice.',
+                '6' => 'Uses enough vocabulary to communicate, with repetition or occasional imprecision.',
+                '4' => 'Uses basic vocabulary and often searches for words.',
+                '0' => 'No assessable vocabulary.',
+            ], [
+                'base' => 3,
+                'cap' => 10,
+                'unique_thresholds' => [
+                    ['threshold' => 0.45, 'bonus' => 1],
+                    ['threshold' => 0.55, 'bonus' => 2],
+                    ['threshold' => 0.65, 'bonus' => 3],
+                ],
+                'length_thresholds' => [
+                    ['threshold' => 4.5, 'bonus' => 1],
+                    ['threshold' => 5.5, 'bonus' => 2],
+                ],
+                'readability_thresholds' => [
+                    ['threshold' => 8, 'bonus' => 1],
+                    ['threshold' => 10, 'bonus' => 2],
+                ],
+                'complex_thresholds' => [
+                    ['threshold' => 2, 'bonus' => 1],
+                    ['threshold' => 5, 'bonus' => 2],
+                ],
+            ], 0.20),
+            $this->criterion('fluency', 'Fluency', 'Độ trôi chảy', [
+                '10' => 'Produces extended speech with natural pacing and very little hesitation.',
+                '8' => 'Maintains speech with only occasional hesitation.',
+                '6' => 'Can keep speaking, though pauses and reformulation are noticeable.',
+                '4' => 'Speech is fragmented with frequent hesitation.',
+                '0' => 'No assessable speech.',
+            ], [
+                'base' => 3,
+                'cap' => 10,
+                'wpm_thresholds' => [
+                    ['threshold' => 60, 'bonus' => 1],
+                    ['threshold' => 90, 'bonus' => 2],
+                    ['threshold' => 120, 'bonus' => 3],
+                    ['threshold' => 150, 'bonus' => 4],
+                ],
+            ], 0.20),
+            $this->criterion('discourse_management', 'Discourse Management', 'Tổ chức ý và phát triển nội dung', [
+                '10' => 'Develops relevant ideas coherently with clear organization and support.',
+                '8' => 'Develops relevant ideas with generally clear linking and support.',
+                '6' => 'Gives relevant answers but development or linking may be limited.',
+                '4' => 'Answers are short, weakly connected, or only partly relevant.',
+                '0' => 'No assessable response.',
+            ], [
+                'base' => 1,
+                'linking_factor' => 0.5,
+                'linking_cap' => 3,
+                'variety_thresholds' => [
+                    ['threshold' => 4, 'bonus' => 1],
+                    ['threshold' => 6, 'bonus' => 2],
+                ],
+            ], 0.20),
+            $this->criterion('pronunciation', 'Pronunciation', 'Phát âm', [
+                '10' => 'Pronunciation is clear and natural, with effective stress and intonation.',
+                '8' => 'Pronunciation is clear; minor issues rarely affect understanding.',
+                '6' => 'Generally understandable, though pronunciation issues are noticeable.',
+                '4' => 'Pronunciation issues often make understanding difficult.',
+                '0' => 'No assessable speech.',
+            ], [
+                'type' => 'azure_scored',
+            ], 0.20),
+        ];
     }
 
     /** @param array<string,string> $descriptors */
-    private function criterionV4(string $key, string $name, string $nameVi, array $descriptors, array $params, float $weight = 1.0): array
+    private function criterion(string $key, string $name, string $nameVi, array $descriptors, array $params, float $weight): array
     {
         return [
             'key' => $key,
@@ -391,19 +324,6 @@ class GradingRubricSeeder extends Seeder
             'weight' => $weight,
             'band_descriptors' => $descriptors,
             'params' => $params,
-        ];
-    }
-
-    /** @param array<string,string> $descriptors */
-    private function criterion(string $key, string $name, string $nameVi, array $descriptors): array
-    {
-        return [
-            'key' => $key,
-            'name' => $name,
-            'name_vi' => $nameVi,
-            'max_score' => 10,
-            'weight' => 1.0,
-            'band_descriptors' => $descriptors,
         ];
     }
 }

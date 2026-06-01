@@ -41,6 +41,9 @@ class SystemConfigSeeder extends Seeder
 
             // Onboarding bonus.
             'onboarding.initial_coins' => [100, 'Xu tặng khi tạo profile đầu tiên của account.'],
+
+            // Profile limits.
+            'profile.max_profiles_per_account' => [5, 'Số hồ sơ tối đa mỗi tài khoản học viên được tạo.'],
         ];
 
         foreach ($defaults as $key => [$value, $description]) {

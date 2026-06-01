@@ -17,8 +17,10 @@ docs/
 │   └── defense-presentation-guide.md
 │
 ├── decisions/
+│   ├── application-boundaries.md
 │   ├── assessment-scoring-principles.md
-│   └── assessment-validation-strategy.md
+│   ├── assessment-validation-strategy.md
+│   └── profile-learning-target-policy.md
 │
 ├── rfcs/
 │   └── assessment engine redesign records
@@ -41,8 +43,10 @@ docs/
 
 ## Decision Records
 
+- [`decisions/application-boundaries.md`](decisions/application-boundaries.md)
 - [`decisions/assessment-scoring-principles.md`](decisions/assessment-scoring-principles.md)
 - [`decisions/assessment-validation-strategy.md`](decisions/assessment-validation-strategy.md)
+- [`decisions/profile-learning-target-policy.md`](decisions/profile-learning-target-policy.md)
 
 ## Archive
 

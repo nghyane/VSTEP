@@ -1,6 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
 import type {
-	AppConfig,
 	Exam,
 	ExamDetail,
 	ExamDraft,
@@ -10,11 +9,7 @@ import type {
 } from "#/features/exam/types"
 import { type ApiResponse, api } from "#/lib/api"
 
-export const appConfigQuery = queryOptions({
-	queryKey: ["config"],
-	queryFn: () => api.get("config").json<ApiResponse<AppConfig>>(),
-	staleTime: 5 * 60 * 1000,
-})
+export { appConfigQuery } from "#/features/config/queries"
 
 export const examsQuery = queryOptions({
 	queryKey: ["exams"],
