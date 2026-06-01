@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { cn } from "#/lib/utils"
+import { cn, pickBoundaryEnglishVoice, speak, stopSpeaking } from "#/lib/utils"
 
 const COLORS = [
 	{ key: "yellow", label: "Vàng", bg: "rgba(255, 200, 0, 0.42)" },
@@ -21,6 +21,12 @@ interface Props {
 	text: string
 	passageId: string
 	className?: string
+	activeCharIndex?: number | null
+}
+
+interface WordRange {
+	start: number
+	end: number
 }
 
 function offsetFromContainer(container: HTMLElement, node: Node, offset: number): number {
@@ -35,12 +41,29 @@ function applyHighlight(existing: Highlight[], next: Highlight): Highlight[] {
 	return [...kept, next].sort((a, b) => a.start - b.start)
 }
 
-export function HighlightablePassage({ text, passageId, className }: Props) {
+function wordRanges(text: string): WordRange[] {
+	const ranges: WordRange[] = []
+	const regex = /\S+/g
+	let match = regex.exec(text)
+	while (match) {
+		ranges.push({ start: match.index, end: match.index + match[0].length })
+		match = regex.exec(text)
+	}
+	return ranges
+}
+
+function activeRangeAt(text: string, charIndex: number | null): WordRange | null {
+	if (charIndex === null) return null
+	return wordRanges(text).find((range) => charIndex >= range.start && charIndex < range.end) ?? null
+}
+
+export function HighlightablePassage({ text, passageId, className, activeCharIndex = null }: Props) {
 	const containerRef = useRef<HTMLDivElement>(null)
 	const [store, setStore] = useState<Map<string, Highlight[]>>(new Map())
 	const [palette, setPalette] = useState<{ x: number; y: number; start: number; end: number } | null>(null)
 
 	const current = store.get(passageId) ?? []
+	const activeRange = activeRangeAt(text, activeCharIndex)
 
 	const handleMouseUp = useCallback(() => {
 		const selection = window.getSelection()
@@ -102,29 +125,50 @@ export function HighlightablePassage({ text, passageId, className }: Props) {
 
 	const sorted = [...current].sort((a, b) => a.start - b.start)
 	const segments: React.ReactNode[] = []
-	let cursor = 0
+	const cuts = new Set([0, text.length])
 	for (const hl of sorted) {
-		if (hl.start > cursor) segments.push(text.slice(cursor, hl.start))
+		cuts.add(hl.start)
+		cuts.add(hl.end)
+	}
+	if (activeRange) {
+		cuts.add(activeRange.start)
+		cuts.add(activeRange.end)
+	}
+	const points = [...cuts].sort((a, b) => a - b)
+	for (let i = 0; i < points.length - 1; i += 1) {
+		const start = points[i]
+		const end = points[i + 1]
+		if (end <= start) continue
+		const value = text.slice(start, end)
+		const hl = sorted.find((item) => start >= item.start && end <= item.end)
+		const active = activeRange !== null && start >= activeRange.start && end <= activeRange.end
+		const activeClass = active ? "rounded-sm bg-skill-reading/20 text-skill-reading-dark" : ""
+		if (!hl) {
+			segments.push(
+				<span key={`text-${start}-${end}`} className={activeClass}>
+					{value}
+				</span>,
+			)
+			continue
+		}
 		const color = COLORS.find((c) => c.key === hl.color)
 		const idx = current.indexOf(hl)
 		segments.push(
 			<button
 				type="button"
-				key={`hl-${hl.start}-${hl.end}`}
+				key={`hl-${start}-${end}`}
 				onClick={(e) => {
 					e.stopPropagation()
 					removeAt(idx)
 				}}
 				style={{ backgroundColor: color?.bg }}
-				className="cursor-pointer rounded-sm px-0.5 text-inherit text-left"
+				className={cn("cursor-pointer rounded-sm px-0.5 text-left text-inherit", activeClass)}
 				title="Click để xóa highlight"
 			>
-				{text.slice(hl.start, hl.end)}
+				{value}
 			</button>,
 		)
-		cursor = hl.end
 	}
-	if (cursor < text.length) segments.push(text.slice(cursor))
 
 	return (
 		<>
@@ -159,5 +203,68 @@ export function HighlightablePassage({ text, passageId, className }: Props) {
 				</div>
 			)}
 		</>
+	)
+}
+
+interface SpeechControlProps {
+	text: string
+	onActiveCharChange: (activeChar: number | null) => void
+}
+
+export function PassageSpeechControl({ text, onActiveCharChange }: SpeechControlProps) {
+	const [speaking, setSpeaking] = useState(false)
+
+	const stopPlayback = useCallback(() => {
+		stopSpeaking()
+		setSpeaking(false)
+		onActiveCharChange(null)
+	}, [onActiveCharChange])
+
+	const playPassage = useCallback(() => {
+		if (speaking) {
+			stopPlayback()
+			return
+		}
+		setSpeaking(true)
+		onActiveCharChange(0)
+		speak(text, {
+			rate: 0.9,
+			voice: pickBoundaryEnglishVoice(),
+			boundaryFallback: false,
+			onBoundary: onActiveCharChange,
+			onEnd: () => {
+				setSpeaking(false)
+				onActiveCharChange(null)
+			},
+		})
+	}, [onActiveCharChange, speaking, stopPlayback, text])
+
+	useEffect(() => stopPlayback, [stopPlayback])
+
+	return (
+		<button
+			type="button"
+			onClick={playPassage}
+			className="flex size-9 items-center justify-center text-foreground transition hover:scale-110 active:scale-95"
+			aria-label={speaking ? "Dừng đọc đoạn văn" : "Đọc đoạn văn"}
+			title={speaking ? "Dừng đọc" : "Đọc đoạn văn"}
+		>
+			{speaking ? (
+				<svg
+					viewBox="0 0 16 16"
+					className="size-5 animate-[flameOuterPulse_900ms_ease-in-out_infinite]"
+					fill="currentColor"
+					aria-hidden="true"
+				>
+					<path d="M2.5 6.2v3.6h2.4L8 12.5v-9L4.9 6.2H2.5z" />
+					<path d="M10 5.4a3.2 3.2 0 0 1 0 5.2l-.8-1a1.9 1.9 0 0 0 0-3.2l.8-1z" />
+					<path d="M11.8 3.5a5.5 5.5 0 0 1 0 9l-.8-1a4.2 4.2 0 0 0 0-7l.8-1z" />
+				</svg>
+			) : (
+				<svg viewBox="0 0 16 16" className="ml-0.5 size-5" fill="currentColor" aria-hidden="true">
+					<path d="M5 3.5v9l7-4.5-7-4.5z" />
+				</svg>
+			)}
+		</button>
 	)
 }

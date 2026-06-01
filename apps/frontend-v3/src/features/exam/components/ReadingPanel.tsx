@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react"
 import { ScrollArea } from "#/components/ScrollArea"
-import { HighlightablePassage } from "#/features/exam/components/HighlightablePassage"
+import { HighlightablePassage, PassageSpeechControl } from "#/features/exam/components/HighlightablePassage"
 import { MCQQuestion } from "#/features/exam/components/MCQQuestion"
 import type { ExamVersionReadingPassage } from "#/features/exam/types"
 import { cn } from "#/lib/utils"
@@ -25,6 +25,7 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 	const sorted = useMemo(() => [...passages].sort((a, b) => a.display_order - b.display_order), [passages])
 
 	const [activeIdx, setActiveIdx] = useState(0)
+	const [activeCharIndex, setActiveCharIndex] = useState<number | null>(null)
 
 	const activePassage = sorted[activeIdx]
 
@@ -37,11 +38,18 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 		[sorted, mcqAnswers],
 	)
 
-	const handlePrev = useCallback(() => setActiveIdx((i) => Math.max(0, i - 1)), [])
-	const handleNext = useCallback(
-		() => setActiveIdx((i) => Math.min(i + 1, sorted.length - 1)),
-		[sorted.length],
-	)
+	const handlePrev = useCallback(() => {
+		setActiveCharIndex(null)
+		setActiveIdx((i) => Math.max(0, i - 1))
+	}, [])
+	const handleNext = useCallback(() => {
+		setActiveCharIndex(null)
+		setActiveIdx((i) => Math.min(i + 1, sorted.length - 1))
+	}, [sorted.length])
+	const handleTab = useCallback((index: number) => {
+		setActiveCharIndex(null)
+		setActiveIdx(index)
+	}, [])
 
 	const handleJump = useCallback((itemIndex: number) => {
 		document
@@ -60,16 +68,24 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 				{/* Passage */}
 				<ScrollArea className="w-1/2 border-r border-border">
 					<div className="space-y-4 bg-background px-7 py-6">
-						<div className="flex items-center gap-2">
-							<span className="rounded-full border-2 border-b-4 border-skill-reading/30 bg-skill-reading/10 px-3 py-1 text-xs font-extrabold text-skill-reading">
-								Phần {activePassage.part}
-							</span>
-							<span className="text-xs text-muted">{activePassage.duration_minutes} phút</span>
+						<div className="flex items-center justify-between gap-3">
+							<div className="flex items-center gap-2">
+								<span className="rounded-full border-2 border-b-4 border-skill-reading/30 bg-skill-reading/10 px-3 py-1 text-xs font-extrabold text-skill-reading">
+									Phần {activePassage.part}
+								</span>
+								<span className="text-xs text-muted">{activePassage.duration_minutes} phút</span>
+							</div>
+							<PassageSpeechControl
+								key={activePassage.id}
+								text={activePassage.passage}
+								onActiveCharChange={setActiveCharIndex}
+							/>
 						</div>
 						<h2 className="text-base font-bold text-foreground">{activePassage.title}</h2>
 						<HighlightablePassage
 							text={activePassage.passage}
 							passageId={activePassage.id}
+							activeCharIndex={activeCharIndex}
 							className="text-sm leading-relaxed text-foreground/90"
 						/>
 					</div>
@@ -142,7 +158,7 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 							<button
 								key={sorted[i]?.id ?? i}
 								type="button"
-								onClick={() => setActiveIdx(i)}
+								onClick={() => handleTab(i)}
 								className={cn(
 									"relative overflow-hidden rounded-(--radius-button) border-2 border-b-4 px-3 pb-2.5 pt-1.5 text-xs font-extrabold transition-all active:translate-y-[2px] active:border-b-2",
 									isActive
