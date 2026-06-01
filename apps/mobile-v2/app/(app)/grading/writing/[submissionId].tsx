@@ -11,8 +11,12 @@ import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 const RUBRIC_LABELS: Record<string, string> = {
   taskAchievement: "Task Achievement",
+  taskFulfillment: "Task Fulfillment",
+  task_fulfillment: "Task Fulfillment",
   coherence: "Coherence & Cohesion",
+  organization: "Organization",
   lexical: "Lexical Resource",
+  vocabulary: "Lexical Resource",
   grammar: "Grammar Range & Accuracy",
 };
 
@@ -69,7 +73,7 @@ export default function WritingGradingScreen() {
             <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.border }]}>
               <Text style={[s.sectionLabel, { color: c.subtle }]}>RUBRIC CHI TIẾT</Text>
               {Object.entries(data.rubricScores ?? {}).map(([key, score]) => (
-                <RubricRow key={key} label={RUBRIC_LABELS[key] ?? key} score={score} max={4} color={accent} />
+                <RubricRow key={key} label={RUBRIC_LABELS[key] ?? key} score={score} max={10} color={accent} />
               ))}
             </View>
 

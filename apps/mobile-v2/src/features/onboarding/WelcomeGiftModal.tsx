@@ -78,7 +78,7 @@ export function WelcomeGiftModal() {
     }, 16);
 
     return () => clearInterval(interval);
-  }, [amount]);
+  }, [amount, coinAnims, scaleAnim]);
 
   if (amount === null) return null;
 

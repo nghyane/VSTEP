@@ -32,13 +32,6 @@ export function useCourse(id: string) {
   });
 }
 
-export function useEnrollmentOrders() {
-  return useQuery({
-    queryKey: ["courses", "enrollment-orders"] as const,
-    queryFn: () => api.get<EnrollmentOrder[]>("/api/v1/courses/enrollment-orders"),
-  });
-}
-
 export function useBookingPage(courseId: string) {
   return useQuery({
     queryKey: ["booking", courseId] as const,

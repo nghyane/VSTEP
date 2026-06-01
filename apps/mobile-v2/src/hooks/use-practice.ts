@@ -105,7 +105,7 @@ export interface GradingJobStatus {
 }
 
 export interface WritingGradingResult {
-  rubricScores: { taskAchievement: number; coherence: number; lexical: number; grammar: number } | null;
+  rubricScores: Record<string, number> | null;
   overallBand: number | null;
   strengths: string[];
   improvements: { message: string; explanation: string }[];
@@ -245,12 +245,43 @@ export interface SpeakingPronunciationReview {
 }
 
 export interface SpeakingGradingResult {
-  rubricScores: { fluency: number; pronunciation: number; content: number; vocab: number; grammar: number } | null;
+  criterionScores: CriterionScore[];
   overallBand: number | null;
   strengths: string[];
   improvements: { message: string; explanation: string }[];
   pronunciationReport: { accuracyScore: number } | null;
   transcript: string | null;
+}
+
+export interface CriterionScore {
+  key: string;
+  score: number;
+  weight?: number;
+}
+
+type FeedbackTextItem = string | { message?: string; explanation?: string };
+
+type FeedbackRewriteItem = string | { original?: string; improved?: string; reason?: string };
+
+interface AssessmentFeedback {
+  strengths?: FeedbackTextItem[];
+  improvements?: FeedbackTextItem[];
+  evidenceNotes?: string[];
+  rewrites?: FeedbackRewriteItem[];
+}
+
+interface AssessmentResultPayload {
+  criterionScores?: CriterionScore[];
+  overallBand: number | null;
+  feedback?: AssessmentFeedback | null;
+  annotations?: unknown[];
+  paragraphFeedback?: Record<string, string>[];
+  pronunciationReport?: { accuracyScore?: number } | null;
+  transcript?: string | null;
+}
+
+interface PracticeGradingResultResponse {
+  data: AssessmentResultPayload | null;
 }
 
 export interface PresignUploadResponse {
@@ -687,24 +718,124 @@ export function useGradingJobStatus(jobId: string) {
 
 export function useWritingGradingResult(submissionId: string) {
   return useQuery({
-    queryKey: ["grading", "writing", "result", submissionId],
-    queryFn: () =>
-      api.get<WritingGradingResult | null>(
-        `/api/v1/grading/writing/practice_writing/${submissionId}`,
-      ),
+    queryKey: ["practice", "writing", "result", submissionId],
+    queryFn: async () => {
+      const response = await api.get<PracticeGradingResultResponse>(
+        `/api/v1/practice/writing/submissions/${submissionId}/result`,
+      );
+      return normalizeWritingGradingResult(response);
+    },
     refetchInterval: (q) => (q.state.data?.overallBand != null ? false : 5000),
+    enabled: !!submissionId,
     retry: false,
   });
 }
 
 export function useSpeakingGradingResult(submissionId: string) {
   return useQuery({
-    queryKey: ["grading", "speaking", "result", submissionId],
-    queryFn: () =>
-      api.get<SpeakingGradingResult | null>(
-        `/api/v1/grading/speaking/practice_speaking/${submissionId}`,
-      ),
+    queryKey: ["practice", "speaking", "result", submissionId],
+    queryFn: async () => {
+      const response = await api.get<PracticeGradingResultResponse>(
+        `/api/v1/practice/speaking/submissions/${submissionId}/result`,
+      );
+      return normalizeSpeakingGradingResult(response);
+    },
     refetchInterval: (q) => (q.state.data?.overallBand != null ? false : 5000),
+    enabled: !!submissionId,
     retry: false,
   });
+}
+
+function normalizeWritingGradingResult(response: PracticeGradingResultResponse): WritingGradingResult | null {
+  const result = response.data;
+  if (!result) return null;
+
+  const feedback = result.feedback;
+  const improvementItems = feedback?.improvements && feedback.improvements.length > 0
+    ? feedback.improvements
+    : feedback?.evidenceNotes ?? [];
+
+  return {
+    rubricScores: normalizeWritingRubricScores(result.criterionScores),
+    overallBand: result.overallBand,
+    strengths: normalizeTextItems(feedback?.strengths),
+    improvements: normalizeImprovementItems(improvementItems),
+    rewrites: normalizeRewriteItems(feedback?.rewrites),
+    annotations: result.annotations ?? [],
+    paragraphFeedback: result.paragraphFeedback ?? [],
+  };
+}
+
+function normalizeSpeakingGradingResult(response: PracticeGradingResultResponse): SpeakingGradingResult | null {
+  const result = response.data;
+  if (!result) return null;
+
+  const feedback = result.feedback;
+  const improvementItems = feedback?.improvements && feedback.improvements.length > 0
+    ? feedback.improvements
+    : feedback?.evidenceNotes ?? [];
+
+  return {
+    overallBand: result.overallBand,
+    criterionScores: result.criterionScores ?? [],
+    strengths: normalizeTextItems(feedback?.strengths),
+    improvements: normalizeImprovementItems(improvementItems),
+    pronunciationReport: normalizePronunciationReport(result),
+    transcript: result.transcript ?? null,
+  };
+}
+
+function normalizeWritingRubricScores(scores: CriterionScore[] | undefined): Record<string, number> | null {
+  const rubricScores: Record<string, number> = {};
+  for (const criterion of scores ?? []) {
+    rubricScores[writingRubricKey(criterion.key)] = criterion.score;
+  }
+
+  return Object.keys(rubricScores).length > 0 ? rubricScores : null;
+}
+
+function writingRubricKey(key: string): string {
+  switch (key) {
+    case "task_fulfillment":
+    case "taskFulfillment":
+    case "taskAchievement":
+      return "taskAchievement";
+    case "organization":
+    case "coherence":
+      return "coherence";
+    case "vocabulary":
+    case "lexical":
+      return "lexical";
+    default:
+      return key;
+  }
+}
+
+function normalizeTextItems(items: FeedbackTextItem[] | undefined): string[] {
+  return (items ?? [])
+    .map((item) => (typeof item === "string" ? item : item.message ?? ""))
+    .filter((item) => item.trim().length > 0);
+}
+
+function normalizeImprovementItems(items: FeedbackTextItem[] | undefined) {
+  return (items ?? [])
+    .map((item) => {
+      if (typeof item === "string") return { message: item, explanation: "" };
+      return { message: item.message ?? "", explanation: item.explanation ?? "" };
+    })
+    .filter((item) => item.message.trim().length > 0);
+}
+
+function normalizeRewriteItems(items: FeedbackRewriteItem[] | undefined) {
+  return (items ?? [])
+    .map((item) => {
+      if (typeof item === "string") return { original: "", improved: item, reason: "" };
+      return { original: item.original ?? "", improved: item.improved ?? "", reason: item.reason ?? "" };
+    })
+    .filter((item) => item.original.trim().length > 0 || item.improved.trim().length > 0);
+}
+
+function normalizePronunciationReport(result: AssessmentResultPayload): { accuracyScore: number } | null {
+  const accuracyScore = result.pronunciationReport?.accuracyScore;
+  return typeof accuracyScore === "number" ? { accuracyScore } : null;
 }

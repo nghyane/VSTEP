@@ -131,6 +131,12 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
     setPlaying(false);
   }, [clearWordTimer]);
 
+  useEffect(() => {
+    stop();
+    setActiveWordIndex(-1);
+    setActiveTurnIndex(-1);
+  }, [transcript, stop]);
+
   const startWordTimer = useCallback(
     (turn: Turn, rate: number) => {
       clearWordTimer();

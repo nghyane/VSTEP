@@ -21,6 +21,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { AvatarPickerSheet } from "@/features/profile/AvatarPickerSheet";
 import { CreateProfileSheet } from "@/features/profile/CreateProfileSheet";
 import { EditProfileSheet } from "@/features/profile/EditProfileSheet";
+import { PromoRedeemCard } from "@/features/wallet/PromoRedeemCard";
 import { useAuth } from "@/hooks/use-auth";
 import {
   useProfiles,
@@ -136,6 +137,8 @@ export default function ProfileScreen() {
       <DepthButton fullWidth variant="secondary" onPress={() => setShowCreate(true)}>
         + Thêm mục tiêu mới
       </DepthButton>
+
+      <PromoRedeemCard />
 
       {/* Settings */}
       <Text style={[s.sectionLabel, { color: c.subtle }]}>CÀI ĐẶT</Text>

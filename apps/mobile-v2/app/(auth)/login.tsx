@@ -39,6 +39,7 @@ export default function LoginScreen() {
   const { signIn, signOut, setSuggestedNickname } = useAuth();
   const googleUnavailableReason = getGoogleAuthUnavailableReason();
   const googleReady = !googleUnavailableReason;
+  const googleUnavailableHint = googleUnavailableReason?.includes("Expo Go") ? null : googleUnavailableReason;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -184,8 +185,8 @@ export default function LoginScreen() {
             )}
           </HapticTouchable>
 
-          {googleUnavailableReason ? (
-            <Text style={[s.fieldHint, { color: c.warning }]}>{googleUnavailableReason}</Text>
+          {googleUnavailableHint ? (
+            <Text style={[s.fieldHint, { color: c.warning }]}>{googleUnavailableHint}</Text>
           ) : null}
 
           <View style={s.dividerRow}>

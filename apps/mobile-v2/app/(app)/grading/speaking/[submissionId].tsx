@@ -13,8 +13,11 @@ const RUBRIC_LABELS: Record<string, string> = {
   fluency: "Fluency & Coherence",
   pronunciation: "Pronunciation",
   content: "Content & Task Fulfillment",
+  vocabulary: "Lexical Resource",
   vocab: "Lexical Resource",
   grammar: "Grammar Range & Accuracy",
+  discourseManagement: "Discourse Management",
+  discourse_management: "Discourse Management",
 };
 
 export default function SpeakingGradingScreen() {
@@ -78,8 +81,14 @@ export default function SpeakingGradingScreen() {
 
             <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.border }]}>
               <Text style={[s.sectionLabel, { color: c.subtle }]}>RUBRIC CHI TIẾT</Text>
-              {Object.entries(data.rubricScores ?? {}).map(([key, score]) => (
-                <RubricRow key={key} label={RUBRIC_LABELS[key] ?? key} score={score} max={4} color={accentText} />
+              {data.criterionScores.map((criterion) => (
+                <RubricRow
+                  key={criterion.key}
+                  label={RUBRIC_LABELS[criterion.key] ?? criterion.key}
+                  score={criterion.score}
+                  max={10}
+                  color={accentText}
+                />
               ))}
             </View>
 

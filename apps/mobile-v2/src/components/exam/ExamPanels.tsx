@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import { resolvePlayableAudioUrl } from "@/lib/asset-url";
 import { useLogListeningPlayed } from "@/hooks/use-exam-session";
+import { useTTSPlayer } from "@/hooks/use-tts-player";
 import { useThemeColors, spacing, radius, fontSize, fontFamily, colors as themeColors } from "@/theme";
 import type { ExamVersionMcqItem, ExamVersionListeningSection, ExamVersionReadingPassage, ExamVersionWritingTask } from "@/types/api";
 
@@ -28,16 +29,25 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
   const [sectionInPartIdx, setSectionInPartIdx] = useState(0);
   const activeGroup = partGroups[partIdx];
   const section = activeGroup?.sections[sectionInPartIdx] ?? activeGroup?.sections[0];
+  const activeSectionId = section?.id ?? "";
+  const activeSectionAudioUrl = section?.audioUrl ?? "";
   const [sound, setSound] = useState<Audio.Sound | null>(null);
   const [playing, setPlaying] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [audioNotice, setAudioNotice] = useState<string | null>(null);
   const [audioRetry, setAudioRetry] = useState(0);
   const [ready, setReady] = useState(false);
   const [countdown, setCountdown] = useState(3);
+  const [useTtsFallback, setUseTtsFallback] = useState(false);
   const shouldAutoPlayRef = useRef(false);
   const loggedSectionsRef = useRef<Set<string>>(new Set());
   const logPlayed = useLogListeningPlayed(sessionId);
   const logPlayedRef = useRef(logPlayed.mutate);
+  const activeGroupTranscript = useMemo(
+    () => activeGroup?.sections.map((sec) => sec.transcript?.trim()).filter((text): text is string => !!text).join("\n\n") ?? "",
+    [activeGroup?.sections],
+  );
+  const ttsPlayer = useTTSPlayer(useTtsFallback && activeGroupTranscript ? activeGroupTranscript : null);
 
   useEffect(() => {
     logPlayedRef.current = logPlayed.mutate;
@@ -55,15 +65,27 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
   }, [countdown, ready]);
 
   useEffect(() => {
-    if (!section?.audioUrl) return;
+    setUseTtsFallback(false);
+    setAudioNotice(null);
+    if (!activeSectionId) return;
+    if (!activeSectionAudioUrl) {
+      if (activeGroupTranscript) {
+        setAudioError(null);
+        setUseTtsFallback(true);
+        setAudioNotice("Audio gốc chưa có, đang dùng giọng đọc máy.");
+      } else {
+        setAudioError("Bài này chưa có audio.");
+      }
+      return;
+    }
     setAudioError(null);
-    const sectionId = section.id;
+    const sectionId = activeSectionId;
     const hasNextSection = sectionInPartIdx < (activeGroup?.sections.length ?? 0) - 1;
     let snd: Audio.Sound | null = null;
     let cancelled = false;
     (async () => {
       try {
-        const audioUrl = await resolvePlayableAudioUrl(section.audioUrl);
+        const audioUrl = await resolvePlayableAudioUrl(activeSectionAudioUrl);
         if (cancelled) return;
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: false,
@@ -97,22 +119,34 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
         }
       } catch (error) {
         if (__DEV__) {
-          console.warn("Exam listening audio load failed", { audioUrl: section.audioUrl, error });
+          console.warn("Exam listening audio load failed", { audioUrl: activeSectionAudioUrl, error });
         }
         setSound(null);
         setPlaying(false);
-        setAudioError("Không tải được audio. Vui lòng thử lại.");
+        if (activeGroupTranscript) {
+          setUseTtsFallback(true);
+          setAudioError(null);
+          setAudioNotice("Không tải được audio gốc, đang dùng giọng đọc máy.");
+        } else {
+          setAudioError("Không tải được audio. Vui lòng thử lại.");
+        }
       }
     })();
     return () => {
       cancelled = true;
       snd?.unloadAsync().catch(() => undefined);
     };
-  }, [section?.audioUrl, section?.id, sectionInPartIdx, activeGroup?.sections.length, audioRetry]);
+  }, [activeSectionAudioUrl, activeSectionId, sectionInPartIdx, activeGroup?.sections.length, activeGroupTranscript, audioRetry]);
 
   async function togglePlay() {
-    if (!sound || !section) return;
+    if (!section) return;
     try {
+      if (useTtsFallback) {
+        logSectionPlayed(section.id);
+        ttsPlayer.toggle();
+        return;
+      }
+      if (!sound) return;
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         playsInSilentModeIOS: true,
@@ -142,6 +176,9 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
 
   const color = themeColors.light.skillListening;
   const activeItems = activeGroup?.sections.flatMap((sec) => sec.items) ?? [];
+  const canPlayTtsFallback = useTtsFallback && activeGroupTranscript.length > 0;
+  const isPlaying = canPlayTtsFallback ? ttsPlayer.playing : playing;
+  const retryOnlyError = !!audioError && !canPlayTtsFallback;
 
   if (!activeGroup || !section) return null;
 
@@ -174,13 +211,14 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
           <Text style={[s.audioSubText, { color: c.mutedForeground }]}>Audio {sectionInPartIdx + 1}/{activeGroup.sections.length}</Text>
         ) : null}
         <TouchableOpacity
-          onPress={audioError ? () => setAudioRetry((v) => v + 1) : togglePlay}
-          disabled={!sound && !audioError}
-          style={[s.playBtn, { backgroundColor: audioError ? c.mutedForeground : color }]}
+          onPress={retryOnlyError ? () => setAudioRetry((v) => v + 1) : togglePlay}
+          disabled={!sound && !canPlayTtsFallback && !retryOnlyError}
+          style={[s.playBtn, { backgroundColor: retryOnlyError ? c.mutedForeground : color }]}
         >
-          <Ionicons name={audioError ? "refresh" : playing ? "pause" : "play"} size={22} color="#fff" />
-          <Text style={s.playBtnText}>{audioError ? "Thử lại" : playing ? "Tạm dừng" : "Phát audio"}</Text>
+          <Ionicons name={retryOnlyError ? "refresh" : isPlaying ? "pause" : "play"} size={22} color="#fff" />
+          <Text style={s.playBtnText}>{retryOnlyError ? "Thử lại" : isPlaying ? "Tạm dừng" : "Phát audio"}</Text>
         </TouchableOpacity>
+        {audioNotice && <Text style={[s.audioNotice, { color: c.mutedForeground }]}>{audioNotice}</Text>}
         {audioError && <Text style={[s.audioError, { color: c.destructive }]}>{audioError}</Text>}
       </View>
       {activeItems.map((item, qi) => (
@@ -402,6 +440,7 @@ const s = StyleSheet.create({
   audioSubText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
   playBtn: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: radius.full, alignSelf: "flex-start" },
   playBtnText: { color: "#fff", fontSize: fontSize.sm, fontFamily: fontFamily.bold },
+  audioNotice: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   audioError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   readyOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", alignItems: "center", justifyContent: "center", padding: spacing.xl },
   readyBox: { width: "100%", borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, gap: spacing.md },
