@@ -47,11 +47,10 @@ export default function FoundationIndexScreen() {
         </View>
       ) : null}
 
-      {/* Từ vựng */}
       <DepthCard style={s.card}>
         <View style={s.cardHeader}>
           <View style={[s.iconWrap, { backgroundColor: c.primaryTint }]}>
-            <GameIcon name="book" size={28} />
+            <GameIcon name="vocabulary" size={32} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[s.cardTitle, { color: c.foreground }]}>Từ vựng</Text>
@@ -74,18 +73,17 @@ export default function FoundationIndexScreen() {
 
         <DepthButton
           fullWidth
-          onPress={() => router.push("/(app)/vocabulary" as any)}
+          onPress={() => router.push("/(app)/vocabulary" as never)}
           style={{ marginTop: spacing.xs }}
         >
           {dueCount > 0 ? `Ôn ${dueCount} từ hôm nay` : "Xem chủ đề từ vựng"}
         </DepthButton>
       </DepthCard>
 
-      {/* Ngữ pháp */}
       <DepthCard style={s.card}>
         <View style={s.cardHeader}>
           <View style={[s.iconWrap, { backgroundColor: "#F3EAFF" }]}>
-            <GameIcon name="pencil" size={28} />
+            <GameIcon name="grammar" size={32} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[s.cardTitle, { color: c.foreground }]}>Ngữ pháp</Text>
@@ -106,7 +104,7 @@ export default function FoundationIndexScreen() {
 
         <DepthButton
           fullWidth
-          onPress={() => router.push("/(app)/practice/grammar" as any)}
+          onPress={() => router.push("/(app)/practice/grammar" as never)}
           style={{ marginTop: spacing.xs }}
         >
           {`Xem ${grammarCount} điểm ngữ pháp`}

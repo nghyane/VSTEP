@@ -118,10 +118,35 @@ export default function RootLayout() {
     });
   }, []);
 
+  const updateProfile = useCallback(async (patch: Partial<Profile>) => {
+    setProfile((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      (async () => {
+        try {
+          const [accessToken, refreshToken] = await Promise.all([
+            getAccessToken(),
+            getRefreshToken(),
+          ]);
+          if (accessToken && refreshToken && userRef.current) {
+            await saveTokens(accessToken, refreshToken, userRef.current, next);
+          }
+        } catch {
+          // Persist best-effort only.
+        }
+      })();
+      return next;
+    });
+  }, []);
+
   const profileRef = useRef<Profile | null>(null);
+  const userRef = useRef<AuthUser | null>(null);
   useEffect(() => {
     profileRef.current = profile;
   }, [profile]);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   const segments = useSegments();
   const router = useRouter();
@@ -154,6 +179,7 @@ export default function RootLayout() {
             switchSession,
             signOut,
             updateUser,
+            updateProfile,
             setSuggestedNickname,
           }}
         >

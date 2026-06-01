@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 
 import { BottomSheet } from "@/components/BottomSheet";
+import { BrandIcon } from "@/components/BrandIcon";
 import { DepthButton } from "@/components/DepthButton";
 import { GameIcon } from "@/components/GameIcon";
 import { HapticTouchable } from "@/components/HapticTouchable";
@@ -162,7 +163,7 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
     <BottomSheet visible={visible} onClose={onClose}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
-          <GameIcon name="coin" size={40} />
+          <BrandIcon name="coin" size={40} />
           <View style={{ flex: 1 }}>
             <Text style={[styles.title, { color: c.foreground }]}>Nạp xu</Text>
             <Text style={[styles.subtitle, { color: c.subtle }]}>
@@ -278,7 +279,7 @@ function PackCard({ pack, selected, onSelect }: { pack: TopupPackage; selected: 
       ) : null}
       <Text style={[styles.packLabel, { color: c.subtle }]}>{pack.label}</Text>
       <View style={styles.packCoinRow}>
-        <GameIcon name="coin" size={20} />
+        <BrandIcon name="coin" size={20} />
         <Text style={[styles.packCoins, { color: c.foreground }]}>{formatNumber(pack.totalCoins)}</Text>
         <Text style={[styles.packUnit, { color: c.subtle }]}>xu</Text>
       </View>

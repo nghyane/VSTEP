@@ -101,7 +101,7 @@ function RecommendationRow({
         {isCoreSkill(item.skill) ? (
           <SkillIcon skill={item.skill} size={20} bare />
         ) : (
-          <GameIcon name={item.skill === "vocabulary" ? "book" : "pencil"} size={20} />
+          <GameIcon name={item.skill === "vocabulary" ? "vocabulary" : "grammar"} size={20} />
         )}
       </View>
       <View style={styles.rowBody}>

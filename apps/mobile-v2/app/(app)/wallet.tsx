@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
-import { GameIcon } from "@/components/GameIcon";
+import { BrandIcon } from "@/components/BrandIcon";
 import { TopUpSheet } from "@/features/wallet/TopUpSheet";
 import { TopUpSuccessPopup } from "@/features/wallet/TopUpSuccessPopup";
 import { useWalletBalance, useWalletTransactions } from "@/features/wallet/queries";
@@ -29,7 +29,7 @@ export default function WalletScreen() {
       <Text style={[styles.title, { color: c.foreground }]}>Ví điện tử</Text>
 
       <DepthCard style={styles.balanceCard}>
-        <GameIcon name="coin" size={48} />
+        <BrandIcon name="coin" size={48} />
         <Text style={[styles.balanceLabel, { color: c.subtle }]}>Số dư hiện tại</Text>
         <Text style={[styles.balanceValue, { color: c.foreground }]}>
           {balance.toLocaleString("vi-VN")} xu

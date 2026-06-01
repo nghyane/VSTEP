@@ -19,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { DepthButton } from "@/components/DepthButton";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useUpdateProfile } from "@/hooks/use-profiles";
+import { getApiErrorMessage } from "@/lib/api";
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
 import type { Profile } from "@/types/api";
 
@@ -46,6 +47,26 @@ function parseDateInput(input: string): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
+function startOfDay(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function tomorrow(): Date {
+  const d = startOfDay(new Date());
+  d.setDate(d.getDate() + 1);
+  return d;
+}
+
+function laterDate(a: Date, b: Date): Date {
+  return a.getTime() >= b.getTime() ? a : b;
+}
+
+function isOnOrAfter(date: Date | null, minDate: Date): boolean {
+  return date !== null && startOfDay(date).getTime() >= startOfDay(minDate).getTime();
+}
+
 function daysUntil(deadline: string): number {
   const diff = new Date(deadline).getTime() - Date.now();
   return Math.max(0, Math.ceil(diff / 86400000));
@@ -57,12 +78,14 @@ export function EditProfileSheet({ profile, onClose }: Props) {
   const [nickname, setNickname] = useState("");
   const [targetDeadline, setTargetDeadline] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [errorText, setErrorText] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile) {
       setNickname(profile.nickname);
       setTargetDeadline(profile.targetDeadline ?? "");
       setShowDatePicker(false);
+      setErrorText(null);
       updateMutation.reset();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -71,8 +94,14 @@ export function EditProfileSheet({ profile, onClose }: Props) {
   if (!profile) return null;
 
   const trimmed = nickname.trim();
-  const dateValid = /^\d{4}-\d{2}-\d{2}$/.test(targetDeadline);
   const dirty = trimmed !== profile.nickname || targetDeadline !== (profile.targetDeadline ?? "");
+  const currentDeadlineDate = profile.targetDeadline ? parseDateInput(profile.targetDeadline) : null;
+  const minEditableDate = currentDeadlineDate
+    ? laterDate(tomorrow(), currentDeadlineDate)
+    : tomorrow();
+  const deadlineChanged = targetDeadline !== (profile.targetDeadline ?? "");
+  const parsedDeadline = parseDateInput(targetDeadline);
+  const dateValid = !deadlineChanged || isOnOrAfter(parsedDeadline, minEditableDate);
   const canSubmit = trimmed.length > 0 && dateValid && dirty && !updateMutation.isPending;
 
   function handleClose() {
@@ -82,19 +111,31 @@ export function EditProfileSheet({ profile, onClose }: Props) {
 
   function handleSubmit() {
     if (!canSubmit || !profile) return;
+    setErrorText(null);
+    const payload = {
+      id: profile.id,
+      ...(trimmed !== profile.nickname ? { nickname: trimmed } : {}),
+      ...(deadlineChanged ? { targetDeadline } : {}),
+    };
     updateMutation.mutate(
-      { id: profile.id, nickname: trimmed, targetDeadline },
-      { onSuccess: () => onClose() },
+      payload,
+      {
+        onSuccess: () => onClose(),
+        onError: (error) => setErrorText(getApiErrorMessage(error)),
+      },
     );
   }
 
   function handleDateChange(_event: unknown, selectedDate?: Date) {
     if (Platform.OS === "android") setShowDatePicker(false);
-    if (selectedDate) setTargetDeadline(toDateInput(selectedDate));
+    if (selectedDate) {
+      setTargetDeadline(toDateInput(selectedDate));
+      setErrorText(null);
+    }
   }
 
   const dateDisplay = toDisplayDate(targetDeadline);
-  const dateValue = parseDateInput(targetDeadline) ?? new Date();
+  const dateValue = parseDateInput(targetDeadline) ?? minEditableDate;
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={handleClose}>
@@ -151,7 +192,7 @@ export function EditProfileSheet({ profile, onClose }: Props) {
                 value={dateValue}
                 mode="date"
                 display={Platform.OS === "ios" ? "spinner" : "default"}
-                minimumDate={new Date()}
+                minimumDate={minEditableDate}
                 onChange={handleDateChange}
               />
             )}
@@ -169,9 +210,9 @@ export function EditProfileSheet({ profile, onClose }: Props) {
               </Text>
             </View>
 
-            {updateMutation.isError ? (
+            {errorText ? (
               <Text style={[s.error, { color: c.destructive }]}>
-                Không lưu được. Vui lòng thử lại.
+                {errorText}
               </Text>
             ) : null}
           </ScrollView>

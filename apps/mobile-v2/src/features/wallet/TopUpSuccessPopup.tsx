@@ -3,8 +3,8 @@
 import { useEffect, useRef } from "react";
 import { Animated, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
+import { BrandIcon } from "@/components/BrandIcon";
 import { DepthButton } from "@/components/DepthButton";
-import { GameIcon } from "@/components/GameIcon";
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
 
 interface Props {
@@ -64,7 +64,7 @@ export function TopUpSuccessPopup({ visible, coinsAdded, newBalance, onClose }: 
             <View style={styles.coinArea}>
               <CoinBurst burst={burst} c={c} />
               <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                <GameIcon name="coin" size={100} />
+                <BrandIcon name="coin" size={100} />
               </Animated.View>
               <Animated.View
                 style={[
@@ -78,7 +78,7 @@ export function TopUpSuccessPopup({ visible, coinsAdded, newBalance, onClose }: 
 
             <View style={styles.footer}>
               <View style={[styles.balanceRow, { backgroundColor: c.background, borderColor: c.border }]}>
-                <GameIcon name="coin" size={20} />
+                <BrandIcon name="coin" size={20} />
                 <Text style={[styles.balanceLabel, { color: c.subtle }]}>Số dư</Text>
                 <Text style={[styles.balanceValue, { color: c.foreground }]}>{formatNumber(newBalance)} xu</Text>
               </View>
@@ -120,7 +120,7 @@ function CoinBurst({ burst, c }: { burst: Animated.Value; c: ReturnType<typeof u
         const opacity = burst.interpolate({ inputRange: [0, 0.5, 1], outputRange: [1, 1, 0] });
         return (
           <Animated.View key={`coin-${angle}`} style={[styles.coinDot, { opacity, transform: [{ translateX: tx }, { translateY: ty }] }]}>
-            <GameIcon name="coin" size={18} />
+            <BrandIcon name="coin" size={18} />
           </Animated.View>
         );
       })}

@@ -3,7 +3,7 @@
 // Upload path bypasses the shared `api` client because it uses JSON content type
 // and snake/camel transform; multipart needs raw FormData and no JSON header.
 import { getAccessToken } from "@/lib/auth";
-import { api } from "@/lib/api";
+import { api, ApiError } from "@/lib/api";
 import type { AvatarKey } from "@/types/api";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? "https://api.vstepgo.com";
@@ -39,7 +39,15 @@ export async function uploadAvatarPhoto(uri: string, mimeType: string): Promise<
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    throw new Error(text || `Upload failed (HTTP ${res.status})`);
+    let parsed: unknown = null;
+    if (text) {
+      try {
+        parsed = JSON.parse(text) as unknown;
+      } catch {
+        parsed = null;
+      }
+    }
+    throw new ApiError(res.status, text || `Upload failed (HTTP ${res.status})`, parsed);
   }
 
   const json = (await res.json()) as {

@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthCard } from "@/components/DepthCard";
+import { GameIcon } from "@/components/GameIcon";
 import { MascotEmpty } from "@/components/MascotStates";
 import { useSpeakingDrills } from "@/hooks/use-practice";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
@@ -52,17 +53,17 @@ export default function SpeakingDrillsScreen() {
             <HapticTouchable
               key={drill.id}
               scalePress
-              onPress={() => router.push(`/(app)/practice/speaking/drill/${drill.id}` as any)}
+              onPress={() => router.push(`/(app)/practice/speaking/drill/${drill.id}` as never)}
             >
               <DepthCard style={s.card}>
                 <View style={s.cardHeader}>
-                  <View style={[s.levelBadge, { backgroundColor: COLOR + "25" }]}> 
+                  <View style={[s.levelBadge, { backgroundColor: COLOR + "25" }]}>
                     <Text style={[s.levelText, { color: COLOR_TEXT }]}>{drill.level}</Text>
                   </View>
                   <Text style={[s.cardTitle, { color: c.foreground }]} numberOfLines={2}>{drill.title}</Text>
                 </View>
                 <View style={s.metaRow}>
-                  <Ionicons name="mic-outline" size={14} color={COLOR_TEXT} />
+                  <GameIcon name="speaking" size={16} />
                   <Text style={[s.metaText, { color: c.mutedForeground }]}> {drill.segmentCount} đoạn · {drill.estimatedMinutes ?? 5} phút</Text>
                 </View>
               </DepthCard>

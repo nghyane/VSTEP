@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { BrandIcon } from "@/components/BrandIcon";
 import { BottomSheet } from "@/components/BottomSheet";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { GameIcon } from "@/components/GameIcon";
@@ -32,7 +33,7 @@ export function StreakButton({ streak, activityByDay = {} }: StreakButtonProps) 
         onPress={() => setVisible(true)}
       >
         <View style={styles.iconWrap}>
-          <GameIcon name="fire" size={18} />
+          <BrandIcon name="streak" size={18} active={isActive} />
         </View>
         <Text style={[styles.btnText, { color: isActive ? c.streak : c.mutedForeground }]}>
           {streak}
@@ -95,7 +96,7 @@ function StreakDialog({
       <View style={styles.content}>
         <View style={[styles.header, { backgroundColor: c.streak + "12" }]}>
           <View style={styles.headerRow}>
-            <GameIcon name="fire" size={36} />
+            <BrandIcon name="streak" size={36} active={streak > 0} />
             <View>
               <Text style={[styles.streakNum, { color: c.streak }]}>
                 {streak} <Text style={styles.streakUnit}>ngày</Text>

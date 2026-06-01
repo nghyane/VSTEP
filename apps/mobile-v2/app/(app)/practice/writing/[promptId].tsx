@@ -22,6 +22,7 @@ import * as Haptics from "expo-haptics";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
+import { GameIcon } from "@/components/GameIcon";
 import { WritingReviewSheet } from "@/components/WritingReviewSheet";
 import { WritingWordProgress } from "@/components/WritingWordProgress";
 import {
@@ -77,7 +78,7 @@ export default function WritingExerciseScreen() {
         </View>
         <View style={[s.fullCenter, { flex: 1 }]}>
           <View style={[s.previewIcon, { backgroundColor: COLOR + "18" }]}>
-            <Ionicons name="create" size={40} color={COLOR} />
+            <GameIcon name="writing" size={48} />
           </View>
           <Text style={[s.previewTitle, { color: c.foreground }]}>{detail.title}</Text>
           <Text style={[s.previewMeta, { color: c.subtle }]}>

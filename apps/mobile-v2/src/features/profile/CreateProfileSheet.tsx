@@ -18,12 +18,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { DepthButton } from "@/components/DepthButton";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useCreateProfile } from "@/hooks/use-profiles";
+import { getApiErrorMessage } from "@/lib/api";
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
+import type { Profile } from "@/types/api";
 
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onCreated?: () => void;
+  onCreated?: (profile: Profile) => Promise<void> | void;
 }
 
 // ─── Level constants (mirror FE v3 lib/vstep.ts) ───
@@ -81,6 +83,16 @@ function parseDateInput(input: string): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
+function startOfDay(date: Date): Date {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function isOnOrAfter(date: Date | null, minDate: Date): boolean {
+  return date !== null && startOfDay(date).getTime() >= startOfDay(minDate).getTime();
+}
+
 // ─── Component ───
 
 export function CreateProfileSheet({ visible, onClose, onCreated }: Props) {
@@ -91,11 +103,16 @@ export function CreateProfileSheet({ visible, onClose, onCreated }: Props) {
   const [targetLevel, setTargetLevel] = useState<TargetLevel>("B2");
   const [targetDeadline, setTargetDeadline] = useState("");
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [errorText, setErrorText] = useState<string | null>(null);
+  const [finishing, setFinishing] = useState(false);
 
   const targets = availableTargets(entryLevel);
   const trimmed = nickname.trim();
-  const dateValid = /^\d{4}-\d{2}-\d{2}$/.test(targetDeadline);
-  const canSubmit = trimmed.length > 0 && dateValid && !createMutation.isPending;
+  const minDate = computeMinDate(entryLevel, targetLevel);
+  const parsedDeadline = parseDateInput(targetDeadline);
+  const dateValid = isOnOrAfter(parsedDeadline, minDate);
+  const isSubmitting = createMutation.isPending || finishing;
+  const canSubmit = trimmed.length > 0 && dateValid && !isSubmitting;
 
   function reset() {
     setNickname("");
@@ -103,32 +120,36 @@ export function CreateProfileSheet({ visible, onClose, onCreated }: Props) {
     setTargetLevel("B2");
     setTargetDeadline("");
     setShowDatePicker(false);
+    setErrorText(null);
+    setFinishing(false);
     createMutation.reset();
   }
 
   function handleClose() {
-    if (createMutation.isPending) return;
+    if (isSubmitting) return;
     reset();
     onClose();
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!canSubmit) return;
-    createMutation.mutate(
-      {
+    setErrorText(null);
+    setFinishing(true);
+    try {
+      const profile = await createMutation.mutateAsync({
         nickname: trimmed,
         entryLevel,
         targetLevel,
         targetDeadline,
-      },
-      {
-        onSuccess: () => {
-          reset();
-          onCreated?.();
-          onClose();
-        },
-      },
-    );
+      });
+      await onCreated?.(profile);
+      reset();
+      onClose();
+    } catch (error) {
+      setErrorText(getApiErrorMessage(error));
+    } finally {
+      setFinishing(false);
+    }
   }
 
   function handleDateChange(_event: unknown, selectedDate?: Date) {
@@ -139,6 +160,7 @@ export function CreateProfileSheet({ visible, onClose, onCreated }: Props) {
   function handleEntryChange(lvl: EntryLevel) {
     setEntryLevel(lvl);
     setTargetDeadline("");
+    setErrorText(null);
     // Auto-fallback target if invalid for new entry
     const newTargets = availableTargets(lvl);
     if (!newTargets.includes(targetLevel)) {
@@ -149,11 +171,11 @@ export function CreateProfileSheet({ visible, onClose, onCreated }: Props) {
   function handleTargetChange(lvl: TargetLevel) {
     setTargetLevel(lvl);
     setTargetDeadline("");
+    setErrorText(null);
   }
 
   const dateDisplay = toDisplayDate(targetDeadline);
   const dateValue = parseDateInput(targetDeadline) ?? new Date();
-  const minDate = computeMinDate(entryLevel, targetLevel);
   const prepMonths = minPrepMonths(entryLevel, targetLevel);
 
   return (
@@ -296,9 +318,9 @@ export function CreateProfileSheet({ visible, onClose, onCreated }: Props) {
               Tối thiểu {prepMonths} tháng để đạt {entryLevel} → {targetLevel}.
             </Text>
 
-            {createMutation.isError ? (
+            {errorText ? (
               <Text style={[s.error, { color: c.destructive }]}>
-                Không thể tạo hồ sơ. Vui lòng thử lại.
+                {errorText}
               </Text>
             ) : null}
           </ScrollView>
@@ -309,14 +331,14 @@ export function CreateProfileSheet({ visible, onClose, onCreated }: Props) {
                 variant="secondary"
                 fullWidth
                 onPress={handleClose}
-                disabled={createMutation.isPending}
+                disabled={isSubmitting}
               >
                 Hủy
               </DepthButton>
             </View>
             <View style={{ flex: 1 }}>
               <DepthButton fullWidth onPress={handleSubmit} disabled={!canSubmit}>
-                {createMutation.isPending ? "Đang tạo..." : "Tạo"}
+                {isSubmitting ? "Đang tạo..." : "Tạo"}
               </DepthButton>
             </View>
           </View>

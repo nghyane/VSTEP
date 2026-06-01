@@ -14,9 +14,9 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { BrandIcon } from "@/components/BrandIcon";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
-import { GameIcon } from "@/components/GameIcon";
 import { SkillIcon } from "@/components/SkillIcon";
 import { CoinButton } from "@/features/coin/CoinButton";
 import { useAppConfig, useExamSessions, useExams, type Exam } from "@/hooks/use-exams";
@@ -324,7 +324,7 @@ function ExamCard({
 
           <View style={[styles.cardFooter, { borderTopColor: c.borderLight }]}> 
             <View style={styles.coinWrap}>
-              <GameIcon name="coin" size={16} />
+              <BrandIcon name="coin" size={16} />
               <Text style={[styles.coinText, { color: c.coinDark }]}>{cost} xu</Text>
             </View>
             <DepthButton size="sm" onPress={onPress}>

@@ -23,6 +23,7 @@ import { CreateProfileSheet } from "@/features/profile/CreateProfileSheet";
 import { EditProfileSheet } from "@/features/profile/EditProfileSheet";
 import { PromoRedeemCard } from "@/features/wallet/PromoRedeemCard";
 import { useAuth } from "@/hooks/use-auth";
+import { useAppConfig } from "@/hooks/use-exams";
 import {
   useProfiles,
   useResetProfile,
@@ -31,14 +32,13 @@ import {
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
 import type { Profile } from "@/types/api";
 
-const AVATAR_KEYS = ["primary", "info", "skillReading", "warning", "coin", "destructive"] as const;
-
 export default function ProfileScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profile: activeProfile, user, signOut, switchSession } = useAuth();
   const { data: profiles, isLoading } = useProfiles();
+  const { data: config } = useAppConfig();
   const resetMutation = useResetProfile();
   const switchMutation = useSwitchProfile();
 
@@ -79,6 +79,18 @@ export default function ProfileScreen() {
   const avatarColor = activeProfile?.avatarColor ?? c.primary;
   const targetLevel = activeProfile?.targetLevel ?? "Chưa đặt";
   const targetDeadline = activeProfile?.targetDeadline;
+  const maxProfiles = config?.profile.maxProfilesPerAccount ?? 5;
+  const profileCount = profiles?.length ?? 0;
+  const canCreateProfile = profileCount < maxProfiles;
+
+  async function handleProfileCreated(created: Profile) {
+    const res = await switchMutation.mutateAsync(created.id);
+    await switchSession(res.accessToken, res.refreshToken, res.profile);
+  }
+
+  const activeAvatarSource = activeProfile
+    ? { avatarKey: activeProfile.avatarKey, avatarUrl: activeProfile.avatarUrl, email: user?.email ?? activeProfile.nickname, fullName: activeProfile.nickname }
+    : user;
 
   return (
     <ScrollView
@@ -92,7 +104,7 @@ export default function ProfileScreen() {
       {/* Hero */}
       <View style={[s.heroCard, { backgroundColor: c.card, borderColor: c.border }]}>
         <HapticTouchable onPress={() => setShowAvatarPicker(true)} style={s.avatarTouch}>
-          <UserAvatar user={user} size={84} fallbackName={displayName} fallbackColor={avatarColor} />
+          <UserAvatar user={activeAvatarSource} size={84} fallbackName={displayName} fallbackColor={avatarColor} />
           <View style={[s.avatarEditBadge, { backgroundColor: c.primary, borderColor: c.card }]}>
             <Ionicons name="camera" size={12} color={c.primaryForeground} />
           </View>
@@ -121,7 +133,7 @@ export default function ProfileScreen() {
       </View>
 
       {/* Profile selector */}
-      <Text style={[s.sectionLabel, { color: c.subtle }]}>HỒ SƠ CỦA BẠN</Text>
+      <Text style={[s.sectionLabel, { color: c.subtle }]}>HỒ SƠ CỦA BẠN · {profileCount}/{maxProfiles}</Text>
       <View style={s.profileList}>
         {profiles?.map((p) => (
           <ProfileRow
@@ -134,8 +146,8 @@ export default function ProfileScreen() {
         ))}
       </View>
 
-      <DepthButton fullWidth variant="secondary" onPress={() => setShowCreate(true)}>
-        + Thêm mục tiêu mới
+      <DepthButton fullWidth variant="secondary" onPress={() => setShowCreate(true)} disabled={!canCreateProfile}>
+        {canCreateProfile ? "+ Thêm mục tiêu mới" : `Đã đạt giới hạn ${maxProfiles} hồ sơ`}
       </DepthButton>
 
       <PromoRedeemCard />
@@ -174,7 +186,7 @@ export default function ProfileScreen() {
       <Text style={[s.version, { color: c.placeholder }]}>VSTEP Mobile v2.0.0</Text>
 
       {/* Sheets & dialogs */}
-      <CreateProfileSheet visible={showCreate} onClose={() => setShowCreate(false)} />
+      <CreateProfileSheet visible={showCreate} onClose={() => setShowCreate(false)} onCreated={handleProfileCreated} />
       <EditProfileSheet profile={editing} onClose={() => setEditing(null)} />
       <AvatarPickerSheet visible={showAvatarPicker} onClose={() => setShowAvatarPicker(false)} />
 
@@ -238,10 +250,13 @@ function ProfileRow({
   onSwitch: (p: Profile) => void;
 }) {
   const c = useThemeColors();
-  const initial = profile.nickname.charAt(0).toUpperCase();
-  const color =
-    profile.avatarColor ??
-    c[AVATAR_KEYS[Math.abs(profile.id.charCodeAt(0)) % AVATAR_KEYS.length]];
+  const color = profile.avatarColor ?? c.primary;
+  const avatarSource = {
+    avatarKey: profile.avatarKey,
+    avatarUrl: profile.avatarUrl,
+    email: profile.nickname,
+    fullName: profile.nickname,
+  };
 
   return (
     <HapticTouchable
@@ -256,9 +271,7 @@ function ProfileRow({
         },
       ]}
     >
-      <View style={[s.profileAvatar, { backgroundColor: color }]}>
-        <Text style={s.profileAvatarText}>{initial}</Text>
-      </View>
+      <UserAvatar user={avatarSource} size={44} fallbackName={profile.nickname} fallbackColor={color} />
       <View style={{ flex: 1 }}>
         <Text style={[s.profileName, { color: c.foreground }]}>{profile.nickname}</Text>
         <Text style={[s.profileMeta, { color: c.mutedForeground }]}>

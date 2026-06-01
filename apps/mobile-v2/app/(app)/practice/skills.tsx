@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
+import { GameIcon } from "@/components/GameIcon";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Skill } from "@/types/api";
 
@@ -13,13 +14,12 @@ const SKILLS: {
   key: Skill;
   label: string;
   sub: string;
-  icon: keyof typeof Ionicons.glyphMap;
   meta: string;
 }[] = [
-  { key: "listening", label: "Nghe",  sub: "Listening", icon: "headset",  meta: "3 phần · MCQ · chấm ngay" },
-  { key: "reading",   label: "Đọc",   sub: "Reading",   icon: "book",     meta: "3 đoạn · MCQ · chấm ngay" },
-  { key: "writing",   label: "Viết",  sub: "Writing",   icon: "create",   meta: "2 task · AI chấm" },
-  { key: "speaking",  label: "Nói",   sub: "Speaking",  icon: "mic",      meta: "3 phần · ghi âm + AI" },
+  { key: "listening", label: "Nghe", sub: "Listening", meta: "3 phần · MCQ · chấm ngay" },
+  { key: "reading", label: "Đọc", sub: "Reading", meta: "4 đoạn · MCQ · chấm ngay" },
+  { key: "writing", label: "Viết", sub: "Writing", meta: "2 task · AI chấm" },
+  { key: "speaking", label: "Nói", sub: "Speaking", meta: "3 phần · ghi âm + AI" },
 ];
 
 const PARTS: Record<Skill, { label: string; meta: string; badge: string }[]> = {
@@ -50,6 +50,7 @@ export default function PracticeSkillsScreen() {
   const insets = useSafeAreaInsets();
   const [selected, setSelected] = useState<Skill>("listening");
   const color = useSkillColor(selected);
+  const selectedLabel = SKILLS.find((skill) => skill.key === selected)?.label ?? "kỹ năng";
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>
@@ -70,7 +71,6 @@ export default function PracticeSkillsScreen() {
           </Text>
         </View>
 
-        {/* 2x2 skill grid */}
         <View style={s.grid}>
           <View style={s.gridRow}>
             {SKILLS.slice(0, 2).map((skill) => (
@@ -84,7 +84,6 @@ export default function PracticeSkillsScreen() {
           </View>
         </View>
 
-        {/* Part list */}
         <View style={[s.partsCard, { backgroundColor: c.card, borderColor: color + "40", borderBottomColor: color }]}>
           <Text style={[s.partsTitle, { color }]}>Chọn phần luyện tập</Text>
           {PARTS[selected].map((part, i) => (
@@ -96,7 +95,7 @@ export default function PracticeSkillsScreen() {
                 i === 0 && { borderTopWidth: 1, marginTop: spacing.sm },
               ]}
               activeOpacity={0.75}
-              onPress={() => router.push(`/(app)/practice/${selected}` as any)}
+              onPress={() => router.push(`/(app)/practice/${selected}` as never)}
             >
               <View style={[s.partBadge, { backgroundColor: color + "18" }]}>
                 <Text style={[s.partBadgeText, { color }]}>{part.badge}</Text>
@@ -110,15 +109,14 @@ export default function PracticeSkillsScreen() {
           ))}
         </View>
 
-        {/* Spacer pushes button to bottom */}
         <View style={s.spacer} />
 
         <DepthButton
           fullWidth
-          onPress={() => router.push(`/(app)/practice/${selected}` as any)}
+          onPress={() => router.push(`/(app)/practice/${selected}` as never)}
           style={{ backgroundColor: color, borderColor: color }}
         >
-          {`Bắt đầu luyện ${SKILLS.find((sk) => sk.key === selected)!.label.toLowerCase()}`}
+          {`Bắt đầu luyện ${selectedLabel.toLowerCase()}`}
         </DepthButton>
 
         <View style={{ height: insets.bottom + spacing.lg }} />
@@ -157,7 +155,7 @@ function SkillCard({
           ]}
         >
           <View style={[s.skillIconWrap, { backgroundColor: color + "20" }]}>
-            <Ionicons name={skill.icon} size={24} color={color} />
+            <GameIcon name={skill.key} size={32} />
           </View>
           <Text style={[s.skillLabel, { color: active ? color : c.foreground }]}>
             {skill.label}
@@ -180,7 +178,6 @@ const s = StyleSheet.create({
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   sub: { fontSize: fontSize.sm, lineHeight: 20, marginTop: spacing.xs },
   titleBlock: { marginBottom: spacing.lg },
-  // Skill grid
   grid: {},
   gridRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: spacing.sm },
   skillCardWrapper: { width: "48.5%" },
@@ -207,7 +204,6 @@ const s = StyleSheet.create({
   skillLabel: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
   skillSub: { fontSize: fontSize.xs, marginTop: 2 },
   skillMeta: { fontSize: fontSize.xs, lineHeight: 16, marginTop: 4 },
-  // Parts card
   partsCard: {
     borderWidth: 2,
     borderBottomWidth: 4,

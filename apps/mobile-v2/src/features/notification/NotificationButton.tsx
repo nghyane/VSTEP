@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+import { BrandIcon } from "@/components/BrandIcon";
 import { BottomSheet } from "@/components/BottomSheet";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { useDeleteNotification, useMarkAllRead, useNotifications, useUnreadCount } from "@/features/notification/queries";
@@ -90,7 +91,11 @@ function NotificationRow({ notification }: { notification: Notification }) {
       onPress={() => deleteMutation.mutate(notification.id)}
     >
       <View style={[styles.iconWrap, { backgroundColor: tone.tint }]}>
-        <Ionicons name={visual.iconName} size={18} color={tone.accent} />
+        {visual.brandIcon ? (
+          <BrandIcon name={visual.brandIcon} size={18} />
+        ) : (
+          <Ionicons name={visual.iconName} size={18} color={tone.accent} />
+        )}
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[styles.rowTitle, { color: c.foreground }]}>{notification.title}</Text>

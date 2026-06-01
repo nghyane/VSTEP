@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { BrandIcon } from "@/components/BrandIcon";
 import { SpiderChart } from "@/components/SpiderChart";
 import { SkillIcon } from "@/components/SkillIcon";
 import { GameIcon } from "@/components/GameIcon";
@@ -338,7 +339,7 @@ function NextActionCard({
     return (
       <DepthCard style={styles.nextCard}>
         <View style={[styles.nextIcon, { backgroundColor: c.streak + "18" }]}>
-          <GameIcon name="fire" size={22} />
+          <BrandIcon name="streak" size={22} />
         </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.nextTitle, { color: c.foreground }]}>Hôm nay chưa luyện tập!</Text>
