@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { type ReactNode, useState } from "react"
 import { Icon } from "#/components/Icon"
 import type { FsrsState, WordWithState } from "#/features/vocab/types"
 import { useIpa } from "#/lib/phonemize"
@@ -29,19 +29,24 @@ function badge(state: FsrsState): { text: string; color: string } {
 
 interface Props {
 	words: WordWithState[]
+	levelControls?: ReactNode
 }
 
-export function WordList({ words }: Props) {
+export function WordList({ words, levelControls }: Props) {
 	const [filter, setFilter] = useState<FilterKey>("all")
 	const counts = countByBucket(words)
 	const filtered = filter === "all" ? words : words.filter((w) => bucket(w.state) === filter)
 
 	return (
 		<section className="card overflow-hidden">
-			<header className="flex items-center justify-between gap-3 px-5 pt-5">
-				<h3 className="font-extrabold text-base text-foreground">
-					Từ vựng <span className="text-subtle">· {words.length}</span>
-				</h3>
+			<header className="flex flex-col gap-3 px-5 pt-5 sm:flex-row sm:items-start sm:justify-between">
+				<div>
+					<h3 className="font-extrabold text-base text-foreground">
+						Từ vựng <span className="text-subtle">· {words.length}</span>
+					</h3>
+					<p className="mt-0.5 text-xs text-subtle">Chọn cấp độ, rồi lọc theo tiến độ học.</p>
+				</div>
+				{levelControls && <div className="shrink-0">{levelControls}</div>}
 			</header>
 			<div className="flex flex-wrap gap-2 px-5 py-4">
 				{FILTERS.map((f) => {
