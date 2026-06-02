@@ -1,7 +1,9 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { HTTPError } from "ky"
 import { useEffect, useRef, useState } from "react"
-import { Icon } from "#/components/Icon"
+import { COIN_SPEND_FX_MS, CoinSpendFly } from "#/components/CoinSpendFly"
+import { Icon, StaticIcon } from "#/components/Icon"
+import { appConfigQuery } from "#/features/config/queries"
 import { endConversation, submitConversationTurn } from "#/features/practice/actions"
 import { ConversationHeader } from "#/features/practice/components/ConversationHeader"
 import { ConversationReviewPopup } from "#/features/practice/components/ConversationReviewPopup"
@@ -33,6 +35,7 @@ type SessionState = "active" | "completed"
 const MAX_SECONDS = 30
 
 export function ConversationInProgress({ session, onEnd }: Props) {
+	const { data: configData } = useQuery(appConfigQuery)
 	const { scenario } = session
 	const [sessionId] = useState(session.session_id)
 	const [turns, setTurns] = useState<ConversationTurn[]>(session.turns)
@@ -42,9 +45,12 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	const aiName = voice ? extractFirstName(shortVoiceName(voice.name)) : scenario.character_name
 	const [sessionState, setSessionState] = useState<SessionState>("active")
 	const [showReview, setShowReview] = useState(false)
+	const [spendFxKey, setSpendFxKey] = useState(0)
+	const [spendAnimating, setSpendAnimating] = useState(false)
 	const [emptyWarning, setEmptyWarning] = useState(false)
 	const [speakingTurnId, setSpeakingTurnId] = useState<string | null>(null)
 	const [speakingCharIndex, setSpeakingCharIndex] = useState(-1)
+	const feedbackCost = configData?.data.pricing.practice.feedback_cost_coins ?? 0
 	const scrollRef = useRef<HTMLDivElement>(null)
 	const recognitionRef = useRef<{ stop: () => void } | null>(null)
 	const timerRef = useRef<number | null>(null)
@@ -116,6 +122,21 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	const handleEnd = () => {
 		stopSpeaking()
 		endConversation(sessionId).then(() => setSessionState("completed"))
+	}
+
+	const handleReview = () => {
+		if (spendAnimating) return
+		if (feedbackCost > 0) {
+			setSpendAnimating(true)
+			setSpendFxKey((key) => key + 1)
+			window.setTimeout(() => {
+				setSpendAnimating(false)
+				setShowReview(true)
+			}, COIN_SPEND_FX_MS)
+			return
+		}
+
+		setShowReview(true)
 	}
 
 	const turnMutation = useMutation({
@@ -419,22 +440,37 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 									{userTurnCount > 0 ? (
 										<>
 											<p className="text-sm text-muted mt-1">
-												Nhận phản hồi từ AI với gợi ý để cải thiện câu trả lời.
+												Nhận phản hồi từ AI với gợi ý để cải thiện câu trả lời
+												{feedbackCost > 0 ? (
+													<span className="inline-flex items-center gap-1.5">
+														&nbsp;· Tốn{" "}
+														<StaticIcon name="coin" size="xs" className="h-3.5 w-auto -translate-y-0.5" />
+														{feedbackCost} xu.
+													</span>
+												) : (
+													"."
+												)}
 											</p>
-											<button
-												type="button"
-												onClick={() => setShowReview(true)}
-												className="btn mt-4 px-6 text-primary-foreground"
-												style={
-													{
-														background: "var(--color-skill-speaking)",
-														"--btn-shadow": "var(--color-skill-speaking-dark)",
-													} as React.CSSProperties
-												}
-											>
-												<Icon name="lightning" size="xs" />
-												Xem đánh giá
-											</button>
+											<div className="relative mt-4 inline-flex">
+												{spendFxKey > 0 && feedbackCost > 0 && (
+													<CoinSpendFly key={spendFxKey} cost={feedbackCost} />
+												)}
+												<button
+													type="button"
+													onClick={handleReview}
+													disabled={spendAnimating}
+													className="btn px-6 text-primary-foreground"
+													style={
+														{
+															background: "var(--color-skill-speaking)",
+															"--btn-shadow": "var(--color-skill-speaking-dark)",
+														} as React.CSSProperties
+													}
+												>
+													<Icon name="lightning" size="xs" />
+													Xem đánh giá
+												</button>
+											</div>
 										</>
 									) : (
 										<p className="text-sm text-muted mt-1">

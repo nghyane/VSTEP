@@ -29,11 +29,11 @@ interface ConversationServiceInterface
 
     public function listHistory(Profile $profile): LengthAwarePaginator;
 
-    /** @return array{overall_score: int, strengths: string[], improvements: string[], corrected_sentences: array, tip: string} */
-    public function reviewSession(PracticeSpeakingConversationSession $session): array;
+    /** @return array{overall_score?: int, strengths: string[], improvements: string[], corrected_sentences: array, tip: string} */
+    public function reviewSession(Profile $profile, PracticeSpeakingConversationSession $session): array;
 
     /** @return array{pronunciation: string, intonation: string, tip: string} */
-    public function pronunciationReview(string $original, string $transcript): array;
+    public function pronunciationReview(Profile $profile, string $original, string $transcript, ?string $segmentId = null): array;
 
     public function generateIpa(string $text): ?string;
 }

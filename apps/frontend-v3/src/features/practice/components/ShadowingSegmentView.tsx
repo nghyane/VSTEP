@@ -1,7 +1,9 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { HTTPError } from "ky"
 import { useState } from "react"
-import { Icon } from "#/components/Icon"
+import { COIN_SPEND_FX_MS, CoinSpendFly } from "#/components/CoinSpendFly"
+import { Icon, StaticIcon } from "#/components/Icon"
+import { appConfigQuery } from "#/features/config/queries"
 import { getPronunciationReview, type PronunciationReview } from "#/features/practice/actions"
 import { ShadowingWordChips } from "#/features/practice/components/ShadowingWordChips"
 import type { ShadowingSegment } from "#/features/practice/types"
@@ -153,16 +155,36 @@ function ReviewPopup({
 }
 
 export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, onListen, attempt }: Props) {
+	const queryClient = useQueryClient()
+	const { data: configData } = useQuery(appConfigQuery)
 	const [showIpa, setShowIpa] = useState(false)
 	const [showReview, setShowReview] = useState(false)
+	const [spendFxKey, setSpendFxKey] = useState(0)
+	const [spendAnimating, setSpendAnimating] = useState(false)
 	const accuracyPercent = attempt?.accuracyPercent ?? null
 	const segmentIpa = useIpa(segment.text, segment.ipa)
+	const feedbackCost = configData?.data.pricing.practice.feedback_cost_coins ?? 0
 
 	const reviewMutation = useMutation({
-		mutationFn: () => getPronunciationReview(segment.text, attempt?.transcript ?? ""),
+		mutationFn: () => getPronunciationReview(segment.text, attempt?.transcript ?? "", segment.id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] })
+		},
 	})
 
 	const handleReview = () => {
+		if (spendAnimating || reviewMutation.isPending) return
+		if (feedbackCost > 0) {
+			setSpendAnimating(true)
+			setSpendFxKey((key) => key + 1)
+			window.setTimeout(() => {
+				setSpendAnimating(false)
+				setShowReview(true)
+				reviewMutation.mutate()
+			}, COIN_SPEND_FX_MS)
+			return
+		}
+
 		setShowReview(true)
 		reviewMutation.mutate()
 	}
@@ -244,14 +266,24 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 
 					<ShadowingWordChips words={attempt.wordResults} />
 
-					<button
-						type="button"
-						onClick={handleReview}
-						className="w-full flex items-center justify-center gap-2 py-3 rounded-(--radius-button) border-2 border-b-4 border-skill-speaking/30 bg-skill-speaking/10 text-skill-speaking font-bold text-sm transition hover:bg-skill-speaking/20 active:translate-y-[1px] active:border-b-2"
-					>
-						<Icon name="lightning" size="xs" />
-						Nhờ AI nhận xét phát âm
-					</button>
+					<div className="relative">
+						{spendFxKey > 0 && feedbackCost > 0 && <CoinSpendFly key={spendFxKey} cost={feedbackCost} />}
+						<button
+							type="button"
+							onClick={handleReview}
+							disabled={spendAnimating || reviewMutation.isPending}
+							className="w-full flex items-center justify-center gap-2 py-3 rounded-(--radius-button) border-2 border-b-4 border-skill-speaking/30 bg-skill-speaking/10 text-skill-speaking font-bold text-sm transition hover:bg-skill-speaking/20 active:translate-y-[1px] active:border-b-2 disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							<Icon name="lightning" size="xs" />
+							Nhờ AI nhận xét phát âm
+							{feedbackCost > 0 && (
+								<span className="inline-flex items-center gap-1.5">
+									· <StaticIcon name="coin" size="xs" className="h-3.5 w-auto -translate-y-0.5" />{" "}
+									{feedbackCost} xu
+								</span>
+							)}
+						</button>
+					</div>
 				</div>
 			)}
 

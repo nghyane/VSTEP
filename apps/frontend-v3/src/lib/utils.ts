@@ -114,7 +114,7 @@ export function speechRecognitionNetworkMessage(userAgent: string, online: boole
 	if (/Edg\//.test(userAgent)) {
 		return isEdgeOnMac(userAgent)
 			? "Edge trên Mac không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome."
-			: "Microsoft Edge không kết nối được dịch vụ nhận dạng giọng nói trên thiết bị này. Vui lòng dùng Chrome."
+			: "Dịch vụ nhận dạng giọng nói đôi khi không kết nối được. Vui lòng thử lại."
 	}
 	return "Dịch vụ nhận dạng giọng nói của trình duyệt đang không phản hồi. Vui lòng thử lại bằng Chrome."
 }
@@ -405,6 +405,47 @@ function matchScore(a: string, b: string): number {
 	return 0
 }
 
+const SPEECH_NUMBER_WORDS: Record<number, string> = {
+	0: "zero",
+	1: "one",
+	2: "two",
+	3: "three",
+	4: "four",
+	5: "five",
+	6: "six",
+	7: "seven",
+	8: "eight",
+	9: "nine",
+	10: "ten",
+	11: "eleven",
+	12: "twelve",
+	13: "thirteen",
+	14: "fourteen",
+	15: "fifteen",
+	16: "sixteen",
+	17: "seventeen",
+	18: "eighteen",
+	19: "nineteen",
+	20: "twenty",
+}
+
+function normalizeSpeechToken(token: string): string {
+	const trimmed = token.replace(/^[.,!?;:'"]+|[.,!?;:'"]+$/g, "")
+	const timeMatch = /^0?([0-9]|1[0-9]|2[0-3]):00$/.exec(trimmed)
+	if (timeMatch) {
+		const hour = Number(timeMatch[1])
+		const spokenHour = hour > 12 ? hour - 12 : hour
+		return SPEECH_NUMBER_WORDS[spokenHour] ?? trimmed
+	}
+
+	if (/^\d+$/.test(trimmed)) {
+		const number = Number(trimmed)
+		return SPEECH_NUMBER_WORDS[number] ?? trimmed
+	}
+
+	return trimmed.replace(/[.,!?;:'"]/g, "")
+}
+
 export interface WordCompareResult {
 	word: string
 	accuracy: "correct" | "wrong" | "close"
@@ -415,12 +456,7 @@ export function compareWords(
 	original: string,
 	transcript: string,
 ): { results: WordCompareResult[]; correct: number } {
-	const clean = (s: string) =>
-		s
-			.toLowerCase()
-			.replace(/[.,!?;:'"]/g, "")
-			.split(/\s+/)
-			.filter(Boolean)
+	const clean = (s: string) => s.toLowerCase().split(/\s+/).map(normalizeSpeechToken).filter(Boolean)
 	const origWords = clean(original)
 	const userWords = clean(transcript)
 

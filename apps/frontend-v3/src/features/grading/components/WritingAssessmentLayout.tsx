@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
+import { COIN_SPEND_FX_MS, CoinSpendFly } from "#/components/CoinSpendFly"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
-import { Icon } from "#/components/Icon"
+import { Icon, StaticIcon } from "#/components/Icon"
 import { FeedbackSection, RewriteSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
 import type {
@@ -251,8 +252,11 @@ function AIFeedbackButton({
 	hasFeedback: boolean
 	onOpen: () => void
 }) {
+	const [spendFxKey, setSpendFxKey] = useState(0)
+	const [spendAnimating, setSpendAnimating] = useState(false)
 	if (!action.canRequest) return null
-	const disabled = action.pending
+	const disabled = action.pending || spendAnimating
+	const shouldShowSpendFx = !hasFeedback && !action.requested && action.cost > 0
 	const label = action.pending
 		? "Đang xử lý..."
 		: hasFeedback
@@ -261,6 +265,18 @@ function AIFeedbackButton({
 				? "Tải nhận xét AI"
 				: "Nhận xét từ AI"
 	const handleClick = () => {
+		if (spendAnimating) return
+		if (shouldShowSpendFx) {
+			setSpendAnimating(true)
+			setSpendFxKey((key) => key + 1)
+			window.setTimeout(() => {
+				setSpendAnimating(false)
+				onOpen()
+				action.onRequest()
+			}, COIN_SPEND_FX_MS)
+			return
+		}
+
 		onOpen()
 		if (!hasFeedback) action.onRequest()
 	}
@@ -269,20 +285,28 @@ function AIFeedbackButton({
 		<div className="border-t-2 border-border pt-4">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<p className="text-xs text-subtle">
-					{hasFeedback
-						? "Nhận xét AI đã được lưu trong kết quả."
-						: action.requested
-							? "Đã thanh toán, bấm để tải nhận xét AI."
-							: `Tốn ${action.cost} xu.`}
+					{hasFeedback ? (
+						"Nhận xét AI đã được lưu trong kết quả."
+					) : action.requested ? (
+						"Đã thanh toán, bấm để tải nhận xét AI."
+					) : (
+						<span className="inline-flex items-center gap-1.5">
+							Tốn <StaticIcon name="coin" size="xs" className="h-3.5 w-auto -translate-y-0.5" /> {action.cost}{" "}
+							xu.
+						</span>
+					)}
 				</p>
-				<button
-					type="button"
-					onClick={handleClick}
-					disabled={disabled}
-					className="btn btn-primary px-5 py-2.5 text-sm disabled:opacity-50"
-				>
-					{label}
-				</button>
+				<div className="relative inline-flex self-start sm:self-auto">
+					{spendFxKey > 0 && shouldShowSpendFx && <CoinSpendFly key={spendFxKey} cost={action.cost} />}
+					<button
+						type="button"
+						onClick={handleClick}
+						disabled={disabled}
+						className="btn btn-primary px-5 py-2.5 text-sm disabled:opacity-50"
+					>
+						{label}
+					</button>
+				</div>
 			</div>
 			{action.error && <p className="mt-2 text-xs font-bold text-destructive">{action.error}</p>}
 		</div>

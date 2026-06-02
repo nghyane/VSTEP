@@ -131,14 +131,16 @@ final class SpeakingConversationController extends Controller
     {
         Gate::authorize('view', $conversationSession);
 
-        return response()->json(['data' => $this->service->reviewSession($conversationSession)]);
+        return response()->json(['data' => $this->service->reviewSession($request->profile(), $conversationSession)]);
     }
 
     public function pronunciationReview(PronunciationReviewRequest $request): JsonResponse
     {
         $result = $this->service->pronunciationReview(
+            $request->profile(),
             $request->validated('original'),
             $request->validated('transcript'),
+            $request->validated('segment_id'),
         );
 
         return response()->json(['data' => $result]);

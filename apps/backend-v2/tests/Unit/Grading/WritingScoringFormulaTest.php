@@ -283,6 +283,31 @@ final class WritingScoringFormulaTest extends TestCase
         $this->assertSame(2.0, $score);
     }
 
+    public function test_task_fulfillment_params_accepts_short_essay_caps_alias(): void
+    {
+        $params = TaskFulfillmentParams::fromArray([
+            'coverage_multiplier' => 7,
+            'task1_multiplier' => 7,
+            'position_bonus' => 0.5,
+            'irrelevant_penalty' => 2,
+            'default_points_required' => 3,
+            'word_minimum_task1' => 120,
+            'word_minimum_task2' => 250,
+            'depth_minimum' => 0.25,
+            'non_assessable_word_limit' => 10,
+            'short_essay_caps' => [
+                ['max_words' => 10, 'cap' => 1],
+                ['max_words' => 30, 'cap' => 2],
+            ],
+            'task_fulfillment_word_caps' => [
+                ['max_words' => 80, 'cap' => 4],
+            ],
+            'tf_cap_ratio' => 1.3,
+        ]);
+
+        $this->assertSame(2.0, $params->shortResponseScoreCap(20));
+    }
+
     /* ─── Grammar — edge cases ─── */
 
     /** sentenceCount=0 → guard chia 0, errorPenalty = 0. (4+5)/2 = 4.5. */

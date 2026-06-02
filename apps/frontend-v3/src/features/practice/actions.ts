@@ -102,8 +102,8 @@ export interface PronunciationReview {
 	tip: string
 }
 
-export async function getPronunciationReview(original: string, transcript: string) {
+export async function getPronunciationReview(original: string, transcript: string, segmentId: string) {
 	return api
-		.post("practice/speaking/pronunciation-review", { json: { original, transcript } })
+		.post("practice/speaking/pronunciation-review", { json: { original, transcript, segment_id: segmentId } })
 		.json<ApiResponse<PronunciationReview>>()
 }

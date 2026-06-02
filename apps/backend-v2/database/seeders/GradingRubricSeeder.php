@@ -112,6 +112,10 @@ class GradingRubricSeeder extends Seeder
                     ['max_words' => 10, 'cap' => 1],
                     ['max_words' => 30, 'cap' => 2],
                 ],
+                'short_essay_caps' => [
+                    ['max_words' => 10, 'cap' => 1],
+                    ['max_words' => 30, 'cap' => 2],
+                ],
                 'task_fulfillment_word_caps' => [
                     ['max_words' => 80, 'cap' => 4],
                     ['max_words' => 120, 'cap' => 6],

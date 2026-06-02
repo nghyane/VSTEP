@@ -33,7 +33,8 @@ export function Header({ title, backTo }: Props) {
 	const [streakOpen, setStreakOpen] = useState(false)
 
 	const pulse = useCoinGain((s) => s.pulse)
-	const gainAmount = useCoinGain((s) => s.amount)
+	const coinDelta = useCoinGain((s) => s.amount)
+	const coinDeltaSign = coinDelta < 0 ? "-" : "+"
 	const lastPulseRef = useRef(pulse)
 	const [animKey, setAnimKey] = useState(0)
 	useEffect(() => {
@@ -123,7 +124,10 @@ export function Header({ title, backTo }: Props) {
 								className="pointer-events-none absolute left-1/2 top-0 inline-flex w-max items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-coin text-coin-dark font-extrabold text-sm tabular-nums shadow-md whitespace-nowrap animate-[coinFlyUp_1300ms_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
 							>
 								<StaticIcon name="coin" size="xs" className="h-4 w-auto shrink-0" />
-								<span className="leading-none">+{formatNumber(gainAmount)}</span>
+								<span className="leading-none">
+									{coinDeltaSign}
+									{formatNumber(Math.abs(coinDelta))} xu
+								</span>
 							</span>
 						</>
 					)}
