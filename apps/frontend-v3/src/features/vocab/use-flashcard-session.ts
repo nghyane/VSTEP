@@ -15,7 +15,6 @@ interface State {
 type Action =
 	| { type: "init"; items: WordWithState[] }
 	| { type: "reveal" }
-	| { type: "flip" }
 	| { type: "advance"; requeue: WordWithState | null }
 
 function reducer(state: State, action: Action): State {
@@ -24,8 +23,6 @@ function reducer(state: State, action: Action): State {
 			return { queue: action.items, index: 0, reviewed: 0, revealed: false }
 		case "reveal":
 			return { ...state, revealed: true }
-		case "flip":
-			return { ...state, revealed: !state.revealed }
 		case "advance":
 			return {
 				queue: action.requeue ? [...state.queue, action.requeue] : state.queue,
@@ -47,7 +44,6 @@ interface FlashcardSession {
 	revealed: boolean
 	submitting: boolean
 	reveal: () => void
-	flip: () => void
 	rate: (rating: SrsRating) => void
 }
 
@@ -77,10 +73,6 @@ export function useFlashcardSession(items: WordWithState[]): FlashcardSession {
 		dispatch({ type: "reveal" })
 	}
 
-	function flip() {
-		dispatch({ type: "flip" })
-	}
-
 	function rate(rating: SrsRating) {
 		if (!current || mutation.isPending) return
 		mutation.mutate({ wordId: current.word.id, rating })
@@ -88,9 +80,9 @@ export function useFlashcardSession(items: WordWithState[]): FlashcardSession {
 
 	useEffect(() => {
 		function onKeyDown(e: KeyboardEvent) {
-			if (e.key === " ") {
+			if (e.key === " " && !revealed) {
 				e.preventDefault()
-				flip()
+				reveal()
 				return
 			}
 			const r = KEY_TO_RATING[e.key]
@@ -100,16 +92,5 @@ export function useFlashcardSession(items: WordWithState[]): FlashcardSession {
 		return () => window.removeEventListener("keydown", onKeyDown)
 	})
 
-	return {
-		status,
-		current,
-		index,
-		total,
-		reviewed,
-		revealed,
-		submitting: mutation.isPending,
-		reveal,
-		flip,
-		rate,
-	}
+	return { status, current, index, total, reviewed, revealed, submitting: mutation.isPending, reveal, rate }
 }

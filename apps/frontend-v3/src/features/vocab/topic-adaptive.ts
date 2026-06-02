@@ -97,12 +97,10 @@ export function recommendedProgress(topic: TopicGroup): LevelProgress {
 	}
 }
 
-export function topicFocusLabel(topic: TopicGroup, focus: LevelProgress, topicComplete: boolean): string {
-	if (topic.adaptiveLabel) return topic.adaptiveLabel
+export function topicFocusLabel(focus: LevelProgress, topicComplete: boolean): string {
 	if (topicComplete) return "Hoàn thành chủ đề"
 	if (focus.learnedCount > 0) return "Tiếp tục"
-	if (topic.learnedCount <= 0) return "Đề xuất"
-	return "Còn lại"
+	return "Đề xuất"
 }
 
 export function levelRank(level: VocabLevel): number {

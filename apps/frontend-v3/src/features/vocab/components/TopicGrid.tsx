@@ -49,7 +49,7 @@ function TopicCard({ topic }: TopicCardProps) {
 	const focus = recommendedProgress(topic)
 	const overallPct = topic.wordCount > 0 ? Math.round((topic.learnedCount / topic.wordCount) * 100) : 0
 	const topicComplete = topic.wordCount > 0 && topic.learnedCount >= topic.wordCount
-	const focusLabel = topicFocusLabel(topic, focus, topicComplete)
+	const focusLabel = topicFocusLabel(focus, topicComplete)
 
 	return (
 		<div className="group relative card-interactive flex min-h-44 flex-col overflow-hidden p-5">

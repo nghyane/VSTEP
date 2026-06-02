@@ -6,17 +6,17 @@ import { cn, speak } from "#/lib/utils"
 interface Props {
 	word: VocabWord
 	flipped: boolean
-	onFlip: () => void
+	onReveal: () => void
 }
 
-export function SrsFlipCard({ word, flipped, onFlip }: Props) {
+export function SrsFlipCard({ word, flipped, onReveal }: Props) {
 	const ipa = useIpa(word.word, word.phonetic)
 
 	return (
 		<div className="flip-scene w-full max-w-xl mx-auto">
 			<div key={word.id} className={cn("flip-inner", flipped && "flipped")}>
 				<div className="flip-face">
-					<FlipButton onClick={onFlip} label="Lật thẻ">
+					<FlipButton onClick={onReveal} label="Lật thẻ">
 						<FlipHeader word={word.word} />
 						<div className="flex-1 flex flex-col items-center justify-center gap-3">
 							<span className="font-extrabold text-4xl text-foreground break-words">{word.word}</span>
@@ -32,7 +32,7 @@ export function SrsFlipCard({ word, flipped, onFlip }: Props) {
 				</div>
 
 				<div className="flip-face flip-face-back">
-					<FlipButton onClick={onFlip} label="Lật lại">
+					<FlipPanel>
 						<FlipHeader word={word.word} />
 						<div className="flex-1 flex flex-col items-center justify-center gap-3">
 							<span className="font-extrabold text-3xl text-foreground break-words">{word.word}</span>
@@ -43,7 +43,7 @@ export function SrsFlipCard({ word, flipped, onFlip }: Props) {
 								<p className="text-xs text-info bg-info-tint px-3 py-2 rounded-lg mt-2">{word.vstep_tip}</p>
 							)}
 						</div>
-					</FlipButton>
+					</FlipPanel>
 				</div>
 			</div>
 		</div>
@@ -89,5 +89,11 @@ function FlipButton({
 		>
 			{children}
 		</button>
+	)
+}
+
+function FlipPanel({ children }: { children: React.ReactNode }) {
+	return (
+		<div className="card w-full p-8 text-center min-h-[26rem] flex flex-col border-border">{children}</div>
 	)
 }

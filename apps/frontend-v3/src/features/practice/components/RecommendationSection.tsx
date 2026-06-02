@@ -1,8 +1,10 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { SkillChip } from "#/components/SkillChip"
+import type { SkillKey } from "#/features/exam/types"
+import { grammarPointsQuery } from "#/features/grammar/queries"
 import { learningPathQuery } from "#/features/practice/queries"
-import { skills } from "#/lib/skills"
+import type { LearningPathSkill } from "#/features/practice/types"
 
 const SKILL_ROUTES: Record<string, string> = {
 	listening: "/luyen-tap/nghe",
@@ -22,6 +24,17 @@ const SKILL_LABELS: Record<string, string> = {
 	grammar: "Ngữ pháp",
 }
 
+const EXAM_SKILLS: Record<SkillKey, true> = {
+	listening: true,
+	reading: true,
+	writing: true,
+	speaking: true,
+}
+
+function isExamSkill(skill: string): skill is SkillKey {
+	return skill in EXAM_SKILLS
+}
+
 function statusColor(skill: string, band: number | null): string {
 	if (band === null) return "bg-border"
 	if (skill === "vocabulary" || skill === "grammar") return "bg-info"
@@ -30,19 +43,22 @@ function statusColor(skill: string, band: number | null): string {
 	return "bg-destructive"
 }
 
+function isActionableRecommendation(skill: LearningPathSkill): boolean {
+	if (skill.coverage_pct !== null) return skill.coverage_pct < 100
+	if (skill.band === null) return true
+	return skill.band < 5.0
+}
+
 export function RecommendationSection() {
 	const { data } = useQuery(learningPathQuery)
+	const { data: grammarData } = useQuery(grammarPointsQuery)
 	if (!data) return null
 
 	const { current_level, target_level, days_remaining, skills: pathSkills } = data.data
 
-	const weak = pathSkills.filter((s) => {
-		if (s.band !== null && s.band < 5.0) return true
-		if (s.coverage_pct !== null && s.coverage_pct < 50) return true
-		return false
-	})
+	const recommendations = pathSkills.filter(isActionableRecommendation)
 
-	if (weak.length === 0 && pathSkills.length > 0) return null
+	if (pathSkills.length === 0) return null
 
 	return (
 		<section>
@@ -53,17 +69,34 @@ export function RecommendationSection() {
 			</p>
 
 			<div className="card p-5 space-y-0 divide-y divide-border">
-				{weak.map((s) => {
-					const isExam = skills.some((sk) => sk.key === s.skill)
+				{recommendations.length === 0 && (
+					<div className="py-3">
+						<p className="font-bold text-sm text-foreground">Bạn đã hoàn thành mục tiêu hiện tại.</p>
+						<p className="text-sm text-subtle mt-1">
+							Tiếp tục làm đề hoặc luyện lại các phần đã học để giữ nhịp trước khi lên mục tiêu mới.
+						</p>
+					</div>
+				)}
+				{recommendations.map((s) => {
+					const isExam = isExamSkill(s.skill)
 					const bandText = s.band !== null ? s.band.toFixed(1) : null
-					const route = SKILL_ROUTES[s.skill] ?? "/luyen-tap"
+					const grammarPoint =
+						s.skill === "grammar"
+							? (grammarData?.data.find(
+									(point) =>
+										point.levels.includes(s.level) &&
+										(point.mastery === null || point.mastery.attempts === 0),
+								) ??
+								grammarData?.data.find((point) => point.levels.includes(s.level)) ??
+								null)
+							: null
 
 					return (
 						<div key={s.skill} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
 							<span className={`w-2 h-2 shrink-0 rounded-full ${statusColor(s.skill, s.band)}`} />
 
 							{isExam ? (
-								<SkillChip skill={s.skill as "listening" | "reading" | "writing" | "speaking"} size="md" />
+								<SkillChip skill={s.skill} size="md" />
 							) : (
 								<span className="inline-flex items-center rounded-full border-2 border-border bg-surface px-2.5 py-1 text-xs font-bold text-foreground">
 									{SKILL_LABELS[s.skill] ?? s.skill}
@@ -78,13 +111,40 @@ export function RecommendationSection() {
 
 							<span className="text-sm text-subtle flex-1 min-w-0 truncate">{s.suggestion}</span>
 
-							<Link to={route} className="btn btn-secondary shrink-0">
-								{isExam ? "Luyện" : "Vào học"}
-							</Link>
+							<RecommendationLink skill={s} isExam={isExam} grammarPointId={grammarPoint?.id ?? null} />
 						</div>
 					)
 				})}
 			</div>
 		</section>
+	)
+}
+
+function RecommendationLink({
+	skill,
+	isExam,
+	grammarPointId,
+}: {
+	skill: LearningPathSkill
+	isExam: boolean
+	grammarPointId: string | null
+}) {
+	if (skill.skill === "grammar" && grammarPointId) {
+		return (
+			<Link
+				to="/luyen-tap/ngu-phap/$pointId"
+				params={{ pointId: grammarPointId }}
+				className="btn btn-secondary shrink-0"
+			>
+				Vào học
+			</Link>
+		)
+	}
+
+	const route = SKILL_ROUTES[skill.skill] ?? "/luyen-tap"
+	return (
+		<Link to={route} className="btn btn-secondary shrink-0">
+			{isExam ? "Luyện" : "Vào học"}
+		</Link>
 	)
 }

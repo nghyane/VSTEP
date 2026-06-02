@@ -34,17 +34,23 @@ final class VocabTopicResource extends JsonResource
                 fn () => $this->resource->learned_count,
             ),
             'recommended_topic_id' => $this->when(
-                $this->resource->getAttribute('recommended_topic_id') !== null,
+                $this->hasAttribute('recommended_topic_id'),
                 fn () => $this->resource->getAttribute('recommended_topic_id'),
             ),
             'adaptive_reason' => $this->when(
-                $this->resource->getAttribute('adaptive_reason') !== null,
+                $this->hasAttribute('adaptive_reason'),
                 fn () => $this->resource->getAttribute('adaptive_reason'),
             ),
             'adaptive_label' => $this->when(
-                $this->resource->getAttribute('adaptive_label') !== null,
+                $this->hasAttribute('adaptive_label'),
                 fn () => $this->resource->getAttribute('adaptive_label'),
             ),
         ];
+    }
+
+    private function hasAttribute(string $key): bool
+    {
+        return array_key_exists($key, $this->resource->getAttributes())
+            && $this->resource->getAttribute($key) !== null;
     }
 }

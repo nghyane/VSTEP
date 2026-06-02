@@ -93,8 +93,8 @@ final class LearningPathService implements LearningPathInterface
             ? ProfileVocabSrsState::query()
                 ->where('profile_id', $profile->id)
                 ->whereIn('word_id', $wordIds)
-                ->where('stability', '>', 0) // Learned = has FSRS stability
-                ->count()
+                ->distinct('word_id')
+                ->count('word_id')
             : 0;
 
         $coveragePct = $totalItems > 0
@@ -148,11 +148,7 @@ final class LearningPathService implements LearningPathInterface
         $totalItems = $pointIds->count();
 
         $completedItems = $totalItems > 0
-            ? ProfileGrammarMastery::query()
-                ->where('profile_id', $profile->id)
-                ->whereIn('grammar_point_id', $pointIds)
-                ->where('attempts', '>', 0)
-                ->count()
+            ? $this->practicedGrammarPointCount($profile, $pointIds->all())
             : 0;
 
         $coveragePct = $totalItems > 0
@@ -189,6 +185,26 @@ final class LearningPathService implements LearningPathInterface
         }
 
         return "Đã luyện tất cả chủ điểm ngữ pháp {$level}. Tiếp tục làm lại các điểm chưa mastered.";
+    }
+
+    /**
+     * @param  list<string>  $pointIds
+     */
+    private function practicedGrammarPointCount(Profile $profile, array $pointIds): int
+    {
+        $masteryPointIds = ProfileGrammarMastery::query()
+            ->where('profile_id', $profile->id)
+            ->whereIn('grammar_point_id', $pointIds)
+            ->where('attempts', '>', 0)
+            ->pluck('grammar_point_id');
+
+        $attemptPointIds = DB::table('practice_grammar_attempts')
+            ->where('profile_id', $profile->id)
+            ->whereIn('grammar_point_id', $pointIds)
+            ->distinct()
+            ->pluck('grammar_point_id');
+
+        return $masteryPointIds->merge($attemptPointIds)->unique()->count();
     }
 
     // ──── Exam skills (writing/speaking/listening/reading) ────

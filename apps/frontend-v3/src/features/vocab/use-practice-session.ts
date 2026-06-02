@@ -17,7 +17,6 @@ type Action =
 	| { type: "value"; value: string }
 	| { type: "check"; correct: boolean }
 	| { type: "reveal" }
-	| { type: "flip" }
 	| { type: "advance"; requeue: PracticeItem | null }
 
 interface State {
@@ -49,8 +48,6 @@ function reducer(state: State, action: Action): State {
 			return { ...state, phase: "reveal", correct: action.correct }
 		case "reveal":
 			return { ...state, phase: "reveal" }
-		case "flip":
-			return { ...state, phase: state.phase === "prompt" ? "reveal" : "prompt" }
 		case "advance":
 			return {
 				...INITIAL,
@@ -76,7 +73,6 @@ export interface PracticeSession {
 	setValue: (v: string) => void
 	check: () => void
 	reveal: () => void
-	flip: () => void
 	rate: (r: SrsRating) => void
 }
 
@@ -153,10 +149,6 @@ export function usePracticeSession(items: PracticeItem[]): PracticeSession {
 		dispatch({ type: "reveal" })
 	}
 
-	function flip() {
-		dispatch({ type: "flip" })
-	}
-
 	function rate(rating: SrsRating) {
 		if (!current || mutation.isPending) return
 		mutation.mutate({ wordId: current.entry.word.id, rating })
@@ -175,7 +167,6 @@ export function usePracticeSession(items: PracticeItem[]): PracticeSession {
 		setValue: (v) => dispatch({ type: "value", value: v }),
 		check,
 		reveal,
-		flip,
 		rate,
 	}
 }

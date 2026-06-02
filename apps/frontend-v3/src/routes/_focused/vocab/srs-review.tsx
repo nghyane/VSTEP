@@ -22,9 +22,12 @@ function SrsReviewPage() {
 	const invalidate = useCallback(() => {
 		qc.invalidateQueries({ queryKey: ["vocab", "srs", "queue"], exact: true })
 		qc.invalidateQueries({ queryKey: ["vocab", "topics"], exact: true })
+		qc.invalidateQueries({ queryKey: ["learning-path"] })
 	}, [qc])
 
-	useEffect(() => invalidate, [invalidate])
+	useEffect(() => {
+		return () => invalidate()
+	}, [invalidate])
 
 	if (!data) {
 		return (
@@ -54,7 +57,7 @@ function SrsReviewPage() {
 				<div className="w-full max-w-lg space-y-4">
 					{s.current && (
 						<>
-							<SrsFlipCard word={s.current.word} flipped={s.revealed} onFlip={s.flip} />
+							<SrsFlipCard word={s.current.word} flipped={s.revealed} onReveal={s.reveal} />
 							{s.revealed && <SrsRatingButtons disabled={s.submitting} onRate={s.rate} />}
 						</>
 					)}
