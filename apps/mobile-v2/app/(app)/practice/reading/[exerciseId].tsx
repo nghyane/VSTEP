@@ -10,6 +10,7 @@ import { useMutation } from "@tanstack/react-query";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
+import { GameIcon } from "@/components/GameIcon";
 import { FocusHeader } from "@/components/FocusHeader";
 import { McqQuestionCard } from "@/components/McqQuestionCard";
 import { McqResultCard } from "@/components/McqResultCard";
@@ -85,7 +86,7 @@ function PreviewScreen({ detail, starting, onStart, onBack, insets, c }: any) {
       </View>
       <View style={[s.fullCenter, { flex: 1 }]}>
         <View style={[s.previewIcon, { backgroundColor: COLOR + "18" }]}>
-          <Ionicons name="book-outline" size={40} color={COLOR} />
+          <GameIcon name="reading" size={48} />
         </View>
         <Text style={[s.previewTitle, { color: c.foreground }]}>{exercise.title}</Text>
         {exercise.description && (
@@ -117,8 +118,10 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
     if (translation) {
       setTranslation(null);
       setTranslationError(false);
+      setWordTapMode(false);
       return;
     }
+    setWordTapMode(true);
     const existingTranslation = exercise.vietnameseTranslation?.trim();
     if (existingTranslation) {
       setTranslation(existingTranslation);
@@ -170,19 +173,12 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
               <View style={s.passageActions}>
                 <HapticTouchable onPress={toggleTranslation} style={s.wtapToggle}>
                   <Text style={[s.wtapBtn, {
-                    color: translation || translationError ? "#FFF" : c.subtle,
-                    backgroundColor: translation || translationError ? COLOR : "transparent",
-                    borderColor: translation || translationError ? COLOR : c.muted,
+                    color: translation || translationLoading || translationError || wordTapMode ? "#FFF" : c.subtle,
+                    backgroundColor: translation || translationLoading || translationError || wordTapMode ? COLOR : "transparent",
+                    borderColor: translation || translationLoading || translationError || wordTapMode ? COLOR : c.muted,
                   }]}>
                     {translationLoading ? "..." : translation ? "Ẩn dịch" : "Dịch"}
                   </Text>
-                </HapticTouchable>
-                <HapticTouchable onPress={() => setWordTapMode(!wordTapMode)} style={s.wtapToggle}>
-                  <Text style={[s.wtapBtn, {
-                    color: wordTapMode ? "#FFF" : c.subtle,
-                    backgroundColor: wordTapMode ? COLOR : "transparent",
-                    borderColor: wordTapMode ? COLOR : c.muted,
-                  }]}>Từ điển</Text>
                 </HapticTouchable>
               </View>
             </View>

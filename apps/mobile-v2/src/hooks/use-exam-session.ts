@@ -31,7 +31,7 @@ export interface StartSessionResult {
 export interface SubmitSessionPayload {
   mcq_answers: McqAnswerPayload[];
   writing_answers?: { task_id: string; text: string; word_count: number }[];
-  speaking_answers?: { part_id: string; audio_url: string; duration_seconds: number }[];
+  speaking_answers?: { part_id: string; audio_key: string; duration_seconds: number }[];
 }
 
 export interface SubmitSessionResult {
@@ -63,6 +63,7 @@ export interface ExamDraftWriting {
 
 export interface ExamDraftSpeakingMark {
   partId: string;
+  audioKey?: string | null;
   audioUrl?: string | null;
   durationSeconds?: number | null;
 }
@@ -71,7 +72,7 @@ export interface ExamDraftSpeakingMark {
 // BE shape per SaveExamDraftRequest:
 //   mcq_answers: [{ item_ref_id, selected_index }]
 //   writing_answers: [{ task_id, text }]
-//   speaking_marks: [{ part_id, audio_url?, duration_seconds? }]
+//   speaking_marks: [{ part_id, audio_key?, audio_url?, duration_seconds? }]
 export interface ExamServerDraft {
   sessionId: string;
   skillIdx: number;
@@ -216,7 +217,8 @@ const SERVER_DRAFT_SYNC_MS = 1_500;
 
 interface SpeakingAnswer {
   partId: string;
-  audioUrl: string | null;
+  audioKey: string | null;
+  audioUrl?: string | null;
   durationSeconds: number;
 }
 
@@ -255,7 +257,7 @@ type ExamAction =
   | { type: "NEXT_SKILL" }
   | { type: "SHOW_CONFIRM_SUBMIT" } | { type: "HIDE_CONFIRM_SUBMIT" }
   | { type: "SHOW_CONFIRM_NEXT" } | { type: "HIDE_CONFIRM_NEXT" }
-  | { type: "SUBMITTING" } | { type: "SUBMITTED" };
+  | { type: "SUBMITTING" } | { type: "SUBMITTED" } | { type: "SUBMIT_FAILED" };
 
 function reducer(state: ExamState, action: ExamAction): ExamState {
   switch (action.type) {
@@ -306,19 +308,20 @@ function reducer(state: ExamState, action: ExamAction): ExamState {
     case "HIDE_CONFIRM_NEXT": return { ...state, confirmNextSkill: false };
     case "SUBMITTING": return { ...state, phase: "submitting", confirmSubmit: false };
     case "SUBMITTED": return { ...state, phase: "submitted" };
+    case "SUBMIT_FAILED": return { ...state, phase: "active", confirmSubmit: false };
     default: return state;
   }
 }
 
 function localDraftSpeakingAudioUrl(mark: ExamDraft["speakingMarks"][string]): string {
-  return typeof mark === "string" ? mark : mark.audioUrl ?? "";
+  return typeof mark === "string" ? mark : mark.audioKey ?? mark.audioUrl ?? "";
 }
 
 function localDraftSpeakingAnswer(partId: string, mark: ExamDraft["speakingMarks"][string]): [string, SpeakingAnswer] | null {
   const audioUrl = localDraftSpeakingAudioUrl(mark);
   if (!audioUrl) return null;
   const durationSeconds = typeof mark === "string" ? 1 : Math.max(1, mark.durationSeconds ?? 1);
-  return [partId, { partId, audioUrl, durationSeconds }];
+  return [partId, { partId, audioKey: audioUrl, audioUrl, durationSeconds }];
 }
 
 function buildMcqPayload(
@@ -346,7 +349,7 @@ function toExamDraft(session: ExamSessionData, draft: ExamServerDraft): ExamDraf
       draft.writingAnswers.map((w) => [w.taskId, w.text]),
     ),
     speakingMarks: Object.fromEntries(
-      draft.speakingMarks.map((s) => [s.partId, { audioUrl: s.audioUrl ?? "", durationSeconds: Math.max(1, s.durationSeconds ?? 1) }]),
+      draft.speakingMarks.map((s) => [s.partId, { audioKey: s.audioKey ?? s.audioUrl ?? "", audioUrl: s.audioUrl ?? s.audioKey ?? "", durationSeconds: Math.max(1, s.durationSeconds ?? 1) }]),
     ),
     savedAt: draft.savedAt,
   };
@@ -360,7 +363,7 @@ function buildDraft(session: ExamSessionData, state: ExamState): ExamDraft {
     mcqAnswers: Object.fromEntries(state.mcqAnswers),
     writingAnswers: Object.fromEntries(state.writingAnswers),
     speakingMarks: Object.fromEntries(
-      Array.from(state.speakingAnswers.entries()).map(([k, v]) => [k, { audioUrl: v.audioUrl ?? "", durationSeconds: Math.max(1, v.durationSeconds) }]),
+      Array.from(state.speakingAnswers.entries()).map(([k, v]) => [k, { audioKey: v.audioKey ?? v.audioUrl ?? "", audioUrl: v.audioUrl ?? v.audioKey ?? "", durationSeconds: Math.max(1, v.durationSeconds) }]),
     ),
     savedAt: new Date().toISOString(),
   };
@@ -373,7 +376,8 @@ function buildSaveDraftPayload(state: ExamState): SaveExamDraftPayload {
     writingAnswers: Array.from(state.writingAnswers, ([taskId, text]) => ({ taskId, text })),
     speakingMarks: Array.from(state.speakingAnswers, ([partId, ans]) => ({
       partId,
-      audioUrl: ans.audioUrl,
+      audioKey: ans.audioKey ?? ans.audioUrl ?? null,
+      audioUrl: ans.audioUrl ?? ans.audioKey ?? null,
       durationSeconds: ans.durationSeconds,
     })),
   };
@@ -451,8 +455,11 @@ export function useExamSessionState(
     if (activeSkills.includes("speaking")) {
       payload.speaking_answers = speakingParts
         .map((p) => state.speakingAnswers.get(p.id))
-        .filter((a): a is SpeakingAnswer => a != null && a.audioUrl != null)
-        .map((a) => ({ part_id: a.partId, audio_url: a.audioUrl!, duration_seconds: a.durationSeconds }));
+        .flatMap((answer) => {
+          const audioKey = answer?.audioKey ?? answer?.audioUrl;
+          if (!answer || !audioKey) return [];
+          return [{ part_id: answer.partId, audio_key: audioKey, duration_seconds: answer.durationSeconds }];
+        });
     }
     submitMutation.mutate(payload, {
       onSuccess: (res) => {
@@ -460,7 +467,7 @@ export function useExamSessionState(
         clearDraft(session.id);
         onSubmitted(res);
       },
-      onError: () => dispatch({ type: "HIDE_CONFIRM_SUBMIT" }),
+      onError: () => dispatch({ type: "SUBMIT_FAILED" }),
     });
   }, [state.phase, state.mcqAnswers, state.writingAnswers, state.speakingAnswers, listeningItems, readingItems, writingTasks, speakingParts, activeSkills, submitMutation, onSubmitted, session.id]);
 
@@ -510,6 +517,7 @@ export function useExamSessionState(
     totalMcq,
     answeredMcq,
     isSubmitting: submitMutation.isPending,
+    submitError: submitMutation.error,
     start: () => dispatch({ type: "START" }),
     answerMcq: (itemId: string, idx: number) => dispatch({ type: "MCQ", itemId, idx }),
     answerWriting: (taskId: string, text: string) => dispatch({ type: "WRITING", taskId, text }),

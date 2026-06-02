@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { GameIcon } from "@/components/GameIcon";
 import { MascotEmpty } from "@/components/MascotStates";
 import { useReadingExercises, useMcqProgress } from "@/hooks/use-practice";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
@@ -87,7 +88,7 @@ export default function ReadingListScreen() {
                         <View key={ex.id} style={s.cardWrapper}>
                           <HapticTouchable
                             scalePress
-                            onPress={() => router.push(`/(app)/practice/reading/${ex.id}` as any)}
+                            onPress={() => router.push(`/(app)/practice/reading/${ex.id}` as never)}
                             style={s.cardTouchable}
                           >
                             <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
@@ -106,7 +107,7 @@ export default function ReadingListScreen() {
                                 <Text style={[s.cardDesc, { color: c.subtle }]} numberOfLines={2}>{ex.description}</Text>
                               )}
                               <View style={s.cardMeta}>
-                                <Ionicons name="book-outline" size={12} color={COLOR} />
+                                <GameIcon name="reading" size={14} />
                                 <Text style={[s.cardMetaText, { color: c.mutedForeground }]}>
                                   {ex.estimatedMinutes ? `${ex.estimatedMinutes} phút` : "MCQ"}
                                 </Text>

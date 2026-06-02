@@ -5,6 +5,9 @@ import type { Exam, ExamDetail, ExamSessionResult } from "@/types/api";
 export type { Exam, ExamDetail };
 
 export interface AppConfig {
+  profile: {
+    maxProfilesPerAccount: number;
+  };
   pricing: {
     exam: {
       fullTestCostCoins: number;

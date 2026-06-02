@@ -115,7 +115,13 @@ class WritingPracticeTest extends TestCase
             ->assertAccepted()
             ->assertJsonPath('data.status', 'ready')
             ->assertJsonPath('data.cost_coins', 1)
-            ->assertJsonPath('data.charged', true);
+            ->assertJsonPath('data.charged', true)
+            ->assertJsonPath('data.feedback.strengths.0', 'Tra loi dung yeu cau de bai');
+
+        $this->assertSame(
+            ['Tra loi dung yeu cau de bai'],
+            $attempt->result()->firstOrFail()->feedback['strengths'],
+        );
 
         $this->assertDatabaseHas('coin_transactions', [
             'profile_id' => $submission->profile_id,

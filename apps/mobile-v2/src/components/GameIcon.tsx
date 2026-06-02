@@ -1,4 +1,4 @@
-// GameIcon — Icons8 3D Fluency style (PNG assets from assets/icons/)
+// GameIcon — shared PNG assets from assets/icons/
 import { Image, type ImageStyle } from "react-native";
 
 const ICONS = {
@@ -26,6 +26,14 @@ const ICONS = {
   target:       require("../../assets/icons/target.png"),
   trophy:       require("../../assets/icons/trophy.png"),
   users:        require("../../assets/icons/users.png"),
+  vocabulary:   require("../../assets/icons/vocabulary.png"),
+  grammar:      require("../../assets/icons/grammar.png"),
+  listening:    require("../../assets/icons/listening.png"),
+  reading:      require("../../assets/icons/reading.png"),
+  writing:      require("../../assets/icons/writing.png"),
+  speaking:     require("../../assets/icons/speaking.png"),
+  "mock-exam": require("../../assets/icons/mock-exam.png"),
+  course:       require("../../assets/icons/course.png"),
 } as const;
 
 export type GameIconName = keyof typeof ICONS;

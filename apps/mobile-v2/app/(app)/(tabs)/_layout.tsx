@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import { BrandIcon } from "@/components/BrandIcon";
 import { CustomTabBar } from "@/components/CustomTabBar";
 
 export default function TabLayout() {
@@ -12,8 +12,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Tổng quan",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="grid-outline" size={size} color={color} />
+          tabBarIcon: ({ focused, size }) => (
+            <BrandIcon name="home" size={size + 4} active={focused} />
           ),
         }}
       />
@@ -21,8 +21,8 @@ export default function TabLayout() {
         name="practice"
         options={{
           title: "Luyện tập",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="barbell-outline" size={size} color={color} />
+          tabBarIcon: ({ focused, size }) => (
+            <BrandIcon name="practice" size={size + 4} active={focused} />
           ),
         }}
       />
@@ -30,8 +30,8 @@ export default function TabLayout() {
         name="exams"
         options={{
           title: "Thi thử",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="document-text-outline" size={size} color={color} />
+          tabBarIcon: ({ focused, size }) => (
+            <BrandIcon name="exam" size={size + 4} active={focused} />
           ),
         }}
       />
@@ -39,8 +39,8 @@ export default function TabLayout() {
         name="classes"
         options={{
           title: "Khóa học",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="school-outline" size={size} color={color} />
+          tabBarIcon: ({ focused, size }) => (
+            <BrandIcon name="course" size={size + 4} active={focused} />
           ),
         }}
       />
@@ -48,8 +48,8 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Hồ sơ",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+          tabBarIcon: ({ focused, size }) => (
+            <BrandIcon name="profile" size={size + 4} active={focused} />
           ),
         }}
       />

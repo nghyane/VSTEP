@@ -1,27 +1,43 @@
+import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
+import { BrandIcon } from "@/components/BrandIcon";
 import { HapticTouchable } from "@/components/HapticTouchable";
-import { GameIcon } from "@/components/GameIcon";
 import { useWalletBalance } from "@/features/wallet/queries";
+import { TopUpSheet } from "@/features/wallet/TopUpSheet";
+import { TopUpSuccessPopup } from "@/features/wallet/TopUpSuccessPopup";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
 export function CoinButton() {
   const c = useThemeColors();
-  const router = useRouter();
+  const [topUpVisible, setTopUpVisible] = useState(false);
+  const [success, setSuccess] = useState<{ coins: number; balance: number } | null>(null);
   const { data } = useWalletBalance();
   const coins = data?.balance ?? 0;
 
   return (
-    <HapticTouchable
-      style={[styles.container, { backgroundColor: c.coinTint }]}
-      onPress={() => router.push("/(app)/wallet" as any)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.iconWrap}>
-        <GameIcon name="coin" size={18} />
-      </View>
-      <Text style={[styles.text, { color: c.coinDark }]}>{coins}</Text>
-    </HapticTouchable>
+    <>
+      <HapticTouchable
+        style={[styles.container, { backgroundColor: c.coinTint }]}
+        onPress={() => setTopUpVisible(true)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.iconWrap}>
+          <BrandIcon name="coin" size={18} />
+        </View>
+        <Text style={[styles.text, { color: c.coinDark }]}>{coins}</Text>
+      </HapticTouchable>
+      <TopUpSheet
+        visible={topUpVisible}
+        onClose={() => setTopUpVisible(false)}
+        onSuccess={(coinsAdded, balance) => setSuccess({ coins: coinsAdded, balance })}
+      />
+      <TopUpSuccessPopup
+        visible={success !== null}
+        coinsAdded={success?.coins ?? 0}
+        newBalance={success?.balance ?? 0}
+        onClose={() => setSuccess(null)}
+      />
+    </>
   );
 }
 

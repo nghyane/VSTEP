@@ -45,9 +45,11 @@ function polygonPoints(value: number): string {
 
 interface SpiderChartProps {
   skills: Record<Skill, { current: number; trend: string }>;
+  targetBand?: number;
+  hasData?: boolean;
 }
 
-export function SpiderChart({ skills }: SpiderChartProps) {
+export function SpiderChart({ skills, targetBand, hasData = true }: SpiderChartProps) {
   const c = useThemeColors();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.85)).current;
@@ -94,16 +96,31 @@ export function SpiderChart({ skills }: SpiderChartProps) {
           );
         })}
 
-        <Polygon
-          points={dataPoints}
-          fill={c.primary + "25"}
-          stroke={c.primary}
-          strokeWidth={2}
-          strokeLinejoin="round"
-        />
+        {targetBand !== undefined ? (
+          <Polygon
+            points={polygonPoints(targetBand)}
+            fill="none"
+            stroke={c.destructive}
+            strokeWidth={1.4}
+            strokeDasharray="5,4"
+            opacity={0.7}
+          />
+        ) : null}
+
+        {hasData ? (
+          <Polygon
+            points={dataPoints}
+            fill={c.primary + "25"}
+            stroke={c.primary}
+            strokeWidth={2}
+            strokeLinejoin="round"
+          />
+        ) : null}
 
         {SKILLS_META.map((s, i) => {
           const val = skills[s.key]?.current ?? 0;
+          if (!hasData || val <= 0) return null;
+
           const [cx, cy] = pointAt(i, val);
           const skillColor = SKILL_COLORS[s.key];
           const a = angleFor(i);

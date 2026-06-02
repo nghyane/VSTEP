@@ -5,10 +5,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import * as SecureStore from "expo-secure-store";
 
 import { BottomSheet } from "@/components/BottomSheet";
+import { BrandIcon } from "@/components/BrandIcon";
 import { DepthButton } from "@/components/DepthButton";
 import { GameIcon } from "@/components/GameIcon";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { syncWalletBalanceCache, useTopupPackages, useWalletBalance } from "@/features/wallet/queries";
+import { useAuth } from "@/hooks/use-auth";
 import { api, getApiErrorMessage } from "@/lib/api";
 import type { TopupPackage, TopupOrder, WalletBalance } from "@/features/wallet/types";
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
@@ -18,6 +20,7 @@ const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/dashboard";
 
 interface PendingTopupOrder {
   id: string;
+  profileId: string;
   coins: number;
 }
 
@@ -30,6 +33,7 @@ interface Props {
 export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
   const c = useThemeColors();
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   const { data, isLoading } = useTopupPackages();
   const { data: balanceData } = useWalletBalance();
   const packages = useMemo(() => data ?? [], [data]);
@@ -100,11 +104,21 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
     let mounted = true;
     loadPendingTopupOrder().then((order) => {
       if (!mounted || !order) return;
+      if (profile && order.profileId !== profile.id) {
+        void clearPendingTopupOrder();
+        return;
+      }
       setPendingOrder(order);
       void checkOrderPayment(order, false);
     }).catch(() => undefined);
     return () => { mounted = false; };
-  }, [checkOrderPayment]);
+  }, [checkOrderPayment, profile]);
+
+  useEffect(() => {
+    if (!pendingOrder || !profile || pendingOrder.profileId === profile.id) return;
+    setPendingOrder(null);
+    void clearPendingTopupOrder();
+  }, [pendingOrder, profile]);
 
   useEffect(() => {
     if (!pendingOrder) return;
@@ -116,6 +130,10 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
 
   async function handleBuy() {
     if (!selected || buying) return;
+    if (!profile) {
+      Alert.alert("Chưa chọn hồ sơ", "Vui lòng chọn hồ sơ học trước khi nạp xu.");
+      return;
+    }
     setBuying(true);
     try {
       const order = await api.post<TopupOrder>("/api/v1/wallet/topup", {
@@ -129,7 +147,7 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
         return;
       }
 
-      const nextPendingOrder = { id: order.id, coins: order.coinsToCredit || selected.totalCoins };
+      const nextPendingOrder = { id: order.id, profileId: profile.id, coins: order.coinsToCredit || selected.totalCoins };
       await savePendingTopupOrder(nextPendingOrder);
       setPendingOrder(nextPendingOrder);
       await Linking.openURL(order.paymentUrl);
@@ -145,7 +163,7 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
     <BottomSheet visible={visible} onClose={onClose}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
-          <GameIcon name="coin" size={40} />
+          <BrandIcon name="coin" size={40} />
           <View style={{ flex: 1 }}>
             <Text style={[styles.title, { color: c.foreground }]}>Nạp xu</Text>
             <Text style={[styles.subtitle, { color: c.subtle }]}>
@@ -215,7 +233,7 @@ function createTopupReturnUrl(): string {
 function isPendingTopupOrder(value: unknown): value is PendingTopupOrder {
   if (!value || typeof value !== "object") return false;
   const record = value as Record<string, unknown>;
-  return typeof record.id === "string" && typeof record.coins === "number";
+  return typeof record.id === "string" && typeof record.profileId === "string" && typeof record.coins === "number";
 }
 
 async function loadPendingTopupOrder(): Promise<PendingTopupOrder | null> {
@@ -261,7 +279,7 @@ function PackCard({ pack, selected, onSelect }: { pack: TopupPackage; selected: 
       ) : null}
       <Text style={[styles.packLabel, { color: c.subtle }]}>{pack.label}</Text>
       <View style={styles.packCoinRow}>
-        <GameIcon name="coin" size={20} />
+        <BrandIcon name="coin" size={20} />
         <Text style={[styles.packCoins, { color: c.foreground }]}>{formatNumber(pack.totalCoins)}</Text>
         <Text style={[styles.packUnit, { color: c.subtle }]}>xu</Text>
       </View>

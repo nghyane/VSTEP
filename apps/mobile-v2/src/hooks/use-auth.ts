@@ -22,6 +22,7 @@ interface AuthCtx {
   ) => Promise<void>;
   signOut: () => Promise<void>;
   updateUser: (patch: Partial<AuthUser>) => Promise<void>;
+  updateProfile: (patch: Partial<Profile>) => Promise<void>;
   setSuggestedNickname: (value: string | null) => void;
 }
 
@@ -35,6 +36,7 @@ export const AuthContext = createContext<AuthCtx>({
   switchSession: async () => undefined,
   signOut: async () => undefined,
   updateUser: async () => undefined,
+  updateProfile: async () => undefined,
   setSuggestedNickname: () => undefined,
 });
 

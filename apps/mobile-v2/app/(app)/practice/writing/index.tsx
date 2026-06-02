@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { GameIcon } from "@/components/GameIcon";
 import { MascotEmpty } from "@/components/MascotStates";
 import { useWritingPrompts } from "@/hooks/use-practice";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
@@ -57,7 +58,7 @@ export default function WritingListScreen() {
         <View style={[s.historyBtn, { borderColor: c.border }]}>
           <HapticTouchable
             scalePress
-            onPress={() => router.push("/(app)/practice/writing/history" as any)}
+            onPress={() => router.push("/(app)/practice/writing/history" as never)}
           >
             <Ionicons name="time-outline" size={18} color={c.primary} />
           </HapticTouchable>
@@ -92,7 +93,7 @@ export default function WritingListScreen() {
                       <View key={p.id} style={s.cardWrapper}>
                         <HapticTouchable
                           scalePress
-                          onPress={() => router.push(`/(app)/practice/writing/${p.id}` as any)}
+                          onPress={() => router.push(`/(app)/practice/writing/${p.id}` as never)}
                           style={s.cardTouchable}
                         >
                           <View style={[s.card, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: "#CACACA" }]}>
@@ -101,7 +102,7 @@ export default function WritingListScreen() {
                             </View>
                             <Text style={[s.cardTitle, { color: c.foreground }]} numberOfLines={3}>{p.title}</Text>
                             <View style={s.cardMeta}>
-                              <Ionicons name="create-outline" size={12} color={COLOR} />
+                              <GameIcon name="writing" size={14} />
                               <Text style={[s.cardMetaText, { color: c.mutedForeground }]}>
                                 {p.minWords}–{p.maxWords} từ{p.estimatedMinutes ? ` · ${p.estimatedMinutes} phút` : ""}
                               </Text>

@@ -21,6 +21,7 @@ import {
 } from "@/hooks/use-exam-session";
 import { useThemeColors, spacing, radius, fontSize, fontFamily, colors as themeColors } from "@/theme";
 import type { ExamVersionMcqItem, Skill } from "@/types/api";
+import { getApiErrorMessage } from "@/lib/api";
 
 const SKILL_COLOR: Record<string, string> = {
   listening: themeColors.light.skillListening,
@@ -135,10 +136,17 @@ function ExamRoom({ session, examDetail, skipDeviceCheck, onSubmitted, c, insets
   );
   const remaining = useExamTimer(session.serverDeadlineAt);
   const [speakingBusy, setSpeakingBusy] = useState(false);
+  const lastSubmitErrorRef = useRef<unknown>(null);
 
   useEffect(() => {
     if (skipDeviceCheck && es.state.phase === "device-check") es.start();
   }, [skipDeviceCheck, es]);
+
+  useEffect(() => {
+    if (!es.submitError || lastSubmitErrorRef.current === es.submitError) return;
+    lastSubmitErrorRef.current = es.submitError;
+    Alert.alert("Không nộp được bài", getApiErrorMessage(es.submitError));
+  }, [es.submitError]);
 
   const guardSpeakingBusy = useCallback(() => {
     if (!speakingBusy) return false;
@@ -313,7 +321,7 @@ function ExamRoom({ session, examDetail, skipDeviceCheck, onSubmitted, c, insets
       <ConfirmModal
         visible={es.state.confirmSubmit}
         title="Nộp bài?"
-        message="Các kỹ năng trước đã chốt, không thể quay lại. Sau khi nộp, bài thi sẽ được chấm và bạn không thể chỉnh sửa đáp án."
+        message={es.submitError ? `Không nộp được bài: ${getApiErrorMessage(es.submitError)}` : "Các kỹ năng trước đã chốt, không thể quay lại. Sau khi nộp, bài thi sẽ được chấm và bạn không thể chỉnh sửa đáp án."}
         warning={currentSkillWarning}
         confirmLabel={es.isSubmitting ? "Đang nộp..." : "Nộp bài"}
         onConfirm={guardedSubmit}

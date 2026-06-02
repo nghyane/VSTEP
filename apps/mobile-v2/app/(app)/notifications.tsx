@@ -2,6 +2,7 @@ import { FlatList, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { BrandIcon } from "@/components/BrandIcon";
 import { useDeleteNotification, useMarkAllRead, useMarkNotificationRead, useNotifications } from "@/features/notification/queries";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { GameIcon } from "@/components/GameIcon";
@@ -75,7 +76,11 @@ function NotificationRow({ n }: { n: Notification }) {
       onLongPress={() => del.mutate(n.id)}
     >
       <View style={[styles.rowIcon, { backgroundColor: tone.tint }]}>
-        <Ionicons name={visual.iconName} size={18} color={tone.accent} />
+        {visual.brandIcon ? (
+          <BrandIcon name={visual.brandIcon} size={18} />
+        ) : (
+          <Ionicons name={visual.iconName} size={18} color={tone.accent} />
+        )}
       </View>
       <View style={{ flex: 1 }}>
         <Text style={[styles.rowTitle, { color: c.foreground }]}>{n.title}</Text>

@@ -3,8 +3,8 @@
 import { useEffect, useRef } from "react";
 import { Animated, Modal, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
+import { BrandIcon } from "@/components/BrandIcon";
 import { DepthButton } from "@/components/DepthButton";
-import { GameIcon } from "@/components/GameIcon";
 import { Mascot } from "@/components/Mascot";
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
 
@@ -91,7 +91,7 @@ export function PromoRedeemSuccessPopup({ visible, coinsAdded, newBalance, onClo
 
             <View style={styles.footer}>
               <View style={[styles.balanceRow, { backgroundColor: c.background, borderColor: c.border }]}>
-                <GameIcon name="coin" size={20} />
+                <BrandIcon name="coin" size={20} />
                 <Text style={[styles.balanceLabel, { color: c.subtle }]}>Số dư</Text>
                 <Text style={[styles.balanceValue, { color: c.foreground }]}>
                   {formatNumber(newBalance)} xu
@@ -160,7 +160,7 @@ function BurstLayer({
               { opacity, transform: [{ translateX: tx }, { translateY: ty }] },
             ]}
           >
-            <GameIcon name="coin" size={20} />
+            <BrandIcon name="coin" size={20} />
           </Animated.View>
         );
       })}

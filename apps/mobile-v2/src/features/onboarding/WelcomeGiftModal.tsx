@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, Modal, StyleSheet, Text, View } from "react-native";
+import { BrandIcon } from "@/components/BrandIcon";
 import { GameIcon } from "@/components/GameIcon";
 import { DepthButton } from "@/components/DepthButton";
 import { useWelcomeGift, dismissWelcomeGift, type GiftKind } from "@/features/onboarding/welcome-gift-store";
@@ -97,14 +98,14 @@ export function WelcomeGiftModal() {
                 key={`coin-${i}`}
                 style={[s.burstCoin, { opacity: a.opacity, transform: [{ translateX: a.translateX }, { translateY: a.translateY }, { scale: a.scale }] }]}
               >
-                <GameIcon name="coin" size={i % 3 === 0 ? 20 : 16} />
+                <BrandIcon name="coin" size={i % 3 === 0 ? 20 : 16} />
               </Animated.View>
             ))}
             <GameIcon name="chest" size={100} />
           </View>
 
           <View style={s.amountRow}>
-            <GameIcon name="coin" size={32} />
+            <BrandIcon name="coin" size={32} />
             <Text style={[s.amountText, { color: c.foreground }]}>+{displayed}</Text>
           </View>
 

@@ -18,6 +18,7 @@ import * as Haptics from "expo-haptics";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
+import { GameIcon } from "@/components/GameIcon";
 import {
   useSpeakingTaskDetail,
   startSpeakingSession,
@@ -72,7 +73,7 @@ export default function SpeakingExerciseScreen() {
         </View>
         <View style={[s.fullCenter, { flex: 1 }]}>
           <View style={[s.previewIcon, { backgroundColor: COLOR + "25" }]}>
-            <Ionicons name="mic" size={40} color={COLOR_TEXT} />
+            <GameIcon name="speaking" size={48} />
           </View>
           <Text style={[s.previewTitle, { color: c.foreground }]}>{detail.title}</Text>
           <Text style={[s.previewMeta, { color: c.subtle }]}>

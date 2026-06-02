@@ -5,19 +5,19 @@
 import type { ComponentProps } from "react";
 import type { Ionicons } from "@expo/vector-icons";
 
+import type { BrandIconName } from "@/components/BrandIcon";
 import type { ThemeColors } from "@/theme";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
 export type NotifTone = "coin" | "warning" | "destructive" | "primary" | "info";
 
-export interface NotifVisual {
-  iconName: IoniconName;
-  tone: NotifTone;
-}
+export type NotifVisual =
+  | { iconName: IoniconName; brandIcon?: never; tone: NotifTone }
+  | { brandIcon: BrandIconName; iconName?: never; tone: NotifTone };
 
 const VISUALS: Record<string, NotifVisual> = {
-  topup_completed: { iconName: "wallet-outline", tone: "coin" },
+  topup_completed: { brandIcon: "coin", tone: "coin" },
   coin_received: { iconName: "gift-outline", tone: "coin" },
   grading_completed: { iconName: "trophy-outline", tone: "warning" },
   grading_failed: { iconName: "alert-circle-outline", tone: "destructive" },

@@ -15,6 +15,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -27,6 +28,7 @@ import {
   uploadAvatarPhoto,
 } from "@/features/profile/avatar-actions";
 import { useAuth } from "@/hooks/use-auth";
+import { getApiErrorMessage } from "@/lib/api";
 import { AVATAR_PRESETS, getAvatarUrl } from "@/lib/avatar";
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
 import type { AvatarKey } from "@/types/api";
@@ -43,7 +45,8 @@ interface PendingFile {
 
 export function AvatarPickerSheet({ visible, onClose }: Props) {
   const c = useThemeColors();
-  const { user, updateUser } = useAuth();
+  const queryClient = useQueryClient();
+  const { user, profile, updateProfile } = useAuth();
   const [pendingKey, setPendingKey] = useState<AvatarKey | null>(null);
   const [pendingFile, setPendingFile] = useState<PendingFile | null>(null);
   const [saving, setSaving] = useState(false);
@@ -87,21 +90,26 @@ export function AvatarPickerSheet({ visible, onClose }: Props) {
     try {
       if (pendingFile) {
         const res = await uploadAvatarPhoto(pendingFile.uri, pendingFile.mimeType);
-        await updateUser({ avatarUrl: res.avatarUrl, avatarKey: null });
+        await updateProfile({ avatarUrl: res.avatarUrl, avatarKey: null });
+        syncProfileAvatar(queryClient, profile?.id ?? null, { avatarUrl: res.avatarUrl, avatarKey: null });
       } else if (pendingKey) {
         const res = await updateAvatarPreset(pendingKey);
-        await updateUser({ avatarKey: res.avatarKey, avatarUrl: null });
+        await updateProfile({ avatarKey: res.avatarKey, avatarUrl: null });
+        syncProfileAvatar(queryClient, profile?.id ?? null, { avatarKey: res.avatarKey, avatarUrl: null });
       }
       setSaving(false);
       clearPending();
       onClose();
-    } catch {
+    } catch (error) {
       setSaving(false);
-      Alert.alert("Không lưu được", "Vui lòng thử lại sau.");
+      Alert.alert("Không lưu được", getApiErrorMessage(error));
     }
   }
 
   const previewUri = pendingFile?.uri ?? (pendingKey ? getAvatarUrl(pendingKey) : null);
+  const avatarSource = profile
+    ? { avatarKey: profile.avatarKey, avatarUrl: profile.avatarUrl, email: user?.email ?? profile.nickname, fullName: profile.nickname }
+    : user;
   const isDirty = pendingFile !== null || pendingKey !== null;
 
   return (
@@ -120,7 +128,7 @@ export function AvatarPickerSheet({ visible, onClose }: Props) {
         </View>
 
         <View style={styles.previewRow}>
-          <UserAvatar user={user} size={88} uriOverride={previewUri ?? undefined} />
+          <UserAvatar user={avatarSource} fallbackName={profile?.nickname ?? user?.fullName ?? user?.email} size={88} uriOverride={previewUri ?? undefined} />
           <View style={styles.previewActions}>
             <DepthButton variant="secondary" size="sm" onPress={handlePickPhoto} disabled={saving}>
               <Ionicons name="image-outline" size={14} color={c.primary} />
@@ -184,6 +192,18 @@ export function AvatarPickerSheet({ visible, onClose }: Props) {
         </View>
       </View>
     </BottomSheet>
+  );
+}
+
+function syncProfileAvatar(
+  queryClient: ReturnType<typeof useQueryClient>,
+  profileId: string | null,
+  patch: { avatarKey: AvatarKey | null; avatarUrl: string | null },
+) {
+  if (!profileId) return;
+  queryClient.setQueryData<{ id: string; avatarKey: AvatarKey | null; avatarUrl: string | null }[]>(
+    ["profiles"],
+    (profiles) => profiles?.map((item) => (item.id === profileId ? { ...item, ...patch } : item)),
   );
 }
 

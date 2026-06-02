@@ -105,6 +105,8 @@ function speechErrorMessage(event: ExpoSpeechRecognitionErrorEvent): string {
       return "Ngon ngu nhan dien giong noi chua kha dung tren thiet bi nay.";
     case "no-speech":
       return "Khong nghe ro giong noi. Vui long noi lai.";
+    case "network":
+      return "Không kết nối được dịch vụ nhận dạng giọng nói. Kiểm tra mạng và thử lại.";
     default:
       return event.message || "Khong nhan dien duoc giong noi. Vui long thu lai.";
   }

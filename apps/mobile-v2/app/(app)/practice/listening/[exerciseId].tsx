@@ -12,6 +12,7 @@ import { resolvePlayableAudioUrl } from "@/lib/asset-url";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
+import { GameIcon } from "@/components/GameIcon";
 import { FocusHeader, TtsBar } from "@/components/FocusHeader";
 import { McqQuestionCard } from "@/components/McqQuestionCard";
 import { McqResultCard } from "@/components/McqResultCard";
@@ -88,7 +89,7 @@ function PreviewScreen({ detail, starting, onStart, onBack, insets, c }: any) {
       </View>
       <View style={[s.fullCenter, { flex: 1 }]}>
         <View style={[s.previewIcon, { backgroundColor: COLOR + "18" }]}>
-          <Ionicons name="headset" size={40} color={COLOR} />
+          <GameIcon name="listening" size={48} />
         </View>
         <Text style={[s.previewTitle, { color: c.foreground }]}>{exercise.title}</Text>
         {exercise.description && (

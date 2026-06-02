@@ -2,46 +2,109 @@ import { useEffect, useRef } from "react";
 import { Animated, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
-import { DepthButton } from "@/components/DepthButton";
-import { GameIcon } from "@/components/GameIcon";
+import { GameIcon, type GameIconName } from "@/components/GameIcon";
 import { Mascot } from "@/components/Mascot";
 import { RecommendationSection } from "@/features/practice/RecommendationSection";
-import { useThemeColors, spacing, radius, fontSize, fontFamily, depthNeutral } from "@/theme";
+import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
-const SKILLS = [
-  { key: "listening", label: "Nghe" },
-  { key: "reading", label: "Đọc" },
-  { key: "writing", label: "Viết" },
-  { key: "speaking", label: "Nói" },
-] as const;
+type PracticeRoute =
+  | "/(app)/vocabulary"
+  | "/(app)/practice/grammar"
+  | "/(app)/practice/listening"
+  | "/(app)/practice/reading"
+  | "/(app)/practice/writing"
+  | "/(app)/practice/speaking"
+  | "/(app)/practice/results";
+
+interface PracticeItem {
+  key: string;
+  title: string;
+  subtitle: string;
+  meta?: string;
+  icon: GameIconName;
+  color: string;
+  tint: string;
+  route: PracticeRoute;
+}
 
 export default function PracticeHubScreen() {
   const c = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const skillColors = {
-    listening: c.skillListening,
-    reading: c.skillReading,
-    writing: c.skillWriting,
-    speaking: c.skillSpeaking,
-  } as const;
-  const fadeAnims = useRef([
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-  ]).current;
+  const fadeAnims = useRef(Array.from({ length: 5 }, () => new Animated.Value(0))).current;
+
+  const foundationItems: PracticeItem[] = [
+    {
+      key: "vocabulary",
+      title: "Từ vựng",
+      subtitle: "Flashcard SRS · 30 chủ đề theo level",
+      icon: "vocabulary",
+      color: c.primary,
+      tint: c.primaryTint,
+      route: "/(app)/vocabulary",
+    },
+    {
+      key: "grammar",
+      title: "Ngữ pháp",
+      subtitle: "38 điểm ngữ pháp · 3 cấp độ",
+      icon: "grammar",
+      color: c.skillReading,
+      tint: "#F3EAFF",
+      route: "/(app)/practice/grammar",
+    },
+  ];
+
+  const skillItems: PracticeItem[] = [
+    {
+      key: "listening",
+      title: "Nghe",
+      subtitle: "Listening",
+      meta: "3 phần · nghe hiểu",
+      icon: "listening",
+      color: c.skillListening,
+      tint: c.infoTint,
+      route: "/(app)/practice/listening",
+    },
+    {
+      key: "reading",
+      title: "Đọc",
+      subtitle: "Reading",
+      meta: "4 đoạn văn · đọc hiểu",
+      icon: "reading",
+      color: c.skillReading,
+      tint: "#F3EAFF",
+      route: "/(app)/practice/reading",
+    },
+    {
+      key: "writing",
+      title: "Viết",
+      subtitle: "Writing",
+      meta: "Thư + luận · AI chấm",
+      icon: "writing",
+      color: c.skillWriting,
+      tint: c.primaryTint,
+      route: "/(app)/practice/writing",
+    },
+    {
+      key: "speaking",
+      title: "Nói",
+      subtitle: "Speaking",
+      meta: "3 phần · ghi âm + AI",
+      icon: "speaking",
+      color: c.skillSpeaking,
+      tint: c.coinTint,
+      route: "/(app)/practice/speaking",
+    },
+  ];
 
   useEffect(() => {
     fadeAnims.forEach((anim, index) => {
       Animated.timing(anim, {
         toValue: 1,
         duration: 420,
-        delay: 60 + index * 100,
+        delay: 60 + index * 90,
         useNativeDriver: true,
       }).start();
     });
@@ -69,117 +132,50 @@ export default function PracticeHubScreen() {
     >
       <Animated.View style={animStyle(0)}>
         <Text style={[styles.title, { color: c.foreground }]}>Luyện tập</Text>
-        <Text style={[styles.subtitle, { color: c.mutedForeground }]}>Chọn luồng học phù hợp với mục tiêu hiện tại của bạn.</Text>
+        <Text style={[styles.subtitle, { color: c.mutedForeground }]}>Chọn mục luyện để vào học ngay.</Text>
       </Animated.View>
 
       <Animated.View style={animStyle(1)}>
         <RecommendationSection />
       </Animated.View>
 
-      <Animated.View style={animStyle(2)}>
-        <HapticTouchable
-          style={[styles.branchCard, depthNeutral, { backgroundColor: c.card }]}
-          activeOpacity={1}
-        >
-          <View style={styles.branchHeader}>
-            <View style={[styles.branchIconWrap, { backgroundColor: c.primaryTint }]}>
-              <GameIcon name="graduation" size={28} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.branchTitle, { color: c.foreground }]}>Luyện tập nền tảng</Text>
-              <Text style={[styles.branchSub, { color: c.mutedForeground }]}>Học từ vựng theo chủ đề và ngữ pháp có cấu trúc trước khi vào luyện đề.</Text>
-            </View>
-          </View>
-
-          <View style={styles.statRow}>
-            <StatPill icon="book" value="60+" label="chủ đề" />
-            <StatPill icon="pencil" value="200+" label="điểm ngữ pháp" />
-            <StatPill icon="lightning" value="SRS" label="lặp lại" />
-          </View>
-
-          <View style={styles.chipRow}>
-            <Chip label="Từ vựng" color={c.primary} />
-            <Chip label="Ngữ pháp" color={c.skillReading} />
-          </View>
-
-          <DepthButton fullWidth style={{ marginTop: spacing.sm }} onPress={() => router.push("/(app)/practice/foundation" as any)}>
-            Bắt đầu nền tảng →
-          </DepthButton>
-        </HapticTouchable>
+      <Animated.View style={[styles.section, animStyle(2)]}>
+        <SectionHeader title="Nền tảng" subtitle="Từ vựng và ngữ pháp — gốc rễ mọi kỹ năng" />
+        <View style={styles.foundationList}>
+          {foundationItems.map((item) => (
+            <FoundationCard key={item.key} item={item} onPress={() => router.push(item.route as never)} />
+          ))}
+        </View>
       </Animated.View>
 
-      <Animated.View style={animStyle(3)}>
-        <HapticTouchable
-          style={[styles.branchCard, depthNeutral, { backgroundColor: c.card }]}
-          activeOpacity={1}
-        >
-          <View style={styles.branchHeader}>
-            <View style={[styles.branchIconWrap, { backgroundColor: c.infoTint }]}>
-              <GameIcon name="star" size={28} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.branchTitle, { color: c.foreground }]}>Luyện 4 kỹ năng</Text>
-              <Text style={[styles.branchSub, { color: c.mutedForeground }]}>Nghe và Đọc được chấm ngay. Viết và Nói được AI chấm bất đồng bộ.</Text>
-            </View>
-          </View>
-
-          <View style={styles.statRow}>
-            <StatPill icon="headphones" value="4" label="kỹ năng" />
-            <StatPill icon="rocket" value="MCQ + AI" label="dạng bài" />
-            <StatPill icon="star" value="Adaptive" label="gợi ý" />
-          </View>
-
-          <View style={styles.chipRow}>
-            {SKILLS.map((skill) => {
-              const color = skillColors[skill.key];
-              return (
-                <View key={skill.key} style={[styles.skillChip, { backgroundColor: color + "15" }]}>
-                  <Ionicons
-                    name={
-                      skill.key === "listening" ? "headset-outline"
-                      : skill.key === "reading" ? "book-outline"
-                      : skill.key === "writing" ? "create-outline"
-                      : "mic-outline"
-                    }
-                    size={14}
-                    color={color}
-                  />
-                  <Text style={[styles.skillChipText, { color }]}>{skill.label}</Text>
-                </View>
-              );
-            })}
-          </View>
-
-          <DepthButton variant="info" fullWidth style={{ marginTop: spacing.sm }} onPress={() => router.push("/(app)/practice/skills" as any)}>
-            Bắt đầu luyện kỹ năng →
-          </DepthButton>
-        </HapticTouchable>
+      <Animated.View style={[styles.section, animStyle(3)]}>
+        <SectionHeader title="Kỹ năng" subtitle="Luyện 4 kỹ năng VSTEP · bật/tắt hỗ trợ tùy nhu cầu" />
+        <View style={styles.skillGrid}>
+          {skillItems.map((item) => (
+            <SkillCard key={item.key} item={item} onPress={() => router.push(item.route as never)} />
+          ))}
+        </View>
       </Animated.View>
 
       <Animated.View style={animStyle(4)}>
-        <View style={[styles.resultsCard, depthNeutral, { backgroundColor: c.card }]}>
-          <HapticTouchable
-            scalePress
-            onPress={() => router.push("/(app)/practice/results" as any)}
-          >
-          <View style={[styles.resultsIcon, { backgroundColor: c.skillWriting + "1A" }]}>
-            <Ionicons name="trophy-outline" size={22} color={c.skillWriting} />
+        <HapticTouchable scalePress activeOpacity={0.9} onPress={() => router.push("/(app)/practice/results" as never)}>
+          <View style={[styles.resultsCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.mutedForeground }]}>
+            <View style={[styles.resultsIcon, { backgroundColor: c.primaryTint }]}>
+              <GameIcon name="writing" size={34} />
+            </View>
+            <View style={styles.cardBody}>
+              <Text style={[styles.resultsTitle, { color: c.foreground }]}>Kết quả AI chấm</Text>
+              <Text style={[styles.resultsSub, { color: c.mutedForeground }]}>Xem lại các bài Viết đã được AI chấm điểm chi tiết.</Text>
+            </View>
+            <Text style={[styles.chevron, { color: c.subtle }]}>›</Text>
           </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.resultsTitle, { color: c.foreground }]}>Kết quả AI chấm</Text>
-            <Text style={[styles.resultsSub, { color: c.mutedForeground }]}>
-              Xem lại các bài Viết đã được AI chấm điểm chi tiết.
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={c.subtle} />
         </HapticTouchable>
-      </View>
       </Animated.View>
 
       <View style={styles.mascotRow}>
         <Mascot name="hero" size={72} animation="none" />
         <View style={[styles.mascotBubble, { backgroundColor: c.primaryTint, borderColor: c.borderFocus }]}>
-          <Text style={[styles.mascotText, { color: c.primaryDark }]}>Đi đúng thứ tự: nền tảng → 4 kỹ năng → thi thử. Học đều mỗi ngày sẽ hiệu quả hơn học dồn.</Text>
+          <Text style={[styles.mascotText, { color: c.primaryDark }]}>Chạm vào từng thẻ để luyện ngay. Học đều nền tảng và 4 kỹ năng sẽ hiệu quả hơn học dồn.</Text>
         </View>
       </View>
 
@@ -188,29 +184,48 @@ export default function PracticeHubScreen() {
   );
 }
 
-function StatPill({
-  icon,
-  value,
-  label,
-}: {
-  icon: Parameters<typeof GameIcon>[0]["name"];
-  value: string;
-  label: string;
-}) {
+function SectionHeader({ title, subtitle }: { title: string; subtitle: string }) {
   const c = useThemeColors();
   return (
-    <View style={[styles.statPill, { backgroundColor: c.muted }]}> 
-      <GameIcon name={icon} size={14} />
-      <Text style={[styles.statValue, { color: c.foreground }]}>{value}</Text>
-      <Text style={[styles.statLabel, { color: c.mutedForeground }]}>{label}</Text>
+    <View style={styles.sectionHeader}>
+      <Text style={[styles.sectionTitle, { color: c.foreground }]}>{title}</Text>
+      <Text style={[styles.sectionSubtitle, { color: c.subtle }]}>{subtitle}</Text>
     </View>
   );
 }
 
-function Chip({ label, color }: { label: string; color: string }) {
+function FoundationCard({ item, onPress }: { item: PracticeItem; onPress: () => void }) {
+  const c = useThemeColors();
   return (
-    <View style={[styles.chip, { backgroundColor: color + "18" }]}>
-      <Text style={[styles.chipText, { color }]}>{label}</Text>
+    <HapticTouchable scalePress activeOpacity={0.9} onPress={onPress}>
+      <View style={[styles.foundationCard, { backgroundColor: c.card, borderColor: item.color + "40", borderBottomColor: item.color }]}>
+        <View style={[styles.foundationIcon, { backgroundColor: item.tint }]}>
+          <GameIcon name={item.icon} size={46} />
+        </View>
+        <View style={styles.cardBody}>
+          <Text style={[styles.cardTitle, { color: c.foreground }]}>{item.title}</Text>
+          <Text style={[styles.cardSubtitle, { color: c.mutedForeground }]}>{item.subtitle}</Text>
+        </View>
+        <Text style={[styles.chevron, { color: item.color }]}>›</Text>
+      </View>
+    </HapticTouchable>
+  );
+}
+
+function SkillCard({ item, onPress }: { item: PracticeItem; onPress: () => void }) {
+  const c = useThemeColors();
+  return (
+    <View style={styles.skillCardWrapper}>
+      <HapticTouchable scalePress activeOpacity={0.9} onPress={onPress}>
+        <View style={[styles.skillCard, { backgroundColor: c.card, borderColor: item.color + "40", borderBottomColor: item.color }]}>
+          <View style={[styles.skillIcon, { backgroundColor: item.tint }]}>
+            <GameIcon name={item.icon} size={44} />
+          </View>
+          <Text style={[styles.skillTitle, { color: c.foreground }]}>{item.title}</Text>
+          <Text style={[styles.skillSubtitle, { color: item.color }]}>{item.subtitle}</Text>
+          {item.meta ? <Text style={[styles.skillMeta, { color: c.mutedForeground }]}>{item.meta}</Text> : null}
+        </View>
+      </HapticTouchable>
     </View>
   );
 }
@@ -218,23 +233,56 @@ function Chip({ label, color }: { label: string; color: string }) {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"], gap: spacing.xl },
-  title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
-  subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs, marginBottom: spacing.md, lineHeight: 20 },
-  branchCard: { borderRadius: radius["2xl"], padding: spacing.xl, gap: spacing.lg },
-  branchHeader: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  branchIconWrap: { width: 52, height: 52, borderRadius: radius.xl, alignItems: "center", justifyContent: "center" },
-  branchTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.bold },
-  branchSub: { fontSize: fontSize.xs, marginTop: 2, lineHeight: 18 },
-  statRow: { flexDirection: "row", gap: spacing.md },
-  statPill: { flex: 1, alignItems: "center", paddingVertical: spacing.md, borderRadius: radius.lg, gap: 4 },
-  statValue: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
-  statLabel: { fontSize: 10 },
-  chipRow: { flexDirection: "row", gap: spacing.md, flexWrap: "wrap" },
-  chip: { paddingHorizontal: spacing.base, paddingVertical: 6, borderRadius: radius.full },
-  chipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
-  skillChip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: spacing.base, paddingVertical: spacing.sm, borderRadius: radius.full },
-  skillChipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
+  title: { fontSize: fontSize["3xl"], fontFamily: fontFamily.extraBold, letterSpacing: -0.4 },
+  subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs, lineHeight: 20 },
+  section: { gap: spacing.md },
+  sectionHeader: { gap: 2 },
+  sectionTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
+  sectionSubtitle: { fontSize: fontSize.sm, lineHeight: 20 },
+  foundationList: { gap: spacing.md },
+  foundationCard: {
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  foundationIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.xl,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cardBody: { flex: 1, minWidth: 0 },
+  cardTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
+  cardSubtitle: { fontSize: fontSize.sm, lineHeight: 20, marginTop: 2 },
+  chevron: { fontSize: 34, lineHeight: 36, fontFamily: fontFamily.extraBold },
+  skillGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: spacing.sm },
+  skillCardWrapper: { width: "48.5%" },
+  skillCard: {
+    height: 176,
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+  },
+  skillIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  skillTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
+  skillSubtitle: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, marginTop: 2 },
+  skillMeta: { fontSize: fontSize.xs, lineHeight: 17, marginTop: spacing.xs },
   resultsCard: {
+    borderWidth: 2,
+    borderBottomWidth: 4,
     borderRadius: radius.xl,
     padding: spacing.base,
     flexDirection: "row",
@@ -242,9 +290,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   resultsIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
+    width: 48,
+    height: 48,
+    borderRadius: radius.lg,
     alignItems: "center",
     justifyContent: "center",
   },
