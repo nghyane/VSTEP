@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="26.0.0">
+  <diagram name="Learner Overview">
+    <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="o2" value="Start" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="60" y="380" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="o3" value="Open learner app" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="220" y="370" width="160" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="o4" value="Authenticated and profile complete?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="450" y="350" width="170" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="o5" value="Login / Register / Complete onboarding" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="430" y="600" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="o6" value="Open Dashboard" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="720" y="370" width="170" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="o7" value="Select main navigation" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="970" y="360" width="160" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="o8" value="Practice" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="100" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="o9" value="Mock Exam" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="250" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="o10" value="Courses" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="400" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="o11" value="Profile" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="550" width="170" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="o12" value="Optional: top up wallet from balance/dialog" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="720" y="600" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="o13" value="Complete selected task" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1510" y="370" width="190" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="o14" value="End" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="1790" y="380" width="90" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="oe1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o2" target="o3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe2" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o3" target="o4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe3" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o4" target="o5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe4" value="Complete" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o5" target="o6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="805" y="640" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="oe5" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o4" target="o6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o6" target="o7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe7" value="Practice" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o7" target="o8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe8" value="Mock Exam" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o7" target="o9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe9" value="Courses" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o7" target="o10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe10" value="Profile" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o7" target="o11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe11" value="Optional" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;dashed=1;" edge="1" parent="1" source="o6" target="o12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o8" target="o13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o9" target="o13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o10" target="o13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o11" target="o13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o12" target="o13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="oe17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;" edge="1" parent="1" source="o13" target="o14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

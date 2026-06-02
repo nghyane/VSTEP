@@ -15,11 +15,16 @@ type AuthParam = LandingAuthMode | undefined
 export const Route = createFileRoute("/")({
 	validateSearch: (
 		s: Record<string, unknown>,
-	): { auth?: AuthParam; redirect?: string; onboarding?: boolean } => {
-		const auth = s.auth === "login" || s.auth === "register" ? s.auth : undefined
+	): { auth?: AuthParam; redirect?: string; onboarding?: boolean; email?: string; token?: string } => {
+		const auth =
+			s.auth === "login" || s.auth === "register" || s.auth === "forgot" || s.auth === "reset"
+				? s.auth
+				: undefined
 		const redirect = typeof s.redirect === "string" ? s.redirect : undefined
 		const onboarding = s.onboarding === true || s.onboarding === "1" ? true : undefined
-		return { auth, redirect, onboarding }
+		const email = typeof s.email === "string" ? s.email : undefined
+		const token = typeof s.token === "string" ? s.token : undefined
+		return { auth, redirect, onboarding, email, token }
 	},
 	component: LandingPage,
 })
@@ -27,7 +32,7 @@ export const Route = createFileRoute("/")({
 function LandingPage() {
 	const status = useAuth((s) => s.status)
 	const navigate = useNavigate()
-	const { auth, redirect: redirectTo, onboarding } = Route.useSearch()
+	const { auth, redirect: redirectTo, onboarding, email, token } = Route.useSearch()
 	const ctaRef = useRef<HTMLDivElement>(null)
 	const [showBtn, setShowBtn] = useState(false)
 
@@ -60,7 +65,9 @@ function LandingPage() {
 				© 2025 VSTEP · Luyện thi chứng chỉ tiếng Anh quốc gia
 			</footer>
 
-			{auth && <LandingAuthOverlay mode={auth} onboarding={onboarding === true} />}
+			{auth && (
+				<LandingAuthOverlay mode={auth} onboarding={onboarding === true} email={email} token={token} />
+			)}
 		</div>
 	)
 }

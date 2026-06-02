@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useReducer } from "react"
 import { reviewWord } from "#/features/vocab/actions"
 import type { PracticeMode, SrsRating, WordWithState } from "#/features/vocab/types"
@@ -17,7 +17,6 @@ type Action =
 	| { type: "value"; value: string }
 	| { type: "check"; correct: boolean }
 	| { type: "reveal" }
-	| { type: "flip" }
 	| { type: "advance"; requeue: PracticeItem | null }
 
 interface State {
@@ -49,8 +48,6 @@ function reducer(state: State, action: Action): State {
 			return { ...state, phase: "reveal", correct: action.correct }
 		case "reveal":
 			return { ...state, phase: "reveal" }
-		case "flip":
-			return { ...state, phase: state.phase === "prompt" ? "reveal" : "prompt" }
 		case "advance":
 			return {
 				...INITIAL,
@@ -76,7 +73,6 @@ export interface PracticeSession {
 	setValue: (v: string) => void
 	check: () => void
 	reveal: () => void
-	flip: () => void
 	rate: (r: SrsRating) => void
 }
 
@@ -125,6 +121,7 @@ export function checkAnswer(item: PracticeItem, value: string): boolean {
 }
 
 export function usePracticeSession(items: PracticeItem[]): PracticeSession {
+	const qc = useQueryClient()
 	const [state, dispatch] = useReducer(reducer, INITIAL)
 
 	useEffect(() => {
@@ -138,6 +135,7 @@ export function usePracticeSession(items: PracticeItem[]): PracticeSession {
 	const mutation = useMutation({
 		mutationFn: ({ wordId, rating }: { wordId: string; rating: SrsRating }) => reviewWord(wordId, rating),
 		onSuccess: (_data, { rating }) => {
+			void qc.invalidateQueries({ queryKey: ["learning-path"] })
 			dispatch({ type: "advance", requeue: rating === 1 ? current : null })
 		},
 	})
@@ -149,10 +147,6 @@ export function usePracticeSession(items: PracticeItem[]): PracticeSession {
 
 	function reveal() {
 		dispatch({ type: "reveal" })
-	}
-
-	function flip() {
-		dispatch({ type: "flip" })
 	}
 
 	function rate(rating: SrsRating) {
@@ -173,7 +167,6 @@ export function usePracticeSession(items: PracticeItem[]): PracticeSession {
 		setValue: (v) => dispatch({ type: "value", value: v }),
 		check,
 		reveal,
-		flip,
 		rate,
 	}
 }

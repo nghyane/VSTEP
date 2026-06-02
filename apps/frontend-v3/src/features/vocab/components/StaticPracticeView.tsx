@@ -59,7 +59,6 @@ export function StaticPracticeView({ item, session }: Props) {
 					<PracticeBack
 						item={item}
 						review={needsInput ? { userAnswer: session.value, correct: session.correct === true } : null}
-						showSpeaker
 					/>
 				</div>
 			)}

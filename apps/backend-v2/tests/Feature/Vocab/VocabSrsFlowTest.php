@@ -29,6 +29,54 @@ class VocabSrsFlowTest extends TestCase
         $response->assertJsonCount(2, 'data');
     }
 
+    public function test_list_topics_exposes_stable_group_key(): void
+    {
+        VocabTopic::factory()->create([
+            'slug' => 'curriculum-work-and-careers-b1',
+            'is_published' => true,
+        ]);
+
+        $token = $this->loginLearner();
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/v1/vocab/topics');
+
+        $response->assertOk();
+        $response->assertJsonPath('data.0.group_key', 'curriculum-work-and-careers');
+    }
+
+    public function test_list_topics_exposes_backend_adaptive_recommendation(): void
+    {
+        $user = User::factory()->create();
+        Profile::factory()->initial()->forAccount($user)->create([
+            'entry_level' => 'B1',
+            'target_level' => 'B2',
+        ]);
+        $a1 = VocabTopic::factory()->create([
+            'slug' => 'curriculum-travel-a1',
+            'name' => 'Travel',
+            'level' => 'A1',
+            'display_order' => 1,
+            'is_published' => true,
+        ]);
+        $b1 = VocabTopic::factory()->create([
+            'slug' => 'curriculum-travel-b1',
+            'name' => 'Travel',
+            'level' => 'B1',
+            'display_order' => 2,
+            'is_published' => true,
+        ]);
+        VocabWord::factory()->create(['topic_id' => $a1->id]);
+        VocabWord::factory()->create(['topic_id' => $b1->id]);
+
+        $response = $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->getJson('/api/v1/vocab/topics');
+
+        $response->assertOk();
+        $response->assertJsonPath('data.0.recommended_topic_id', $b1->id);
+        $response->assertJsonPath('data.0.adaptive_reason', 'recommended');
+        $response->assertJsonPath('data.0.adaptive_label', 'Đề xuất');
+    }
+
     public function test_topic_detail_includes_words_with_new_state(): void
     {
         $topic = VocabTopic::factory()->create();

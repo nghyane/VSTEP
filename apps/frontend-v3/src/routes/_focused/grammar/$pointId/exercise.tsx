@@ -1,5 +1,6 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { useCallback, useEffect } from "react"
 import { GrammarFeedback, GrammarInput, GrammarQuestion } from "#/features/grammar/components/ExerciseUI"
 import { grammarPointDetailQuery } from "#/features/grammar/queries"
 import { useGrammarExerciseSession } from "#/features/grammar/use-grammar-exercise"
@@ -11,11 +12,21 @@ export const Route = createFileRoute("/_focused/grammar/$pointId/exercise")({
 })
 
 function GrammarExercisePage() {
+	const qc = useQueryClient()
 	const { pointId } = Route.useParams()
 	const { data } = useQuery(grammarPointDetailQuery(pointId))
 	const exercises = data ? data.data.exercises : []
 	const s = useGrammarExerciseSession(exercises)
 	const back = { backTo: "/luyen-tap/ngu-phap/$pointId", backParams: { pointId } }
+
+	const invalidate = useCallback(() => {
+		qc.invalidateQueries({ queryKey: ["learning-path"] })
+		qc.invalidateQueries({ queryKey: ["grammar", "points"] })
+	}, [qc])
+
+	useEffect(() => {
+		return () => invalidate()
+	}, [invalidate])
 
 	if (!data) {
 		return (

@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useReducer } from "react"
 import { attemptGrammarExercise } from "#/features/grammar/actions"
 import type { GrammarExercise, GrammarMastery } from "#/features/grammar/types"
@@ -45,12 +45,15 @@ interface GrammarExerciseSession {
 }
 
 export function useGrammarExerciseSession(exercises: GrammarExercise[]): GrammarExerciseSession {
+	const qc = useQueryClient()
 	const [state, dispatch] = useReducer(reducer, { index: 0, selected: null, result: null })
 
 	const mutation = useMutation({
 		mutationFn: ({ id, answer }: { id: string; answer: Record<string, unknown> }) =>
 			attemptGrammarExercise(id, answer),
 		onSuccess: (res) => {
+			void qc.invalidateQueries({ queryKey: ["learning-path"] })
+			void qc.invalidateQueries({ queryKey: ["grammar", "points"] })
 			dispatch({
 				type: "answered",
 				result: {

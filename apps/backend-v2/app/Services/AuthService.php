@@ -9,6 +9,8 @@ use App\Exceptions\GoogleAccountConflictException;
 use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
@@ -88,6 +90,60 @@ final class AuthService
             'refresh_token' => $plainToken,
             'expires_in' => config('jwt.ttl') * 60,
         ];
+    }
+
+    public function sendPasswordResetLink(string $email): void
+    {
+        $user = User::query()->where('email', $email)->first();
+        if ($user !== null && $user->password === null) {
+            throw ValidationException::withMessages([
+                'email' => ['Tài khoản này đăng nhập bằng Google. Vui lòng dùng nút đăng nhập Google.'],
+            ]);
+        }
+
+        $status = Password::sendResetLink(['email' => $email]);
+
+        if ($status === Password::RESET_LINK_SENT || $status === Password::INVALID_USER) {
+            return;
+        }
+
+        if ($status === Password::RESET_THROTTLED) {
+            throw ValidationException::withMessages([
+                'email' => ['Email đặt lại mật khẩu vừa được gửi. Vui lòng chờ trước khi gửi lại.'],
+            ]);
+        }
+
+        throw ValidationException::withMessages([
+            'email' => ['Không gửi được email đặt lại mật khẩu. Vui lòng thử lại sau.'],
+        ]);
+    }
+
+    public function resetPassword(string $email, string $token, string $password, string $passwordConfirmation): void
+    {
+        $user = User::query()->where('email', $email)->first();
+        if ($user !== null && $user->password === null) {
+            throw ValidationException::withMessages([
+                'email' => ['Tài khoản này đăng nhập bằng Google. Vui lòng dùng nút đăng nhập Google.'],
+            ]);
+        }
+
+        $status = Password::reset(
+            [
+                'email' => $email,
+                'token' => $token,
+                'password' => $password,
+                'password_confirmation' => $passwordConfirmation,
+            ],
+            function (User $user, string $password): void {
+                $user->forceFill(['password' => Hash::make($password)])->save();
+            },
+        );
+
+        if ($status !== Password::PASSWORD_RESET) {
+            throw ValidationException::withMessages([
+                'email' => ['Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.'],
+            ]);
+        }
     }
 
     /**

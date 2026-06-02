@@ -93,9 +93,9 @@ export function LoginForm() {
 					</form.Field>
 				</div>
 				<div className="flex items-center justify-end">
-					<button type="button" className="text-xs font-bold text-primary hover:underline">
+					<Link to="/" search={{ auth: "forgot" }} className="text-xs font-bold text-primary hover:underline">
 						Quên mật khẩu?
-					</button>
+					</Link>
 				</div>
 				<button
 					type="submit"

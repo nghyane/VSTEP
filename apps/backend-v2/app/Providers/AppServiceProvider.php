@@ -51,8 +51,10 @@ use App\Services\SpeechToTextService;
 use App\Srs\FsrsConfig;
 use Carbon\CarbonImmutable;
 use Google\Client as GoogleClient;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Support\Facades\Date;
@@ -132,6 +134,23 @@ class AppServiceProvider extends ServiceProvider
         View::addLocation(resource_path());
 
         (new AiConfigValidator)->validate();
+
+        ResetPassword::toMailUsing(function (object $notifiable, string $token): MailMessage {
+            $email = is_string($notifiable->email ?? null) ? $notifiable->email : '';
+            $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
+            $url = $frontendUrl.'/?'.http_build_query([
+                'auth' => 'reset',
+                'email' => $email,
+                'token' => $token,
+            ]);
+
+            return (new MailMessage)
+                ->subject('Đặt lại mật khẩu VSTEP')
+                ->line('Bạn nhận được email này vì đã yêu cầu đặt lại mật khẩu cho tài khoản VSTEP.')
+                ->action('Đặt lại mật khẩu', $url)
+                ->line('Liên kết đặt lại mật khẩu sẽ hết hạn sau 60 phút.')
+                ->line('Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này.');
+        });
 
         Request::macro('profile', function (): Profile {
             /** @var Profile|null $profile */

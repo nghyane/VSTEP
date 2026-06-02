@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Progress;
 
+use App\Models\GrammarExercise;
 use App\Models\GrammarPoint;
 use App\Models\GrammarPointLevel;
+use App\Models\PracticeGrammarAttempt;
 use App\Models\Profile;
 use App\Models\ProfileGrammarMastery;
 use App\Models\ProfileVocabSrsState;
@@ -141,6 +143,28 @@ final class LearningPathServiceTest extends TestCase
         $this->assertStringContainsString('Còn 2 từ vựng', (string) $vocabSkill['suggestion']);
     }
 
+    public function test_vocabulary_coverage_counts_started_srs_words(): void
+    {
+        $topic = VocabTopic::factory()->create(['level' => 'A2', 'is_published' => true]);
+        $word = VocabWord::factory()->create(['topic_id' => $topic->id]);
+
+        ProfileVocabSrsState::create([
+            'profile_id' => $this->profile->id,
+            'word_id' => $word->id,
+            'stability' => 0.0,
+            'difficulty' => 0.5,
+            'state_kind' => 'learning',
+            'due_at' => now()->addMinute(),
+        ]);
+
+        $this->mockProgressService(null);
+
+        $vocabSkill = $this->vocabSkillFromResult();
+
+        $this->assertSame(100, $vocabSkill['coverage_pct']);
+        $this->assertSame(1, $vocabSkill['completed_items']);
+    }
+
     public function test_vocabulary_zero_coverage(): void
     {
         VocabTopic::factory()->create(['level' => 'A2', 'is_published' => true]);
@@ -191,15 +215,15 @@ final class LearningPathServiceTest extends TestCase
         $this->assertSame(100, $grammarSkill['coverage_pct']);
         $this->assertSame(1, $grammarSkill['total_items']);
         $this->assertSame(1, $grammarSkill['completed_items']);
-        $this->assertStringContainsString('Đã master', (string) $grammarSkill['suggestion']);
+        $this->assertStringContainsString('Đã luyện', (string) $grammarSkill['suggestion']);
     }
 
-    public function test_grammar_coverage_ignores_non_mastered(): void
+    public function test_grammar_coverage_counts_practiced_points(): void
     {
         $point = GrammarPoint::factory()->create(['is_published' => true]);
         GrammarPointLevel::create(['grammar_point_id' => $point->id, 'level' => 'A2']);
 
-        // Only "learning" level — not counted as completed
+        // Learning path shows practice coverage, not strict mastery coverage.
         ProfileGrammarMastery::create([
             'profile_id' => $this->profile->id,
             'grammar_point_id' => $point->id,
@@ -213,9 +237,32 @@ final class LearningPathServiceTest extends TestCase
 
         $grammarSkill = $this->grammarSkillFromResult();
 
-        $this->assertSame(0, $grammarSkill['coverage_pct']);
+        $this->assertSame(100, $grammarSkill['coverage_pct']);
         $this->assertSame(1, $grammarSkill['total_items']);
-        $this->assertSame(0, $grammarSkill['completed_items']);
+        $this->assertSame(1, $grammarSkill['completed_items']);
+    }
+
+    public function test_grammar_coverage_counts_attempt_rows(): void
+    {
+        $point = GrammarPoint::factory()->create(['is_published' => true]);
+        GrammarPointLevel::create(['grammar_point_id' => $point->id, 'level' => 'A2']);
+        $exercise = GrammarExercise::factory()->create(['grammar_point_id' => $point->id]);
+
+        PracticeGrammarAttempt::create([
+            'profile_id' => $this->profile->id,
+            'grammar_point_id' => $point->id,
+            'exercise_id' => $exercise->id,
+            'answer' => ['selected_index' => 0],
+            'is_correct' => false,
+            'attempted_at' => now(),
+        ]);
+
+        $this->mockProgressService(null);
+
+        $grammarSkill = $this->grammarSkillFromResult();
+
+        $this->assertSame(100, $grammarSkill['coverage_pct']);
+        $this->assertSame(1, $grammarSkill['completed_items']);
     }
 
     public function test_grammar_filtered_by_level(): void
