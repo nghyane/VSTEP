@@ -42,6 +42,8 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/google', [AuthController::class, 'googleLogin']);
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::post('/auth/email/check', [AuthController::class, 'checkEmail']);
+        Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+        Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
     });
 
     // Auth (protected, no active profile required — admin/teacher fit here)

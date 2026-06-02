@@ -115,6 +115,42 @@ POST /auth/register { email, password, nickname, target_level, target_deadline }
   → return { access_token, refresh_token, user, profile }
 ```
 
+### Forgot password flow
+
+```
+POST /auth/forgot-password { email }
+  → if account exists and has local password:
+      create Laravel password reset token in password_reset_tokens
+      send reset link through configured Laravel mailer
+    if account does not exist:
+      return success response without sending mail (avoid email enumeration)
+    if account is Google-only (password = null):
+      return validation error telling user to use Google login
+
+POST /auth/reset-password { email, token, password, password_confirmation }
+  → verify token with Laravel Password Broker
+  → update users.password
+  → delete consumed reset token
+```
+
+Password reset is separate from authenticated password change:
+- `/me/change-password` requires an authenticated session and the current password.
+- `/auth/forgot-password` proves email ownership through a short-lived reset token.
+
+The reset-token table is the Laravel-standard `password_reset_tokens` table. It is
+not used for email verification or OTP flows.
+
+### Email delivery
+
+Password reset mail uses Laravel Mail/Notifications. Resend is configured as an
+SMTP transport via environment variables (`MAIL_HOST=smtp.resend.com`,
+`MAIL_USERNAME=resend`, `MAIL_PASSWORD=<Resend API key>`). The mail transport is
+shared infrastructure and can be reused for future transactional emails.
+
+Do not reuse `password_reset_tokens` for signup email verification. If signup
+verification is added later, use Laravel signed verification URLs after account
+creation, or a dedicated OTP/code store for pre-registration verification.
+
 ### Middleware chain
 
 ```

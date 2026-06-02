@@ -7,11 +7,13 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\CheckEmailRequest;
 use App\Http\Requests\Auth\CompleteOnboardingRequest;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
 use App\Http\Requests\Auth\GoogleLoginRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\LogoutRequest;
 use App\Http\Requests\Auth\RefreshRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\SwitchProfileRequest;
 use App\Http\Resources\ProfileResource;
 use App\Http\Resources\UserResource;
@@ -70,6 +72,25 @@ final class AuthController extends Controller
             'refresh_token' => $result['refresh_token'],
             'expires_in' => $result['expires_in'],
         ]]);
+    }
+
+    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
+    {
+        $this->authService->sendPasswordResetLink($request->validated('email'));
+
+        return response()->json(['data' => ['success' => true]]);
+    }
+
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        $this->authService->resetPassword(
+            $request->validated('email'),
+            $request->validated('token'),
+            $request->validated('password'),
+            $request->validated('password_confirmation'),
+        );
+
+        return response()->json(['data' => ['success' => true]]);
     }
 
     public function googleLogin(GoogleLoginRequest $request, GoogleTokenVerifier $googleTokenVerifier): JsonResponse
