@@ -13,6 +13,7 @@ import { useToast } from "#/lib/toast"
 import {
 	cn,
 	compareWords,
+	pickBoundaryEnglishVoice,
 	pickEnglishVoice,
 	speak,
 	speechRecognitionNetworkMessage,
@@ -34,7 +35,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 	const [current, setCurrent] = useState(0)
 	const [done, setDone] = useState<Set<number>>(new Set())
 	const mergedDone = new Set([...persistedDone, ...done])
-	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickEnglishVoice())
+	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickBoundaryEnglishVoice())
 	const [mic, setMic] = useState<MicState>("idle")
 	const [speakingCharIndex, setSpeakingCharIndex] = useState(-1)
 	const [elapsed, setElapsed] = useState(0)
@@ -53,7 +54,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 	useEffect(() => {
 		if (voice) return
 		const load = () => {
-			const v = pickEnglishVoice()
+			const v = pickBoundaryEnglishVoice() ?? pickEnglishVoice()
 			if (v) setVoice(v)
 		}
 		window.speechSynthesis?.addEventListener("voiceschanged", load)
@@ -72,6 +73,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 			speak(segment.text, {
 				rate: 0.85,
 				voice,
+				boundaryFallback: false,
 				onBoundary: (ci) => setSpeakingCharIndex(ci),
 				onEnd: () => {
 					setMic("idle")
@@ -98,6 +100,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 			speak(segment.text, {
 				rate: 0.85,
 				voice,
+				boundaryFallback: false,
 				onBoundary: (ci) => setSpeakingCharIndex(ci),
 				onEnd: () => {
 					setMic("idle")
@@ -259,6 +262,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 			speak(segments[current].text, {
 				rate: 0.85,
 				voice,
+				boundaryFallback: false,
 				onBoundary: (ci) => setSpeakingCharIndex(ci),
 				onEnd: () => {
 					setMic("idle")

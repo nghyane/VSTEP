@@ -7,8 +7,11 @@ namespace App\Services;
 use App\Ai\Contracts\ConversationReviewer;
 use App\Ai\Contracts\ConversationTurnHandler;
 use App\Ai\Contracts\PronunciationAnalyzer;
+use App\Enums\CoinTransactionType;
 use App\Enums\ConversationStatus;
+use App\Enums\PracticeFeedbackStatus;
 use App\Exceptions\ResourceNotActiveException;
+use App\Models\PracticeFeedbackRequest;
 use App\Models\PracticeSpeakingConversationSession;
 use App\Models\PracticeSpeakingConversationTurn;
 use App\Models\PracticeSpeakingScenario;
@@ -25,6 +28,8 @@ final class SpeakingConversationService implements ConversationServiceInterface
         private readonly ConversationTurnHandler $turnHandler,
         private readonly ConversationReviewer $reviewer,
         private readonly PronunciationAnalyzer $pronunciation,
+        private readonly EconomyConfigService $economyConfig,
+        private readonly WalletService $walletService,
     ) {}
 
     /** @return Collection<int,PracticeSpeakingScenario> */
@@ -205,24 +210,120 @@ final class SpeakingConversationService implements ConversationServiceInterface
     /**
      * @return array{strengths: string[], improvements: string[], corrected_sentences: array, tip: string}
      */
-    public function reviewSession(PracticeSpeakingConversationSession $session): array
+    public function reviewSession(Profile $profile, PracticeSpeakingConversationSession $session): array
     {
-        $session->loadMissing(['scenario', 'turns']);
-        $scenario = $session->scenario;
-        $turns = $session->turns;
+        $request = $this->chargeFeedbackOnce($profile, 'speaking_conversation_review', $session->id, [
+            'feedback_type' => 'conversation_review',
+        ]);
 
-        $turnsSerialized = $turns->map(fn ($t) => ($t->role === 'ai' ? $scenario->character_name : 'User').': '.$t->text)->implode("\n");
-        $userSentences = $turns->where('role', 'user')->pluck('text')->implode("\n");
+        try {
+            $session->loadMissing(['scenario', 'turns']);
+            $scenario = $session->scenario;
+            $turns = $session->turns;
 
-        return $this->reviewer->review($scenario->title, $scenario->level, $turnsSerialized, $userSentences);
+            $turnsSerialized = $turns->map(fn ($t) => ($t->role === 'ai' ? $scenario->character_name : 'User').': '.$t->text)->implode("\n");
+            $userSentences = $turns->where('role', 'user')->pluck('text')->implode("\n");
+
+            $review = $this->reviewer->review($scenario->title, $scenario->level, $turnsSerialized, $userSentences);
+            $this->markFeedbackReady($request);
+
+            return $review;
+        } catch (\Throwable $exception) {
+            $this->markFeedbackFailed($request, $exception);
+            throw $exception;
+        }
     }
 
     /**
      * @return array{pronunciation: string, intonation: string, tip: string}
      */
-    public function pronunciationReview(string $original, string $transcript): array
+    public function pronunciationReview(Profile $profile, string $original, string $transcript, ?string $segmentId = null): array
     {
+        $metadata = [
+            'feedback_type' => 'shadowing_pronunciation',
+        ];
+        if ($segmentId !== null) {
+            $metadata['segment_id'] = $segmentId;
+        }
+
+        $this->chargeFeedback($profile, $metadata);
+
         return $this->pronunciation->analyze($original, $transcript);
+    }
+
+    /** @param array<string,mixed> $metadata */
+    private function chargeFeedback(Profile $profile, array $metadata): void
+    {
+        $this->walletService->spend(
+            $profile,
+            $this->economyConfig->practiceFeedbackCost(),
+            CoinTransactionType::PracticeFeedback,
+            null,
+            $metadata,
+        );
+    }
+
+    /** @param array<string,mixed> $metadata */
+    private function chargeFeedbackOnce(Profile $profile, string $submissionType, string $submissionId, array $metadata): PracticeFeedbackRequest
+    {
+        return DB::transaction(function () use ($profile, $submissionType, $submissionId, $metadata) {
+            $existing = PracticeFeedbackRequest::query()
+                ->where('submission_type', $submissionType)
+                ->where('submission_id', $submissionId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing instanceof PracticeFeedbackRequest) {
+                return $existing;
+            }
+
+            $request = PracticeFeedbackRequest::create([
+                'profile_id' => $profile->id,
+                'submission_type' => $submissionType,
+                'submission_id' => $submissionId,
+                'status' => PracticeFeedbackStatus::Pending,
+                'requested_at' => now(),
+            ]);
+
+            $transaction = $this->walletService->spend(
+                $profile,
+                $this->economyConfig->practiceFeedbackCost(),
+                CoinTransactionType::PracticeFeedback,
+                $request,
+                ['submission_type' => $submissionType, 'submission_id' => $submissionId, ...$metadata],
+            );
+
+            $request->update(['coin_transaction_id' => $transaction->id]);
+
+            return $request->refresh();
+        });
+    }
+
+    private function markFeedbackReady(PracticeFeedbackRequest $request): void
+    {
+        if ($request->status === PracticeFeedbackStatus::Ready) {
+            return;
+        }
+
+        $request->update([
+            'status' => PracticeFeedbackStatus::Ready,
+            'last_error' => null,
+            'completed_at' => now(),
+            'failed_at' => null,
+        ]);
+    }
+
+    private function markFeedbackFailed(PracticeFeedbackRequest $request, \Throwable $exception): void
+    {
+        if ($request->status === PracticeFeedbackStatus::Ready) {
+            return;
+        }
+
+        $request->update([
+            'status' => PracticeFeedbackStatus::Failed,
+            'last_error' => $exception->getMessage(),
+            'failed_at' => now(),
+        ]);
     }
 
     public function generateIpa(string $text): ?string

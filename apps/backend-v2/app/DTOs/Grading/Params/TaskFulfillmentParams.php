@@ -11,7 +11,7 @@ final readonly class TaskFulfillmentParams
     private const REQUIRED = [
         'coverage_multiplier', 'task1_multiplier', 'position_bonus', 'irrelevant_penalty',
         'default_points_required', 'word_minimum_task1', 'word_minimum_task2',
-        'depth_minimum', 'non_assessable_word_limit', 'short_response_caps',
+        'depth_minimum', 'non_assessable_word_limit',
         'task_fulfillment_word_caps', 'tf_cap_ratio',
     ];
 
@@ -38,6 +38,7 @@ final readonly class TaskFulfillmentParams
     public static function fromArray(array $data): self
     {
         self::validate($data);
+        $shortResponseCaps = $data['short_response_caps'] ?? $data['short_essay_caps'];
 
         return new self(
             coverageMultiplier: (float) $data['coverage_multiplier'],
@@ -49,7 +50,7 @@ final readonly class TaskFulfillmentParams
             wordMinimumTask2: (int) $data['word_minimum_task2'],
             depthMinimum: (float) $data['depth_minimum'],
             nonAssessableWordLimit: (int) $data['non_assessable_word_limit'],
-            shortResponseCaps: (array) $data['short_response_caps'],
+            shortResponseCaps: (array) $shortResponseCaps,
             taskFulfillmentWordCaps: (array) $data['task_fulfillment_word_caps'],
             tfCapRatio: (float) $data['tf_cap_ratio'],
         );
@@ -83,7 +84,15 @@ final readonly class TaskFulfillmentParams
             throw new InvalidArgumentException('TaskFulfillmentParams non_assessable_word_limit must be positive.');
         }
 
-        foreach (['short_response_caps', 'task_fulfillment_word_caps'] as $key) {
+        if (! array_key_exists('short_response_caps', $data) && ! array_key_exists('short_essay_caps', $data)) {
+            throw new InvalidArgumentException('TaskFulfillmentParams missing keys: short_response_caps');
+        }
+
+        foreach (['short_response_caps', 'short_essay_caps', 'task_fulfillment_word_caps'] as $key) {
+            if (! array_key_exists($key, $data)) {
+                continue;
+            }
+
             if (! is_array($data[$key])) {
                 throw new InvalidArgumentException("TaskFulfillmentParams {$key} must be an array.");
             }

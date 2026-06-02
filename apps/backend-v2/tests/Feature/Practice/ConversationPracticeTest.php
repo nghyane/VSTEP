@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Practice;
 
+use App\Enums\CoinTransactionType;
 use App\Models\PracticeSpeakingConversationSession;
 use App\Models\PracticeSpeakingScenario;
 use App\Models\Profile;
 use App\Models\User;
+use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -204,7 +206,8 @@ class ConversationPracticeTest extends TestCase
 
     public function test_pronunciation_review_renders_ai_prompt_view(): void
     {
-        ['token' => $token] = $this->actingAsLearner();
+        ['token' => $token, 'profile' => $profile] = $this->actingAsLearner();
+        $this->app->make(WalletService::class)->credit($profile, 10, CoinTransactionType::AdminGrant);
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson('/api/v1/practice/speaking/pronunciation-review', [
@@ -213,5 +216,35 @@ class ConversationPracticeTest extends TestCase
             ])
             ->assertOk()
             ->assertJsonPath('data.pronunciation', 'Phát âm tốt');
+
+        $this->assertDatabaseHas('coin_transactions', [
+            'profile_id' => $profile->id,
+            'type' => CoinTransactionType::PracticeFeedback->value,
+            'delta' => -1,
+        ]);
+    }
+
+    public function test_conversation_review_charges_feedback_cost(): void
+    {
+        ['token' => $token, 'profile' => $profile] = $this->actingAsLearner();
+        $this->app->make(WalletService::class)->credit($profile, 10, CoinTransactionType::AdminGrant);
+        $scenario = $this->createScenario();
+
+        $start = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/speaking/conversations', ['scenario_id' => $scenario->id])
+            ->assertStatus(201);
+
+        $sessionId = $start->json('data.session_id');
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/practice/speaking/conversations/{$sessionId}/review")
+            ->assertOk()
+            ->assertJsonPath('data.strengths.0', 'Good vocabulary usage');
+
+        $this->assertDatabaseHas('coin_transactions', [
+            'profile_id' => $profile->id,
+            'type' => CoinTransactionType::PracticeFeedback->value,
+            'delta' => -1,
+        ]);
     }
 }

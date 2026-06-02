@@ -1,6 +1,8 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { HTTPError } from "ky"
-import { Icon } from "#/components/Icon"
+import { useEffect } from "react"
+import { Icon, StaticIcon } from "#/components/Icon"
+import { appConfigQuery } from "#/features/config/queries"
 import { type ConversationReview, getConversationReview } from "#/features/practice/actions"
 
 interface Props {
@@ -68,10 +70,18 @@ function ReviewContent({ review }: { review: ConversationReview }) {
 }
 
 export function ConversationReviewPopup({ sessionId, turnCount, onClose }: Props) {
+	const queryClient = useQueryClient()
+	const { data: configData } = useQuery(appConfigQuery)
 	const { data, isPending, isError, error, refetch } = useQuery({
 		queryKey: ["conversation-review", sessionId],
 		queryFn: () => getConversationReview(sessionId),
 	})
+	const feedbackCost = configData?.data.pricing.practice.feedback_cost_coins ?? 0
+
+	useEffect(() => {
+		if (!data) return
+		queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] })
+	}, [data, queryClient])
 
 	let errorMsg = "Không thể tải đánh giá."
 	if (error instanceof HTTPError) {
@@ -90,7 +100,15 @@ export function ConversationReviewPopup({ sessionId, turnCount, onClose }: Props
 						<Icon name="close" size="sm" />
 					</button>
 				</div>
-				<p className="text-xs text-muted mb-4">Bạn đã hoàn thành {turnCount} lượt nói</p>
+				<p className="text-xs text-muted mb-4">
+					Bạn đã hoàn thành {turnCount} lượt nói
+					{feedbackCost > 0 && (
+						<span className="inline-flex items-center gap-1.5">
+							&nbsp;· Tốn <StaticIcon name="coin" size="xs" className="h-3.5 w-auto -translate-y-0.5" />{" "}
+							{feedbackCost} xu
+						</span>
+					)}
+				</p>
 
 				{isPending && (
 					<div className="text-center py-8">
