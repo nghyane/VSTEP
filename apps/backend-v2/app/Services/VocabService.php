@@ -12,6 +12,7 @@ use App\Models\ProfileVocabSrsState;
 use App\Models\VocabExercise;
 use App\Models\VocabTopic;
 use App\Models\VocabWord;
+use App\Services\Contracts\LearningPathInterface;
 use App\Srs\FsrsConfig;
 use App\Srs\FsrsScheduler;
 use App\Srs\FsrsState;
@@ -31,9 +32,12 @@ use Illuminate\Support\Facades\DB;
  */
 final class VocabService
 {
+    private const LEVEL_ORDER = ['A1' => 0, 'A2' => 1, 'B1' => 2, 'B2' => 3, 'C1' => 4];
+
     public function __construct(
         private readonly FsrsScheduler $scheduler,
         private readonly FsrsConfig $config,
+        private readonly LearningPathInterface $learningPath,
     ) {}
 
     /**
@@ -41,7 +45,7 @@ final class VocabService
      */
     public function listPublishedTopics(Profile $profile): Collection
     {
-        return VocabTopic::query()
+        $topics = VocabTopic::query()
             ->where('is_published', true)
             ->withCount('words')
             ->withCount(['words as learned_count' => function ($q) use ($profile) {
@@ -50,6 +54,10 @@ final class VocabService
             ->orderBy('level')
             ->orderBy('display_order')
             ->get();
+
+        $this->annotateAdaptiveRecommendations($topics, $profile);
+
+        return $topics;
     }
 
     /**
@@ -228,6 +236,134 @@ final class VocabService
             dueAtMs: $row->due_at ? (int) ($row->due_at->getTimestamp() * 1000) : null,
             lastReviewAtMs: $row->last_review_at ? (int) ($row->last_review_at->getTimestamp() * 1000) : null,
         );
+    }
+
+    /**
+     * @param  Collection<int,VocabTopic>  $topics
+     */
+    private function annotateAdaptiveRecommendations(Collection $topics, Profile $profile): void
+    {
+        $path = $this->learningPath->forProfile($profile);
+        $activeLevel = $this->normalizeLevel($path['current_level']) ?? $this->normalizeLevel($path['target_level']);
+
+        $topics->groupBy(fn (VocabTopic $topic): string => $topic->group_key)
+            ->each(function (Collection $group) use ($activeLevel): void {
+                /** @var Collection<int,VocabTopic> $group */
+                $recommendation = $this->recommendTopic($group, $activeLevel);
+
+                $group->each(function (VocabTopic $topic) use ($recommendation): void {
+                    $topic->setAttribute('recommended_topic_id', $recommendation['topic']->id);
+                    $topic->setAttribute('adaptive_reason', $recommendation['reason']);
+                    $topic->setAttribute('adaptive_label', $recommendation['label']);
+                });
+            });
+    }
+
+    /**
+     * @param  Collection<int,VocabTopic>  $topics
+     * @return array{topic: VocabTopic, reason: string, label: string}
+     */
+    private function recommendTopic(Collection $topics, ?string $activeLevel): array
+    {
+        $ordered = $topics
+            ->sortBy(fn (VocabTopic $topic): array => [$this->levelRank($topic->level), $topic->display_order])
+            ->values();
+
+        $inProgress = $ordered->first(
+            fn (VocabTopic $topic): bool => $this->learnedCount($topic) > 0
+                && $this->learnedCount($topic) < $this->wordCount($topic),
+        );
+        if ($inProgress instanceof VocabTopic) {
+            return ['topic' => $inProgress, 'reason' => 'continue', 'label' => 'Tiếp tục'];
+        }
+
+        if ($activeLevel !== null) {
+            $nearActive = $this->nearestIncompleteTopic($ordered, $activeLevel);
+            if ($nearActive instanceof VocabTopic) {
+                $reason = $this->levelRank($nearActive->level) < $this->levelRank($activeLevel) ? 'catch_up' : 'recommended';
+
+                return [
+                    'topic' => $nearActive,
+                    'reason' => $reason,
+                    'label' => $reason === 'catch_up' ? 'Còn lại' : 'Đề xuất',
+                ];
+            }
+        }
+
+        $firstIncomplete = $ordered->first(
+            fn (VocabTopic $topic): bool => $this->wordCount($topic) > 0
+                && $this->learnedCount($topic) < $this->wordCount($topic),
+        );
+        if ($firstIncomplete instanceof VocabTopic) {
+            return ['topic' => $firstIncomplete, 'reason' => 'first_incomplete', 'label' => 'Đề xuất'];
+        }
+
+        $activeTopic = $activeLevel !== null
+            ? $ordered->first(fn (VocabTopic $topic): bool => $this->normalizeLevel($topic->level) === $activeLevel)
+            : null;
+        if ($activeTopic instanceof VocabTopic) {
+            return ['topic' => $activeTopic, 'reason' => 'review', 'label' => 'Hoàn thành chủ đề'];
+        }
+
+        /** @var VocabTopic $fallback */
+        $fallback = $ordered->first();
+
+        return ['topic' => $fallback, 'reason' => 'review', 'label' => 'Hoàn thành chủ đề'];
+    }
+
+    /**
+     * @param  Collection<int,VocabTopic>  $topics
+     */
+    private function nearestIncompleteTopic(Collection $topics, string $activeLevel): ?VocabTopic
+    {
+        $levels = array_keys(self::LEVEL_ORDER);
+        $activeLevelIndex = array_search($activeLevel, $levels, true);
+        if ($activeLevelIndex === false) {
+            return null;
+        }
+
+        $searchLevels = array_merge(
+            [$activeLevel],
+            array_slice($levels, $activeLevelIndex + 1),
+            array_reverse(array_slice($levels, 0, $activeLevelIndex)),
+        );
+
+        foreach ($searchLevels as $level) {
+            $topic = $topics->first(
+                fn (VocabTopic $item): bool => $this->normalizeLevel($item->level) === $level
+                    && $this->wordCount($item) > 0
+                    && $this->learnedCount($item) < $this->wordCount($item),
+            );
+            if ($topic instanceof VocabTopic) {
+                return $topic;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeLevel(?string $level): ?string
+    {
+        $normalized = strtoupper((string) $level);
+
+        return array_key_exists($normalized, self::LEVEL_ORDER) ? $normalized : null;
+    }
+
+    private function levelRank(?string $level): int
+    {
+        $normalized = $this->normalizeLevel($level);
+
+        return $normalized !== null ? self::LEVEL_ORDER[$normalized] : count(self::LEVEL_ORDER);
+    }
+
+    private function wordCount(VocabTopic $topic): int
+    {
+        return (int) ($topic->getAttribute('words_count') ?? 0);
+    }
+
+    private function learnedCount(VocabTopic $topic): int
+    {
+        return (int) ($topic->getAttribute('learned_count') ?? 0);
     }
 
     private function persistState(Profile $profile, VocabWord $word, FsrsState $state): void

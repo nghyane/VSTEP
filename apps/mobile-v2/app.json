@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "VSTEP",
+    "name": "Vstep GO",
     "slug": "aptis-mobile",
     "version": "2.0.0",
     "orientation": "portrait",
@@ -17,7 +17,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.vstep.mobile.v2",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Cho phep VSTEP su dung micro de luyen noi va ghi am bai speaking.",
+        "NSMicrophoneUsageDescription": "Cho phep VSTEP su dung micro de luyen noi.",
         "NSSpeechRecognitionUsageDescription": "Cho phep VSTEP nhan dien giong noi de luyen noi."
       }
     },

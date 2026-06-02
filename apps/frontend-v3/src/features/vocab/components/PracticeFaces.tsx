@@ -14,7 +14,6 @@ interface Props {
 
 interface BackProps extends Props {
 	review?: PracticeReview | null
-	showSpeaker?: boolean
 }
 
 export function PracticeFront({ item }: Props) {
@@ -73,16 +72,13 @@ export function PracticeFront({ item }: Props) {
 	}
 }
 
-export function PracticeBack({ item, review, showSpeaker = false }: BackProps) {
+export function PracticeBack({ item, review }: BackProps) {
 	const w = item.entry.word
 	const ipa = useIpa(w.word, w.phonetic)
 	return (
 		<>
 			{review && <ReviewBanner review={review} correctWord={w.word} />}
-			<div className="flex items-center justify-center gap-2">
-				<span className="font-extrabold text-3xl text-foreground break-words">{w.word}</span>
-				{showSpeaker && <SpeakButton word={w.word} />}
-			</div>
+			<span className="font-extrabold text-3xl text-foreground break-words">{w.word}</span>
 			{ipa && <p className="text-sm text-subtle">/{ipa}/</p>}
 			<p className="text-base text-foreground font-bold mt-1">{w.definition}</p>
 			{w.example && (
@@ -94,19 +90,6 @@ export function PracticeBack({ item, review, showSpeaker = false }: BackProps) {
 				<p className="text-xs text-info bg-info-tint px-3 py-2 rounded-lg mt-2">{w.vstep_tip}</p>
 			)}
 		</>
-	)
-}
-
-function SpeakButton({ word }: { word: string }) {
-	return (
-		<button
-			type="button"
-			onClick={() => speak(word)}
-			className="shrink-0 text-muted transition hover:text-primary"
-			aria-label="Nghe phát âm đáp án"
-		>
-			<Icon name="volume" size="sm" />
-		</button>
 	)
 }
 

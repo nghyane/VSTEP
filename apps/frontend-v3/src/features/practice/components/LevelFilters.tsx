@@ -1,7 +1,8 @@
 import { cn } from "#/lib/utils"
+import { ENTRY_LEVELS, parseVstepLevel, type VstepLevel } from "#/lib/vstep"
 
-export const LEVELS = ["A1", "A2", "B1", "B2", "C1"] as const
-export type Level = (typeof LEVELS)[number]
+export const LEVELS = ENTRY_LEVELS
+export type Level = VstepLevel
 
 export const LEVEL_COLORS: Record<Level, { active: string; text: string }> = {
 	A1: { active: "bg-success/15 border-success/40", text: "text-success" },
@@ -19,13 +20,7 @@ interface Props {
 }
 
 export function toLevel(value: string): Level | null {
-	const normalized = value.toUpperCase()
-	if (normalized === "A1") return "A1"
-	if (normalized === "A2") return "A2"
-	if (normalized === "B1") return "B1"
-	if (normalized === "B2") return "B2"
-	if (normalized === "C1") return "C1"
-	return null
+	return parseVstepLevel(value)
 }
 
 export function LevelFilters({ level, onLevelChange, availableLevels = LEVELS, allowClear = true }: Props) {

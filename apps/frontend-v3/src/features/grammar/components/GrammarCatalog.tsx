@@ -2,10 +2,27 @@ import { Link } from "@tanstack/react-router"
 import { useMemo } from "react"
 import { findStarterPoint, type GrammarTierGroup, groupByTier } from "#/features/grammar/catalog"
 import type { GrammarPoint } from "#/features/grammar/types"
-import { ExerciseCard } from "#/features/practice/components/ExerciseCard"
+import { ExerciseCard, type ExerciseCardProgress } from "#/features/practice/components/ExerciseCard"
 
 interface Props {
 	points: GrammarPoint[]
+}
+
+const LEVEL_ORDER: Record<string, number> = {
+	A1: 1,
+	A2: 2,
+	B1: 3,
+	B2: 4,
+	C1: 5,
+	C2: 6,
+}
+
+function grammarLevelLabel(levels: string[]): string | undefined {
+	const uniqueLevels = Array.from(new Set(levels.map((level) => level.toUpperCase()))).sort(
+		(a, b) => (LEVEL_ORDER[a] ?? 99) - (LEVEL_ORDER[b] ?? 99),
+	)
+
+	return uniqueLevels.length > 0 ? uniqueLevels.join("/") : undefined
 }
 
 export function GrammarCatalog({ points }: Props) {
@@ -56,16 +73,16 @@ function TierSection({ group }: { group: GrammarTierGroup }) {
 			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				{points.map((point) => {
 					const correct = Math.min(point.distinct_correct, point.exercise_count)
-					const progress =
-						correct > 0
-							? { status: "in_progress" as const, score: correct, total: point.exercise_count }
-							: undefined
+					const levelLabel = grammarLevelLabel(point.levels)
+					const progress: ExerciseCardProgress | undefined =
+						correct > 0 ? { status: "in_progress", score: correct, total: point.exercise_count } : undefined
 
 					return (
 						<ExerciseCard
 							key={point.id}
 							title={point.vietnamese_name || point.name}
 							description={point.summary}
+							level={levelLabel}
 							meta={point.vietnamese_name ? point.name : ""}
 							progress={progress}
 							overlay={
