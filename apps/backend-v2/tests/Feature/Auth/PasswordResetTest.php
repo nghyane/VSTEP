@@ -54,6 +54,20 @@ class PasswordResetTest extends TestCase
         Notification::assertNotSentTo($user, ResetPassword::class);
     }
 
+    public function test_forgot_password_reports_throttle_when_recently_sent(): void
+    {
+        Notification::fake();
+        $user = User::factory()->create(['email' => 'learner@example.com']);
+
+        $this->postJson('/api/v1/auth/forgot-password', ['email' => 'learner@example.com'])->assertOk();
+
+        $this->postJson('/api/v1/auth/forgot-password', ['email' => 'learner@example.com'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['email']);
+
+        Notification::assertSentToTimes($user, ResetPassword::class, 1);
+    }
+
     public function test_reset_password_updates_account_password(): void
     {
         Notification::fake();

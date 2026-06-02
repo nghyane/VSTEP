@@ -101,7 +101,21 @@ final class AuthService
             ]);
         }
 
-        Password::sendResetLink(['email' => $email]);
+        $status = Password::sendResetLink(['email' => $email]);
+
+        if ($status === Password::RESET_LINK_SENT || $status === Password::INVALID_USER) {
+            return;
+        }
+
+        if ($status === Password::RESET_THROTTLED) {
+            throw ValidationException::withMessages([
+                'email' => ['Email đặt lại mật khẩu vừa được gửi. Vui lòng chờ trước khi gửi lại.'],
+            ]);
+        }
+
+        throw ValidationException::withMessages([
+            'email' => ['Không gửi được email đặt lại mật khẩu. Vui lòng thử lại sau.'],
+        ]);
     }
 
     public function resetPassword(string $email, string $token, string $password, string $passwordConfirmation): void
