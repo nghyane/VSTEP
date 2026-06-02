@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\GradingRubric\SimulateRubricRequest;
 use App\Http\Requests\Admin\GradingRubric\UpdateGradingRubricRequest;
 use App\Http\Resources\Admin\AdminGradingRubricResource;
 use App\Services\Admin\AdminGradingRubricService;
+use App\Services\Admin\RubricSimulatorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
@@ -16,6 +18,7 @@ final class GradingRubricController extends Controller
 {
     public function __construct(
         private readonly AdminGradingRubricService $service,
+        private readonly RubricSimulatorService $simulator,
     ) {}
 
     public function index(Request $request): ResourceCollection
@@ -60,5 +63,13 @@ final class GradingRubricController extends Controller
         $rubric = $this->service->activateDraft($id);
 
         return new AdminGradingRubricResource($rubric);
+    }
+
+    public function simulate(SimulateRubricRequest $request, string $id): JsonResponse
+    {
+        $rubric = $this->service->showRubric($id);
+        $result = $this->simulator->simulate($rubric, $request->validated());
+
+        return response()->json(['data' => $result]);
     }
 }

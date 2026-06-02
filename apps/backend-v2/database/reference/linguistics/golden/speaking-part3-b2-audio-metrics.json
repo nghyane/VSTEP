@@ -1,0 +1,27 @@
+{
+  "id": "speaking-part3-b2-audio-metrics",
+  "task_type": "speaking_part_3",
+  "expected_band": 7.0,
+  "expected_level": "B2",
+  "expected_source": "internal_vstep_golden_fixture",
+  "prompt": "Discuss whether online learning is better than traditional learning.",
+  "transcript": "In my opinion, online learning is useful, but it cannot replace traditional classrooms completely. First of all, students can access lessons from home, so it is convenient for people who live far from school. For example, public transport can be expensive and slow in some cities. On the other hand, classroom learning gives students direct interaction with teachers. Compared with online courses, face-to-face lessons may create stronger motivation. If schools combine both methods, students will have more flexibility. In other words, both methods have advantages. As a result, I think schools should combine online learning with classroom activities.",
+  "audio_metrics": {
+    "speaking_rate": 132.0,
+    "pause_count": 4,
+    "word_count": 92,
+    "confidence": 0.93,
+    "pronunciation": {
+      "accuracy": 8.0,
+      "fluency": 7.8,
+      "prosody": 7.5,
+      "completeness": 8.6,
+      "overall": 8.0,
+      "mispronunciation_count": 2,
+      "unexpected_break_count": 1,
+      "missing_break_count": 0,
+      "monotone_count": 1
+    }
+  },
+  "expected_signals": {"discourse_marker_min": 5, "topic_development_min": 1, "topic_lexis_min": 2, "grammar_types_min": 2}
+}

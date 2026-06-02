@@ -69,6 +69,7 @@ export function WritingAssessmentLayout({ view }: LayoutProps) {
 			<section className="space-y-4">
 				<WritingPaperPanel context={view.context} result={view.result} />
 				<RequirementPanel result={view.result} />
+				<ProfanityWarning result={view.result} />
 				<RubricPanel view={view} />
 				<DiagnosticsPanel result={view.result} />
 				<FeedbackPanel view={view} />
@@ -506,6 +507,30 @@ function RequirementPanel({ result }: { result: WritingGradingResult }) {
 					))}
 				</div>
 			) : null}
+		</div>
+	)
+}
+
+function ProfanityWarning({ result }: { result: WritingGradingResult }) {
+	const profanity = result.diagnostics?.profanity
+	if (!profanity?.found) return null
+
+	const censored = profanity.words.map((w) => w[0] + "*".repeat(w.length - 2) + w[w.length - 1]).join(", ")
+
+	return (
+		<div className="card p-4 border-l-4 border-l-warning bg-warning/5">
+			<div className="flex items-start gap-3">
+				<span className="text-warning text-lg shrink-0">⚠</span>
+				<div>
+					<p className="text-sm font-bold text-warning">
+						Phát hiện từ ngữ không phù hợp ({profanity.count} lần)
+					</p>
+					<p className="mt-1 text-sm text-muted">
+						Bài viết có chứa: <span className="font-bold text-foreground">{censored}</span>. Điểm không bị ảnh
+						hưởng nhưng nên tránh trong bài thi học thuật.
+					</p>
+				</div>
+			</div>
 		</div>
 	)
 }

@@ -65,15 +65,17 @@ final class SpeechToTextService implements SpeechToText
                     'Ocp-Apim-Subscription-Key' => $key,
                     'Content-Type' => $candidate,
                     'Accept' => 'application/json',
+                    'Pronunciation-Assessment' => base64_encode(json_encode([
+                        'GradingSystem' => 'HundredMark',
+                        'Granularity' => 'Word',
+                        'Dimension' => 'Comprehensive',
+                        'EnableMiscue' => true,
+                        'EnableProsodyAssessment' => true,
+                    ], JSON_THROW_ON_ERROR)),
                 ])
                     ->withQueryParameters([
                         'language' => $language,
                         'format' => 'detailed',
-                        'pronunciationAssessment' => json_encode([
-                            'GradingSystem' => 'FivePoint',
-                            'Granularity' => 'Word',
-                            'EnableMiscue' => true,
-                        ]),
                     ])
                     ->withBody($audioContent, $candidate)
                     ->timeout(30)
@@ -167,17 +169,16 @@ final class SpeechToTextService implements SpeechToText
         $best = $data['NBest'][0] ?? null;
         $durationMs = (int) (((int) ($data['Duration'] ?? 0)) / 10_000);
 
-        $pronAssessment = $best['PronunciationAssessment'] ?? null;
-        $pronScores = $pronAssessment !== null ? [
-            'accuracy' => (float) ($pronAssessment['AccuracyScore'] ?? 0) / 100 * 10,
-            'fluency' => (float) ($pronAssessment['FluencyScore'] ?? 0) / 100 * 10,
-            'prosody' => (float) ($pronAssessment['ProsodyScore'] ?? 0) / 100 * 10,
-            'overall' => (float) ($pronAssessment['PronScore'] ?? 0) / 100 * 10,
-        ] : null;
+        $pronAssessment = $best['PronunciationAssessment'] ?? $best;
 
         $words = $best['Words'] ?? $data['Words'] ?? [];
         $wordCount = count($words);
         $pauseCount = 0;
+        $mispronunciationCount = 0;
+        $unexpectedBreakCount = 0;
+        $missingBreakCount = 0;
+        $monotoneCount = 0;
+        $lowAccuracyWords = [];
         for ($i = 1; $i < $wordCount; $i++) {
             $prevEnd = ($words[$i - 1]['Offset'] ?? 0) + ($words[$i - 1]['Duration'] ?? 0);
             $currStart = $words[$i]['Offset'] ?? 0;
@@ -185,6 +186,47 @@ final class SpeechToTextService implements SpeechToText
                 $pauseCount++;
             }
         }
+
+        foreach ($words as $word) {
+            $errorType = (string) ($word['ErrorType'] ?? '');
+            $accuracyScore = (float) ($word['AccuracyScore'] ?? 100);
+            if ($errorType === 'Mispronunciation') {
+                $mispronunciationCount++;
+            }
+            if ($accuracyScore < 60.0 && count($lowAccuracyWords) < 10) {
+                $lowAccuracyWords[] = [
+                    'word' => (string) ($word['Word'] ?? ''),
+                    'accuracy' => round($accuracyScore / 10, 1),
+                    'error_type' => $errorType !== '' ? $errorType : null,
+                ];
+            }
+
+            $prosody = $word['Feedback']['Prosody'] ?? [];
+            $breakErrors = (array) ($prosody['Break']['ErrorTypes'] ?? []);
+            if (in_array('UnexpectedBreak', $breakErrors, true)) {
+                $unexpectedBreakCount++;
+            }
+            if (in_array('MissingBreak', $breakErrors, true)) {
+                $missingBreakCount++;
+            }
+            $intonationErrors = (array) ($prosody['Intonation']['ErrorTypes'] ?? []);
+            if (in_array('Monotone', $intonationErrors, true)) {
+                $monotoneCount++;
+            }
+        }
+
+        $pronScores = isset($pronAssessment['PronScore']) ? [
+            'accuracy' => round((float) ($pronAssessment['AccuracyScore'] ?? 0) / 10, 1),
+            'fluency' => round((float) ($pronAssessment['FluencyScore'] ?? 0) / 10, 1),
+            'prosody' => round((float) ($pronAssessment['ProsodyScore'] ?? 0) / 10, 1),
+            'completeness' => round((float) ($pronAssessment['CompletenessScore'] ?? 0) / 10, 1),
+            'overall' => round((float) ($pronAssessment['PronScore'] ?? 0) / 10, 1),
+            'mispronunciation_count' => $mispronunciationCount,
+            'unexpected_break_count' => $unexpectedBreakCount,
+            'missing_break_count' => $missingBreakCount,
+            'monotone_count' => $monotoneCount,
+            'low_accuracy_words' => $lowAccuracyWords,
+        ] : null;
 
         $speakingRate = $durationMs > 0 ? ($wordCount / ($durationMs / 1000)) * 60 : 0;
 

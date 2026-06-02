@@ -147,32 +147,30 @@ final class AdminGradingRubricService
     /** @param list<array<string,mixed>> $criteria @param array<string,mixed> $policy @return list<array<string,mixed>> */
     private function updatedWritingCriteria(array $criteria, array $policy): array
     {
+        $existingParams = [];
+        foreach ($criteria as $criterion) {
+            if (is_array($criterion) && ($criterion['key'] ?? null) === 'task_fulfillment') {
+                $existingParams = is_array($criterion['params'] ?? null) ? $criterion['params'] : [];
+                break;
+            }
+        }
+
+        $wordMinTask1 = (int) ($policy['word_minimum_task1'] ?? $existingParams['word_minimum_task1'] ?? 120);
+        $wordMinTask2 = (int) ($policy['word_minimum_task2'] ?? $existingParams['word_minimum_task2'] ?? 250);
+        $coverage = (int) ($policy['minimum_covered_points'] ?? $existingParams['minimum_covered_points'] ?? 1);
+        $severity = (string) ($policy['severity'] ?? $existingParams['severity'] ?? 'standard');
+
+        $derived = ScoringPresetService::derive($severity, $wordMinTask1, $wordMinTask2, $coverage);
+
         foreach ($criteria as &$criterion) {
             if (! is_array($criterion) || ($criterion['key'] ?? null) !== 'task_fulfillment') {
                 continue;
             }
 
-            $params = is_array($criterion['params'] ?? null) ? $criterion['params'] : [];
-            $gates = is_array($policy['assessment_gates'] ?? null) ? $policy['assessment_gates'] : [];
-            $wordRules = is_array($policy['word_rules'] ?? null) ? $policy['word_rules'] : [];
-
-            $map = [
-                'severe_minimum_words_task1' => $gates['severe_minimum_words_task1'] ?? null,
-                'severe_minimum_words_task2' => $gates['severe_minimum_words_task2'] ?? null,
-                'minimum_covered_points' => $gates['minimum_covered_points'] ?? null,
-                'word_minimum_task1' => $wordRules['official_minimum_task1'] ?? null,
-                'word_minimum_task2' => $wordRules['official_minimum_task2'] ?? null,
-                'short_response_caps' => $wordRules['short_response_caps'] ?? null,
-                'task_fulfillment_word_caps' => $wordRules['task_fulfillment_word_caps'] ?? null,
-            ];
-
-            foreach ($map as $key => $value) {
-                if ($value !== null) {
-                    $params[$key] = $value;
-                }
-            }
-
-            $criterion['params'] = $params;
+            $criterion['params'] = array_merge(
+                is_array($criterion['params'] ?? null) ? $criterion['params'] : [],
+                $derived,
+            );
         }
         unset($criterion);
 

@@ -40,11 +40,14 @@ export interface RubricAdminActions {
 }
 
 export interface WritingPolicySummary {
+	severity: string
+	severity_label: string
 	assessment_gates: {
 		severe_minimum_words_task1: number
 		severe_minimum_words_task2: number
 		minimum_covered_points: number
 	} | null
+	system_gates: Record<string, { enabled: boolean; description: string }> | null
 	word_rules: {
 		official_minimum_task1: number
 		official_minimum_task2: number

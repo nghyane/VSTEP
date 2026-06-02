@@ -77,9 +77,24 @@ final class SpeakingScoringFormula
         return $this->clampRound($structuralScore * $factor);
     }
 
-    public function pronunciation(float $azureScore): float
+    /** @param array<string,mixed>|float $signals */
+    public function pronunciation(array|float $signals): float
     {
-        return $this->clampRound($azureScore);
+        if (is_float($signals)) {
+            return $this->clampRound($signals);
+        }
+
+        $accuracy = (float) ($signals['accuracy'] ?? $signals['overall'] ?? 0.0);
+        $fluency = (float) ($signals['fluency'] ?? $signals['overall'] ?? 0.0);
+        $prosody = (float) ($signals['prosody'] ?? $signals['overall'] ?? 0.0);
+        $completeness = (float) ($signals['completeness'] ?? $signals['overall'] ?? 0.0);
+
+        $base = ($accuracy * 0.45)
+            + ($fluency * 0.20)
+            + ($prosody * 0.20)
+            + ($completeness * 0.15);
+
+        return $this->clampRound($base - $this->pronunciationPenalty($signals));
     }
 
     /* ─── Helpers ─── */
@@ -133,6 +148,7 @@ final class SpeakingScoringFormula
      * Generate deterministic insights explaining how each score was derived.
      * Used for fallback feedback and score transparency.
      *
+     * @param  array<string,mixed>  $pronunciation
      * @return array<string, array{label: string, detail: string}>
      */
     public function insights(
@@ -143,11 +159,12 @@ final class SpeakingScoringFormula
         int $sttWordCount,
         float $sentenceVariety,
         float $contentFactor,
-        float $azureScore,
+        float|array $pronunciation,
     ): array {
         $typeCount = $syntax['count'] ?? 0;
         $pausesPer100 = $sttWordCount > 0 ? round(($pauseCount / $sttWordCount) * 100, 1) : 0;
         $linkingCount = (int) ($metrics['linking_word_count'] ?? 0);
+        $pronunciationSignals = is_array($pronunciation) ? $pronunciation : ['overall' => $pronunciation];
 
         return [
             'grammar' => [
@@ -171,8 +188,44 @@ final class SpeakingScoringFormula
             ],
             'pronunciation' => [
                 'label' => 'Phát âm',
-                'detail' => 'Điểm phát âm Azure: '.round($azureScore, 1).'/10.',
+                'detail' => $this->pronunciationInsight($pronunciationSignals),
             ],
         ];
+    }
+
+    /** @param array<string,mixed> $pronunciation */
+    private function pronunciationInsight(array $pronunciation): string
+    {
+        $formulaScore = $this->pronunciation($pronunciation);
+        $detail = 'Azure pronunciation: overall '.round((float) ($pronunciation['overall'] ?? 0), 1).'/10'
+            .', accuracy '.round((float) ($pronunciation['accuracy'] ?? 0), 1)
+            .', fluency '.round((float) ($pronunciation['fluency'] ?? 0), 1)
+            .', prosody '.round((float) ($pronunciation['prosody'] ?? 0), 1);
+
+        if (isset($pronunciation['completeness'])) {
+            $detail .= ', completeness '.round((float) $pronunciation['completeness'], 1);
+        }
+
+        $mispronunciations = (int) ($pronunciation['mispronunciation_count'] ?? 0);
+        $unexpectedBreaks = (int) ($pronunciation['unexpected_break_count'] ?? 0);
+        $missingBreaks = (int) ($pronunciation['missing_break_count'] ?? 0);
+        $monotone = (int) ($pronunciation['monotone_count'] ?? 0);
+
+        return $detail.'. Transparent score: '.round($formulaScore, 1).'/10 after rubric penalties.'
+            ." Word-level evidence: {$mispronunciations} mispronunciation(s), "
+            ."{$unexpectedBreaks} unexpected break(s), {$missingBreaks} missing break(s), {$monotone} monotone marker(s).";
+    }
+
+    /** @param array<string,mixed> $signals */
+    private function pronunciationPenalty(array $signals): float
+    {
+        $wordCount = max(1, (int) ($signals['word_count'] ?? 100));
+        $mispronunciations = (int) ($signals['mispronunciation_count'] ?? 0);
+        $breakErrors = (int) ($signals['unexpected_break_count'] ?? 0) + (int) ($signals['missing_break_count'] ?? 0);
+        $monotoneMarkers = (int) ($signals['monotone_count'] ?? 0);
+
+        return min(1.0, ($mispronunciations / $wordCount) * 20)
+            + min(0.5, ($breakErrors / $wordCount) * 10)
+            + min(0.5, ($monotoneMarkers / $wordCount) * 10);
     }
 }

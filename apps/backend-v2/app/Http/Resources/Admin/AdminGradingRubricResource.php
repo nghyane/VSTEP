@@ -95,12 +95,39 @@ final class AdminGradingRubricResource extends JsonResource
         }
 
         $params = $this->resource->taskFulfillmentParams();
+        $severity = 'standard';
+        foreach ($this->resource->criteria as $criterion) {
+            if (is_array($criterion) && ($criterion['key'] ?? null) === 'task_fulfillment') {
+                $severity = (string) (is_array($criterion['params'] ?? null) ? ($criterion['params']['severity'] ?? 'standard') : 'standard');
+                break;
+            }
+        }
 
         return [
+            'severity' => $severity,
+            'severity_label' => self::severityLabel($severity),
             'assessment_gates' => [
                 'severe_minimum_words_task1' => $params->severeMinimumWordsTask1,
                 'severe_minimum_words_task2' => $params->severeMinimumWordsTask2,
                 'minimum_covered_points' => $params->minimumCoveredPoints,
+            ],
+            'system_gates' => [
+                'non_english' => [
+                    'enabled' => true,
+                    'description' => 'Hệ thống từ chối bài viết không phải tiếng Anh.',
+                ],
+                'copied_prompt' => [
+                    'enabled' => true,
+                    'description' => 'Hệ thống phát hiện bài làm sao chép lại đề bài.',
+                ],
+                'empty_text' => [
+                    'enabled' => true,
+                    'description' => 'Hệ thống từ chối bài nộp rỗng.',
+                ],
+                'profanity' => [
+                    'enabled' => true,
+                    'description' => 'Cảnh báo nếu bài có từ ngữ không phù hợp (không chặn điểm).',
+                ],
             ],
             'word_rules' => [
                 'official_minimum_task1' => $params->wordMinimumTask1,
@@ -125,5 +152,14 @@ final class AdminGradingRubricResource extends JsonResource
         }
 
         return $weights;
+    }
+
+    private static function severityLabel(string $severity): string
+    {
+        return match ($severity) {
+            'strict' => 'Chặt',
+            'lenient' => 'Thoáng',
+            default => 'Tiêu chuẩn',
+        };
     }
 }

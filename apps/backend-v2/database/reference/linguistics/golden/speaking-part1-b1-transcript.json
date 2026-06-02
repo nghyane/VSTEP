@@ -1,0 +1,10 @@
+{
+  "id": "speaking-part1-b1-transcript",
+  "task_type": "speaking_part_1",
+  "expected_band": 6.0,
+  "expected_level": "B1",
+  "expected_source": "internal_vstep_golden_fixture",
+  "prompt": "Talk about your daily routine and free time.",
+  "transcript": "Well, I usually get up at six thirty and go to school by bus. My daily routine is quite busy, but I try to have some free time in the evening. For example, I often listen to music or talk with my close friend after dinner. In my opinion, it is important to relax because students have a lot of homework. To sum up, my routine is simple, but it helps me stay organised.",
+  "expected_signals": {"discourse_marker_min": 3, "topic_development_min": 0, "topic_lexis_min": 3, "grammar_types_min": 1}
+}

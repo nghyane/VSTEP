@@ -45,6 +45,23 @@ final class RuleBasedScoringServiceTest extends TestCase
         $this->assertSame(2, $result['metrics']['linking_word_count']);
     }
 
+    public function test_analyze_detects_task_one_linking_phrases(): void
+    {
+        $text = 'Unfortunately, I missed the party. As a result, I felt bad. To make up for it, let us meet. Once again, I am sorry. Hopefully, you can come.';
+        $result = $this->service->analyze($text, []);
+
+        $this->assertSame(5, $result['metrics']['linking_word_count']);
+        $this->assertContains('unfortunately', array_column($result['metrics']['lexical_signal_matches'], 'phrase'));
+    }
+
+    public function test_analyze_counts_task_one_lexical_collocations(): void
+    {
+        $text = 'Please accept my sincere apology. It was an important occasion, and I felt extremely regretful because everything happened unexpectedly. I prepared a belated birthday present to make up for letting you down.';
+        $result = $this->service->analyze($text, []);
+
+        $this->assertSame(7, $result['metrics']['complex_vocab_count']);
+    }
+
     public function test_analyze_no_errors_returns_zero(): void
     {
         $text = 'A simple text.';

@@ -137,6 +137,11 @@ export interface AssessmentDiagnostics {
 		cefr_vocab_count: number | null
 		complex_vocab_count: number | null
 	}
+	profanity?: {
+		found: boolean
+		words: string[]
+		count: number
+	}
 	speech?: {
 		transcript: string | null
 		confidence: number | null

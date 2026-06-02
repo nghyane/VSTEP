@@ -1,0 +1,12 @@
+{
+  "id": "writing-task2-discussion-b2",
+  "task_type": "writing_task_2_essay",
+  "genre": "discussion",
+  "expected_band": 7.0,
+  "expected_level": "B2",
+  "expected_source": "internal_vstep_golden_fixture",
+  "prompt": "Some people think students should study online, while others prefer traditional classrooms. Discuss both views and give your opinion.",
+  "requirements": ["view one", "view two", "own opinion"],
+  "text": "Online learning is now widely used, but people disagree about whether it is better than classroom learning. On the one hand, supporters of this view argue that online courses provide access to information for students who live far from schools. In addition, digital literacy can be improved when learners use online platforms regularly.\n\nOn the other hand, opponents claim that traditional classrooms are more effective because students can interact directly with teachers and classmates. This is important for younger learners who need guidance and social pressure to stay focused.\n\nHaving considered both sides, I believe both views have valid points. However, it seems to me that a blended approach is best because it gives students flexibility while preserving classroom support.",
+  "expected_signals": {"linking_min": 4, "collocation_min": 7, "grammar_types_min": 3}
+}

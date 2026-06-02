@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\LexicalSignal;
+use App\Services\Linguistics\JsonlFixtureReader;
+use App\Services\Linguistics\LinguisticCacheKeys;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 /**
@@ -15,12 +20,7 @@ use Illuminate\Support\Str;
  */
 final class RuleBasedScoringService
 {
-    private const LINKING_WORDS = [
-        'however', 'moreover', 'furthermore', 'therefore', 'consequently',
-        'nevertheless', 'although', 'despite', 'in addition', 'on the other hand',
-        'firstly', 'secondly', 'finally', 'in conclusion', 'for example',
-        'as a result', 'in contrast', 'meanwhile', 'similarly',
-    ];
+    private const LEXICAL_SIGNAL_FIXTURE = 'reference/linguistics/bootstrap/lexical-signals.jsonl';
 
     /** Salutation patterns for letter/email (VSTEP Part 1). */
     private const SALUTATION_PATTERNS = [
@@ -74,10 +74,8 @@ final class RuleBasedScoringService
         $errorsPerSentence = $totalErrorCount / $effectiveSentenceCount;
 
         $textLower = Str::lower($text);
-        $linkingCount = 0;
-        foreach (self::LINKING_WORDS as $lw) {
-            $linkingCount += substr_count($textLower, $lw);
-        }
+        $linkingMatches = $this->lexicalSignalMatches($textLower, 'linking');
+        $linkingCount = $this->sumSignalMatches($linkingMatches);
 
         $totalChars = $words->map(fn (string $w): int => mb_strlen($w))->sum();
         $avgWordLength = $wordCount > 0 ? round($totalChars / $wordCount, 1) : 0;
@@ -90,8 +88,9 @@ final class RuleBasedScoringService
             ? round(4.71 * ($totalChars / $wordCount) + 0.5 * ($wordCount / $sentenceCount) - 21.43, 1)
             : 0;
 
-        // Complex vocabulary count (academic/formal words)
-        $complexVocabCount = $this->countComplexVocab($textLower);
+        // Complex vocabulary count (academic/formal words and assessed collocations)
+        $collocationMatches = $this->lexicalSignalMatches($textLower, 'collocation');
+        $complexVocabCount = $this->sumSignalMatches($collocationMatches);
 
         // Letter format detection (VSTEP Part 1)
         $hasSalutation = $this->hasSalutation($text);
@@ -119,6 +118,7 @@ final class RuleBasedScoringService
             'has_salutation' => $hasSalutation,
             'has_closing' => $hasClosing,
             'tone_signals' => $toneSignals,
+            'lexical_signal_matches' => [...$linkingMatches, ...$collocationMatches],
         ];
     }
 
@@ -157,32 +157,97 @@ final class RuleBasedScoringService
         return sqrt($sumSquaredDiff / $count);
     }
 
-    /**
-     * Count academic/formal vocabulary words in text.
-     * Based on VSTEP B1-C1 vocabulary expectations.
-     */
-    private function countComplexVocab(string $text): int
+    /** @return list<array{phrase: string, type: string, category: string, level: string|null, count: int, weight: int, source: string}> */
+    private function lexicalSignalMatches(string $text, string $type): array
     {
-        $words = [
-            'therefore', 'however', 'moreover', 'furthermore', 'nevertheless', 'consequently',
-            'significant', 'demonstrate', 'sufficient', 'approximately', 'subsequently',
-            'particularly', 'fundamentally', 'essentially', 'inevitably', 'predominantly',
-            'acquisition', 'implementation', 'interpretation', 'investigation', 'participation',
-            'beneficial', 'challenging', 'comprehensive', 'considerable', 'detrimental',
-            'advantageous', 'disadvantageous', 'substantial', 'conventional', 'alternative',
-            'phenomenon', 'perspective', 'consequence', 'inequality', 'sustainability',
-            'globalization', 'urbanization', 'industrialization', 'technological',
-            'deterioration', 'enhancement', 'diversity', 'accessibility', 'affordability',
-        ];
-
-        $count = 0;
-        foreach ($words as $word) {
-            if (str_contains($text, $word)) {
-                $count++;
+        $matches = [];
+        foreach ($this->lexicalSignals($type) as $signal) {
+            $count = $this->countPhraseOccurrences($text, $signal['phrase']);
+            if ($count === 0) {
+                continue;
             }
+
+            $matches[] = [
+                'phrase' => $signal['phrase'],
+                'type' => $signal['type'],
+                'category' => $signal['category'],
+                'level' => $signal['level'],
+                'count' => $count,
+                'weight' => $signal['weight'],
+                'source' => $signal['source'],
+            ];
         }
 
-        return $count;
+        return $matches;
+    }
+
+    /** @param list<array{count: int, weight: int}> $matches */
+    private function sumSignalMatches(array $matches): int
+    {
+        return array_reduce($matches, fn (int $sum, array $match): int => $sum + $match['count'] * $match['weight'], 0);
+    }
+
+    /** @return list<array{phrase: string, type: string, category: string, level: string|null, weight: int, source: string}> */
+    private function lexicalSignals(string $type): array
+    {
+        static $cache = [];
+        if (isset($cache[$type])) {
+            return $cache[$type];
+        }
+
+        if (! Schema::hasTable('lexical_signals')) {
+            return $cache[$type] = $this->fixtureLexicalSignals($type);
+        }
+
+        $signals = Cache::rememberForever(
+            LinguisticCacheKeys::lexicalSignals('writing', $type),
+            fn (): array => LexicalSignal::query()
+                ->active()
+                ->where('skill', 'writing')
+                ->where('type', $type)
+                ->get(['phrase', 'type', 'category', 'level', 'weight', 'source'])
+                ->map(fn (LexicalSignal $signal): array => [
+                    'phrase' => Str::lower($signal->phrase),
+                    'type' => $signal->type,
+                    'category' => $signal->category,
+                    'level' => $signal->level,
+                    'weight' => $signal->weight,
+                    'source' => $signal->source,
+                ])
+                ->values()
+                ->all(),
+        );
+
+        return $cache[$type] = $signals !== [] ? $signals : $this->fixtureLexicalSignals($type);
+    }
+
+    /** @return list<array{phrase: string, type: string, category: string, level: string|null, weight: int, source: string}> */
+    private function fixtureLexicalSignals(string $type): array
+    {
+        $signals = [];
+        foreach (app(JsonlFixtureReader::class)->read(self::LEXICAL_SIGNAL_FIXTURE) as $decoded) {
+            if (($decoded['type'] ?? null) !== $type || ($decoded['skill'] ?? 'writing') !== 'writing') {
+                continue;
+            }
+
+            $signals[] = [
+                'phrase' => Str::lower((string) $decoded['phrase']),
+                'type' => (string) $decoded['type'],
+                'category' => (string) $decoded['category'],
+                'level' => isset($decoded['level']) ? (string) $decoded['level'] : null,
+                'weight' => (int) ($decoded['weight'] ?? 1),
+                'source' => (string) $decoded['source'],
+            ];
+        }
+
+        return $signals;
+    }
+
+    private function countPhraseOccurrences(string $text, string $phrase): int
+    {
+        $pattern = '/(?<![a-z])'.preg_quote($phrase, '/').'(?![a-z])/u';
+
+        return preg_match_all($pattern, $text) ?: 0;
     }
 
     /**

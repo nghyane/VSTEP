@@ -53,6 +53,9 @@ final class AssessmentDiagnosticsService
         ];
 
         if ($attempt->skill === AssessmentSkill::Writing) {
+            $raw = (array) ($signals['raw'] ?? []);
+            $profanity = (array) ($raw['profanity'] ?? []);
+
             return [
                 ...$diagnostics,
                 'data_status' => [
@@ -65,6 +68,7 @@ final class AssessmentDiagnosticsService
                 'format' => $this->writingFormat($attempt, $metrics),
                 'cohesion' => $this->cohesion($metrics),
                 'vocabulary_profile' => $this->vocabularyProfile($metrics),
+                'profanity' => $this->profanity($profanity),
             ];
         }
 
@@ -198,6 +202,16 @@ final class AssessmentDiagnosticsService
             'cefr_advanced_ratio' => $this->nullableFloat($metrics, 'cefr_advanced_ratio'),
             'cefr_vocab_count' => $this->nullableInt($metrics, 'cefr_vocab_count'),
             'complex_vocab_count' => $this->nullableInt($metrics, 'complex_vocab_count'),
+        ];
+    }
+
+    /** @param array<string,mixed> $profanity @return array<string,mixed> */
+    private function profanity(array $profanity): array
+    {
+        return [
+            'found' => (bool) ($profanity['found'] ?? false),
+            'words' => array_values((array) ($profanity['words'] ?? [])),
+            'count' => (int) ($profanity['count'] ?? 0),
         ];
     }
 

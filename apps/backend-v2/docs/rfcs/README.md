@@ -19,6 +19,7 @@
 | 0020 | [Exam and Grading Service Decomposition](./0020-exam-grading-service-decomposition.md) | Implemented | 2026-04-24 |
 | 0021 | [Google ID Token Verification via Official PHP Client](./0021-google-token-verification.md) | Implemented | 2026-04-24 |
 | 0022 | [Admin Content Management Pattern (Vocab as reference)](./0022-admin-content-management-pattern.md) | Draft | 2026-05-11 |
+| 0023 | [Transparent Reference Linguistic Database](./0023-transparent-reference-linguistic-database.md) | Draft | 2026-06-02 |
 
 ## Implement order
 

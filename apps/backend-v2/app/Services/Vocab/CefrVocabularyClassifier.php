@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Services\Vocab;
 
 use App\Models\CefrVocabulary;
+use App\Services\Linguistics\JsonlFixtureReader;
+use App\Services\Linguistics\LinguisticCacheKeys;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Classify vocabulary level in an essay using CEFR word lists.
@@ -14,6 +17,8 @@ use App\Models\CefrVocabulary;
  */
 final class CefrVocabularyClassifier
 {
+    private const FIXTURE = 'reference/linguistics/bootstrap/cefr-vocabulary.jsonl';
+
     /** @var array<string, string>|null word → level lookup cache */
     private ?array $lookup = null;
 
@@ -24,6 +29,7 @@ final class CefrVocabularyClassifier
         'B1' => 3,
         'B2' => 4,
         'C1' => 5,
+        'C2' => 6,
     ];
 
     /**
@@ -36,12 +42,12 @@ final class CefrVocabularyClassifier
         $words = $this->tokenizeContent($text);
         $lookup = $this->getLookup();
 
-        $counts = ['A1' => 0, 'A2' => 0, 'B1' => 0, 'B2' => 0, 'C1' => 0];
+        $counts = ['A1' => 0, 'A2' => 0, 'B1' => 0, 'B2' => 0, 'C1' => 0, 'C2' => 0];
         $classified = 0;
 
         foreach ($words as $word) {
             $level = $lookup[$word] ?? null;
-            if ($level !== null) {
+            if ($level !== null && array_key_exists($level, $counts)) {
                 $counts[$level]++;
                 $classified++;
             }
@@ -60,7 +66,7 @@ final class CefrVocabularyClassifier
         }
         $weightedAvg = round($weightedSum / $total, 2);
 
-        $advancedCount = ($counts['B2'] ?? 0) + ($counts['C1'] ?? 0);
+        $advancedCount = ($counts['B2'] ?? 0) + ($counts['C1'] ?? 0) + ($counts['C2'] ?? 0);
         $advancedRatio = round($advancedCount / $total, 2);
 
         return [
@@ -110,10 +116,31 @@ final class CefrVocabularyClassifier
     private function getLookup(): array
     {
         if ($this->lookup === null) {
-            $this->lookup = CefrVocabulary::levelMap();
+            $this->lookup = Cache::rememberForever(
+                LinguisticCacheKeys::CEFR_VOCABULARY_LEVEL_MAP,
+                fn (): array => CefrVocabulary::levelMap(),
+            );
+            if ($this->lookup === []) {
+                $this->lookup = $this->fixtureLevelMap();
+            }
         }
 
         return $this->lookup;
+    }
+
+    /** @return array<string, string> */
+    private function fixtureLevelMap(): array
+    {
+        $map = [];
+        foreach (app(JsonlFixtureReader::class)->read(self::FIXTURE) as $entry) {
+            $word = strtolower((string) ($entry['word'] ?? ''));
+            $level = (string) ($entry['level'] ?? '');
+            if ($word !== '' && $level !== '') {
+                $map[$word] = $level;
+            }
+        }
+
+        return $map;
     }
 
     /** @return list<string> */

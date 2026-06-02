@@ -21,6 +21,7 @@ use App\Services\Grading\RubricResolver;
 use App\Services\Grading\WritingScoringFormula;
 use App\Services\LanguageDetector;
 use App\Services\LanguageToolService;
+use App\Services\ProfanityDetector;
 use App\Services\RuleBasedScoringService;
 use App\Services\SyntaxAnalyzer;
 use App\Services\Vocab\CefrVocabularyClassifier;
@@ -37,6 +38,7 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
         private readonly WritingFeedbackGenerator $feedbackGenerator,
         private readonly RubricResolver $rubricResolver,
         private readonly CefrVocabularyClassifier $cefrClassifier,
+        private readonly ProfanityDetector $profanityDetector,
     ) {}
 
     public function collectSignals(AssessmentInput $input): SignalBag
@@ -62,6 +64,8 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
         $ruleAnalysis['metrics']['cefr_advanced_ratio'] = $cefr['advanced_ratio'];
         $ruleAnalysis['metrics']['cefr_vocab_count'] = $cefr['cefr_vocab_count'];
 
+        $profanity = $this->profanityDetector->detect($text);
+
         return new SignalBag(
             grammar: ['errors' => $grammarErrors, 'annotations' => $this->languageTool->toAnnotations($text, $grammarErrors)],
             vocabulary: $ruleAnalysis['metrics'],
@@ -74,7 +78,7 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
                 'has_salutation' => $ruleAnalysis['metrics']['has_salutation'] ?? false,
                 'has_closing' => $ruleAnalysis['metrics']['has_closing'] ?? false,
             ],
-            raw: ['rule_analysis' => $ruleAnalysis, 'cefr' => $cefr],
+            raw: ['rule_analysis' => $ruleAnalysis, 'cefr' => $cefr, 'profanity' => $profanity],
         );
     }
 

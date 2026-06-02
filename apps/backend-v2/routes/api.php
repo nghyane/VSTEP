@@ -225,6 +225,7 @@ Route::prefix('v1')->group(function () {
             Route::patch('/{id}', [Admin\GradingRubricController::class, 'update'])->whereUuid('id');
             Route::post('/{id}/clone', [Admin\GradingRubricController::class, 'clone'])->whereUuid('id');
             Route::post('/{id}/activate', [Admin\GradingRubricController::class, 'activate'])->whereUuid('id');
+            Route::post('/{id}/simulate', [Admin\GradingRubricController::class, 'simulate'])->whereUuid('id');
         });
 
         // System config — ADMIN ONLY (nested middleware role:admin overrides parent role:staff)

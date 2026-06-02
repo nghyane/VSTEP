@@ -1,0 +1,16 @@
+{
+  "id": "writing-task1-apology-b2",
+  "task_type": "writing_task_1_letter",
+  "genre": "apology",
+  "expected_band": 7.0,
+  "expected_level": "B2",
+  "expected_source": "internal_vstep_golden_fixture",
+  "prompt": "You forgot your close friend's birthday party last weekend. Write a letter to apologize, explain why you could not attend, and suggest a plan to make it up.",
+  "requirements": ["apologize", "explain reason", "suggest plan"],
+  "text": "Dear Tom,\n\nI hope you are doing well. Please accept my sincere apology for missing your birthday party last weekend. It was such an important occasion, and not being there to celebrate with you made me feel extremely regretful.\n\nUnfortunately, I had to return to my hometown at short notice because my grandmother suddenly fell ill. As a result, my family needed my support immediately. Everything happened so unexpectedly that there was no proper chance to contact you before the party. I truly hope you can understand the situation.\n\nTo make up for my absence, let me take you out for dinner this Saturday. We can choose your favorite restaurant, enjoy a good meal, and celebrate your birthday properly. I have also prepared a small gift for you as a belated birthday present.\n\nOnce again, I am really sorry for letting you down. Hopefully, we can meet this weekend and make up for the missed celebration.\n\nBest wishes,\nNghia",
+  "expected_signals": {
+    "linking_min": 5,
+    "collocation_min": 8,
+    "grammar_types_min": 2
+  }
+}

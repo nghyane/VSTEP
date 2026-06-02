@@ -16,6 +16,8 @@ final class DatabaseSeeder extends Seeder
             WalletSeeder::class,
             GradingRubricSeeder::class,
             AssessmentRubricSeeder::class,
+            LexicalSignalSeeder::class,
+            GrammarPatternSeeder::class,
             CefrVocabularySeeder::class,
             ContentSeeder::class,
             LegacyCurriculumContentSeeder::class,

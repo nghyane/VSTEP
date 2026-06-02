@@ -1,0 +1,12 @@
+{
+  "id": "writing-task2-advantage-disadvantage-b2",
+  "task_type": "writing_task_2_essay",
+  "genre": "advantage_disadvantage",
+  "expected_band": 7.0,
+  "expected_level": "B2",
+  "expected_source": "internal_vstep_golden_fixture",
+  "prompt": "More people are working from home. Discuss the advantages and disadvantages.",
+  "requirements": ["advantages", "disadvantages", "balanced conclusion"],
+  "text": "Working from home has become increasingly common in many countries. A major advantage is that employees can save time because they do not need to travel to the office every day. One clear benefit is a better work-life balance, which can improve mental health and productivity.\n\nHowever, there are also disadvantages. A significant drawback is that people may feel isolated when they have little face-to-face communication with colleagues. On the negative side, some workers find it difficult to separate work from family life, so their stress levels may increase.\n\nOverall, although remote work brings significant benefits, it also has a negative impact on teamwork if companies do not manage it carefully. Therefore, in my view, a flexible model that combines home and office work is the most practical solution.",
+  "expected_signals": {"linking_min": 4, "collocation_min": 7, "grammar_types_min": 3}
+}

@@ -69,18 +69,15 @@ final class AdminGradingRubricTest extends TestCase
             ->patchJson("/api/v1/admin/grading-rubrics/{$draftId}", [
                 'name' => 'VSTEP Writing v2',
                 'policy' => [
-                    'assessment_gates' => [
-                        'severe_minimum_words_task1' => 70,
-                        'minimum_covered_points' => 2,
-                    ],
-                    'word_rules' => [
-                        'official_minimum_task1' => 130,
-                    ],
+                    'severity' => 'lenient',
+                    'word_minimum_task1' => 130,
+                    'minimum_covered_points' => 2,
                 ],
             ])
             ->assertOk()
             ->assertJsonPath('data.name', 'VSTEP Writing v2')
-            ->assertJsonPath('data.policy_summary.assessment_gates.severe_minimum_words_task1', 70)
+            ->assertJsonPath('data.policy_summary.severity', 'lenient')
+            ->assertJsonPath('data.policy_summary.assessment_gates.severe_minimum_words_task1', 40)
             ->assertJsonPath('data.policy_summary.assessment_gates.minimum_covered_points', 2)
             ->assertJsonPath('data.policy_summary.word_rules.official_minimum_task1', 130);
 

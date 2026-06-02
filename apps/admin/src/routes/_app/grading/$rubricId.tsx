@@ -11,11 +11,11 @@ import {
 	Input,
 	InputNumber,
 	message,
+	Radio,
 	Result,
 	Skeleton,
 	Space,
 	Table,
-	Tabs,
 	Tag,
 	Typography,
 } from "antd"
@@ -25,10 +25,10 @@ import {
 	activateRubric,
 	cloneRubric,
 	rubricDetailQuery,
+	simulateRubric,
 	type UpdateRubricPayload,
 	updateRubric,
 } from "#/features/admin-grading/queries"
-import { RubricExplanation } from "#/features/admin-grading/RubricExplanation"
 import type { Criterion, GradingRubric } from "#/features/admin-grading/types"
 import { extractError, formatApiErrorBanner } from "#/lib/api"
 import { useAuth } from "#/lib/auth"
@@ -43,25 +43,29 @@ export const Route = createFileRoute("/_app/grading/$rubricId")({
 	component: RubricDetailPage,
 })
 
+// ─── Page ──────────────────────────────────────────────────────────
+
 function RubricDetailPage() {
 	const { rubricId } = Route.useParams()
 	const queryClient = useQueryClient()
 	const navigate = Route.useNavigate()
 	const { data, isLoading, isError } = useQuery(rubricDetailQuery(rubricId))
 	const rubric = data?.data
+
 	const cloneMutation = useMutation({
 		mutationFn: () => cloneRubric(rubricId),
 		onSuccess: async (res) => {
-			message.success("Đã clone rubric thành draft")
+			message.success("Đã tạo bản nháp mới")
 			await queryClient.invalidateQueries({ queryKey: ["admin", "grading-rubrics"] })
 			navigate({ to: "/grading/$rubricId", params: { rubricId: res.data.id } })
 		},
 		onError: async (error) => message.error(formatApiErrorBanner(await extractError(error))),
 	})
+
 	const activateMutation = useMutation({
 		mutationFn: () => activateRubric(rubricId),
 		onSuccess: async () => {
-			message.success("Đã activate rubric")
+			message.success("Đã kích hoạt version này")
 			await queryClient.invalidateQueries({ queryKey: ["admin", "grading-rubrics"] })
 		},
 		onError: async (error) => message.error(formatApiErrorBanner(await extractError(error))),
@@ -72,7 +76,7 @@ function RubricDetailPage() {
 		return (
 			<Result
 				status="404"
-				title="Không tìm thấy tiêu chí"
+				title="Không tìm thấy rubric"
 				subTitle="Rubric này không tồn tại hoặc chưa được tạo trong hệ thống."
 				extra={
 					<Link to="/grading" search={gradingSearch}>
@@ -83,6 +87,8 @@ function RubricDetailPage() {
 		)
 	}
 
+	const isDraft = rubric.lifecycle.status === "draft"
+
 	return (
 		<Flex vertical gap={24}>
 			<Link to="/grading" search={gradingSearch}>
@@ -91,254 +97,487 @@ function RubricDetailPage() {
 				</Button>
 			</Link>
 
-			<PageHeader
-				title={rubric.name}
-				subtitle={`${rubric.skill === "writing" ? "Writing" : "Speaking"} · Version ${rubric.version}`}
-				action={
-					<Space>
-						<Button
-							icon={<CopyOutlined />}
-							loading={cloneMutation.isPending}
-							onClick={() => cloneMutation.mutate()}
-						>
-							Tạo bản nháp mới
-						</Button>
-						{rubric.admin_actions.can_activate && (
-							<Button
-								type="primary"
-								icon={<ThunderboltOutlined />}
-								loading={activateMutation.isPending}
-								onClick={() => activateMutation.mutate()}
-							>
-								Kích hoạt version này
-							</Button>
-						)}
-					</Space>
-				}
-			/>
-
-			<Card size="small">
-				<Flex justify="space-between" align="center" wrap="wrap" gap={12}>
-					<div>
-						<Typography.Text strong>Thao tác version</Typography.Text>
-						<br />
-						<Typography.Text type="secondary">
-							Active rubric không sửa trực tiếp. Hãy tạo bản nháp, chỉnh policy rồi kích hoạt.
-						</Typography.Text>
-					</div>
-					<Space>
-						<Button
-							icon={<CopyOutlined />}
-							loading={cloneMutation.isPending}
-							onClick={() => cloneMutation.mutate()}
-						>
-							Tạo bản nháp mới
-						</Button>
-						{rubric.admin_actions.can_activate && (
-							<Button
-								type="primary"
-								icon={<ThunderboltOutlined />}
-								loading={activateMutation.isPending}
-								onClick={() => activateMutation.mutate()}
-							>
-								Kích hoạt version này
-							</Button>
-						)}
-					</Space>
-				</Flex>
-			</Card>
+			<DetailHeader rubric={rubric} cloneMutation={cloneMutation} activateMutation={activateMutation} />
 
 			<LifecycleBanner rubric={rubric} />
 
-			<RubricSummary rubric={rubric} />
-
-			<Tabs
-				items={[
-					{ key: "overview", label: "Tổng quan", children: <OverviewTab rubric={rubric} /> },
-					{ key: "policy", label: "Điều kiện chấm", children: <PolicyEditor rubric={rubric} /> },
-					{ key: "criteria", label: "Template tiêu chí", children: <CriteriaTab rubric={rubric} /> },
-					{ key: "simulator", label: "Mô phỏng", children: <SimulatorTab rubric={rubric} /> },
-				]}
-			/>
+			{isDraft ? (
+				<DraftBuilder rubric={rubric} activateMutation={activateMutation} />
+			) : (
+				<ReadOnlyView rubric={rubric} cloneMutation={cloneMutation} />
+			)}
 		</Flex>
 	)
 }
 
-function RubricSummary({ rubric }: { rubric: GradingRubric }) {
-	const gates = rubric.policy_summary.assessment_gates
-	const wordRules = rubric.policy_summary.word_rules
+// ─── Header ────────────────────────────────────────────────────────
+
+function DetailHeader({
+	rubric,
+	cloneMutation,
+	activateMutation,
+}: {
+	rubric: GradingRubric
+	cloneMutation: ReturnType<typeof useMutation>
+	activateMutation: ReturnType<typeof useMutation>
+}) {
+	const skillLabel = rubric.skill === "writing" ? "Writing" : "Speaking"
+
 	return (
-		<Flex gap={12} wrap="wrap">
-			<Card size="small" title="Version" style={{ width: 240 }}>
-				<Typography.Text>
-					{rubric.skill === "writing" ? "Writing" : "Speaking"} · v{rubric.version}
-				</Typography.Text>
-				<br />
-				<Typography.Text type="secondary">{rubric.scoring_formula}</Typography.Text>
-			</Card>
-			{gates && (
-				<Card size="small" title="Không chấm điểm khi" style={{ width: 320 }}>
-					<Typography.Text>Task 1 &lt; {gates.severe_minimum_words_task1} từ</Typography.Text>
-					<br />
-					<Typography.Text>Task 2 &lt; {gates.severe_minimum_words_task2} từ</Typography.Text>
-					<br />
-					<Typography.Text>Coverage &lt; {gates.minimum_covered_points} ý</Typography.Text>
-				</Card>
-			)}
-			{wordRules && (
-				<Card size="small" title="Yêu cầu chuẩn" style={{ width: 260 }}>
-					<Typography.Text>Task 1: {wordRules.official_minimum_task1} từ</Typography.Text>
-					<br />
-					<Typography.Text>Task 2: {wordRules.official_minimum_task2} từ</Typography.Text>
-				</Card>
-			)}
-			<Card size="small" title="Tiêu chí" style={{ width: 220 }}>
-				<Typography.Text>{rubric.criteria.length} tiêu chí</Typography.Text>
-				<br />
-				<Typography.Text type="secondary">
-					Tổng weight:{" "}
-					{Math.round(
-						Object.values(rubric.policy_summary.criteria_weights).reduce((sum, w) => sum + w, 0) * 100,
-					)}
-					%
-				</Typography.Text>
-			</Card>
+		<Flex justify="space-between" align="flex-start" wrap="wrap" gap={12}>
+			<div>
+				<PageHeader title={rubric.name} subtitle={`${skillLabel} · Version ${rubric.version}`} />
+			</div>
+			<Space>
+				<Button
+					icon={<CopyOutlined />}
+					loading={cloneMutation.isPending}
+					onClick={() => cloneMutation.mutate()}
+				>
+					Tạo bản nháp mới
+				</Button>
+				{rubric.admin_actions.can_activate && (
+					<Button
+						type="primary"
+						icon={<ThunderboltOutlined />}
+						loading={activateMutation.isPending}
+						onClick={() => activateMutation.mutate()}
+					>
+						Kích hoạt
+					</Button>
+				)}
+			</Space>
 		</Flex>
 	)
 }
 
-interface PolicyFormValues {
-	name: string
-	severe_minimum_words_task1: number
-	severe_minimum_words_task2: number
-	minimum_covered_points: number
-	official_minimum_task1: number
-	official_minimum_task2: number
-	short_response_caps: Array<{ max_words: number; cap: number }>
-	task_fulfillment_word_caps: Array<{ max_words: number; cap: number }>
-}
+// ─── Lifecycle Banner ──────────────────────────────────────────────
 
 function LifecycleBanner({ rubric }: { rubric: GradingRubric }) {
-	const status = rubric.lifecycle.status
+	const s = rubric.lifecycle.status
 	const config = {
 		active: {
 			type: "success" as const,
-			title: "ACTIVE · Chỉ đọc",
+			title: "ACTIVE · Đang dùng để chấm bài mới",
 			description:
 				rubric.lifecycle.read_only_reason ??
-				"Rubric này đang dùng để chấm bài mới. Clone để chỉnh version tiếp theo.",
+				"Rubric này ở chế độ chỉ đọc. Để thay đổi policy, hãy tạo bản nháp mới.",
 		},
 		draft: {
 			type: "warning" as const,
 			title: "DRAFT · Có thể chỉnh sửa",
-			description: "Bạn đang chỉnh bản nháp. Thay đổi chỉ áp dụng sau khi kích hoạt version này.",
+			description:
+				"Bạn đang chỉnh bản nháp. Sau khi lưu và kích hoạt, version này mới được dùng để chấm bài mới.",
 		},
 		archived: {
 			type: "info" as const,
-			title: "ARCHIVED · Chỉ đọc",
-			description: rubric.lifecycle.read_only_reason ?? "Rubric đã lưu để truy vết kết quả lịch sử.",
+			title: "ARCHIVED · Lưu lịch sử",
+			description: rubric.lifecycle.read_only_reason ?? "Rubric này được lưu để truy vết kết quả chấm cũ.",
 		},
-	}[status]
+	}[s]
 
 	return <Alert showIcon type={config.type} message={config.title} description={config.description} />
 }
 
-function OverviewTab({ rubric }: { rubric: GradingRubric }) {
-	return <RubricExplanation rubric={rubric} />
+// ─── Read-only View ────────────────────────────────────────────────
+
+function ReadOnlyView({
+	rubric,
+	cloneMutation,
+}: {
+	rubric: GradingRubric
+	cloneMutation: ReturnType<typeof useMutation>
+}) {
+	const gates = rubric.policy_summary.assessment_gates
+	const rules = rubric.policy_summary.word_rules
+	const weights = rubric.policy_summary.criteria_weights
+
+	return (
+		<Flex vertical gap={16}>
+			<PolicySummaryCards
+				gates={gates}
+				rules={rules}
+				weights={weights}
+				criteriaCount={rubric.criteria.length}
+			/>
+
+			<Card title="Template tiêu chí" size="small">
+				<Typography.Text type="secondary">
+					Bộ tiêu chí được cố định theo template {rubric.skill === "writing" ? "Writing" : "Speaking"}. Admin
+					chỉnh trọng số và policy trong từng version.
+				</Typography.Text>
+				<Flex gap={12} wrap="wrap" style={{ marginTop: 12 }}>
+					{rubric.criteria.map((criterion) => (
+						<Card key={criterion.key} size="small" style={{ width: 200 }}>
+							<Flex justify="space-between" align="center">
+								<div>
+									<Typography.Text strong>{criterion.name_vi ?? criterion.name}</Typography.Text>
+									<br />
+									<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+										{criterion.name}
+									</Typography.Text>
+								</div>
+								<Tag>{Math.round(criterion.weight * 100)}%</Tag>
+							</Flex>
+						</Card>
+					))}
+				</Flex>
+			</Card>
+
+			<Collapse
+				items={rubric.criteria.map((c: Criterion) => ({
+					key: c.key,
+					label: `Mô tả band — ${c.name_vi ?? c.name}`,
+					children: <BandDescriptorTable descriptors={c.band_descriptors} />,
+				}))}
+			/>
+
+			<Card>
+				<Flex align="center" justify="center" style={{ minHeight: 80 }}>
+					<Space direction="vertical" align="center">
+						<Typography.Text type="secondary">Muốn thay đổi policy hoặc trọng số?</Typography.Text>
+						<Button
+							type="primary"
+							icon={<CopyOutlined />}
+							loading={cloneMutation.isPending}
+							onClick={() => cloneMutation.mutate()}
+						>
+							Tạo bản nháp mới từ version này
+						</Button>
+					</Space>
+				</Flex>
+			</Card>
+		</Flex>
+	)
 }
 
-function PolicyEditor({ rubric }: { rubric: GradingRubric }) {
-	const [form] = Form.useForm()
+// ─── Policy Summary Cards ──────────────────────────────────────────
+
+function PolicySummaryCards({
+	gates,
+	rules,
+	weights,
+	criteriaCount,
+}: {
+	gates: GradingRubric["policy_summary"]["assessment_gates"]
+	rules: GradingRubric["policy_summary"]["word_rules"]
+	weights: Record<string, number>
+	criteriaCount: number
+}) {
+	const totalWeight = Math.round(Object.values(weights).reduce((a, b) => a + b, 0) * 100)
+
+	return (
+		<Flex gap={12} wrap="wrap">
+			{gates && (
+				<Card size="small" title="Không chấm điểm khi" style={{ flex: 1, minWidth: 260 }}>
+					<Typography.Text>Task 1 dưới {gates.severe_minimum_words_task1} từ</Typography.Text>
+					<br />
+					<Typography.Text>Task 2 dưới {gates.severe_minimum_words_task2} từ</Typography.Text>
+					<br />
+					<Typography.Text>Trả lời dưới {gates.minimum_covered_points} ý trong đề</Typography.Text>
+					{rubric.policy_summary.system_gates && (
+						<>
+							<br />
+							<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+								+ Hệ thống từ chối bài không phải tiếng Anh, sao chép đề, nộp rỗng.
+							</Typography.Text>
+						</>
+					)}
+				</Card>
+			)}
+			{rules && (
+				<Card size="small" title="Yêu cầu số từ chuẩn" style={{ flex: 1, minWidth: 200 }}>
+					<Typography.Text>Task 1: {rules.official_minimum_task1} từ</Typography.Text>
+					<br />
+					<Typography.Text>Task 2: {rules.official_minimum_task2} từ</Typography.Text>
+				</Card>
+			)}
+			<Card size="small" title="Tiêu chí & trọng số" style={{ flex: 1, minWidth: 180 }}>
+				<Typography.Text>{criteriaCount} tiêu chí</Typography.Text>
+				<br />
+				<Typography.Text type="secondary">Tổng trọng số: {totalWeight}%</Typography.Text>
+			</Card>
+		</Flex>
+	)
+}
+
+// ─── Draft Builder ─────────────────────────────────────────────────
+
+interface PolicyFormValues {
+	name: string
+	severity: "strict" | "standard" | "lenient"
+	word_minimum_task1: number
+	word_minimum_task2: number
+	minimum_covered_points: number
+}
+
+function DraftBuilder({
+	rubric,
+	activateMutation,
+}: {
+	rubric: GradingRubric
+	activateMutation: ReturnType<typeof useMutation>
+}) {
+	const [form] = Form.useForm<PolicyFormValues>()
 	const queryClient = useQueryClient()
-	const editable = rubric.lifecycle.is_editable && rubric.skill === "writing"
 	const summary = rubric.policy_summary
+
 	const updateMutation = useMutation({
 		mutationFn: (values: PolicyFormValues) => updateRubric(rubric.id, toUpdatePayload(values)),
 		onSuccess: async () => {
-			message.success("Đã lưu draft policy")
-			await queryClient.invalidateQueries({ queryKey: ["admin", "grading-rubrics", "detail", rubric.id] })
+			message.success("Đã lưu draft")
+			await queryClient.invalidateQueries({
+				queryKey: ["admin", "grading-rubrics", "detail", rubric.id],
+			})
 		},
 		onError: async (error) => message.error(formatApiErrorBanner(await extractError(error))),
 	})
 
+	const initial = {
+		name: rubric.name,
+		severity: summary.severity ?? "standard",
+		word_minimum_task1: summary.word_rules?.official_minimum_task1 ?? 120,
+		word_minimum_task2: summary.word_rules?.official_minimum_task2 ?? 250,
+		minimum_covered_points: summary.assessment_gates?.minimum_covered_points ?? 1,
+	}
+
 	if (!summary.assessment_gates || !summary.word_rules) {
-		return <Alert type="info" showIcon message="Policy editor hiện hỗ trợ Writing rubric." />
+		return (
+			<Alert type="info" showIcon message="Trình chỉnh policy hiện chỉ hỗ trợ rubrics Writing." />
+		)
 	}
 
 	return (
 		<Form
 			form={form}
 			layout="vertical"
-			disabled={!editable || updateMutation.isPending}
-			initialValues={{
-				name: rubric.name,
-				...summary.assessment_gates,
-				...summary.word_rules,
-			}}
+			initialValues={initial}
 			onFinish={(values) => updateMutation.mutate(values)}
 		>
-			<Flex gap={16} align="flex-start">
-				<Flex vertical gap={16} flex={1}>
-					<Card title="Khi nào không chấm điểm?" extra={<Tag color="red">Không hiển thị điểm</Tag>}>
-						<Alert
-							showIcon
-							type="error"
-							message="Fail các điều kiện này thì bài không đủ dữ liệu để chấm theo rubric."
-							style={{ marginBottom: 16 }}
-						/>
-						<Flex gap={12} wrap="wrap">
-							<Form.Item name="severe_minimum_words_task1" label="Task 1 dưới bao nhiêu từ thì không chấm?">
-								<InputNumber min={1} addonAfter="words" />
-							</Form.Item>
-							<Form.Item name="severe_minimum_words_task2" label="Task 2 dưới bao nhiêu từ thì không chấm?">
-								<InputNumber min={1} addonAfter="words" />
-							</Form.Item>
-							<Form.Item name="minimum_covered_points" label="Cần trả lời ít nhất bao nhiêu ý?">
-								<InputNumber min={1} />
-							</Form.Item>
-						</Flex>
-					</Card>
-					<Card title="Thiếu số từ nhưng vẫn chấm" extra={<Tag color="orange">Cảnh báo / giới hạn điểm</Tag>}>
-						<Alert
-							showIcon
-							type="warning"
-							message="Dưới mức chuẩn nhưng vượt ngưỡng không chấm thì vẫn được chấm, checklist sẽ cảnh báo và cap có thể giới hạn điểm."
-							style={{ marginBottom: 16 }}
-						/>
-						<Flex gap={12} wrap="wrap">
-							<Form.Item name="official_minimum_task1" label="Task 1 yêu cầu chuẩn">
-								<InputNumber min={1} addonAfter="words" />
-							</Form.Item>
-							<Form.Item name="official_minimum_task2" label="Task 2 yêu cầu chuẩn">
-								<InputNumber min={1} addonAfter="words" />
-							</Form.Item>
-						</Flex>
-						<CapEditor name="short_response_caps" title="Giới hạn toàn bộ điểm khi bài quá ngắn" />
-						<CapEditor name="task_fulfillment_word_caps" title="Giới hạn riêng điểm hoàn thành yêu cầu" />
-					</Card>
-					<Card title="Thông tin version">
-						<Form.Item name="name" label="Tên rubric">
-							<Input />
+			<Flex vertical gap={24}>
+				<Card title="1. Mức độ chấm">
+					<Form.Item name="severity" label="Chọn mức độ nghiêm ngặt khi chấm bài">
+						<Radio.Group>
+							<Radio value="strict">Chặt — từ chối sớm, cap điểm thấp</Radio>
+							<Radio value="standard">Tiêu chuẩn — cân bằng</Radio>
+							<Radio value="lenient">Thoáng — ít từ chối, cap điểm cao</Radio>
+						</Radio.Group>
+					</Form.Item>
+					<Form.Item noStyle shouldUpdate>
+						{() => <DerivedValues rubric={rubric} />}
+					</Form.Item>
+				</Card>
+
+				<Card title="2. Yêu cầu tối thiểu">
+					<Flex gap={16} wrap="wrap">
+						<Form.Item name="word_minimum_task1" label="Task 1 yêu cầu tối thiểu">
+							<InputNumber min={1} addonAfter="từ" />
 						</Form.Item>
-					</Card>
-					{editable && (
-						<Button
-							type="primary"
-							htmlType="submit"
-							icon={<EditOutlined />}
-							loading={updateMutation.isPending}
-						>
-							Lưu bản nháp
-						</Button>
-					)}
+						<Form.Item name="word_minimum_task2" label="Task 2 yêu cầu tối thiểu">
+							<InputNumber min={1} addonAfter="từ" />
+						</Form.Item>
+						<Form.Item name="minimum_covered_points" label="Cần trả lời ít nhất">
+							<InputNumber min={1} addonAfter="ý" />
+						</Form.Item>
+					</Flex>
+				</Card>
+
+				<Card title="3. Thông tin">
+					<Form.Item name="name" label="Tên rubric">
+						<Input />
+					</Form.Item>
+				</Card>
+
+				<Flex gap={12}>
+					<Button type="primary" htmlType="submit" icon={<EditOutlined />} loading={updateMutation.isPending}>
+						Lưu bản nháp
+					</Button>
+					<Button icon={<ThunderboltOutlined />} loading={activateMutation.isPending} onClick={() => activateMutation.mutate()}>
+						Kích hoạt
+					</Button>
 				</Flex>
-				<PolicyPreview />
+
+				<SimulatorSection rubric={rubric} />
 			</Flex>
 		</Form>
 	)
 }
 
-function CapEditor({ name, title }: { name: string; title: string }) {
+// ─── Simulator ─────────────────────────────────────────────────────
+
+function SimulatorSection({ rubric }: { rubric: GradingRubric }) {
+	const gates = rubric.policy_summary.assessment_gates
+	const [part, setPart] = useState<1 | 2>(1)
+	const [wordCount, setWordCount] = useState(36)
+	const [covered, setCovered] = useState(0)
+	const [criteriaScores, setCriteriaScores] = useState<Record<string, number>>({})
+
+	const simulateMutation = useMutation({
+		mutationFn: () =>
+			simulateRubric(rubric.id, {
+				part,
+				word_count: wordCount,
+				covered_points: covered,
+				scores: Object.keys(criteriaScores).length > 0 ? criteriaScores : undefined,
+			}),
+		onError: async (error) => message.error(formatApiErrorBanner(await extractError(error))),
+	})
+
+	const result = simulateMutation.data?.data
+
+	if (!gates) {
+		return <Alert showIcon type="info" message="Mô phỏng chỉ khả dụng cho Writing rubric." />
+	}
+
+	return (
+		<Card title="Mô phỏng chính sách">
+			<Flex gap={16} align="flex-start" wrap="wrap">
+				{/* ── Input ── */}
+				<Card size="small" title="Nhập tình huống thử" style={{ width: 340 }}>
+					<Space direction="vertical" style={{ width: "100%" }}>
+						<Space>
+							<Button type={part === 1 ? "primary" : "default"} onClick={() => setPart(1)}>
+								Task 1
+							</Button>
+							<Button type={part === 2 ? "primary" : "default"} onClick={() => setPart(2)}>
+								Task 2
+							</Button>
+						</Space>
+						<Typography.Text>Số từ</Typography.Text>
+						<InputNumber
+							style={{ width: "100%" }}
+							min={0}
+							value={wordCount}
+							onChange={(v) => setWordCount(Number(v ?? 0))}
+						/>
+						<Typography.Text>Số ý đã trả lời trong đề</Typography.Text>
+						<InputNumber
+							style={{ width: "100%" }}
+							min={0}
+							max={10}
+							value={covered}
+							onChange={(v) => setCovered(Number(v ?? 0))}
+						/>
+
+						<Typography.Text>Điểm tiêu chí ước lượng (nếu có)</Typography.Text>
+						{rubric.criteria.map((criterion) => (
+							<Flex key={criterion.key} justify="space-between" align="center">
+								<Typography.Text style={{ fontSize: 12 }}>
+									{criterion.name_vi ?? criterion.name}
+								</Typography.Text>
+								<InputNumber
+									size="small"
+									min={0}
+									max={10}
+									step={0.5}
+									value={criteriaScores[criterion.key] ?? undefined}
+									placeholder="Bỏ trống"
+									onChange={(v) =>
+										setCriteriaScores((prev) => {
+											const next = { ...prev }
+											if (v === null || v === undefined) {
+												delete next[criterion.key]
+											} else {
+												next[criterion.key] = Number(v)
+											}
+											return next
+										})
+									}
+								/>
+							</Flex>
+						))}
+
+						<Button
+							type="primary"
+							block
+							loading={simulateMutation.isPending}
+							onClick={() => simulateMutation.mutate()}
+						>
+							Chạy mô phỏng
+						</Button>
+					</Space>
+				</Card>
+
+				{/* ── Result ── */}
+				{result && (
+					<Card size="small" title="Kết quả" style={{ flex: 1, minWidth: 360 }}>
+						<Alert
+							showIcon
+							type={result.assessable ? "success" : "error"}
+							message={result.assessable ? "Được chấm điểm" : "Không đủ điều kiện chấm"}
+							description={
+								result.assessable
+									? "Bài sẽ hiển thị điểm thành phần và cho phép mua nhận xét AI."
+									: "Bài chỉ hiển thị checklist và hướng dẫn viết lại."
+							}
+						/>
+
+						<Space direction="vertical" style={{ marginTop: 12, width: "100%" }}>
+							<Typography.Text type={result.details.word_check.passed ? "success" : "danger"}>
+								{result.details.word_check.passed ? "✓" : "✕"} Số từ: {result.details.word_check.actual}/
+								{result.details.word_check.required}
+							</Typography.Text>
+							<Typography.Text type={result.details.coverage_check.passed ? "success" : "danger"}>
+								{result.details.coverage_check.passed ? "✓" : "✕"} Coverage:{" "}
+								{result.details.coverage_check.actual}/{result.details.coverage_check.required}
+							</Typography.Text>
+						</Space>
+
+						{result.details.system_gates && (
+							<Typography.Text type="secondary" style={{ fontSize: 12, marginTop: 4, display: "block" }}>
+								Hệ thống cũng từ chối: không phải tiếng Anh, sao chép đề, nộp rỗng.
+							</Typography.Text>
+						)}
+
+						{result.assessable && result.overall_band !== null && (
+							<>
+								<Flex align="center" gap={12} style={{ marginTop: 12 }}>
+									<Typography.Text style={{ fontSize: 48, fontWeight: 800 }}>
+										{result.overall_band.toFixed(1)}
+									</Typography.Text>
+									<Typography.Text type="secondary">/ 10</Typography.Text>
+								</Flex>
+
+								{result.criterion_scores && (
+									<Space direction="vertical" style={{ marginTop: 8 }}>
+										{Object.entries(result.criterion_scores).map(([key, val]) => (
+											<Typography.Text key={key} type="secondary" style={{ fontSize: 13 }}>
+												{key}: {val.raw.toFixed(1)}
+												{val.capped !== val.raw ? ` → ${val.capped.toFixed(1)}` : ""}
+												{" · "}×{Math.round(val.weight * 100)}%
+											</Typography.Text>
+										))}
+									</Space>
+								)}
+
+								{Object.keys(result.caps_applied).length > 0 && (
+									<Alert
+										showIcon
+										type="warning"
+										message="Đã áp dụng giới hạn điểm do bài quá ngắn."
+										style={{ marginTop: 12 }}
+									/>
+								)}
+								{result.details.below_official_minimum && (
+									<Alert
+										showIcon
+										type="warning"
+										message={`Dưới mức chuẩn ${result.details.official_minimum} từ, checklist sẽ cảnh báo.`}
+										style={{ marginTop: 8 }}
+									/>
+								)}
+							</>
+						)}
+					</Card>
+				)}
+			</Flex>
+		</Card>
+	)
+}
+
+// ─── Form Cap List ─────────────────────────────────────────────────
+
+function FormCapList({ name, title, description }: { name: string; title: string; description: string }) {
 	return (
 		<Form.List name={name}>
 			{(fields, { add, remove }) => (
@@ -348,19 +587,25 @@ function CapEditor({ name, title }: { name: string; title: string }) {
 					style={{ marginTop: 12 }}
 					extra={
 						<Button size="small" onClick={() => add({ max_words: 0, cap: 1 })}>
-							Thêm dòng
+							Thêm
 						</Button>
 					}
 				>
+					<Typography.Text type="secondary" style={{ marginBottom: 8, display: "block" }}>
+						{description}
+					</Typography.Text>
 					{fields.map((field) => (
-						<Space key={field.key} align="baseline">
-							<Form.Item name={[field.name, "max_words"]} label="Tối đa số từ">
+						<Space key={field.key} align="baseline" style={{ marginBottom: 8 }}>
+							<Typography.Text>≤</Typography.Text>
+							<Form.Item {...field} name={[field.name, "max_words"]} noStyle>
 								<InputNumber min={1} />
 							</Form.Item>
-							<Form.Item name={[field.name, "cap"]} label="Điểm tối đa">
+							<Typography.Text>từ → tối đa</Typography.Text>
+							<Form.Item {...field} name={[field.name, "cap"]} noStyle>
 								<InputNumber min={1} max={10} step={0.5} />
 							</Form.Item>
-							<Button danger onClick={() => remove(field.name)}>
+							<Typography.Text>điểm</Typography.Text>
+							<Button danger size="small" onClick={() => remove(field.name)}>
 								Xóa
 							</Button>
 						</Space>
@@ -371,176 +616,64 @@ function CapEditor({ name, title }: { name: string; title: string }) {
 	)
 }
 
-function PolicyPreview() {
-	const values = Form.useWatch([], Form.useFormInstance()) ?? {}
-	const task1HardStop = Number(values.severe_minimum_words_task1 ?? 0)
-	const task2HardStop = Number(values.severe_minimum_words_task2 ?? 0)
+// ─── Derived Values ───────────────────────────────────────────────
+
+const SEVERITY_DERIVED: Record<string, {
+	gates: { task1: number; task2: number }
+	caps: string[]
+	tfCaps: string[]
+}> = {
+	strict: {
+		gates: { task1: 80, task2: 150 },
+		caps: ["≤10 từ → 1.0", "≤30 từ → 2.0"],
+		tfCaps: ["≤80 từ → 3.0", "≤120 từ → 5.0"],
+	},
+	standard: {
+		gates: { task1: 60, task2: 125 },
+		caps: ["≤10 từ → 1.0", "≤30 từ → 2.0"],
+		tfCaps: ["≤80 từ → 4.0", "≤120 từ → 6.0"],
+	},
+	lenient: {
+		gates: { task1: 40, task2: 90 },
+		caps: ["≤10 từ → 1.0"],
+		tfCaps: ["≤80 từ → 5.0"],
+	},
+}
+
+function DerivedValues({ rubric }: { rubric: GradingRubric }) {
+	const form = Form.useFormInstance()
+	const severity: keyof typeof SEVERITY_DERIVED = form.getFieldValue("severity") ?? rubric.policy_summary.severity ?? "standard"
+	const derived = SEVERITY_DERIVED[severity] ?? SEVERITY_DERIVED.standard
+
 	return (
-		<Card title="Tóm tắt tác động" style={{ width: 320 }}>
+		<Card size="small" title="Thông số được sinh từ preset" style={{ marginTop: 12 }}>
 			<Space direction="vertical">
-				<Typography.Text>Task 1 dưới {task1HardStop} từ: không chấm điểm.</Typography.Text>
-				<Typography.Text>Task 2 dưới {task2HardStop} từ: không chấm điểm.</Typography.Text>
-				<Typography.Text>
-					Coverage thấp hơn {values.minimum_covered_points ?? 1}: không chấm điểm.
+				<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+					Không chấm: Task 1 &lt; {derived.gates.task1} từ · Task 2 &lt; {derived.gates.task2} từ
+				</Typography.Text>
+				<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+					Cap toàn bộ: {derived.caps.join(" · ") || "không"}
+				</Typography.Text>
+				<Typography.Text type="secondary" style={{ fontSize: 12 }}>
+					Cap TF: {derived.tfCaps.join(" · ") || "không"}
 				</Typography.Text>
 			</Space>
 		</Card>
 	)
 }
 
+// ─── Helpers ───────────────────────────────────────────────────────
+
 function toUpdatePayload(values: PolicyFormValues): UpdateRubricPayload {
 	return {
 		name: values.name,
 		policy: {
-			assessment_gates: {
-				severe_minimum_words_task1: values.severe_minimum_words_task1,
-				severe_minimum_words_task2: values.severe_minimum_words_task2,
-				minimum_covered_points: values.minimum_covered_points,
-			},
-			word_rules: {
-				official_minimum_task1: values.official_minimum_task1,
-				official_minimum_task2: values.official_minimum_task2,
-				short_response_caps: values.short_response_caps,
-				task_fulfillment_word_caps: values.task_fulfillment_word_caps,
-			},
+			severity: values.severity,
+			word_minimum_task1: values.word_minimum_task1,
+			word_minimum_task2: values.word_minimum_task2,
+			minimum_covered_points: values.minimum_covered_points,
 		},
 	}
-}
-
-function CriteriaTab({ rubric }: { rubric: GradingRubric }) {
-	return (
-		<Flex vertical gap={16}>
-			<Flex justify="space-between" align="center">
-				<div>
-					<Typography.Title level={4} style={{ margin: 0 }}>
-						Template tiêu chí ({rubric.criteria.length})
-					</Typography.Title>
-					<Typography.Text type="secondary">
-						Template định nghĩa bài được chấm theo những tiêu chí nào. Admin chỉnh policy và trọng số ở
-						version, không sửa cấu trúc active trực tiếp.
-					</Typography.Text>
-				</div>
-				<Tag color="blue">Template</Tag>
-			</Flex>
-
-			<Alert
-				showIcon
-				type="info"
-				message="Kiến trúc: Template tiêu chí + Version rubric + Policy chấm điểm"
-				description="Template giữ cấu trúc tiêu chí ổn định để kết quả chấm nhất quán. Version rubric lưu policy, trọng số và trạng thái active/draft. Muốn thay đổi cách chấm, tạo draft version rồi kích hoạt."
-			/>
-
-			<Flex gap={16} wrap="wrap">
-				{rubric.criteria.map((criterion) => (
-					<CriterionCard key={criterion.key} criterion={criterion} />
-				))}
-			</Flex>
-
-			<Collapse
-				items={rubric.criteria.map((c: Criterion) => ({
-					key: c.key,
-					label: `${c.name_vi ?? c.name} — mô tả band`,
-					children: <BandDescriptorTable descriptors={c.band_descriptors} />,
-				}))}
-			/>
-		</Flex>
-	)
-}
-
-function CriterionCard({ criterion }: { criterion: Criterion }) {
-	const percent = Math.round(criterion.weight * 100)
-
-	return (
-		<Card size="small" style={{ width: 260 }}>
-			<Flex vertical gap={8}>
-				<Flex justify="space-between" align="start">
-					<div>
-						<Typography.Text strong>{criterion.name_vi ?? criterion.name}</Typography.Text>
-						<br />
-						<Typography.Text type="secondary" style={{ fontSize: 12 }}>
-							{criterion.name}
-						</Typography.Text>
-					</div>
-					<Tag color="blue">{percent}%</Tag>
-				</Flex>
-				<Space direction="vertical" size={2}>
-					<Typography.Text type="secondary">Key: {criterion.key}</Typography.Text>
-					<Typography.Text type="secondary">Điểm tối đa: {criterion.max_score}</Typography.Text>
-					<Typography.Text type="secondary">Trọng số: {percent}%</Typography.Text>
-				</Space>
-			</Flex>
-		</Card>
-	)
-}
-
-function SimulatorTab({ rubric }: { rubric: GradingRubric }) {
-	const gates = rubric.policy_summary.assessment_gates
-	const [part, setPart] = useState<1 | 2>(1)
-	const [wordCount, setWordCount] = useState(36)
-	const [covered, setCovered] = useState(0)
-	if (!gates) {
-		return <Alert showIcon type="info" message="Mô phỏng Speaking sẽ bổ sung sau." />
-	}
-	const severeMin = part === 1 ? gates.severe_minimum_words_task1 : gates.severe_minimum_words_task2
-	const failedWords = wordCount < severeMin
-	const failedCoverage = covered < gates.minimum_covered_points
-	const assessable = !failedWords && !failedCoverage
-
-	return (
-		<Flex gap={16} align="flex-start">
-			<Card title="Nhập tình huống" style={{ width: 360 }}>
-				<Space direction="vertical" style={{ width: "100%" }}>
-					<Space>
-						<Button type={part === 1 ? "primary" : "default"} onClick={() => setPart(1)}>
-							Task 1
-						</Button>
-						<Button type={part === 2 ? "primary" : "default"} onClick={() => setPart(2)}>
-							Task 2
-						</Button>
-					</Space>
-					<Space direction="vertical">
-						<Typography.Text>Số từ</Typography.Text>
-						<InputNumber
-							style={{ width: "100%" }}
-							min={0}
-							value={wordCount}
-							onChange={(v) => setWordCount(Number(v ?? 0))}
-						/>
-					</Space>
-					<Space direction="vertical">
-						<Typography.Text>Số ý đã trả lời</Typography.Text>
-						<InputNumber
-							style={{ width: "100%" }}
-							min={0}
-							max={10}
-							value={covered}
-							onChange={(v) => setCovered(Number(v ?? 0))}
-						/>
-					</Space>
-				</Space>
-			</Card>
-			<Card title="Kết quả mô phỏng" style={{ flex: 1 }}>
-				<Alert
-					showIcon
-					type={assessable ? "success" : "error"}
-					message={assessable ? "Được chấm điểm" : "Không đủ điều kiện chấm"}
-					description={
-						assessable
-							? "Bài sẽ hiển thị điểm, rubric breakdown và có thể mua nhận xét AI."
-							: "Bài chỉ hiển thị checklist lỗi và hướng dẫn viết lại; không hiển thị điểm thành phần."
-					}
-				/>
-				<Space direction="vertical" style={{ marginTop: 16 }}>
-					<Typography.Text type={failedWords ? "danger" : "success"}>
-						{failedWords ? "✕" : "✓"} Số từ: {wordCount}/{severeMin} tối thiểu để được chấm
-					</Typography.Text>
-					<Typography.Text type={failedCoverage ? "danger" : "success"}>
-						{failedCoverage ? "✕" : "✓"} Coverage: {covered}/{gates.minimum_covered_points} ý tối thiểu
-					</Typography.Text>
-				</Space>
-			</Card>
-		</Flex>
-	)
 }
 
 function BandDescriptorTable({ descriptors }: { descriptors: string[] }) {
