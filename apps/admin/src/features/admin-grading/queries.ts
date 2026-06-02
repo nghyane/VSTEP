@@ -21,7 +21,8 @@ function buildSearch(filters: RubricListFilters): string {
 export const rubricListQuery = (filters: RubricListFilters) =>
 	queryOptions({
 		queryKey: ["admin", "grading-rubrics", "list", filters],
-		queryFn: () => api.get(`admin/grading-rubrics${buildSearch(filters)}`).json<PaginatedResponse<GradingRubric>>(),
+		queryFn: () =>
+			api.get(`admin/grading-rubrics${buildSearch(filters)}`).json<PaginatedResponse<GradingRubric>>(),
 		staleTime: 60_000,
 	})
 
@@ -31,3 +32,33 @@ export const rubricDetailQuery = (id: string) =>
 		queryFn: () => api.get(`admin/grading-rubrics/${id}`).json<ApiResponse<GradingRubric>>(),
 		staleTime: 60_000,
 	})
+
+export interface UpdateRubricPayload {
+	name?: string
+	effective_from?: string
+	policy?: {
+		assessment_gates?: {
+			severe_minimum_words_task1?: number
+			severe_minimum_words_task2?: number
+			minimum_covered_points?: number
+		}
+		word_rules?: {
+			official_minimum_task1?: number
+			official_minimum_task2?: number
+			short_response_caps?: Array<{ max_words: number; cap: number }>
+			task_fulfillment_word_caps?: Array<{ max_words: number; cap: number }>
+		}
+	}
+}
+
+export function updateRubric(id: string, payload: UpdateRubricPayload) {
+	return api.patch(`admin/grading-rubrics/${id}`, { json: payload }).json<ApiResponse<GradingRubric>>()
+}
+
+export function cloneRubric(id: string) {
+	return api.post(`admin/grading-rubrics/${id}/clone`).json<ApiResponse<GradingRubric>>()
+}
+
+export function activateRubric(id: string) {
+	return api.post(`admin/grading-rubrics/${id}/activate`).json<ApiResponse<GradingRubric>>()
+}

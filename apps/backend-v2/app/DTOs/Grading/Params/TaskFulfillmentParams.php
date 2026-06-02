@@ -12,7 +12,8 @@ final readonly class TaskFulfillmentParams
         'coverage_multiplier', 'task1_multiplier', 'position_bonus', 'irrelevant_penalty',
         'default_points_required', 'word_minimum_task1', 'word_minimum_task2',
         'depth_minimum', 'non_assessable_word_limit',
-        'task_fulfillment_word_caps', 'tf_cap_ratio',
+        'task_fulfillment_word_caps', 'tf_cap_ratio', 'severe_minimum_words_task1',
+        'severe_minimum_words_task2', 'minimum_covered_points',
     ];
 
     /**
@@ -32,6 +33,9 @@ final readonly class TaskFulfillmentParams
         public array $shortResponseCaps,
         public array $taskFulfillmentWordCaps,
         public float $tfCapRatio,
+        public int $severeMinimumWordsTask1,
+        public int $severeMinimumWordsTask2,
+        public int $minimumCoveredPoints,
     ) {}
 
     /** @param array<string,mixed> $data */
@@ -53,7 +57,15 @@ final readonly class TaskFulfillmentParams
             shortResponseCaps: (array) $shortResponseCaps,
             taskFulfillmentWordCaps: (array) $data['task_fulfillment_word_caps'],
             tfCapRatio: (float) $data['tf_cap_ratio'],
+            severeMinimumWordsTask1: (int) $data['severe_minimum_words_task1'],
+            severeMinimumWordsTask2: (int) $data['severe_minimum_words_task2'],
+            minimumCoveredPoints: (int) $data['minimum_covered_points'],
         );
+    }
+
+    public function severeMinimumWords(int $part): int
+    {
+        return $part === 1 ? $this->severeMinimumWordsTask1 : $this->severeMinimumWordsTask2;
     }
 
     public function isNonAssessable(int $wordCount): bool
@@ -82,6 +94,14 @@ final readonly class TaskFulfillmentParams
 
         if ((int) $data['non_assessable_word_limit'] <= 0) {
             throw new InvalidArgumentException('TaskFulfillmentParams non_assessable_word_limit must be positive.');
+        }
+
+        if ((int) $data['severe_minimum_words_task1'] <= 0 || (int) $data['severe_minimum_words_task2'] <= 0) {
+            throw new InvalidArgumentException('TaskFulfillmentParams severe minimum words must be positive.');
+        }
+
+        if ((int) $data['minimum_covered_points'] <= 0) {
+            throw new InvalidArgumentException('TaskFulfillmentParams minimum_covered_points must be positive.');
         }
 
         if (! array_key_exists('short_response_caps', $data) && ! array_key_exists('short_essay_caps', $data)) {
@@ -131,7 +151,7 @@ final readonly class TaskFulfillmentParams
         usort($caps, fn (array $a, array $b): int => ((int) $a['max_words']) <=> ((int) $b['max_words']));
 
         foreach ($caps as $cap) {
-            if ($wordCount < (int) $cap['max_words']) {
+            if ($wordCount <= (int) $cap['max_words']) {
                 return (float) $cap['cap'];
             }
         }

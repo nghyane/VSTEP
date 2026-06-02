@@ -39,17 +39,13 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 			setErrorMessage("Không tạo được liên kết thanh toán. Vui lòng thử lại.")
 			setPhase("failure")
 		},
-		onError: async (e: unknown) => {
-			// HTTPError từ BE (422 v.v.) → đọc body.message để hiện tiếng Việt thay
-			// vì raw ky error "Request failed with status code 422".
+		onError: (e: unknown) => {
 			if (e instanceof HTTPError) {
-				const body = (await e.response
-					.clone()
-					.json()
-					.catch(() => null)) as { message?: string } | null
-				setErrorMessage(body?.message ?? "Đã có lỗi xảy ra. Vui lòng thử lại.")
+				setErrorMessage(e.message)
 			} else if (e instanceof Error) {
 				setErrorMessage(e.message)
+			} else {
+				setErrorMessage("Đã có lỗi xảy ra. Vui lòng thử lại.")
 			}
 			setPhase("failure")
 		},

@@ -142,6 +142,15 @@ final class AssessmentResultDisplayService
             ];
         }
 
+        if (($capsApplied['type'] ?? null) === 'assessment_requirements_not_met') {
+            return [
+                'code' => 'not_assessable',
+                'label' => 'Bài chưa đáp ứng yêu cầu bắt buộc',
+                'source' => 'assessment_requirements_not_met',
+                'details' => $capsApplied,
+            ];
+        }
+
         if (($capsApplied['type'] ?? null) === 'content_cap') {
             return [
                 'code' => 'content_cap',

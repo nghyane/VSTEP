@@ -23,13 +23,10 @@ export function PromoRedeemCard() {
 			setFieldError(null)
 			setSuccess({ coins: data.coins_granted, balance: data.balance_after })
 		},
-		onError: async (err) => {
+		onError: (err) => {
 			let message = "Mã không hợp lệ hoặc đã hết hạn."
 			if (err instanceof HTTPError) {
-				const body = (await err.response
-					.clone()
-					.json()
-					.catch(() => null)) as { message?: string; errors?: Record<string, string[]> } | null
+				const body = err.data as { message?: string; errors?: Record<string, string[]> } | undefined
 				const firstFieldError = body?.errors ? Object.values(body.errors)[0]?.[0] : undefined
 				message = firstFieldError ?? body?.message ?? message
 			}

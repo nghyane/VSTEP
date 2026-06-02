@@ -1,4 +1,4 @@
-import ky from "ky"
+import ky, { HTTPError } from "ky"
 import { useAuth } from "#/lib/auth"
 import { tokens } from "#/lib/tokens"
 
@@ -36,6 +36,23 @@ async function refreshSession(refreshToken: string): Promise<RefreshTokenRespons
 	}
 
 	return refreshPromise
+}
+
+/**
+ * Normalize every HTTP error so `error.message` always contains the server's
+ * human-readable message (Vietnamese), not ky's generic status text.
+ *
+ * Components read `error.message` for display.
+ * Components needing field-level validation errors read `error.data.errors`.
+ */
+function normalizeErrorMessage({ error }: { error: Error }): Error {
+	if (error instanceof HTTPError) {
+		const body = error.data as { message?: string } | undefined
+		if (body?.message) {
+			error.message = body.message
+		}
+	}
+	return error
 }
 
 export const api = ky.create({
@@ -79,6 +96,7 @@ export const api = ky.create({
 				}
 			},
 		],
+		beforeError: [normalizeErrorMessage],
 	},
 })
 

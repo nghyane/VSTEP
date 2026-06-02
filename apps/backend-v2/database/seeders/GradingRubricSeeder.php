@@ -108,6 +108,9 @@ class GradingRubricSeeder extends Seeder
                 'word_minimum_task2' => 250,
                 'depth_minimum' => 0.25,
                 'non_assessable_word_limit' => 10,
+                'severe_minimum_words_task1' => 60,
+                'severe_minimum_words_task2' => 125,
+                'minimum_covered_points' => 1,
                 'short_response_caps' => [
                     ['max_words' => 10, 'cap' => 1],
                     ['max_words' => 30, 'cap' => 2],

@@ -169,35 +169,29 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 				}
 			}, 500)
 		},
-		onError: async (error) => {
-			// Remove optimistic pending turn so user can re-record.
+		onError: (error) => {
 			setTurns((prev) => prev.filter((t) => t.id !== "pending-user"))
 			setMic("idle")
 			submittedRef.current = false
 
 			if (error instanceof HTTPError) {
-				const body = (await error.response.json().catch(() => null)) as { message?: string } | null
-				const msg = body?.message
+				const msg = error.message
 
-				// 503: AI service unavailable → show retry message
 				if (error.response.status === 503) {
-					useToast.getState().add(msg ?? "AI tạm thời không phản hồi. Vui lòng thử lại sau.")
+					useToast.getState().add(msg || "AI tạm thời không phản hồi. Vui lòng thử lại sau.")
 					return
 				}
 
-				// 409: session already ended
 				if (error.response.status === 409) {
 					setSessionState("completed")
-					useToast.getState().add(msg ?? "Phiên hội thoại đã kết thúc.")
+					useToast.getState().add(msg || "Phiên hội thoại đã kết thúc.")
 					return
 				}
 
-				// Other HTTP errors — show backend message
-				useToast.getState().add(msg ?? `Lỗi server (${error.response.status}). Vui lòng thử lại.`)
+				useToast.getState().add(msg || `Lỗi server (${error.response.status}). Vui lòng thử lại.`)
 				return
 			}
 
-			// Network error, timeout, or other non-HTTP failure
 			useToast.getState().add("Không gửi được câu trả lời. Vui lòng thử lại.")
 		},
 	})

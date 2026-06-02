@@ -28,6 +28,7 @@ export function useWritingAssessment({ attemptId }: Input) {
 			queryClient.invalidateQueries({ queryKey: ["assessment-attempts", attemptId, "view"] })
 			queryClient.invalidateQueries({ queryKey: ["wallet"] })
 		},
+		onError: () => {}, // handled inline via feedbackError; suppress global toast
 	})
 	const viewData = view.data?.data ?? null
 	const viewResult = writingResult(viewData)

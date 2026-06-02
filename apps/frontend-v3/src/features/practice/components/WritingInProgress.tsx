@@ -168,6 +168,11 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 			{/* Footer */}
 			<div className="border-t-2 border-border bg-surface shrink-0">
 				<div className="max-w-2xl mx-auto px-6 py-4 flex flex-col items-center gap-2">
+					{mutation.isError && (
+						<p className="text-xs font-bold text-destructive">
+							{mutation.error instanceof Error ? mutation.error.message : "Không nộp được bài."}
+						</p>
+					)}
 					<button
 						type="button"
 						onClick={() => mutation.mutate()}

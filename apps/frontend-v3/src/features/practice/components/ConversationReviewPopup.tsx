@@ -88,7 +88,7 @@ export function ConversationReviewPopup({ sessionId, turnCount, onClose }: Props
 		const status = error.response.status
 		if (status === 503) errorMsg = "AI tạm thời không phản hồi. Vui lòng thử lại sau."
 		else if (status === 403) errorMsg = "Bạn không có quyền xem đánh giá này."
-		else errorMsg = `Lỗi server (${status}). Vui lòng thử lại.`
+		else errorMsg = error.message || `Lỗi server (${status}). Vui lòng thử lại.`
 	}
 
 	return (

@@ -1,10 +1,11 @@
-import { CheckCircleOutlined, EyeOutlined, MinusCircleOutlined } from "@ant-design/icons"
-import { useQuery } from "@tanstack/react-query"
+import { CheckCircleOutlined, CopyOutlined, EditOutlined, EyeOutlined, PlusOutlined } from "@ant-design/icons"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, Link, redirect } from "@tanstack/react-router"
-import { Button, Empty, Flex, Result, Select, Table, Tag } from "antd"
+import { Button, Card, Empty, Flex, message, Result, Select, Space, Tag, Typography } from "antd"
 import { PageHeader } from "#/components/PageHeader"
-import { rubricListQuery } from "#/features/admin-grading/queries"
+import { cloneRubric, rubricListQuery } from "#/features/admin-grading/queries"
 import type { GradingRubric } from "#/features/admin-grading/types"
+import { extractError, formatApiErrorBanner } from "#/lib/api"
 import { useAuth } from "#/lib/auth"
 
 export const Route = createFileRoute("/_app/grading/")({
@@ -23,7 +24,18 @@ export const Route = createFileRoute("/_app/grading/")({
 function GradingListPage() {
 	const search = Route.useSearch()
 	const navigate = Route.useNavigate()
+	const queryClient = useQueryClient()
 	const { data, isLoading, isError } = useQuery(rubricListQuery(search))
+	const activeWriting = data?.data.find((rubric) => rubric.skill === "writing" && rubric.is_active)
+	const cloneMutation = useMutation({
+		mutationFn: (id: string) => cloneRubric(id),
+		onSuccess: async (res) => {
+			message.success("Đã tạo bản nháp mới")
+			await queryClient.invalidateQueries({ queryKey: ["admin", "grading-rubrics"] })
+			navigate({ to: "/grading/$rubricId", params: { rubricId: res.data.id } })
+		},
+		onError: async (error) => message.error(formatApiErrorBanner(await extractError(error))),
+	})
 
 	if (isError) {
 		return (
@@ -36,55 +48,23 @@ function GradingListPage() {
 		)
 	}
 
-	const columns = [
-		{
-			title: "Kỹ năng",
-			dataIndex: "skill",
-			width: 120,
-			render: (s: string) => (
-				<Tag color={s === "writing" ? "blue" : "purple"}>{s === "writing" ? "Writing" : "Speaking"}</Tag>
-			),
-		},
-		{ title: "Tên", dataIndex: "name" },
-		{ title: "Version", dataIndex: "version", width: 90 },
-		{
-			title: "Số tiêu chí",
-			dataIndex: "criteria",
-			width: 110,
-			render: (c: unknown[]) => c?.length ?? 0,
-		},
-		{ title: "Công thức", dataIndex: "scoring_formula", width: 160 },
-		{
-			title: "Trạng thái",
-			dataIndex: "is_active",
-			width: 120,
-			render: (v: boolean) =>
-				v ? (
-					<Tag icon={<CheckCircleOutlined />} color="success">
-						Active
-					</Tag>
-				) : (
-					<Tag icon={<MinusCircleOutlined />} color="default">
-						Inactive
-					</Tag>
-				),
-		},
-		{
-			title: "",
-			width: 80,
-			render: (_: unknown, r: GradingRubric) => (
-				<Link to="/grading/$rubricId" params={{ rubricId: r.id }}>
-					<Button type="link" icon={<EyeOutlined />}>
-						Xem
-					</Button>
-				</Link>
-			),
-		},
-	]
-
 	return (
 		<Flex vertical gap={16}>
-			<PageHeader title="Tiêu chí chấm điểm" subtitle="Rubric chấm điểm Writing & Speaking (read-only)" />
+			<PageHeader
+				title="Rubric chấm điểm"
+				subtitle="Quản lý version rubric. Active để chấm bài mới, Draft để chỉnh sửa trước khi kích hoạt."
+				action={
+					<Button
+						type="primary"
+						icon={<PlusOutlined />}
+						disabled={!activeWriting}
+						loading={cloneMutation.isPending}
+						onClick={() => activeWriting && cloneMutation.mutate(activeWriting.id)}
+					>
+						Tạo rubric mới
+					</Button>
+				}
+			/>
 			<Flex gap={12}>
 				<Select
 					placeholder="Kỹ năng"
@@ -109,26 +89,83 @@ function GradingListPage() {
 					style={{ width: 140 }}
 				/>
 			</Flex>
-			<Table
-				loading={isLoading}
-				dataSource={data?.data}
-				rowKey="id"
-				columns={columns}
-				locale={{
-					emptyText: (
-						<Empty
-							description="Chưa có tiêu chí chấm điểm nào. Hãy chạy seeder để tạo dữ liệu mẫu."
-							image={Empty.PRESENTED_IMAGE_SIMPLE}
+			{isLoading ? (
+				<Card loading />
+			) : data?.data.length ? (
+				<Flex vertical gap={12}>
+					{data.data.map((rubric) => (
+						<RubricCard
+							key={rubric.id}
+							rubric={rubric}
+							onClone={() => cloneMutation.mutate(rubric.id)}
+							cloning={cloneMutation.isPending}
 						/>
-					),
-				}}
-				pagination={{
-					current: data?.meta?.current_page ?? 1,
-					pageSize: data?.meta?.per_page ?? 20,
-					total: data?.meta?.total ?? 0,
-					onChange: (p) => navigate({ search: { ...search, page: p } }),
-				}}
-			/>
+					))}
+				</Flex>
+			) : (
+				<Empty
+					description="Chưa có rubric. Hãy chạy seeder hoặc tạo rubric mới."
+					image={Empty.PRESENTED_IMAGE_SIMPLE}
+				/>
+			)}
 		</Flex>
 	)
+}
+
+function RubricCard({
+	rubric,
+	onClone,
+	cloning,
+}: {
+	rubric: GradingRubric
+	onClone: () => void
+	cloning: boolean
+}) {
+	return (
+		<Card>
+			<Flex justify="space-between" align="center" wrap="wrap" gap={16}>
+				<div>
+					<Space>
+						<Typography.Title level={4} style={{ margin: 0 }}>
+							{rubric.name}
+						</Typography.Title>
+						<LifecycleTag rubric={rubric} />
+					</Space>
+					<Typography.Text type="secondary">
+						{rubric.skill === "writing" ? "Writing" : "Speaking"} · Version {rubric.version} ·{" "}
+						{rubric.criteria.length} tiêu chí
+					</Typography.Text>
+					<br />
+					<Typography.Text type="secondary">{lifecycleText(rubric)}</Typography.Text>
+				</div>
+				<Space>
+					<Link to="/grading/$rubricId" params={{ rubricId: rubric.id }}>
+						<Button icon={rubric.lifecycle.status === "draft" ? <EditOutlined /> : <EyeOutlined />}>
+							{rubric.lifecycle.status === "draft" ? "Tiếp tục chỉnh" : "Xem"}
+						</Button>
+					</Link>
+					<Button icon={<CopyOutlined />} loading={cloning} onClick={onClone}>
+						Tạo bản nháp từ version này
+					</Button>
+				</Space>
+			</Flex>
+		</Card>
+	)
+}
+
+function LifecycleTag({ rubric }: { rubric: GradingRubric }) {
+	if (rubric.lifecycle.status === "active")
+		return (
+			<Tag icon={<CheckCircleOutlined />} color="success">
+				ACTIVE
+			</Tag>
+		)
+	if (rubric.lifecycle.status === "draft") return <Tag color="processing">DRAFT</Tag>
+	return <Tag>ARCHIVED</Tag>
+}
+
+function lifecycleText(rubric: GradingRubric): string {
+	if (rubric.lifecycle.status === "active") return "Đang dùng để chấm bài mới. Không sửa trực tiếp."
+	if (rubric.lifecycle.status === "draft") return "Bản nháp có thể chỉnh sửa, chưa ảnh hưởng bài chấm mới."
+	return "Lưu để truy vết kết quả lịch sử."
 }

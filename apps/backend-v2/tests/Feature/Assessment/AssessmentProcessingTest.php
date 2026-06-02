@@ -154,7 +154,8 @@ final class AssessmentProcessingTest extends TestCase
         $expectedCap = $tfParams->shortResponseScoreCap(1);
 
         $this->assertSame($expectedCap, $result->overall_band);
-        $this->assertEquals($expectedCap, $result->caps_applied['short_response_word_count']['cap']);
+        $this->assertSame('assessment_requirements_not_met', $result->caps_applied['type']);
+        $this->assertContains('severe_minimum_word_count', $result->caps_applied['failed_requirements']);
 
         $display = $this->app->make(AssessmentResultDisplayService::class)->forResult($result);
         $this->assertSame('not_assessable', $display['status']);
@@ -164,6 +165,73 @@ final class AssessmentProcessingTest extends TestCase
         foreach ($result->criterion_scores as $criterion) {
             $this->assertEquals($expectedCap, $criterion['score']);
         }
+    }
+
+    public function test_writing_response_with_no_task_coverage_is_non_assessable(): void
+    {
+        $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
+        $prompt = "You forgot your close friend's birthday party last weekend. Write a letter to your friend to:\n- Apologize for missing the party\n- Explain why you couldn't attend\n- Suggest a plan to make it up";
+
+        $attempt = $this->app->make(AssessmentSubmissionService::class)->submit(new AssessmentInput(
+            profileId: $profile->id,
+            skill: AssessmentSkill::Writing,
+            taskType: AssessmentTaskType::WritingTask1Letter,
+            sourceType: AssessmentSourceType::Practice,
+            sourceId: '00000000-0000-0000-0000-000000000005',
+            prompt: [
+                'part' => 1,
+                'prompt' => $prompt,
+            ],
+            requirements: ['apologize', 'explain reason', 'suggest plan'],
+            text: $prompt,
+            metadata: ['word_count' => 36],
+        ));
+
+        $result = $this->app->make(AssessmentProcessingService::class)->process($attempt->job);
+
+        $this->assertSame(1.0, $result->overall_band);
+        $this->assertSame('assessment_requirements_not_met', $result->caps_applied['type']);
+        $this->assertSame(0, $result->caps_applied['points_covered']);
+        $this->assertContains('severe_minimum_word_count', $result->caps_applied['failed_requirements']);
+        $this->assertContains('task_coverage', $result->caps_applied['failed_requirements']);
+
+        $display = $this->app->make(AssessmentResultDisplayService::class)->forResult($result);
+        $this->assertSame('not_assessable', $display['status']);
+        $this->assertFalse($display['is_assessable']);
+        $this->assertFalse($display['ui']['show_criterion_breakdown']);
+
+        foreach ($result->criterion_scores as $criterion) {
+            $this->assertEquals(1.0, $criterion['score']);
+        }
+    }
+
+    public function test_under_target_writing_with_task_coverage_remains_assessable(): void
+    {
+        $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
+        $text = str_repeat('I am sorry that I missed your birthday party because my family had an emergency. ', 7);
+
+        $attempt = $this->app->make(AssessmentSubmissionService::class)->submit(new AssessmentInput(
+            profileId: $profile->id,
+            skill: AssessmentSkill::Writing,
+            taskType: AssessmentTaskType::WritingTask1Letter,
+            sourceType: AssessmentSourceType::Practice,
+            sourceId: '00000000-0000-0000-0000-000000000006',
+            prompt: [
+                'part' => 1,
+                'prompt' => 'Write a letter to apologize, explain, and suggest a plan.',
+            ],
+            requirements: ['apologize', 'explain reason', 'suggest plan'],
+            text: $text,
+            metadata: ['word_count' => 84],
+        ));
+
+        $result = $this->app->make(AssessmentProcessingService::class)->process($attempt->job);
+
+        $this->assertNotSame('assessment_requirements_not_met', $result->caps_applied['type'] ?? null);
+
+        $display = $this->app->make(AssessmentResultDisplayService::class)->forResult($result);
+        $this->assertNotSame('not_assessable', $display['status']);
+        $this->assertTrue($display['ui']['show_criterion_breakdown']);
     }
 
     private function activeRubric(): AssessmentRubric

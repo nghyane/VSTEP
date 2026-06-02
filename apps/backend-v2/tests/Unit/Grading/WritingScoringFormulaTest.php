@@ -165,7 +165,7 @@ final class WritingScoringFormulaTest extends TestCase
     public function test_task_fulfillment_applies_word_count_cap_from_rubric(): void
     {
         $params = $this->taskFulfillmentParams();
-        $wordCount = (int) $params->taskFulfillmentWordCaps[0]['max_words'] - 1;
+        $wordCount = (int) $params->taskFulfillmentWordCaps[0]['max_words'];
 
         $score = $this->formula->taskFulfillment([
             'points_covered' => 3,
@@ -184,7 +184,7 @@ final class WritingScoringFormulaTest extends TestCase
     {
         $rubric = $this->writingRubric();
         $params = $rubric->taskFulfillmentParams();
-        $wordCount = $params->nonAssessableWordLimit - 1;
+        $wordCount = (int) $params->shortResponseCaps[1]['max_words'];
         $expectedCap = $params->shortResponseScoreCap($wordCount);
 
         $result = $this->formula->applyShortResponseCap([
@@ -295,6 +295,9 @@ final class WritingScoringFormulaTest extends TestCase
             'word_minimum_task2' => 250,
             'depth_minimum' => 0.25,
             'non_assessable_word_limit' => 10,
+            'severe_minimum_words_task1' => 60,
+            'severe_minimum_words_task2' => 125,
+            'minimum_covered_points' => 1,
             'short_essay_caps' => [
                 ['max_words' => 10, 'cap' => 1],
                 ['max_words' => 30, 'cap' => 2],
@@ -306,6 +309,8 @@ final class WritingScoringFormulaTest extends TestCase
         ]);
 
         $this->assertSame(2.0, $params->shortResponseScoreCap(20));
+        $this->assertSame(60, $params->severeMinimumWords(1));
+        $this->assertSame(125, $params->severeMinimumWords(2));
     }
 
     /* ─── Grammar — edge cases ─── */

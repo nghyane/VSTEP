@@ -222,6 +222,9 @@ Route::prefix('v1')->group(function () {
         Route::middleware('role:admin')->prefix('grading-rubrics')->group(function () {
             Route::get('/', [Admin\GradingRubricController::class, 'index']);
             Route::get('/{id}', [Admin\GradingRubricController::class, 'show'])->whereUuid('id');
+            Route::patch('/{id}', [Admin\GradingRubricController::class, 'update'])->whereUuid('id');
+            Route::post('/{id}/clone', [Admin\GradingRubricController::class, 'clone'])->whereUuid('id');
+            Route::post('/{id}/activate', [Admin\GradingRubricController::class, 'activate'])->whereUuid('id');
         });
 
         // System config — ADMIN ONLY (nested middleware role:admin overrides parent role:staff)

@@ -14,6 +14,7 @@ use App\Assessment\Data\FeedbackBag;
 use App\Assessment\Data\ScoreBag;
 use App\Assessment\Data\SignalBag;
 use App\Assessment\Enums\CriterionKey;
+use App\DTOs\Grading\Params\TaskFulfillmentParams;
 use App\Exceptions\AssessmentFailedException;
 use App\Models\AssessmentRubric;
 use App\Services\Grading\RubricResolver;
@@ -86,8 +87,9 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
         $text = $input->text ?? '';
         $wordCount = $this->effectiveWordCount($input, $signals);
         $tfParams = $this->rubricResolver->active('writing')->taskFulfillmentParams();
+        $copiedPrompt = $this->isPromptCopy($text, (string) ($input->prompt['prompt'] ?? ''));
 
-        if ($tfParams->isNonAssessable($wordCount)) {
+        if ($tfParams->isNonAssessable($wordCount) || $copiedPrompt) {
             $evidence = [
                 'points_covered' => 0,
                 'points_required' => max(1, count($input->requirements)),
@@ -97,6 +99,7 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
                 'has_clear_position' => false,
                 'has_irrelevant_content' => true,
                 'word_count' => $wordCount,
+                'copied_prompt' => $copiedPrompt,
                 'tone_informal_count' => (int) (($signals->vocabulary['tone_signals']['informal_count'] ?? 0)),
             ];
 
@@ -113,6 +116,7 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
         );
 
         $evidence['word_count'] = $wordCount;
+        $evidence['copied_prompt'] = false;
         $evidence['tone_informal_count'] = (int) (($signals->vocabulary['tone_signals']['informal_count'] ?? 0));
 
         return new EvidenceBag(task: $evidence, raw: $evidence);
@@ -170,6 +174,33 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
         $capsApplied = [];
 
         $wordCount = (int) ($evidence->task['word_count'] ?? $metrics['word_count'] ?? 0);
+
+        $failedRequirements = $this->failedAssessmentRequirements(
+            $evidence->task,
+            $wordCount,
+            $part,
+            $scoringRubric->taskFulfillmentParams(),
+        );
+        if ($failedRequirements !== []) {
+            $scores = array_map(fn (): float => 1.0, $scores);
+            $capsApplied['type'] = 'assessment_requirements_not_met';
+            $capsApplied['failed_requirements'] = $failedRequirements;
+            $capsApplied['word_count'] = $wordCount;
+            $capsApplied['minimum_word_count'] = $part === 1
+                ? $scoringRubric->taskFulfillmentParams()->wordMinimumTask1
+                : $scoringRubric->taskFulfillmentParams()->wordMinimumTask2;
+            $capsApplied['points_covered'] = (int) ($evidence->task['points_covered'] ?? 0);
+            $capsApplied['points_required'] = (int) ($evidence->task['points_required'] ?? 0);
+            $capsApplied['copied_prompt'] = ($evidence->task['copied_prompt'] ?? false) === true;
+
+            return new ScoreBag(
+                criterionScores: $this->criterionScores($scores, $rubric),
+                overallBand: 1.0,
+                capsApplied: $capsApplied,
+                calculationTrace: ['formula' => 'vstep_writing', 'rubric_id' => $scoringRubric->id],
+            );
+        }
+
         $shortResponseCap = $this->formula->applyShortResponseCap($scores, $wordCount, $scoringRubric);
         $scores = $shortResponseCap['rubricScores'];
         if ($shortResponseCap['capApplied'] !== null) {
@@ -268,5 +299,68 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
         }
 
         return count(explode(' ', $trimmed));
+    }
+
+    private function isPromptCopy(string $text, string $prompt): bool
+    {
+        $normalizedText = $this->normalizeForCopyCheck($text);
+        $normalizedPrompt = $this->normalizeForCopyCheck($prompt);
+
+        if ($normalizedText === '' || $normalizedPrompt === '') {
+            return false;
+        }
+
+        if ($normalizedText === $normalizedPrompt) {
+            return true;
+        }
+
+        return str_contains($normalizedPrompt, $normalizedText)
+            && $this->simpleWordCount($normalizedText) >= 8;
+    }
+
+    private function normalizeForCopyCheck(string $value): string
+    {
+        $value = mb_strtolower($value);
+        $value = preg_replace('/[^a-z0-9\s]+/u', ' ', $value) ?? '';
+
+        return trim(preg_replace('/\s+/', ' ', $value) ?? '');
+    }
+
+    /**
+     * @param  array<string,mixed>  $taskEvidence
+     * @return list<string>
+     */
+    private function failedAssessmentRequirements(
+        array $taskEvidence,
+        int $wordCount,
+        int $part,
+        TaskFulfillmentParams $params,
+    ): array {
+        $failed = [];
+        if ($wordCount < $params->severeMinimumWords($part)) {
+            $failed[] = 'severe_minimum_word_count';
+        }
+
+        if ($this->hasInsufficientTaskCoverage($taskEvidence, $params->minimumCoveredPoints)) {
+            $failed[] = 'task_coverage';
+        }
+
+        return $failed;
+    }
+
+    /** @param array<string,mixed> $taskEvidence */
+    private function hasInsufficientTaskCoverage(array $taskEvidence, int $minimumCoveredPoints): bool
+    {
+        $covered = (float) ($taskEvidence['points_covered'] ?? 0);
+        if ($covered >= $minimumCoveredPoints) {
+            return false;
+        }
+
+        $requirementsMet = $taskEvidence['requirements_met'] ?? [];
+        if (! is_array($requirementsMet) || $requirementsMet === []) {
+            return true;
+        }
+
+        return count(array_filter($requirementsMet, fn (mixed $met): bool => $met === true)) === 0;
     }
 }
