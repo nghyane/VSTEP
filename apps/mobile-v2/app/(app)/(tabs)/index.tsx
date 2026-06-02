@@ -4,25 +4,23 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
-import { HapticTouchable } from "@/components/HapticTouchable";
 import { BrandIcon } from "@/components/BrandIcon";
 import { SpiderChart } from "@/components/SpiderChart";
 import { SkillIcon } from "@/components/SkillIcon";
 import { GameIcon } from "@/components/GameIcon";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
-import { Mascot } from "@/components/Mascot";
 import { StreakButton } from "@/features/streak/StreakButton";
 import { NotificationButton } from "@/features/notification/NotificationButton";
 import { CoinButton } from "@/features/coin/CoinButton";
 import { ActivityHeatmap } from "@/components/dashboard/ActivityHeatmap";
-import { GapAnalysis } from "@/components/dashboard/GapAnalysis";
+import { DoughnutCard } from "@/components/dashboard/DoughnutCard";
 import { ScoreTrend } from "@/components/dashboard/ScoreTrend";
 import { useAuth } from "@/hooks/use-auth";
 import { useOverview, useStreak } from "@/hooks/use-progress";
 import { getTargetBand } from "@/lib/vstep";
 import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
-import type { Skill } from "@/types/api";
+import type { ScoreSpider, Skill } from "@/types/api";
 
 const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
 const MIN_TESTS_FOR_CHART = 5;
@@ -55,10 +53,9 @@ export default function DashboardScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
   const { user, profile } = useAuth();
-  const router = useRouter();
   const { data: overview } = useOverview();
   const { data: streakData } = useStreak();
-  const sectionAnims = useStaggerFade(5, 100);
+  const sectionAnims = useStaggerFade(6, 100);
 
   const nickname = profile?.nickname ?? user?.fullName ?? "Bạn";
   const initial = nickname.charAt(0).toUpperCase();
@@ -76,6 +73,10 @@ export default function DashboardScreen() {
         return gapSkill < gapWeakest ? skill : weakestSkill;
       }, SKILLS[0])
     : "listening";
+  const hasSpiderData = chart !== null && SKILLS.some((skill) => (chart[skill] ?? 0) > 0);
+  const spiderSubtitle = hasSpiderData && chart
+    ? `Trung bình từ ${chart.sampleSize} bài thi gần nhất`
+    : `Cần thêm ${Math.max(0, MIN_TESTS_FOR_CHART - (stats?.totalTests ?? 0))} bài thi để hiện biểu đồ`;
 
   function toAnimStyle(index: number) {
     return {
@@ -175,42 +176,25 @@ export default function DashboardScreen() {
       <ActivityHeatmap />
 
       <Animated.View style={toAnimStyle(4)}>
-        <Text style={[styles.sectionTitle, { color: c.foreground }]}>4 kỹ năng</Text>
-        <View style={styles.skillGrid}>
-          {SKILLS.map((skill) => (
-            <SkillCard
-              key={skill}
-              skill={skill}
-              score={chart?.[skill] ?? null}
-              onPress={() => router.push(`/(app)/skill/${skill}` as any)}
-            />
-          ))}
-        </View>
+        <DepthCard style={styles.chartCard}>
+          <Text style={[styles.chartTitle, { color: c.foreground }]}>Năng lực 4 kỹ năng</Text>
+          <Text style={[styles.chartSub, { color: c.subtle }]}>{spiderSubtitle}</Text>
+          <SpiderChart
+            skills={{
+              listening: { current: chart?.listening ?? 0, trend: "stable" },
+              reading: { current: chart?.reading ?? 0, trend: "stable" },
+              writing: { current: chart?.writing ?? 0, trend: "stable" },
+              speaking: { current: chart?.speaking ?? 0, trend: "stable" },
+            }}
+            targetBand={targetBand}
+            hasData={hasSpiderData}
+          />
+          <SpiderLegend chart={chart} />
+        </DepthCard>
+        <DoughnutCard />
+      </Animated.View>
 
-        {chart ? (
-          <DepthCard style={styles.chartCard}>
-            <Text style={[styles.chartTitle, { color: c.foreground }]}>Biểu đồ năng lực</Text>
-            <Text style={[styles.chartSub, { color: c.subtle }]}>Dựa trên {chart.sampleSize} bài thi gần nhất</Text>
-            <SpiderChart
-              skills={{
-                listening: { current: chart.listening ?? 0, trend: "stable" },
-                reading: { current: chart.reading ?? 0, trend: "stable" },
-                writing: { current: chart.writing ?? 0, trend: "stable" },
-                speaking: { current: chart.speaking ?? 0, trend: "stable" },
-              }}
-            />
-          </DepthCard>
-        ) : stats ? (
-          <DepthCard style={styles.chartCard}>
-            <View style={styles.chartLocked}>
-              <Mascot name="think" size={72} animation="none" />
-              <Text style={[styles.chartLockedTitle, { color: c.foreground }]}>Chưa đủ dữ liệu biểu đồ</Text>
-              <Text style={[styles.chartLockedSub, { color: c.mutedForeground }]}>Cần thêm {Math.max(0, MIN_TESTS_FOR_CHART - (stats.totalTests ?? 0))} bài thi để hiển thị biểu đồ mạng nhện.</Text>
-            </View>
-          </DepthCard>
-        ) : null}
-
-        <GapAnalysis />
+      <Animated.View style={toAnimStyle(5)}>
         <ScoreTrend />
       </Animated.View>
 
@@ -261,40 +245,6 @@ function SkillStatCard({ skill, score, targetBand }: { skill: Skill; score: numb
       </Text>
       <Text style={{ fontSize: fontSize.xs, fontFamily: fontFamily.bold, color: gapColor }}>{gapText}</Text>
     </View>
-  );
-}
-
-function SkillCard({
-  skill,
-  score,
-  onPress,
-}: {
-  skill: Skill;
-  score: number | null;
-  onPress: () => void;
-}) {
-  const c = useThemeColors();
-  const color = useSkillColor(skill);
-
-  return (
-    <HapticTouchable
-      style={[styles.skillCard, { backgroundColor: c.card, borderColor: color + "40", borderBottomColor: color }]}
-      onPress={onPress}
-      activeOpacity={0.85}
-    >
-      <View style={styles.skillTop}>
-        <View style={[styles.skillIconBg, { backgroundColor: color + "15" }]}>
-          <SkillIcon skill={skill} size={26} bare />
-        </View>
-        <Text style={[styles.skillScore, { color: c.foreground }]}>
-          {score !== null ? score.toFixed(1) : "—"}
-        </Text>
-      </View>
-      <Text style={[styles.skillLabel, { color: c.mutedForeground }]}>{SKILL_META[skill].vi}</Text>
-      <View style={[styles.skillBar, { backgroundColor: color + "20" }]}>
-        <View style={[styles.skillBarFill, { backgroundColor: color, width: score !== null ? `${Math.min(score / 10 * 100, 100)}%` : "0%" }]} />
-      </View>
-    </HapticTouchable>
   );
 }
 
@@ -369,6 +319,29 @@ function NextActionCard({
   );
 }
 
+function SpiderLegend({ chart }: { chart: ScoreSpider | null }) {
+  return (
+    <View style={styles.spiderLegendGrid}>
+      {SKILLS.map((skill) => (
+        <SpiderLegendItem key={skill} skill={skill} score={chart?.[skill] ?? null} />
+      ))}
+    </View>
+  );
+}
+
+function SpiderLegendItem({ skill, score }: { skill: Skill; score: number | null }) {
+  const c = useThemeColors();
+  const color = useSkillColor(skill);
+
+  return (
+    <View style={styles.spiderLegendItem}>
+      <SkillIcon skill={skill} size={18} bare />
+      <Text style={[styles.spiderLegendLabel, { color: c.foreground }]}>{SKILL_META[skill].vi}</Text>
+      <Text style={[styles.spiderLegendValue, { color: score !== null && score > 0 ? color : c.subtle }]}>{score !== null && score > 0 ? score.toFixed(1) : "—"}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"] },
@@ -404,19 +377,11 @@ const styles = StyleSheet.create({
   statCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.base, width: "48%", gap: 4 },
   statLabel: { fontSize: fontSize.xs },
   statValue: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
-  sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, marginBottom: spacing.md },
-  skillGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.base },
-  skillCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.base, gap: spacing.sm, width: "48.5%" },
-  skillTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  skillIconBg: { width: 40, height: 40, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  skillLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  skillScore: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
-  skillBar: { height: 6, borderRadius: radius.full, overflow: "hidden" },
-  skillBarFill: { height: 6, borderRadius: radius.full },
   chartCard: { marginBottom: spacing.base },
   chartTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
   chartSub: { fontSize: fontSize.sm, marginBottom: spacing.sm },
-  chartLocked: { alignItems: "center", gap: spacing.sm, paddingVertical: spacing.xl },
-  chartLockedTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
-  chartLockedSub: { fontSize: fontSize.sm, textAlign: "center" },
+  spiderLegendGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.xs },
+  spiderLegendItem: { width: "48%", flexDirection: "row", alignItems: "center", gap: spacing.sm, borderRadius: radius.button, padding: spacing.sm },
+  spiderLegendLabel: { flex: 1, fontSize: fontSize.sm, fontFamily: fontFamily.bold },
+  spiderLegendValue: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold },
 });
