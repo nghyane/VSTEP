@@ -9,6 +9,7 @@ use App\Assessment\Enums\AssessmentSourceType;
 use App\Assessment\Enums\AssessmentTaskType;
 use App\Enums\CoinTransactionType;
 use App\Models\AssessmentAttempt;
+use App\Models\AssessmentEvidence;
 use App\Models\AssessmentResult;
 use App\Models\AssessmentRubric;
 use App\Models\PracticeFeedbackRequest;
@@ -145,6 +146,12 @@ class WritingPracticeTest extends TestCase
             ->assertJsonPath('data.context.word_count', 6)
             ->assertJsonPath('data.rubric.max_score', 10)
             ->assertJsonPath('data.result.overall_band', 6)
+            ->assertJsonPath('data.result.display.status', 'passed')
+            ->assertJsonPath('data.result.display.level', 'B2')
+            ->assertJsonPath('data.result.display.ui.show_criterion_breakdown', true)
+            ->assertJsonPath('data.result.diagnostics.summary.spelling_error_count', 1)
+            ->assertJsonPath('data.result.diagnostics.by_type.spelling.0.text', 'practice')
+            ->assertJsonPath('data.result.diagnostics.by_type.spelling.0.suggestions.0', 'practise')
             ->assertJsonPath('data.feedback_request.can_request', true);
     }
 
@@ -235,6 +242,46 @@ class WritingPracticeTest extends TestCase
             'criterion_scores' => [['key' => 'grammar', 'score' => 6.0, 'weight' => 0.25]],
             'overall_band' => 6.0,
             'calculation_trace' => ['formula' => 'test'],
+        ]);
+        AssessmentEvidence::create([
+            'attempt_id' => $attempt->id,
+            'rubric_id' => $rubric->id,
+            'signals' => [
+                'grammar' => [
+                    'errors' => [[
+                        'offset' => 10,
+                        'length' => 8,
+                        'message' => 'Possible spelling mistake found.',
+                        'category' => 'Typos',
+                        'rule_id' => 'MORFOLOGIK_RULE_EN_US',
+                        'replacements' => ['practise'],
+                    ]],
+                    'annotations' => [[
+                        'start' => 10,
+                        'end' => 18,
+                        'severity' => 'error',
+                        'category' => 'typos',
+                        'message' => 'Possible spelling mistake found.',
+                        'suggestion' => 'practise',
+                    ]],
+                ],
+                'vocabulary' => [
+                    'word_count' => 6,
+                    'sentence_count' => 1,
+                    'paragraph_count' => 1,
+                    'total_error_count' => 1,
+                    'grammar_error_count' => 0,
+                    'spelling_error_count' => 1,
+                    'punctuation_error_count' => 0,
+                    'linking_word_count' => 0,
+                    'unique_ratio' => 1.0,
+                    'avg_word_length' => 4.8,
+                    'readability_grade' => 1.0,
+                ],
+            ],
+            'evidence' => [],
+            'validation' => ['passed' => true],
+            'extraction_trace' => ['strategy' => 'test'],
         ]);
 
         return [$user, $submission];

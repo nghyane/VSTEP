@@ -73,6 +73,8 @@ function writingResult(view: AssessmentView | null): WritingGradingResult | null
 	return {
 		overall_band: view.result.overall_band,
 		criterion_scores: view.result.criterion_scores,
+		display: view.result.display,
+		diagnostics: view.result.diagnostics,
 		feedback: view.result.feedback,
 	}
 }

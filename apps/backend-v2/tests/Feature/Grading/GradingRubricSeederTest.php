@@ -49,5 +49,13 @@ class GradingRubricSeederTest extends TestCase
             (float) $taskFulfillment['params']['coverage_multiplier'],
             (float) $taskFulfillment['params']['task1_multiplier'],
         );
+        $this->assertArrayHasKey('non_assessable_word_limit', $taskFulfillment['params']);
+        $this->assertArrayHasKey('short_response_caps', $taskFulfillment['params']);
+        $this->assertArrayHasKey('task_fulfillment_word_caps', $taskFulfillment['params']);
+
+        $params = $rubric->taskFulfillmentParams();
+        $this->assertTrue($params->isNonAssessable($params->nonAssessableWordLimit - 1));
+        $this->assertNotNull($params->shortResponseScoreCap($params->nonAssessableWordLimit - 1));
+        $this->assertNotNull($params->taskFulfillmentScoreCap($params->wordMinimumTask1 - 1));
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Grading;
 
+use App\DTOs\Grading\Params\TaskFulfillmentParams;
+use App\Models\GradingRubric;
 use App\Services\Grading\WritingScoringFormula;
 use Tests\TestCase;
 
@@ -97,7 +99,7 @@ final class WritingScoringFormulaTest extends TestCase
 
     /* ─── Task Fulfillment ───
      * T = clampRound((covered/required)×M + depth×3 + pos + examples − irrelevant)
-     * M = 6 (Task 1) or 8 (Task 2)
+     * M comes from the active writing rubric.
      */
 
     /** 3/3, depth=0.8, examples, position → (3/3)×7=7+2.4+0.5+0.5=10.4→10. */
@@ -142,9 +144,11 @@ final class WritingScoringFormulaTest extends TestCase
         $this->assertSame(7.0, $score);
     }
 
-    /** Task 1 letter: 3/3, depth=0.5, position → (3/3)×5=5+1.5+0.5=7.0. */
+    /** Task 1 letter uses the task1 multiplier from the active rubric. */
     public function test_task_fulfillment_task1_letter(): void
     {
+        $params = $this->taskFulfillmentParams();
+
         $score = $this->formula->taskFulfillment([
             'points_covered' => 3,
             'points_required' => 3,
@@ -153,7 +157,47 @@ final class WritingScoringFormulaTest extends TestCase
             'has_clear_position' => true,
             'has_irrelevant_content' => false,
         ], 1);
-        $this->assertSame(7.0, $score);
+
+        $expected = round(($params->task1Multiplier + 0.5 * 3 + $params->positionBonus) * 2) / 2;
+        $this->assertSame($expected, $score);
+    }
+
+    public function test_task_fulfillment_applies_word_count_cap_from_rubric(): void
+    {
+        $params = $this->taskFulfillmentParams();
+        $wordCount = (int) $params->taskFulfillmentWordCaps[0]['max_words'] - 1;
+
+        $score = $this->formula->taskFulfillment([
+            'points_covered' => 3,
+            'points_required' => 3,
+            'depth_factor' => 1.0,
+            'has_examples' => true,
+            'has_clear_position' => true,
+            'has_irrelevant_content' => false,
+            'word_count' => $wordCount,
+        ], 1);
+
+        $this->assertSame($params->taskFulfillmentScoreCap($wordCount), $score);
+    }
+
+    public function test_short_response_cap_limits_all_rubric_scores_from_rubric(): void
+    {
+        $rubric = $this->writingRubric();
+        $params = $rubric->taskFulfillmentParams();
+        $wordCount = $params->nonAssessableWordLimit - 1;
+        $expectedCap = $params->shortResponseScoreCap($wordCount);
+
+        $result = $this->formula->applyShortResponseCap([
+            'task_fulfillment' => 6.0,
+            'organization' => 4.0,
+            'grammar' => 4.5,
+            'vocabulary' => 2.0,
+        ], $wordCount, $rubric);
+
+        $this->assertSame(['word_count' => $wordCount, 'cap' => $expectedCap], $result['capApplied']);
+        foreach ($result['rubricScores'] as $score) {
+            $this->assertSame($expectedCap, $score);
+        }
     }
 
     /* ─── Organization ───
@@ -247,5 +291,15 @@ final class WritingScoringFormulaTest extends TestCase
         $syntax = ['count' => 0, 'types' => [], 'details' => []];
         $score = $this->formula->grammar($syntax, 5, 0);
         $this->assertSame(4.5, $score);
+    }
+
+    private function writingRubric(): GradingRubric
+    {
+        return GradingRubric::query()->where('skill', 'writing')->firstOrFail();
+    }
+
+    private function taskFulfillmentParams(): TaskFulfillmentParams
+    {
+        return $this->writingRubric()->taskFulfillmentParams();
     }
 }

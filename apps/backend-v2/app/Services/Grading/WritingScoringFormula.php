@@ -116,16 +116,8 @@ final class WritingScoringFormula
         $hasPosition = (bool) ($evidence['has_clear_position'] ?? false);
         $irrelevant = (bool) ($evidence['has_irrelevant_content'] ?? false);
 
+        $wordCount = array_key_exists('word_count', $evidence) ? max(0, (int) $evidence['word_count']) : null;
         $multiplier = $part === 1 ? $p->task1Multiplier : $p->coverageMultiplier;
-
-        // Short essay caps from rubric params
-        $wordCount = (int) ($evidence['word_count'] ?? 0);
-        foreach ($p->shortEssayCaps as $cap) {
-            if ($wordCount > 0 && $wordCount < (int) ($cap['max_words'] ?? 0)) {
-                $multiplier = min($multiplier, (float) ($cap['cap'] ?? $multiplier));
-                break;
-            }
-        }
 
         if ($depthFactor < $p->depthMinimum && $covered > 0) {
             $depthFactor = $p->depthMinimum;
@@ -139,6 +131,11 @@ final class WritingScoringFormula
             - ($irrelevant ? $p->irrelevantPenalty : 0)
         );
 
+        $taskFulfillmentCap = $wordCount === null ? null : $p->taskFulfillmentScoreCap($wordCount);
+        if ($taskFulfillmentCap !== null) {
+            $score = min($score, $taskFulfillmentCap);
+        }
+
         // Tone/register sub-signal (from rubric DB)
         $tone = $this->rubric->subSignalParams('task_fulfillment', 'tone_register');
         if ($tone !== [] && $score > 0) {
@@ -150,6 +147,24 @@ final class WritingScoringFormula
         }
 
         return $score;
+    }
+
+    /**
+     * @param  array<string,float>  $rubricScores
+     * @return array{rubricScores: array<string,float>, capApplied: null|array<string,mixed>}
+     */
+    public function applyShortResponseCap(array $rubricScores, int $wordCount, GradingRubric $rubric): array
+    {
+        $cap = $rubric->taskFulfillmentParams()->shortResponseScoreCap($wordCount);
+
+        if ($cap === null) {
+            return ['rubricScores' => $rubricScores, 'capApplied' => null];
+        }
+
+        return [
+            'rubricScores' => array_map(fn (float $score): float => min($score, $cap), $rubricScores),
+            'capApplied' => ['word_count' => $wordCount, 'cap' => $cap],
+        ];
     }
 
     public function organization(int $paragraphCount, int $linkingWordCount, int $sentenceCount, float $sentenceVariety = 0, int $part = 2, bool $hasSalutation = false, bool $hasClosing = false): float

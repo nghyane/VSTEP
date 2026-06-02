@@ -46,7 +46,8 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
         }
 
         $language = $this->languageDetector->detect($text);
-        if (! $language['is_english']) {
+        $tfParams = $this->rubricResolver->active('writing')->taskFulfillmentParams();
+        if (! $language['is_english'] && ! $tfParams->isNonAssessable($this->simpleWordCount($text))) {
             throw new AssessmentFailedException('Writing submission is not in English.');
         }
 
@@ -83,6 +84,24 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
         }
 
         $text = $input->text ?? '';
+        $wordCount = $this->effectiveWordCount($input, $signals);
+        $tfParams = $this->rubricResolver->active('writing')->taskFulfillmentParams();
+
+        if ($tfParams->isNonAssessable($wordCount)) {
+            $evidence = [
+                'points_covered' => 0,
+                'points_required' => max(1, count($input->requirements)),
+                'depth_factor' => 0.0,
+                'has_examples' => false,
+                'has_clear_position' => false,
+                'has_irrelevant_content' => true,
+                'word_count' => $wordCount,
+                'tone_informal_count' => (int) (($signals->vocabulary['tone_signals']['informal_count'] ?? 0)),
+            ];
+
+            return new EvidenceBag(task: $evidence, raw: $evidence);
+        }
+
         $evidence = $this->taskAssessor->assess(
             $text,
             (string) ($input->prompt['prompt'] ?? ''),
@@ -92,7 +111,7 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
             $this->part($input),
         );
 
-        $evidence['word_count'] = (int) ($input->metadata['word_count'] ?? $signals->vocabulary['word_count']);
+        $evidence['word_count'] = $wordCount;
         $evidence['tone_informal_count'] = (int) (($signals->vocabulary['tone_signals']['informal_count'] ?? 0));
 
         return new EvidenceBag(task: $evidence, raw: $evidence);
@@ -137,10 +156,19 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
 
         $capped = $this->formula->applyTfCap($scores, $scoringRubric);
         $scores = $capped['rubricScores'];
+        $capsApplied = [];
+
+        $wordCount = (int) ($evidence->task['word_count'] ?? $metrics['word_count'] ?? 0);
+        $shortResponseCap = $this->formula->applyShortResponseCap($scores, $wordCount, $scoringRubric);
+        $scores = $shortResponseCap['rubricScores'];
+        if ($shortResponseCap['capApplied'] !== null) {
+            $capsApplied['short_response_word_count'] = $shortResponseCap['capApplied'];
+        }
 
         return new ScoreBag(
             criterionScores: $this->criterionScores($scores, $rubric),
             overallBand: $this->overallBand($scores, $rubric),
+            capsApplied: $capsApplied,
             calculationTrace: ['formula' => 'vstep_writing', 'rubric_id' => $scoringRubric->id],
         );
     }
@@ -205,5 +233,29 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
     private function part(AssessmentInput $input): int
     {
         return (int) ($input->prompt['part'] ?? ($this->taskType()->value === 'writing_task_1_letter' ? 1 : 2));
+    }
+
+    private function effectiveWordCount(AssessmentInput $input, SignalBag $signals): int
+    {
+        $signalWordCount = max(0, (int) ($signals->vocabulary['word_count'] ?? 0));
+        if ($signalWordCount > 0) {
+            return $signalWordCount;
+        }
+
+        $metadataWordCount = array_key_exists('word_count', $input->metadata)
+            ? max(0, (int) $input->metadata['word_count'])
+            : null;
+
+        return $metadataWordCount ?? 0;
+    }
+
+    private function simpleWordCount(string $text): int
+    {
+        $trimmed = trim(preg_replace('/\s+/', ' ', $text) ?? '');
+        if ($trimmed === '') {
+            return 0;
+        }
+
+        return count(explode(' ', $trimmed));
     }
 }

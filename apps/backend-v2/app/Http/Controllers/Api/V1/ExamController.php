@@ -19,6 +19,8 @@ use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
 use App\Models\ExamSessionDraft;
 use App\Models\ExamVersion;
+use App\Services\AssessmentDiagnosticsService;
+use App\Services\AssessmentResultDisplayService;
 use App\Services\ExamScoringService;
 use App\Services\ExamSessionService;
 use App\Services\ProgressService;
@@ -33,6 +35,8 @@ final class ExamController extends Controller
         private readonly ExamSessionService $examService,
         private readonly ExamScoringService $scoringService,
         private readonly ProgressService $progressService,
+        private readonly AssessmentResultDisplayService $displayService,
+        private readonly AssessmentDiagnosticsService $diagnosticsService,
     ) {}
 
     public function index(): JsonResponse
@@ -237,7 +241,9 @@ final class ExamController extends Controller
 
         $examSession->load([
             'mcqAnswers',
+            'writingSubmissions.assessmentAttempt.evidence',
             'writingSubmissions.assessmentAttempt.result',
+            'speakingSubmissions.assessmentAttempt.evidence',
             'speakingSubmissions.assessmentAttempt.result',
             'examVersion.listeningSections.items',
             'examVersion.readingPassages.items',
@@ -259,6 +265,9 @@ final class ExamController extends Controller
                 'text' => $submission->text,
                 'overall_band' => $result?->overall_band,
                 'criterion_scores' => $result?->criterion_scores,
+                'caps_applied' => $result?->caps_applied,
+                'display' => $result === null ? null : $this->displayService->forResult($result),
+                'diagnostics' => $result === null ? null : $this->diagnosticsService->forAttempt($submission->assessmentAttempt),
                 'feedback' => $result?->feedback,
                 'calculation_trace' => $result?->calculation_trace,
             ];
@@ -275,6 +284,9 @@ final class ExamController extends Controller
                 'transcript' => $submission->transcript,
                 'overall_band' => $result?->overall_band,
                 'criterion_scores' => $result?->criterion_scores,
+                'caps_applied' => $result?->caps_applied,
+                'display' => $result === null ? null : $this->displayService->forResult($result),
+                'diagnostics' => $result === null ? null : $this->diagnosticsService->forAttempt($submission->assessmentAttempt),
                 'feedback' => $result?->feedback,
                 'calculation_trace' => $result?->calculation_trace,
             ];

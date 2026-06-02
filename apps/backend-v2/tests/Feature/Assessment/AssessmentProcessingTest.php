@@ -22,8 +22,10 @@ use App\Assessment\Services\AssessmentSubmissionService;
 use App\Assessment\Services\StrategyRegistry;
 use App\Jobs\ProcessAssessmentJob;
 use App\Models\AssessmentRubric;
+use App\Models\GradingRubric;
 use App\Models\Profile;
 use App\Models\User;
+use App\Services\AssessmentResultDisplayService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -126,6 +128,42 @@ final class AssessmentProcessingTest extends TestCase
             'id' => $attempt->job->id,
             'status' => AssessmentJobStatus::Ready->value,
         ]);
+    }
+
+    public function test_extremely_short_writing_response_is_scored_as_non_assessable(): void
+    {
+        $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
+        $tfParams = GradingRubric::query()->where('skill', 'writing')->firstOrFail()->taskFulfillmentParams();
+
+        $attempt = $this->app->make(AssessmentSubmissionService::class)->submit(new AssessmentInput(
+            profileId: $profile->id,
+            skill: AssessmentSkill::Writing,
+            taskType: AssessmentTaskType::WritingTask1Letter,
+            sourceType: AssessmentSourceType::Practice,
+            sourceId: '00000000-0000-0000-0000-000000000004',
+            prompt: [
+                'part' => 1,
+                'prompt' => 'Write a letter to apologize, explain, and suggest a plan.',
+            ],
+            requirements: ['Apologize for missing the party', 'Explain why you could not attend', 'Suggest a plan to make it up'],
+            text: 'hrrrlnhập đại cũng có điểm',
+            metadata: ['word_count' => 1],
+        ));
+
+        $result = $this->app->make(AssessmentProcessingService::class)->process($attempt->job);
+        $expectedCap = $tfParams->shortResponseScoreCap(1);
+
+        $this->assertSame($expectedCap, $result->overall_band);
+        $this->assertEquals($expectedCap, $result->caps_applied['short_response_word_count']['cap']);
+
+        $display = $this->app->make(AssessmentResultDisplayService::class)->forResult($result);
+        $this->assertSame('not_assessable', $display['status']);
+        $this->assertFalse($display['is_assessable']);
+        $this->assertFalse($display['ui']['show_criterion_breakdown']);
+
+        foreach ($result->criterion_scores as $criterion) {
+            $this->assertEquals($expectedCap, $criterion['score']);
+        }
     }
 
     private function activeRubric(): AssessmentRubric

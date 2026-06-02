@@ -21,6 +21,8 @@ final class AssessmentViewService
     public function __construct(
         private readonly EconomyConfigService $economyConfig,
         private readonly PracticeFeedbackService $feedbackService,
+        private readonly AssessmentResultDisplayService $displayService,
+        private readonly AssessmentDiagnosticsService $diagnosticsService,
     ) {}
 
     /** @return array<string,mixed> */
@@ -54,6 +56,8 @@ final class AssessmentViewService
                 'overall_band' => $attempt->result->overall_band,
                 'criterion_scores' => $attempt->result->criterion_scores,
                 'caps_applied' => $attempt->result->caps_applied,
+                'display' => $this->displayService->forResult($attempt->result),
+                'diagnostics' => $this->diagnosticsService->forAttempt($attempt),
                 'calculation_trace' => $attempt->result->calculation_trace,
                 'feedback' => $attempt->result->feedback,
             ],

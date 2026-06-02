@@ -25,6 +25,75 @@ export interface AssessmentFeedback {
 	rewrites?: Array<Rewrite | string>
 }
 
+export interface AssessmentResultDisplay {
+	status: "not_assessable" | "below_b1" | "passed"
+	status_label: string
+	level: "B1" | "B2" | "C1" | "below_b1" | null
+	level_label: string
+	is_assessable: boolean
+	is_passing: boolean
+	score: {
+		value: number
+		max: number
+		label: string
+		should_show: boolean
+		emphasis: "primary" | "secondary"
+	}
+	reason: {
+		code: string
+		label: string | null
+		source: string | null
+		details: Record<string, unknown> | unknown[]
+	}
+	message: string
+	thresholds: {
+		min_b1: number
+		min_b2: number
+		min_c1: number
+		max_score: number
+	}
+	ui: {
+		tone: "danger" | "warning" | "success"
+		badge: string
+		show_score: boolean
+		show_criterion_breakdown: boolean
+		show_feedback: boolean
+		primary_action: "rewrite" | null
+	}
+}
+
+export interface AssessmentAnnotation {
+	start: number
+	end: number
+	length: number
+	text: string
+	type: "spelling" | "grammar" | "punctuation" | "style" | "other"
+	severity: string
+	category: string
+	message: string
+	suggestions: string[]
+	rule_id: string
+}
+
+export interface AssessmentDiagnostics {
+	summary: {
+		word_count: number
+		sentence_count: number
+		paragraph_count: number
+		total_error_count: number
+		grammar_error_count: number
+		spelling_error_count: number
+		punctuation_error_count: number
+		linking_word_count: number
+		unique_ratio: number
+		avg_word_length: number
+		readability_grade: number
+	}
+	annotations: AssessmentAnnotation[]
+	by_type: Record<AssessmentAnnotation["type"], AssessmentAnnotation[]>
+	counts_by_category: Record<string, number>
+}
+
 export interface InsightsEntry {
 	label: string
 	detail: string
@@ -34,6 +103,8 @@ export interface WritingGradingResult {
 	id?: string
 	criterion_scores: CriterionScore[]
 	overall_band: number
+	display?: AssessmentResultDisplay
+	diagnostics?: AssessmentDiagnostics
 	feedback: AssessmentFeedback | null
 	annotations?: { _insights?: Record<string, InsightsEntry> } | null
 	created_at?: string
@@ -43,6 +114,8 @@ export interface SpeakingGradingResult {
 	id?: string
 	criterion_scores: CriterionScore[]
 	overall_band: number
+	display?: AssessmentResultDisplay
+	diagnostics?: AssessmentDiagnostics
 	feedback: AssessmentFeedback | null
 	pronunciation_report?: { accuracy_score: number; insights?: Record<string, InsightsEntry> } | null
 	transcript?: string | null
