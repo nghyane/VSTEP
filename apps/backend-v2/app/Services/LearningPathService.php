@@ -151,7 +151,7 @@ final class LearningPathService implements LearningPathInterface
             ? ProfileGrammarMastery::query()
                 ->where('profile_id', $profile->id)
                 ->whereIn('grammar_point_id', $pointIds)
-                ->where('computed_level', 'mastered')
+                ->where('attempts', '>', 0)
                 ->count()
             : 0;
 
@@ -185,10 +185,10 @@ final class LearningPathService implements LearningPathInterface
         }
 
         if ($remaining > 0) {
-            return "Còn {$remaining} chủ điểm ngữ pháp {$level} chưa mastered. Ưu tiên các điểm sai nhiều.";
+            return "Còn {$remaining} chủ điểm ngữ pháp {$level} chưa luyện. Ưu tiên các điểm sai nhiều.";
         }
 
-        return "Đã master tất cả chủ điểm ngữ pháp {$level}. Có thể chuyển lên cấp độ cao hơn.";
+        return "Đã luyện tất cả chủ điểm ngữ pháp {$level}. Tiếp tục làm lại các điểm chưa mastered.";
     }
 
     // ──── Exam skills (writing/speaking/listening/reading) ────

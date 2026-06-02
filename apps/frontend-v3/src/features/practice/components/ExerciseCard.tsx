@@ -14,6 +14,7 @@ interface Props {
 	meta: string
 	overlay: ReactNode
 	progress?: Progress
+	progressLabel?: string
 	level?: string
 	tag?: string
 }
@@ -27,9 +28,19 @@ const LEVEL_COLORS: Record<string, string> = {
 	C2: "bg-skill-reading/15 text-skill-reading border-skill-reading/30",
 }
 
-export function ExerciseCard({ title, description, meta, overlay, progress, level, tag }: Props) {
-	const pct = progress ? Math.round((progress.score / progress.total) * 100) : 0
+export function ExerciseCard({
+	title,
+	description,
+	meta,
+	overlay,
+	progress,
+	progressLabel,
+	level,
+	tag,
+}: Props) {
+	const pct = progress && progress.total > 0 ? Math.round((progress.score / progress.total) * 100) : 0
 	const hasBar = progress && progress.status !== "not_started" && progress.total > 0
+	const hasProgressBlock = progress && progress.total > 0
 	const levelStyle = level
 		? (LEVEL_COLORS[level.toUpperCase()] ?? "bg-muted/15 text-muted border-border")
 		: null
@@ -64,20 +75,22 @@ export function ExerciseCard({ title, description, meta, overlay, progress, leve
 				)}
 			</div>
 
-			{hasBar && (
+			{hasProgressBlock && (
 				<div className="mt-auto px-5 pb-4">
 					<div className="flex items-center justify-between mb-1">
-						<span className="text-xs font-bold text-muted tabular-nums">{pct}%</span>
+						<span className="text-xs font-bold text-muted tabular-nums">{progressLabel ?? `${pct}%`}</span>
 					</div>
-					<div className="h-1.5 bg-background rounded-full overflow-hidden">
-						<div
-							className={cn(
-								"h-full rounded-full transition-all",
-								pct >= 80 ? "bg-primary" : pct >= 50 ? "bg-warning" : "bg-destructive",
-							)}
-							style={{ width: `${pct}%` }}
-						/>
-					</div>
+					{hasBar && (
+						<div className="h-1.5 bg-background rounded-full overflow-hidden">
+							<div
+								className={cn(
+									"h-full rounded-full transition-all",
+									pct >= 80 ? "bg-primary" : pct >= 50 ? "bg-warning" : "bg-destructive",
+								)}
+								style={{ width: `${pct}%` }}
+							/>
+						</div>
+					)}
 				</div>
 			)}
 

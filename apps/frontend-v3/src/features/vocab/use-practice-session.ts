@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useReducer } from "react"
 import { reviewWord } from "#/features/vocab/actions"
 import type { PracticeMode, SrsRating, WordWithState } from "#/features/vocab/types"
@@ -125,6 +125,7 @@ export function checkAnswer(item: PracticeItem, value: string): boolean {
 }
 
 export function usePracticeSession(items: PracticeItem[]): PracticeSession {
+	const qc = useQueryClient()
 	const [state, dispatch] = useReducer(reducer, INITIAL)
 
 	useEffect(() => {
@@ -138,6 +139,7 @@ export function usePracticeSession(items: PracticeItem[]): PracticeSession {
 	const mutation = useMutation({
 		mutationFn: ({ wordId, rating }: { wordId: string; rating: SrsRating }) => reviewWord(wordId, rating),
 		onSuccess: (_data, { rating }) => {
+			void qc.invalidateQueries({ queryKey: ["learning-path"] })
 			dispatch({ type: "advance", requeue: rating === 1 ? current : null })
 		},
 	})

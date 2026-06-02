@@ -21,8 +21,19 @@ export type TargetLevel = (typeof TARGET_LEVELS)[number]
 
 export const ENTRY_LEVELS = ["A1", "A2", "B1", "B2", "C1"] as const
 export type EntryLevel = (typeof ENTRY_LEVELS)[number]
+export type VstepLevel = EntryLevel
 
 export const LEVEL_RANK: Record<EntryLevel, number> = { A1: 0, A2: 1, B1: 2, B2: 3, C1: 4 }
+
+export function parseVstepLevel(value: string | null | undefined): VstepLevel | null {
+	const normalized = value?.toUpperCase()
+	if (normalized === "A1") return "A1"
+	if (normalized === "A2") return "A2"
+	if (normalized === "B1") return "B1"
+	if (normalized === "B2") return "B2"
+	if (normalized === "C1") return "C1"
+	return null
+}
 
 /** Min months giữa hôm nay và ngày thi, theo độ chênh entry → target. */
 export const MIN_PREP_MONTHS = [1, 3, 6, 12, 18] as const

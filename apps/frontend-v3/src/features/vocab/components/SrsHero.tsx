@@ -17,6 +17,7 @@ export function SrsHero() {
 
 	const queue = data.data
 	const totalDue = queue.new_count + queue.learning_count + queue.review_count
+	const reviewText = reviewSummary(queue.new_count, queue.learning_count, queue.review_count)
 
 	return (
 		<section className="card overflow-hidden">
@@ -30,9 +31,8 @@ export function SrsHero() {
 					{totalDue > 0 ? (
 						<>
 							<h2 className="font-extrabold text-2xl text-foreground mb-1">Ôn tập từ vựng</h2>
-							<p className="text-sm text-muted mb-4">
-								Bạn có {totalDue} từ cần ôn lại hôm nay để không bị quên
-							</p>
+							<p className="text-sm text-muted mb-2">Bạn có {totalDue} thẻ từ sẵn sàng hôm nay.</p>
+							{reviewText && <p className="text-xs font-bold text-subtle mb-4">{reviewText}</p>}
 							<Link to="/vocab/srs-review" className="btn btn-primary px-8 py-3 text-base">
 								Bắt đầu ôn tập
 							</Link>
@@ -49,4 +49,12 @@ export function SrsHero() {
 			</div>
 		</section>
 	)
+}
+
+function reviewSummary(newCount: number, learningCount: number, reviewCount: number): string {
+	const parts: string[] = []
+	if (newCount > 0) parts.push(`${newCount} từ mới`)
+	if (learningCount > 0) parts.push(`${learningCount} đang học`)
+	if (reviewCount > 0) parts.push(`${reviewCount} cần ôn lại`)
+	return parts.join(" · ")
 }

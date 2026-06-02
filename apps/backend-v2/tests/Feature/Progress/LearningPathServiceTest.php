@@ -191,15 +191,15 @@ final class LearningPathServiceTest extends TestCase
         $this->assertSame(100, $grammarSkill['coverage_pct']);
         $this->assertSame(1, $grammarSkill['total_items']);
         $this->assertSame(1, $grammarSkill['completed_items']);
-        $this->assertStringContainsString('Đã master', (string) $grammarSkill['suggestion']);
+        $this->assertStringContainsString('Đã luyện', (string) $grammarSkill['suggestion']);
     }
 
-    public function test_grammar_coverage_ignores_non_mastered(): void
+    public function test_grammar_coverage_counts_practiced_points(): void
     {
         $point = GrammarPoint::factory()->create(['is_published' => true]);
         GrammarPointLevel::create(['grammar_point_id' => $point->id, 'level' => 'A2']);
 
-        // Only "learning" level — not counted as completed
+        // Learning path shows practice coverage, not strict mastery coverage.
         ProfileGrammarMastery::create([
             'profile_id' => $this->profile->id,
             'grammar_point_id' => $point->id,
@@ -213,9 +213,9 @@ final class LearningPathServiceTest extends TestCase
 
         $grammarSkill = $this->grammarSkillFromResult();
 
-        $this->assertSame(0, $grammarSkill['coverage_pct']);
+        $this->assertSame(100, $grammarSkill['coverage_pct']);
         $this->assertSame(1, $grammarSkill['total_items']);
-        $this->assertSame(0, $grammarSkill['completed_items']);
+        $this->assertSame(1, $grammarSkill['completed_items']);
     }
 
     public function test_grammar_filtered_by_level(): void

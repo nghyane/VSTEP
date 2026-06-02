@@ -1,6 +1,7 @@
 export interface VocabTopic {
 	id: string
 	slug: string
+	group_key?: string
 	name: string
 	description: string | null
 	level: string
@@ -9,6 +10,9 @@ export interface VocabTopic {
 	tasks: string[]
 	word_count?: number
 	learned_count?: number
+	recommended_topic_id?: string
+	adaptive_reason?: "continue" | "recommended" | "catch_up" | "first_incomplete" | "review"
+	adaptive_label?: string
 }
 
 export interface VocabWord {

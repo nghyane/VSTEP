@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useReducer } from "react"
 import { reviewWord } from "#/features/vocab/actions"
 import type { SrsRating, WordWithState } from "#/features/vocab/types"
@@ -52,6 +52,7 @@ interface FlashcardSession {
 }
 
 export function useFlashcardSession(items: WordWithState[]): FlashcardSession {
+	const qc = useQueryClient()
 	const [state, dispatch] = useReducer(reducer, { queue: [], index: 0, reviewed: 0, revealed: false })
 
 	useEffect(() => {
@@ -67,6 +68,7 @@ export function useFlashcardSession(items: WordWithState[]): FlashcardSession {
 	const mutation = useMutation({
 		mutationFn: ({ wordId, rating }: { wordId: string; rating: SrsRating }) => reviewWord(wordId, rating),
 		onSuccess: (_data, { rating }) => {
+			void qc.invalidateQueries({ queryKey: ["learning-path"] })
 			dispatch({ type: "advance", requeue: rating === 1 ? current : null })
 		},
 	})
