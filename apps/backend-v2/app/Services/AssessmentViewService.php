@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Assessment\Enums\AssessmentSkill;
 use App\Assessment\Enums\AssessmentSourceType;
+use App\Enums\PracticeFeedbackSubmissionType;
 use App\Models\AssessmentAttempt;
 use App\Models\ExamSpeakingSubmission;
 use App\Models\ExamWritingSubmission;
@@ -230,13 +231,10 @@ final class AssessmentViewService
             return null;
         }
 
-        $submissionType = match ($attempt->skill) {
-            AssessmentSkill::Writing => 'practice_writing',
-            AssessmentSkill::Speaking => 'practice_speaking',
-        };
+        $submissionType = PracticeFeedbackSubmissionType::fromSkill($attempt->skill);
 
         return PracticeFeedbackRequest::query()
-            ->where('submission_type', $submissionType)
+            ->where('submission_type', $submissionType->value)
             ->where('submission_id', $attempt->source_id)
             ->first();
     }

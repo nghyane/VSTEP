@@ -169,6 +169,14 @@ export interface AssessmentFeedbackRequestState {
 	status: "none" | "pending" | "ready" | "failed"
 }
 
+export interface RequestFeedbackResponse {
+	submission_id: string
+	status: "pending" | "ready" | "failed"
+	cost_coins: number
+	charged: boolean
+	feedback: AssessmentFeedback | null
+}
+
 export interface AssessmentView {
 	attempt_id: string
 	source: {

@@ -8,6 +8,8 @@ use App\Assessment\Enums\AssessmentSkill;
 use App\Assessment\Enums\AssessmentSourceType;
 use App\Assessment\Enums\AssessmentTaskType;
 use App\Enums\CoinTransactionType;
+use App\Enums\PracticeFeedbackStatus;
+use App\Enums\PracticeFeedbackSubmissionType;
 use App\Models\AssessmentAttempt;
 use App\Models\AssessmentEvidence;
 use App\Models\AssessmentResult;
@@ -135,6 +137,38 @@ class WritingPracticeTest extends TestCase
             ->assertJsonPath('data.charged', false);
 
         $this->assertSame(1, PracticeFeedbackRequest::query()->where('submission_id', $submission->id)->count());
+    }
+
+    public function test_paid_feedback_retries_without_charge_when_saved_feedback_is_empty(): void
+    {
+        [$user, $submission] = $this->gradedWritingSubmission();
+        $attempt = $submission->assessmentAttempt()->firstOrFail();
+        $attempt->result()->firstOrFail()->update(['feedback' => []]);
+        PracticeFeedbackRequest::create([
+            'profile_id' => $submission->profile_id,
+            'submission_type' => PracticeFeedbackSubmissionType::Writing->value,
+            'submission_id' => $submission->id,
+            'status' => PracticeFeedbackStatus::Ready,
+            'requested_at' => now(),
+            'completed_at' => now(),
+        ]);
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/assessment-attempts/{$attempt->id}/feedback")
+            ->assertAccepted()
+            ->assertJsonPath('data.status', 'ready')
+            ->assertJsonPath('data.charged', false)
+            ->assertJsonPath('data.feedback.strengths.0', 'Tra loi dung yeu cau de bai');
+
+        $this->assertSame(
+            ['Tra loi dung yeu cau de bai'],
+            $attempt->result()->firstOrFail()->feedback['strengths'],
+        );
+        $this->assertDatabaseMissing('coin_transactions', [
+            'profile_id' => $submission->profile_id,
+            'type' => CoinTransactionType::PracticeFeedback->value,
+        ]);
     }
 
     public function test_assessment_view_returns_normalized_writing_result(): void

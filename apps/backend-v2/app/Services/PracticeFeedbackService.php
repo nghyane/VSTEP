@@ -9,6 +9,7 @@ use App\Assessment\Enums\AssessmentSkill;
 use App\Assessment\Enums\AssessmentSourceType;
 use App\Enums\CoinTransactionType;
 use App\Enums\PracticeFeedbackStatus;
+use App\Enums\PracticeFeedbackSubmissionType;
 use App\Models\AssessmentAttempt;
 use App\Models\AssessmentResult;
 use App\Models\PracticeFeedbackRequest;
@@ -30,52 +31,56 @@ final class PracticeFeedbackService
     /** @return array<string,mixed> */
     public function requestWriting(Profile $profile, PracticeWritingSubmission $submission): array
     {
-        return $this->request($profile, $submission, 'practice_writing');
+        return $this->request($profile, $submission, PracticeFeedbackSubmissionType::Writing);
     }
 
     /** @return array<string,mixed> */
     public function requestSpeaking(Profile $profile, PracticeSpeakingSubmission $submission): array
     {
-        return $this->request($profile, $submission, 'practice_speaking');
+        return $this->request($profile, $submission, PracticeFeedbackSubmissionType::Speaking);
     }
 
     /** @return array<string,mixed> */
-    private function request(Profile $profile, Model $submission, string $submissionType): array
+    private function request(Profile $profile, Model $submission, PracticeFeedbackSubmissionType $submissionType): array
     {
         if ($submission->profile_id !== $profile->id) {
             abort(403);
         }
 
-        $attempt = $this->readyAttempt($submissionType, (string) $submission->getKey());
+        $attempt = $this->readyAttempt($submission->getKey());
 
         $cost = $this->economyConfig->practiceFeedbackCost();
-        $existing = $this->existingRequest($submissionType, (string) $submission->getKey());
+        $existing = $this->existingRequest($submissionType, $submission->getKey());
         if ($existing !== null) {
-            if ($submission instanceof PracticeWritingSubmission && $this->resultFeedback($attempt) === null) {
-                $this->persistFeedback($attempt, $this->generateWritingFeedback($attempt, $submission));
+            if (! $submission instanceof PracticeWritingSubmission || $this->hasGeneratedFeedback($attempt)) {
+                return $this->payload($existing, $cost, false, $this->resultFeedback($attempt));
             }
 
-            return $this->payload($existing, $cost, false, $this->resultFeedback($attempt));
+            if (! $this->markFeedbackPending($existing)) {
+                return $this->payload($existing->refresh(), $cost, false, $this->resultFeedback($attempt));
+            }
+
+            $this->completeWritingFeedback($existing, $attempt, $submission);
+
+            return $this->payload($existing->refresh(), $cost, false, $this->resultFeedback($attempt));
         }
 
-        $generatedFeedback = $submission instanceof PracticeWritingSubmission
-            ? $this->generateWritingFeedback($attempt, $submission)
-            : null;
-
-        return DB::transaction(function () use ($profile, $submission, $submissionType, $cost, $attempt, $generatedFeedback) {
-            $existing = $this->existingRequest($submissionType, (string) $submission->getKey(), true);
+        $request = DB::transaction(function () use ($profile, $submission, $submissionType, $cost, $attempt) {
+            $existing = $this->existingRequest($submissionType, $submission->getKey(), true);
 
             if ($existing !== null) {
-                return $this->payload($existing, $cost, false, $this->resultFeedback($attempt));
+                return $existing;
             }
 
             $request = PracticeFeedbackRequest::create([
                 'profile_id' => $profile->id,
-                'submission_type' => $submissionType,
+                'submission_type' => $submissionType->value,
                 'submission_id' => $submission->getKey(),
-                'status' => PracticeFeedbackStatus::Ready,
+                'status' => $submission instanceof PracticeWritingSubmission
+                    ? PracticeFeedbackStatus::Pending
+                    : PracticeFeedbackStatus::Ready,
                 'requested_at' => now(),
-                'completed_at' => now(),
+                'completed_at' => $submission instanceof PracticeWritingSubmission ? null : now(),
             ]);
 
             $transaction = $this->walletService->spend(
@@ -83,25 +88,25 @@ final class PracticeFeedbackService
                 $cost,
                 CoinTransactionType::PracticeFeedback,
                 $request,
-                ['submission_type' => $submissionType, 'submission_id' => $submission->getKey()],
+                ['submission_type' => $submissionType->value, 'submission_id' => $submission->getKey()],
             );
-
-            if ($generatedFeedback !== null) {
-                $this->persistFeedback($attempt, $generatedFeedback);
-            }
 
             $request->update(['coin_transaction_id' => $transaction->id]);
 
-            return $this->payload($request->refresh(), $cost, true, $this->resultFeedback($attempt));
+            return $request->refresh();
         });
-    }
 
-    private function readyAttempt(string $submissionType, string $submissionId): AssessmentAttempt
-    {
-        if (! in_array($submissionType, ['practice_writing', 'practice_speaking'], true)) {
-            throw new \InvalidArgumentException("Unsupported feedback type: {$submissionType}.");
+        if ($request->status === PracticeFeedbackStatus::Pending && $submission instanceof PracticeWritingSubmission) {
+            $this->completeWritingFeedback($request, $attempt, $submission);
         }
 
+        $charged = $request->wasRecentlyCreated;
+
+        return $this->payload($request->refresh(), $cost, $charged, $this->resultFeedback($attempt));
+    }
+
+    private function readyAttempt(int|string $submissionId): AssessmentAttempt
+    {
         $attempt = AssessmentAttempt::query()
             ->with(['evidence', 'result'])
             ->where('source_type', AssessmentSourceType::Practice)
@@ -140,10 +145,10 @@ final class PracticeFeedbackService
         );
     }
 
-    private function existingRequest(string $submissionType, string $submissionId, bool $lock = false): ?PracticeFeedbackRequest
+    private function existingRequest(PracticeFeedbackSubmissionType $submissionType, int|string $submissionId, bool $lock = false): ?PracticeFeedbackRequest
     {
         $query = PracticeFeedbackRequest::query()
-            ->where('submission_type', $submissionType)
+            ->where('submission_type', $submissionType->value)
             ->where('submission_id', $submissionId);
 
         if ($lock) {
@@ -151,6 +156,55 @@ final class PracticeFeedbackService
         }
 
         return $query->first();
+    }
+
+    private function markFeedbackPending(PracticeFeedbackRequest $request): bool
+    {
+        return DB::transaction(function () use ($request) {
+            $locked = PracticeFeedbackRequest::query()
+                ->whereKey($request->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($locked->status === PracticeFeedbackStatus::Pending) {
+                return false;
+            }
+
+            $locked->update([
+                'status' => PracticeFeedbackStatus::Pending,
+                'last_error' => null,
+                'completed_at' => null,
+                'failed_at' => null,
+            ]);
+
+            $request->setRawAttributes($locked->getAttributes(), true);
+
+            return true;
+        });
+    }
+
+    private function completeWritingFeedback(
+        PracticeFeedbackRequest $request,
+        AssessmentAttempt $attempt,
+        PracticeWritingSubmission $submission,
+    ): void {
+        try {
+            $this->persistFeedback($attempt, $this->generateWritingFeedback($attempt, $submission));
+            $request->update([
+                'status' => PracticeFeedbackStatus::Ready,
+                'last_error' => null,
+                'completed_at' => now(),
+                'failed_at' => null,
+            ]);
+        } catch (\Throwable $exception) {
+            $request->update([
+                'status' => PracticeFeedbackStatus::Failed,
+                'last_error' => $exception->getMessage(),
+                'failed_at' => now(),
+            ]);
+
+            throw $exception;
+        }
     }
 
     /** @param array{strengths: list<string>, improvements: list<string>, rewrites: list<string>} $generatedFeedback */
@@ -192,5 +246,22 @@ final class PracticeFeedbackService
         $feedback = $attempt->result?->feedback;
 
         return is_array($feedback) ? $feedback : null;
+    }
+
+    private function hasGeneratedFeedback(AssessmentAttempt $attempt): bool
+    {
+        $feedback = $this->resultFeedback($attempt);
+
+        if ($feedback === null) {
+            return false;
+        }
+
+        foreach (['strengths', 'improvements', 'rewrites'] as $key) {
+            if (is_array($feedback[$key] ?? null) && $feedback[$key] !== []) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

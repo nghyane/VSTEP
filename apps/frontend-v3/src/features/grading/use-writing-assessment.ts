@@ -1,23 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { assessmentViewQuery } from "#/features/grading/queries"
 import type {
-	AssessmentFeedback,
 	AssessmentView,
 	GradingProgress,
+	RequestFeedbackResponse,
 	WritingGradingResult,
 } from "#/features/grading/types"
 import { type ApiResponse, api } from "#/lib/api"
 
 interface Input {
 	attemptId: string
-}
-
-interface RequestFeedbackResponse {
-	submission_id: string
-	status: string
-	cost_coins: number
-	charged: boolean
-	feedback: AssessmentFeedback | null
 }
 
 export function useWritingAssessment({ attemptId }: Input) {
