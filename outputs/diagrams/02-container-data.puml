@@ -1,0 +1,60 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam componentBorderColor #2C3E50
+skinparam ArrowColor #2C3E50
+skinparam FontName Arial
+skinparam FontSize 11
+
+title Kiến trúc container & dòng dữ liệu chấm điểm
+
+actor "Học viên" as L
+
+rectangle "Frontend (React + TanStack)" as FE #F9E79F {
+  component "Trang luyện viết\n(realtime editor)" as WritingPage
+  component "Trang kết quả\n(bài đã chấm)" as ResultPage
+}
+
+rectangle "Backend (Laravel 13 + Redis)" as BE #AED6F1 {
+  component "REST API\n(practice, assessment)" as API
+  component "Queue Worker\n(GradeSubmission)" as Queue
+  frame "Dịch vụ chấm điểm" as Scoring #E8F8F5 {
+    component "Phân tích số từ,\nbố cục, liên kết" as RuleEngine
+    component "Chấm ngữ pháp\nchính tả" as GrammarCheck
+    component "Chấm yêu cầu\nđề bài (AI)" as TaskCheck
+    component "Chấm phát âm\nnói (AI + Azure)" as SpeechCheck
+  }
+}
+
+database "PostgreSQL\n(kết quả, bằng chứng" as DB
+cloud "AI LLM\n(GPT / Claude)" as LLM
+cloud "Azure Speech\n(phát âm)" as Azure
+cloud "LanguageTool\n(ngữ pháp)" as LT
+
+L --> FE : nhập bài viết / ghi âm nói
+FE --> API : nộp bài
+
+API --> DB : lưu bài nộp
+API --> Queue : đẩy job chấm điểm
+
+Queue --> RuleEngine : đếm từ, câu, đoạn,
+Queue --> RuleEngine : tỉ lệ từ duy nhất, từ nối
+
+Queue --> GrammarCheck : kiểm tra lỗi
+GrammarCheck --> LT : HTTP API
+
+Queue --> TaskCheck : đánh giá yêu cầu
+TaskCheck --> LLM : tool-calling
+
+Queue --> SpeechCheck : đánh giá phát âm (Speaking)
+SpeechCheck --> Azure : STT + pronunciation
+
+RuleEngine --> DB : lưu tín hiệu (signals)
+GrammarCheck --> DB : lưu lỗi + chú thích
+TaskCheck --> DB : lưu bằng chứng (evidence)
+SpeechCheck --> DB : lưu transcript + phát âm
+
+API --> DB : đọc kết quả
+API --> FE : trả kết quả chấm + chẩn đoán
+
+@enduml

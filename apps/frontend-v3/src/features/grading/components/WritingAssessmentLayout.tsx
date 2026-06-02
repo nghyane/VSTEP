@@ -4,10 +4,10 @@ import { DuoProgressBar } from "#/components/DuoProgressBar"
 import { Icon } from "#/components/Icon"
 import { FeedbackSection, RewriteSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
+import { feedbackImprovements } from "#/features/grading/feedback"
 import type {
 	AssessmentFeedback,
 	GradingProgress,
-	Improvement,
 	RubricMeta,
 	WritingGradingResult,
 } from "#/features/grading/types"
@@ -128,7 +128,9 @@ function ScoreSummary({ view }: LayoutProps) {
 			<p className="text-6xl font-extrabold tabular-nums text-skill-writing">
 				{round(view.result.overall_band)}
 			</p>
-			<p className="text-sm text-subtle mt-1">/ {view.rubric?.max_score ?? 10}</p>
+			<p className="text-sm text-subtle mt-1">
+				{view.rubric ? `/ ${view.rubric.max_score}` : "Chưa có dữ liệu thang điểm"}
+			</p>
 		</div>
 	)
 }
@@ -197,15 +199,25 @@ function ContextMeta({ context }: { context: WritingAssessmentContext }) {
 }
 
 function RubricPanel({ view }: LayoutProps) {
+	const rubric = view.rubric
+	if (!rubric) {
+		return (
+			<div className="card p-6">
+				<p className="text-xs font-bold uppercase tracking-wide text-subtle">Rubric</p>
+				<p className="mt-2 text-sm text-muted">Chưa có dữ liệu rubric cho bài này.</p>
+			</div>
+		)
+	}
+
 	return (
 		<div className="card p-6 space-y-3">
 			<p className="text-xs font-bold uppercase tracking-wide text-subtle">Rubric</p>
 			{view.result.criterion_scores.map((criterion) => (
 				<RubricBar
 					key={criterion.key}
-					label={criterionLabel(view.rubric, criterion.key)}
+					label={criterionLabel(rubric, criterion.key)}
 					score={criterion.score}
-					max={criterionMax(view.rubric, criterion.key)}
+					max={criterionMax(rubric, criterion.key)}
 					color={COLOR}
 				/>
 			))}
@@ -349,20 +361,6 @@ function detailedAIFeedback(feedback: AssessmentFeedback | null): AssessmentFeed
 	return hasStrengths || hasImprovements || hasRewrites ? feedback : null
 }
 
-function feedbackImprovements(feedback: AssessmentFeedback | null): Array<Improvement | string> {
-	const improvements = feedback?.improvements ?? []
-	if (improvements.length > 0) return improvements
-
-	const evidenceNotes = feedback?.evidenceNotes
-	if (!evidenceNotes) return []
-	if (Array.isArray(evidenceNotes)) return evidenceNotes
-
-	return Object.values(evidenceNotes).map((entry) => ({
-		message: entry.label,
-		explanation: entry.detail,
-	}))
-}
-
 function RewritePanel({ result }: { result: WritingGradingResult }) {
 	const rewrites = result.feedback?.rewrites ?? []
 	if (rewrites.length === 0) return null
@@ -388,10 +386,10 @@ function progressValue(progress: GradingProgress[]): number {
 	return Math.min(90, 25 + progress.length * 20)
 }
 
-function criterionLabel(rubric: RubricMeta | null, key: string): string {
-	return rubric?.criteria.find((criterion) => criterion.key === key)?.label ?? key
+function criterionLabel(rubric: RubricMeta, key: string): string {
+	return rubric.criteria.find((criterion) => criterion.key === key)?.label ?? key
 }
 
-function criterionMax(rubric: RubricMeta | null, key: string): number {
-	return rubric?.criteria.find((criterion) => criterion.key === key)?.max ?? rubric?.max_score ?? 10
+function criterionMax(rubric: RubricMeta, key: string): number {
+	return rubric.criteria.find((criterion) => criterion.key === key)?.max ?? rubric.max_score
 }

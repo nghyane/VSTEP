@@ -5,6 +5,7 @@ import type {
 	ExerciseFeedbackPayload,
 	PracticeSession,
 	SubmitResult,
+	WritingRealtimeDiagnostics,
 	WritingSubmission,
 } from "#/features/practice/types"
 import { type ApiResponse, api } from "#/lib/api"
@@ -53,6 +54,12 @@ export async function submitWritingSession(sessionId: string, text: string) {
 	return api
 		.post(`practice/writing/sessions/${sessionId}/submit`, { json: { text } })
 		.json<ApiResponse<WritingSubmission>>()
+}
+
+export async function getWritingDiagnostics(promptId: string, text: string, signal?: AbortSignal) {
+	return api
+		.post("practice/writing/diagnostics", { json: { prompt_id: promptId, text }, signal })
+		.json<ApiResponse<WritingRealtimeDiagnostics>>()
 }
 
 export async function startConversation(scenarioId: string) {

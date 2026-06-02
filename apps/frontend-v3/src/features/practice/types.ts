@@ -1,3 +1,5 @@
+import type { AssessmentDiagnostics } from "#/features/grading/types"
+
 export interface ListeningExerciseSummary {
 	id: string
 	slug: string
@@ -127,6 +129,49 @@ export interface WritingSubmission {
 	word_count: number
 	submitted_at: string
 	grading_status: string
+}
+
+export interface WritingRealtimeDiagnostics {
+	text_hash: string
+	language: {
+		is_english: boolean
+		confidence: number
+		non_ascii_letter_ratio: number
+	}
+	diagnostics: AssessmentDiagnostics & {
+		data_status?: {
+			rule_metrics_available: boolean
+			language_tool_checked: boolean
+		}
+		format?: {
+			letter_format_expected: boolean
+			has_salutation: boolean | null
+			has_closing: boolean | null
+			tone: {
+				formal_count: number | null
+				informal_count: number | null
+				informal_words: string[] | null
+			} | null
+		}
+		cohesion?: {
+			linking_word_count: number | null
+			sentence_variety: number | null
+		}
+		vocabulary_profile?: {
+			cefr_weighted_avg: number | null
+			cefr_advanced_ratio: number | null
+			cefr_vocab_count: number | null
+			complex_vocab_count: number | null
+		} | null
+	}
+	readiness: {
+		status: "ready" | "needs_work"
+		label: string
+		reasons: Array<{
+			code: string
+			message: string
+		}>
+	}
 }
 
 /* ───── Shadowing ───── */

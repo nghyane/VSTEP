@@ -16,6 +16,7 @@ import type {
 } from "#/features/exam/types"
 import { FeedbackSection, RewriteSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
+import { feedbackImprovements } from "#/features/grading/feedback"
 import { cn, round } from "#/lib/utils"
 
 const WRITING_RUBRIC: Record<string, string> = {
@@ -356,7 +357,7 @@ function WritingFeedbackBlock({
 						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4">
 							<FeedbackSection
 								strengths={feedback.feedback.strengths ?? []}
-								improvements={feedback.feedback.improvements ?? feedback.feedback.evidenceNotes ?? []}
+								improvements={feedbackImprovements(feedback.feedback)}
 							/>
 						</div>
 					)}
@@ -437,7 +438,7 @@ function SpeakingFeedbackBlock({
 						<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-card p-4">
 							<FeedbackSection
 								strengths={feedback.feedback.strengths ?? []}
-								improvements={feedback.feedback.improvements ?? feedback.feedback.evidenceNotes ?? []}
+								improvements={feedbackImprovements(feedback.feedback)}
 							/>
 						</div>
 					)}

@@ -1,0 +1,61 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam ArrowColor #2C3E50
+skinparam FontName Arial
+skinparam FontSize 11
+
+title Pipeline chấm điểm & xử lý dữ liệu thiếu
+
+start
+
+:Tiếp nhận bài nộp\n(Writing / Speaking);
+
+:Đưa vào hàng đợi Redis\n(GradeSubmission Job);
+
+partition "Giai đoạn 1: Trích xuất tín hiệu" #LightBlue {
+  if (Có bài viết / audio?) then (Có)
+    :Phân tích số từ, câu, đoạn,\ntừ nối, từ vựng CEFR;
+    :Gọi LanguageTool →\nlỗi ngữ pháp, chính tả;
+    if (Loại kỹ năng?) is (Writing) then
+      :Gọi AI LLM →\nđánh giá yêu cầu đề bài;
+    else (Speaking)
+      :Gọi Azure Speech →\nSTT + phát âm;
+    endif
+  else (Không)
+    :Đánh dấu bài không chấm được\n(guardrail / non-assessable);
+    stop
+  endif
+}
+
+partition "Giai đoạn 2: Lưu bằng chứng" #LightGreen {
+  :Lưu signals (số từ, lỗi ngữ pháp,\nphát âm, độ trôi chảy);
+  :Lưu evidence (yêu cầu đạt/không,\nmức độ chi tiết, nội dung);
+  :Lưu annotations (vị trí lỗi,\ngợi ý sửa);
+}
+
+partition "Giai đoạn 3: Tính điểm" #LightYellow {
+  :Áp dụng công thức VSTEP\n(Grammar, Vocabulary, Task,\nOrganization, Fluency);
+  :Kiểm tra guardrail\n(quá ngắn? copy đề? lạc đề?);
+  if (Đạt guardrail?) then (Đạt)
+    :Trả điểm tổng + từng tiêu chí;
+  else (Không đạt)
+    :Áp dụng điểm trần\n(short-response cap);
+  endif
+}
+
+partition "Giai đoạn 4: Làm giàu kết quả" #LightCoral {
+  :Tra rubric → tên tiêu chí, trọng số;
+  :Tính display (trạng thái,\nlevel, UI hints);
+  :Tính diagnostics + data_status;
+}
+
+partition "Giai đoạn 5: Trả về Frontend" #Violet {
+  :FE kiểm tra data_status\n→ biết provider nào có dữ liệu;
+  :FE kiểm tra từng metric\n→ null = hiện "Chưa có dữ liệu";
+  :FE không suy diễn giá trị\nkhi thiếu dữ liệu;
+}
+
+stop
+
+@enduml

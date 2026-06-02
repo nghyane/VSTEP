@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { AssessmentView, RubricMeta, SpeakingGradingResult } from "#/features/grading/types"
+import type { AssessmentView, PracticeSpeakingResultResponse } from "#/features/grading/types"
 import { type ApiResponse, api } from "#/lib/api"
 
 export const assessmentViewQuery = (attemptId: string) =>
@@ -13,7 +13,5 @@ export const speakingResultQuery = (submissionId: string) =>
 	queryOptions({
 		queryKey: ["practice", "speaking", "result", submissionId],
 		queryFn: () =>
-			api
-				.get(`practice/speaking/submissions/${submissionId}/result`)
-				.json<ApiResponse<SpeakingGradingResult | null> & { rubric?: RubricMeta }>(),
+			api.get(`practice/speaking/submissions/${submissionId}/result`).json<PracticeSpeakingResultResponse>(),
 	})

@@ -77,21 +77,85 @@ export interface AssessmentAnnotation {
 
 export interface AssessmentDiagnostics {
 	summary: {
-		word_count: number
-		sentence_count: number
-		paragraph_count: number
-		total_error_count: number
-		grammar_error_count: number
-		spelling_error_count: number
-		punctuation_error_count: number
-		linking_word_count: number
-		unique_ratio: number
-		avg_word_length: number
-		readability_grade: number
+		word_count: number | null
+		sentence_count: number | null
+		paragraph_count: number | null
+		total_error_count: number | null
+		grammar_error_count: number | null
+		spelling_error_count: number | null
+		punctuation_error_count: number | null
+		linking_word_count: number | null
+		unique_ratio: number | null
+		avg_word_length: number | null
+		readability_grade: number | null
 	}
+	data_status?: Record<string, boolean>
 	annotations: AssessmentAnnotation[]
 	by_type: Record<AssessmentAnnotation["type"], AssessmentAnnotation[]>
 	counts_by_category: Record<string, number>
+	service_status?: {
+		language_tool?: {
+			available: boolean
+			checked?: boolean
+			message: string | null
+		}
+	}
+	word_requirement?: {
+		minimum: number
+		actual: number | null
+		is_met: boolean | null
+		missing: number | null
+	}
+	task_coverage?: {
+		required_points: number
+		covered_points: number | null
+		coverage_ratio: number | null
+		has_requirement_details: boolean
+		source?: "heuristic" | "final"
+		requirements: Array<{
+			text: string
+			met: boolean | null
+		}>
+	}
+	format?: {
+		letter_format_expected: boolean
+		has_salutation: boolean | null
+		has_closing: boolean | null
+		tone: {
+			formal_count: number | null
+			informal_count: number | null
+			informal_words: string[] | null
+		}
+	}
+	cohesion?: {
+		linking_word_count: number | null
+		sentence_variety: number | null
+	}
+	vocabulary_profile?: {
+		cefr_weighted_avg: number | null
+		cefr_advanced_ratio: number | null
+		cefr_vocab_count: number | null
+		complex_vocab_count: number | null
+	}
+	speech?: {
+		transcript: string | null
+		confidence: number | null
+		speaking_rate: number | null
+		pause_count: number | null
+		word_count: number | null
+	}
+	fluency?: {
+		speaking_rate: number | null
+		pause_count: number | null
+		word_count: number | null
+	}
+	pronunciation?: {
+		overall: number | null
+		raw: Record<string, unknown>
+	}
+	content?: {
+		content_factor: number | null
+	}
 }
 
 export interface InsightsEntry {
@@ -120,6 +184,12 @@ export interface SpeakingGradingResult {
 	pronunciation_report?: { accuracy_score: number; insights?: Record<string, InsightsEntry> } | null
 	transcript?: string | null
 	created_at?: string
+}
+
+export interface PracticeSpeakingResultResponse {
+	attempt_id?: string
+	data: SpeakingGradingResult | null
+	rubric: RubricMeta | null
 }
 
 export interface RubricCriteriaMeta {

@@ -47,17 +47,21 @@ final class RuleBasedScoringService
     /** @return array<string,mixed> */
     private function computeMetrics(string $text, array $errors): array
     {
-        $words = Str::of($text)->trim()->split('/\s+/');
+        $trimmedText = trim($text);
+        $words = $trimmedText === ''
+            ? collect()
+            : Str::of($trimmedText)->split('/\s+/');
         $wordCount = $words->count();
-        $sentences = Str::of($text)->trim()->split('/[.!?]+/', -1, PREG_SPLIT_NO_EMPTY);
-        $sentenceCount = max(1, $sentences->count());
-        $paragraphs = Str::of($text)->trim()->split('/\n\s*\n/', -1, PREG_SPLIT_NO_EMPTY);
+        $sentences = Str::of($trimmedText)->split('/[.!?]+/', -1, PREG_SPLIT_NO_EMPTY);
+        $sentenceCount = $sentences->count();
+        $effectiveSentenceCount = max(1, $sentenceCount);
+        $paragraphs = Str::of($trimmedText)->split('/\n\s*\n/', -1, PREG_SPLIT_NO_EMPTY);
         $paragraphCount = $paragraphs->count();
 
         $uniqueWords = $words->map(fn (string $w): string => Str::lower($w))->unique()->count();
         $uniqueRatio = $wordCount > 0 ? $uniqueWords / $wordCount : 0;
 
-        $avgSentenceLength = $wordCount / $sentenceCount;
+        $avgSentenceLength = $wordCount / $effectiveSentenceCount;
 
         $grammarErrors = array_filter($errors, fn ($e) => Str::contains(Str::lower($e['category'] ?? ''), 'grammar'));
         $grammarErrorCount = count($grammarErrors);
@@ -67,7 +71,7 @@ final class RuleBasedScoringService
         $punctuationErrors = array_filter($errors, fn ($e) => Str::contains(Str::lower($e['category'] ?? ''), 'punctuation'));
         $punctuationErrorCount = count($punctuationErrors);
         $totalErrorCount = count($errors);
-        $errorsPerSentence = $totalErrorCount / $sentenceCount;
+        $errorsPerSentence = $totalErrorCount / $effectiveSentenceCount;
 
         $textLower = Str::lower($text);
         $linkingCount = 0;

@@ -7,6 +7,7 @@ import { SkillScoreCards } from "#/features/exam/components/SkillScoreCards"
 import type { ExamResultUi, SpeakingSection, WritingSection } from "#/features/exam/use-exam-result-ui"
 import { FeedbackSection, RewriteSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
+import { feedbackImprovements } from "#/features/grading/feedback"
 import type { RubricCriteriaMeta } from "#/features/grading/types"
 
 export function DuoResultPage({ ui }: { ui: ExamResultUi }) {
@@ -135,7 +136,7 @@ function SkillRow({ label, summary, pending, children }: SkillRowProps) {
 }
 
 function WritingDetail({ section, rubric }: { section: WritingSection; rubric?: RubricCriteriaMeta[] }) {
-	const meta = (rubric ?? []) as RubricCriteriaMeta[]
+	const meta = rubric ?? []
 	return (
 		<div className="space-y-4">
 			{section.criterionScores && (
@@ -154,7 +155,7 @@ function WritingDetail({ section, rubric }: { section: WritingSection; rubric?: 
 			{section.feedback && (
 				<FeedbackSection
 					strengths={section.feedback.strengths ?? []}
-					improvements={section.feedback.improvements ?? section.feedback.evidenceNotes ?? []}
+					improvements={feedbackImprovements(section.feedback)}
 				/>
 			)}
 			{section.feedback?.rewrites && section.feedback.rewrites.length > 0 && (
@@ -171,7 +172,7 @@ function WritingDetail({ section, rubric }: { section: WritingSection; rubric?: 
 }
 
 function SpeakingDetail({ section, rubric }: { section: SpeakingSection; rubric?: RubricCriteriaMeta[] }) {
-	const meta = (rubric ?? []) as RubricCriteriaMeta[]
+	const meta = rubric ?? []
 	return (
 		<div className="space-y-4">
 			{section.audioUrl && (
@@ -201,7 +202,7 @@ function SpeakingDetail({ section, rubric }: { section: SpeakingSection; rubric?
 			{section.feedback && (
 				<FeedbackSection
 					strengths={section.feedback.strengths ?? []}
-					improvements={section.feedback.improvements ?? section.feedback.evidenceNotes ?? []}
+					improvements={feedbackImprovements(section.feedback)}
 				/>
 			)}
 		</div>

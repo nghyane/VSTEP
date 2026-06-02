@@ -1,0 +1,31 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam componentBorderColor #2C3E50
+skinparam ArrowColor #2C3E50
+skinparam FontName Arial
+skinparam FontSize 12
+
+title Kiến trúc tổng thể hệ thống VSTEP
+
+actor "Học viên\n(luyện tập + thi thử)" as Learner #LightBlue
+actor "Giáo viên\n(quản lý khóa học)" as Teacher #LightGreen
+actor "Quản trị viên\n(nội dung + rubric)" as Admin #LightYellow
+
+rectangle "Hệ thống VSTEP" as System #F9E79F {
+  component "Nền tảng luyện thi\nWriting · Speaking\nListening · Reading" as Platform
+}
+
+cloud "AI chấm điểm\n(GPT / Claude)" as LLM #AED6F1
+cloud "Azure Speech\n(phát âm + STT)" as Azure #A9DFBF
+database "LanguageTool\n(ngữ pháp)" as LangTool #D7BDE2
+
+Learner --> Platform : luyện tập, thi thử, xem kết quả
+Teacher --> Platform : quản lý lớp, booking, đánh giá
+Admin --> Platform : quản lý đề thi, rubric, người dùng
+
+Platform --> LLM : phân tích yêu cầu đề bài,\nđánh giá nội dung
+Platform --> Azure : speech-to-text,\nphát âm, độ trôi chảy
+Platform --> LangTool : kiểm tra ngữ pháp,\nchính tả, phong cách
+
+@enduml

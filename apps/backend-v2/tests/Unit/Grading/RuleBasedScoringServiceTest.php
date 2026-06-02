@@ -54,6 +54,17 @@ final class RuleBasedScoringServiceTest extends TestCase
         $this->assertSame(0, $result['metrics']['total_error_count']);
     }
 
+    public function test_analyze_counts_blank_text_as_zero_words(): void
+    {
+        $result = $this->service->analyze(" \n\t ", []);
+
+        $this->assertSame(0, $result['metrics']['word_count']);
+        $this->assertSame(0, $result['metrics']['sentence_count']);
+        $this->assertSame(0, $result['metrics']['paragraph_count']);
+        $this->assertSame(0.0, $result['metrics']['unique_ratio']);
+        $this->assertSame(0, $result['metrics']['avg_word_length']);
+    }
+
     public function test_flags_short_text(): void
     {
         $text = 'Hello world.';

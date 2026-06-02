@@ -91,6 +91,7 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
             $evidence = [
                 'points_covered' => 0,
                 'points_required' => max(1, count($input->requirements)),
+                'requirements_met' => array_fill(0, max(1, count($input->requirements)), false),
                 'depth_factor' => 0.0,
                 'has_examples' => false,
                 'has_clear_position' => false,
@@ -119,7 +120,17 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
 
     public function validateEvidence(EvidenceBag $evidence, AssessmentRubric $rubric): EvidenceValidationResult
     {
-        foreach (['points_covered', 'points_required', 'has_clear_position', 'has_irrelevant_content'] as $key) {
+        $requiredKeys = [
+            'points_covered',
+            'points_required',
+            'requirements_met',
+            'depth_factor',
+            'has_examples',
+            'has_clear_position',
+            'has_irrelevant_content',
+        ];
+
+        foreach ($requiredKeys as $key) {
             if (! array_key_exists($key, $evidence->task)) {
                 return new EvidenceValidationResult(false, ["Missing writing evidence: {$key}"]);
             }

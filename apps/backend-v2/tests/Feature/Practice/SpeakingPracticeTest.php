@@ -4,8 +4,17 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Practice;
 
+use App\Assessment\Enums\AssessmentSkill;
+use App\Assessment\Enums\AssessmentSourceType;
+use App\Assessment\Enums\AssessmentTaskType;
+use App\Models\AssessmentAttempt;
+use App\Models\AssessmentEvidence;
+use App\Models\AssessmentResult;
+use App\Models\AssessmentRubric;
+use App\Models\PracticeSession;
 use App\Models\PracticeSpeakingDrill;
 use App\Models\PracticeSpeakingDrillSentence;
+use App\Models\PracticeSpeakingSubmission;
 use App\Models\PracticeSpeakingTask;
 use App\Models\Profile;
 use App\Models\User;
@@ -111,6 +120,45 @@ class SpeakingPracticeTest extends TestCase
         $this->assertDatabaseCount('assessment_jobs', 1);
     }
 
+    public function test_speaking_result_returns_diagnostics(): void
+    {
+        [$user, $submission] = $this->gradedSpeakingSubmission();
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/practice/speaking/submissions/{$submission->id}/result")
+            ->assertOk()
+            ->assertJsonPath('data.overall_band', 6)
+            ->assertJsonPath('data.diagnostics.speech.transcript', 'I enjoy learning English every day.')
+            ->assertJsonPath('data.diagnostics.speech.speaking_rate', 112.5)
+            ->assertJsonPath('data.diagnostics.fluency.pause_count', 2)
+            ->assertJsonPath('data.diagnostics.pronunciation.overall', 78)
+            ->assertJsonPath('data.diagnostics.content.content_factor', 0.9);
+    }
+
+    public function test_speaking_result_marks_missing_diagnostics_as_null(): void
+    {
+        [$user, $submission] = $this->gradedSpeakingSubmission();
+        $attempt = $submission->assessmentAttempt()->firstOrFail();
+        AssessmentEvidence::query()
+            ->where('attempt_id', $attempt->id)
+            ->update(['signals' => [], 'evidence' => []]);
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/practice/speaking/submissions/{$submission->id}/result")
+            ->assertOk()
+            ->assertJsonPath('data.diagnostics.data_status.vocabulary_metrics_available', false)
+            ->assertJsonPath('data.diagnostics.summary.word_count', null)
+            ->assertJsonPath('data.diagnostics.summary.total_error_count', null)
+            ->assertJsonPath('data.diagnostics.speech.transcript', null)
+            ->assertJsonPath('data.diagnostics.speech.speaking_rate', null)
+            ->assertJsonPath('data.diagnostics.fluency.pause_count', null)
+            ->assertJsonPath('data.diagnostics.pronunciation.overall', null)
+            ->assertJsonPath('data.diagnostics.content.content_factor', null)
+            ->assertJsonPath('data.diagnostics.cohesion.linking_word_count', null);
+    }
+
     public function test_list_vstep_tasks(): void
     {
         PracticeSpeakingTask::factory()->create(['part' => 1]);
@@ -136,5 +184,89 @@ class SpeakingPracticeTest extends TestCase
         return $this->postJson('/api/v1/auth/login', [
             'email' => $user->email, 'password' => 'password',
         ])->json('data.access_token');
+    }
+
+    /** @return array{User, PracticeSpeakingSubmission} */
+    private function gradedSpeakingSubmission(): array
+    {
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+        $task = PracticeSpeakingTask::factory()->create(['part' => 1]);
+        $session = PracticeSession::factory()->create([
+            'profile_id' => $profile->id,
+            'module' => 'speaking',
+            'content_ref_type' => 'practice_speaking_task',
+            'content_ref_id' => $task->id,
+        ]);
+        $submission = PracticeSpeakingSubmission::create([
+            'session_id' => $session->id,
+            'profile_id' => $profile->id,
+            'task_ref_type' => 'practice_speaking_task',
+            'task_ref_id' => $task->id,
+            'audio_key' => 'audio/practice_speaking/test.webm',
+            'audio_url' => 'https://example.test/audio.webm',
+            'duration_seconds' => 32,
+            'transcript' => 'I enjoy learning English every day.',
+            'submitted_at' => now(),
+        ]);
+        $rubric = AssessmentRubric::query()
+            ->where('task_type', AssessmentTaskType::SpeakingPart1Personal)
+            ->firstOrFail();
+        $attempt = AssessmentAttempt::create([
+            'profile_id' => $profile->id,
+            'rubric_id' => $rubric->id,
+            'skill' => AssessmentSkill::Speaking,
+            'task_type' => AssessmentTaskType::SpeakingPart1Personal,
+            'source_type' => AssessmentSourceType::Practice,
+            'source_id' => $submission->id,
+            'prompt' => ['requirements' => ['Answer the personal question']],
+            'response_payload' => ['audio_key' => $submission->audio_key],
+            'submitted_at' => now(),
+        ]);
+        AssessmentResult::create([
+            'attempt_id' => $attempt->id,
+            'rubric_id' => $rubric->id,
+            'criterion_scores' => [['key' => 'fluency', 'score' => 6.0, 'weight' => 0.25]],
+            'overall_band' => 6.0,
+            'calculation_trace' => ['formula' => 'test'],
+        ]);
+        AssessmentEvidence::create([
+            'attempt_id' => $attempt->id,
+            'rubric_id' => $rubric->id,
+            'signals' => [
+                'speech' => [
+                    'transcript' => 'I enjoy learning English every day.',
+                    'confidence' => 0.86,
+                    'speaking_rate' => 112.5,
+                    'pause_count' => 2,
+                    'word_count' => 6,
+                ],
+                'pronunciation' => [
+                    'overall' => 78,
+                ],
+                'vocabulary' => [
+                    'word_count' => 6,
+                    'sentence_count' => 1,
+                    'paragraph_count' => 1,
+                    'total_error_count' => 0,
+                    'grammar_error_count' => 0,
+                    'spelling_error_count' => 0,
+                    'punctuation_error_count' => 0,
+                    'linking_word_count' => 0,
+                    'unique_ratio' => 1.0,
+                    'avg_word_length' => 5.0,
+                    'readability_grade' => 2.0,
+                ],
+            ],
+            'evidence' => [
+                'content' => [
+                    'content_factor' => 0.9,
+                ],
+            ],
+            'validation' => ['passed' => true],
+            'extraction_trace' => ['strategy' => 'test'],
+        ]);
+
+        return [$user, $submission];
     }
 }

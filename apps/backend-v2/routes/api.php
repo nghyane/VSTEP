@@ -104,6 +104,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/practice/writing/prompts', [WritingPracticeController::class, 'listPrompts']);
         Route::get('/practice/writing/prompts/{id}', [WritingPracticeController::class, 'showPrompt']);
         Route::get('/practice/writing/history', [WritingPracticeController::class, 'history']);
+        Route::post('/practice/writing/diagnostics', [WritingPracticeController::class, 'diagnostics'])
+            ->middleware('throttle:30,1');
         Route::post('/practice/writing/sessions', [WritingPracticeController::class, 'startSession']);
         Route::post('/practice/writing/sessions/{practice_session}/submit', [WritingPracticeController::class, 'submit']);
 

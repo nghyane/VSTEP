@@ -46,9 +46,12 @@ final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
 
         $requirementsMet = $structured['requirements_met'] ?? [];
         $total = max(1, count($requirements) ?: 3);
+        $normalizedRequirementsMet = [];
         $metCount = 0;
         for ($i = 0; $i < $total; $i++) {
-            if (! empty($requirementsMet[$i])) {
+            $isMet = ! empty($requirementsMet[$i]);
+            $normalizedRequirementsMet[] = $isMet;
+            if ($isMet) {
                 $metCount++;
             }
         }
@@ -83,6 +86,7 @@ final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
         return [
             'points_covered' => $metCount,
             'points_required' => $total,
+            'requirements_met' => $normalizedRequirementsMet,
             'depth_factor' => round($depthFactor, 2),
             'has_examples' => $hasExamples,
             'has_clear_position' => $hasPosition,

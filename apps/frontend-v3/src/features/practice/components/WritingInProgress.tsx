@@ -1,14 +1,21 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
-import { submitWritingSession } from "#/features/practice/actions"
+import { getWritingDiagnostics, submitWritingSession } from "#/features/practice/actions"
 import { TranslateSelection } from "#/features/practice/components/TranslateSelection"
 import { WritingGradingScreen } from "#/features/practice/components/WritingGradingScreen"
 import { WritingSamplePanel } from "#/features/practice/components/WritingSamplePanel"
 import { WritingWordProgress } from "#/features/practice/components/WritingWordProgress"
-import type { WritingPromptDetail, WritingSubmission } from "#/features/practice/types"
+import type {
+	WritingPromptDetail,
+	WritingRealtimeDiagnostics,
+	WritingSubmission,
+} from "#/features/practice/types"
 import { countWords } from "#/lib/utils"
+
+const DIAGNOSTICS_MIN_CHARS = 20
+const DIAGNOSTICS_DEBOUNCE_MS = 1000
 
 interface Props {
 	prompt: WritingPromptDetail
@@ -22,6 +29,16 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 	const textareaRef = useRef<HTMLTextAreaElement>(null)
 	const wc = countWords(text)
 	const hasSample = !!prompt.sample_answer
+	const debouncedText = useDebouncedValue(text, DIAGNOSTICS_DEBOUNCE_MS)
+	const diagnosticsQuery = useQuery({
+		queryKey: ["practice", "writing", "diagnostics", prompt.id, debouncedText],
+		queryFn: ({ signal }) => getWritingDiagnostics(prompt.id, debouncedText, signal),
+		enabled: debouncedText.trim().length >= DIAGNOSTICS_MIN_CHARS,
+		staleTime: 30_000,
+	})
+	const canRequestDiagnostics = text.trim().length >= DIAGNOSTICS_MIN_CHARS
+	const diagnostics = text === debouncedText ? diagnosticsQuery.data?.data : undefined
+	const diagnosticsLoading = canRequestDiagnostics && (text !== debouncedText || diagnosticsQuery.isFetching)
 
 	const mutation = useMutation({
 		mutationFn: () => submitWritingSession(sessionId, text),
@@ -122,6 +139,15 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 									Xem bài mẫu
 								</button>
 							)}
+							<WritingRealtimePanel
+								prompt={prompt}
+								state={{
+									wordCount: wc,
+									diagnostics,
+									loading: diagnosticsLoading,
+									error: diagnosticsQuery.isError,
+								}}
+							/>
 						</div>
 
 						{/* Editor */}
@@ -165,5 +191,147 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 				/>
 			)}
 		</div>
+	)
+}
+
+function useDebouncedValue(value: string, delayMs: number): string {
+	const [debounced, setDebounced] = useState(value)
+
+	useEffect(() => {
+		const timer = window.setTimeout(() => setDebounced(value), delayMs)
+		return () => window.clearTimeout(timer)
+	}, [value, delayMs])
+
+	return debounced
+}
+
+interface RealtimePanelProps {
+	prompt: WritingPromptDetail
+	state: RealtimePanelState
+}
+
+interface RealtimePanelState {
+	wordCount: number
+	diagnostics: WritingRealtimeDiagnostics | undefined
+	loading: boolean
+	error: boolean
+}
+
+function WritingRealtimePanel({ prompt, state }: RealtimePanelProps) {
+	const { wordCount, diagnostics, loading, error } = state
+	const wordRequirement = diagnostics?.diagnostics.word_requirement
+	const taskCoverage = diagnostics?.diagnostics.task_coverage
+	const format = diagnostics?.diagnostics.format
+	const summary = diagnostics?.diagnostics.summary
+	const serviceStatus = diagnostics?.diagnostics.service_status
+	const minWords = wordRequirement?.minimum ?? prompt.min_words
+	const missingWords = Math.max(0, minWords - wordCount)
+	const languageErrorCount = summary?.total_error_count
+	const hasLanguageErrorCount = typeof languageErrorCount === "number"
+	const languageErrorsChecked = serviceStatus?.language_tool?.checked === true
+	const languageErrorsAvailable = serviceStatus?.language_tool?.available !== false
+
+	return (
+		<div className="rounded-(--radius-card) border-2 border-skill-writing/20 bg-skill-writing/5 p-4 space-y-3">
+			<div className="flex items-center justify-between gap-3">
+				<div>
+					<p className="text-xs font-extrabold uppercase tracking-wide text-skill-writing">
+						Kiểm tra realtime
+					</p>
+					<p className="text-xs text-muted">Gợi ý nhanh, điểm cuối vẫn tính khi nộp bài.</p>
+				</div>
+				{loading && <span className="text-[10px] font-bold text-muted">Đang kiểm tra...</span>}
+			</div>
+
+			{error && (
+				<RealtimeNote tone="warning" text="Chưa tải được kiểm tra realtime. Bạn vẫn có thể viết tiếp." />
+			)}
+			{!loading && !error && !diagnostics && (
+				<RealtimeNote tone="info" text="Viết thêm một đoạn ngắn để bật kiểm tra realtime." />
+			)}
+			{!languageErrorsAvailable && (
+				<RealtimeNote tone="info" text="Tạm thời chưa kiểm tra được lỗi ngôn ngữ tự động." />
+			)}
+
+			<div className="grid grid-cols-2 gap-2">
+				<MetricPill label="Số từ" value={`${wordCount}/${minWords}`} ok={missingWords === 0} />
+				<MetricPill
+					label="Lỗi ngôn ngữ"
+					value={languageErrorsChecked && hasLanguageErrorCount ? `${languageErrorCount}` : "Chưa kiểm tra"}
+					ok={languageErrorsChecked && hasLanguageErrorCount ? languageErrorCount === 0 : null}
+				/>
+			</div>
+
+			{missingWords > 0 && <RealtimeNote tone="warning" text={`Cần viết thêm ${missingWords} từ.`} />}
+
+			{prompt.part === 1 && (
+				<div className="grid grid-cols-2 gap-2">
+					<CheckPill label="Lời chào" checked={formatCheck(format?.has_salutation)} />
+					<CheckPill label="Lời kết" checked={formatCheck(format?.has_closing)} />
+				</div>
+			)}
+
+			{taskCoverage && taskCoverage.requirements.length > 0 && (
+				<div className="space-y-1.5">
+					<p className="text-[10px] font-bold uppercase tracking-wide text-muted">
+						Yêu cầu đề bài ({formatTaskCoverage(taskCoverage.covered_points)}/{taskCoverage.required_points})
+					</p>
+					{taskCoverage.requirements.map((requirement) => (
+						<div key={requirement.text} className="flex items-start gap-2 text-xs text-subtle">
+							<span className={requirement.met ? "text-success" : "text-muted"}>
+								{requirement.met ? "✓" : "○"}
+							</span>
+							<span>{requirement.text}</span>
+						</div>
+					))}
+				</div>
+			)}
+
+			{diagnostics?.readiness.reasons.slice(0, 3).map((reason) => (
+				<RealtimeNote key={reason.code} tone="info" text={reason.message} />
+			))}
+		</div>
+	)
+}
+
+function MetricPill({ label, value, ok }: { label: string; value: string; ok: boolean | null }) {
+	const valueClass =
+		ok === null
+			? "text-sm font-extrabold text-muted"
+			: ok
+				? "text-sm font-extrabold text-success"
+				: "text-sm font-extrabold text-foreground"
+
+	return (
+		<div className="rounded-xl bg-background px-3 py-2">
+			<p className="text-[10px] font-bold uppercase text-subtle">{label}</p>
+			<p className={valueClass}>{value}</p>
+		</div>
+	)
+}
+
+function CheckPill({ label, checked }: { label: string; checked: boolean | null }) {
+	const marker = checked === null ? "?" : checked ? "✓" : "○"
+	const markerClass = checked === null ? "text-muted" : checked ? "text-success" : "text-muted"
+
+	return (
+		<div className="flex items-center gap-2 rounded-xl bg-background px-3 py-2 text-xs font-bold">
+			<span className={markerClass}>{marker}</span>
+			<span className="text-foreground">{label}</span>
+		</div>
+	)
+}
+
+function formatTaskCoverage(value: number | null): string {
+	return value === null ? "?" : `${value}`
+}
+
+function formatCheck(value: boolean | null | undefined): boolean | null {
+	return value === undefined ? null : value
+}
+
+function RealtimeNote({ text, tone }: { text: string; tone: "warning" | "info" }) {
+	return (
+		<p className={tone === "warning" ? "text-xs font-bold text-warning" : "text-xs text-muted"}>{text}</p>
 	)
 }
