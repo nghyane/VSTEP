@@ -1,9 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { startReadingSession, submitReadingSession } from "#/features/practice/actions"
 import { ReadingInProgress } from "#/features/practice/components/ReadingInProgress"
-import { ReadingPreview } from "#/features/practice/components/ReadingPreview"
 import { readingExerciseDetailQuery } from "#/features/practice/queries"
 import { useMcqPracticeSession } from "#/features/practice/use-mcq-session"
 import { FocusBar } from "#/features/vocab/components/FocusBar"
@@ -21,27 +20,22 @@ function ReadingExercisePage() {
 		mutationFn: () => startReadingSession(exerciseId),
 		onSuccess: (res) => setSessionId(res.data.id),
 	})
+	const shouldStart = !!data && !sessionId && startMutation.status === "idle"
 
 	const session = useMcqPracticeSession(sessionId, submitReadingSession, "reading")
 
-	if (!data) {
+	useEffect(() => {
+		if (shouldStart) startMutation.mutate()
+	}, [shouldStart, startMutation.mutate])
+
+	if (!data || !sessionId) {
 		return (
 			<div className="min-h-screen bg-background flex flex-col">
-				<FocusBar backTo="/luyen-tap/doc" current={0} total={0} />
+				<FocusBar backTo="/luyen-tap/doc" current={0} total={data?.data.questions.length ?? 0} />
 				<div className="flex-1 flex items-center justify-center">
-					<p className="text-muted">Đang tải...</p>
+					<p className="text-muted">{data ? "Đang bắt đầu..." : "Đang tải..."}</p>
 				</div>
 			</div>
-		)
-	}
-
-	if (!sessionId) {
-		return (
-			<ReadingPreview
-				detail={data.data}
-				starting={startMutation.isPending}
-				onStart={() => startMutation.mutate()}
-			/>
 		)
 	}
 

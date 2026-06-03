@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import { Icon } from "#/components/Icon"
+import { ScrollArea } from "#/components/ScrollArea"
 import {
 	type WritingAssessmentContext,
 	WritingAssessmentError,
@@ -32,9 +33,11 @@ export function WritingGradingScreen({ prompt, submission, responseText }: Props
 		return (
 			<div className="flex flex-col h-screen bg-background">
 				<Header prompt={prompt} />
-				<div className="flex-1 overflow-y-auto px-6 py-8">
-					<WritingAssessmentError message={assessment.error} />
-				</div>
+				<ScrollArea className="flex-1">
+					<div className="px-6 py-8">
+						<WritingAssessmentError message={assessment.error} />
+					</div>
+				</ScrollArea>
 			</div>
 		)
 	}
@@ -43,11 +46,11 @@ export function WritingGradingScreen({ prompt, submission, responseText }: Props
 		return (
 			<div className="flex flex-col h-screen bg-background">
 				<Header prompt={prompt} />
-				<div className="flex-1 overflow-y-auto">
+				<ScrollArea className="flex-1">
 					<div className="max-w-5xl mx-auto px-6 py-8">
 						<WritingAssessmentPending context={context} progress={assessment.progress} />
 					</div>
-				</div>
+				</ScrollArea>
 			</div>
 		)
 	}
@@ -55,7 +58,7 @@ export function WritingGradingScreen({ prompt, submission, responseText }: Props
 	return (
 		<div className="flex flex-col h-screen bg-background">
 			<Header prompt={prompt} />
-			<div className="flex-1 overflow-y-auto">
+			<ScrollArea className="flex-1">
 				<div className="max-w-5xl mx-auto px-6 py-8">
 					<WritingAssessmentLayout
 						view={{
@@ -74,7 +77,7 @@ export function WritingGradingScreen({ prompt, submission, responseText }: Props
 						}}
 					/>
 				</div>
-			</div>
+			</ScrollArea>
 		</div>
 	)
 }

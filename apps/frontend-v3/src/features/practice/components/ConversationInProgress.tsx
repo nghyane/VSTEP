@@ -6,7 +6,7 @@ import { Icon, StaticIcon } from "#/components/Icon"
 import { appConfigQuery } from "#/features/config/queries"
 import { endConversation, submitConversationTurn } from "#/features/practice/actions"
 import { ConversationHeader } from "#/features/practice/components/ConversationHeader"
-import { ConversationReviewPopup } from "#/features/practice/components/ConversationReviewPopup"
+import { ConversationReviewPanel } from "#/features/practice/components/ConversationReviewPopup"
 import { ConversationScenarioCard } from "#/features/practice/components/ConversationScenarioCard"
 import { ConversationSuggestions } from "#/features/practice/components/ConversationSuggestions"
 import { ConversationTurnView } from "#/features/practice/components/ConversationTurnView"
@@ -131,17 +131,25 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 
 	const handleReview = () => {
 		if (spendAnimating) return
+		const revealReview = () => {
+			setShowReview(true)
+			window.setTimeout(() => {
+				document
+					.getElementById("ai-conversation-feedback")
+					?.scrollIntoView({ behavior: "smooth", block: "start" })
+			}, 0)
+		}
 		if (feedbackCost > 0) {
 			setSpendAnimating(true)
 			setSpendFxKey((key) => key + 1)
 			window.setTimeout(() => {
 				setSpendAnimating(false)
-				setShowReview(true)
+				revealReview()
 			}, COIN_SPEND_FX_MS)
 			return
 		}
 
-		setShowReview(true)
+		revealReview()
 	}
 
 	const turnMutation = useMutation({
@@ -479,6 +487,12 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 								</div>
 							)
 						})()}
+					{showReview && (
+						<ConversationReviewPanel
+							sessionId={sessionId}
+							turnCount={turns.filter((t) => t.role === "user").length}
+						/>
+					)}
 				</div>
 			</div>
 
@@ -541,14 +555,6 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 						</div>
 					</div>
 				</div>
-			)}
-
-			{showReview && (
-				<ConversationReviewPopup
-					sessionId={sessionId}
-					turnCount={turns.filter((t) => t.role === "user").length}
-					onClose={() => setShowReview(false)}
-				/>
 			)}
 
 			{showConfirmExit && (

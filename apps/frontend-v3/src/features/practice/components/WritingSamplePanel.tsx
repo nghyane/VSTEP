@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
+import { ScrollArea } from "#/components/ScrollArea"
 import { TranslateSelection } from "#/features/practice/components/TranslateSelection"
 import type { SampleMarker } from "#/features/practice/types"
 import { cn } from "#/lib/utils"
@@ -17,7 +18,7 @@ export function WritingSamplePanel({ answer, markers, onClose }: Props) {
 			onClick={onClose}
 		>
 			<div
-				className="relative mx-4 max-h-[90vh] w-[calc(100vw-2rem)] max-w-7xl overflow-x-hidden overflow-y-auto"
+				className="relative mx-4 w-[calc(100vw-2rem)] max-w-7xl overflow-hidden"
 				onClick={(e) => e.stopPropagation()}
 			>
 				<button
@@ -27,9 +28,16 @@ export function WritingSamplePanel({ answer, markers, onClose }: Props) {
 				>
 					<Icon name="close" size="xs" />
 				</button>
-				<div className="pt-10 pb-8 px-4">
-					<SampleContent answer={answer} markers={markers} />
-				</div>
+				<ScrollArea
+					maxHeight="90vh"
+					className="pr-3"
+					trackClassName="right-1 py-10"
+					thumbClassName="bg-border"
+				>
+					<div className="pt-10 pb-8 px-4">
+						<SampleContent answer={answer} markers={markers} />
+					</div>
+				</ScrollArea>
 			</div>
 		</div>
 	)
@@ -93,7 +101,7 @@ function SampleContent({ answer, markers }: { answer: string; markers: SampleMar
 			<svg
 				aria-hidden="true"
 				role="presentation"
-				className="pointer-events-none absolute inset-0 size-full overflow-visible"
+				className="pointer-events-none absolute inset-0 hidden size-full overflow-visible 2xl:block"
 				style={{ zIndex: 10 }}
 			>
 				{lines.map((l) => (
@@ -125,7 +133,7 @@ function SampleContent({ answer, markers }: { answer: string; markers: SampleMar
 			{leftMarkers.map((m, i) => (
 				<div
 					key={m.id}
-					className="absolute right-[calc(50%+24rem+1.5rem)] hidden w-40 text-right xl:block"
+					className="absolute right-[calc(50%+24rem+1.5rem)] hidden w-40 text-right 2xl:block"
 					style={{ top: `${i * 100 + 48}px` }}
 				>
 					<div className="flex items-center justify-end gap-2">
@@ -148,7 +156,7 @@ function SampleContent({ answer, markers }: { answer: string; markers: SampleMar
 			{rightMarkers.map((m, i) => (
 				<div
 					key={m.id}
-					className="absolute left-[calc(50%+24rem+1.5rem)] hidden w-40 xl:block"
+					className="absolute left-[calc(50%+24rem+1.5rem)] hidden w-40 2xl:block"
 					style={{ top: `${i * 100 + 48}px` }}
 				>
 					<div className="flex items-center gap-2">
@@ -169,7 +177,7 @@ function SampleContent({ answer, markers }: { answer: string; markers: SampleMar
 			))}
 
 			{markers.length > 0 && (
-				<div className="mx-auto max-w-3xl mt-4 grid gap-2 sm:grid-cols-2 xl:hidden">
+				<div className="mx-auto max-w-3xl mt-4 grid gap-2 sm:grid-cols-2 2xl:hidden">
 					{markers.map((m) => (
 						<div key={m.id} className="flex items-start gap-2 rounded-lg border-2 border-border p-3">
 							<span className={cn("mt-0.5 size-2.5 shrink-0 rounded-full", DOT_BG[m.color])} />

@@ -1,10 +1,8 @@
-import { Link } from "@tanstack/react-router"
 import { ExerciseFeedbackCard } from "#/features/practice/components/ExerciseFeedbackCard"
 import type { SubmitResult } from "#/features/practice/types"
 
 interface ResultPanelConfig {
 	backTo: "/luyen-tap/nghe" | "/luyen-tap/doc"
-	buttonClassName: string
 	contentId: string
 	contentType: "practice_listening_exercise" | "practice_reading_exercise"
 	label: string
@@ -28,9 +26,6 @@ export function PracticeMcqResultPanel({ result, config }: Props) {
 					{result.score}/{result.total}
 				</p>
 				<p className="text-sm text-muted">câu đúng</p>
-				<Link to={config.backTo} className={`${config.buttonClassName} mt-4`}>
-					Về danh sách
-				</Link>
 			</div>
 
 			<div className="mt-5 grid grid-cols-3 gap-2">

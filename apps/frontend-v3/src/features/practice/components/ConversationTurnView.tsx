@@ -5,6 +5,7 @@ import type { ConversationTurn } from "#/features/practice/types"
 import { useAuth } from "#/lib/auth"
 import { getAvatarUrl, getProfileAvatarSrc } from "#/lib/avatar"
 import { useIpa } from "#/lib/phonemize"
+import { censorProfanityText } from "#/lib/profanity"
 import { cn, translateText } from "#/lib/utils"
 
 interface Props {
@@ -134,6 +135,7 @@ function HighlightText({ text, charIndex }: { text: string; charIndex: number })
 export function ConversationTurnView({ turn, aiName, isSpeaking, highlightCharIndex = -1 }: Props) {
 	const profile = useAuth((s) => (s.status === "authenticated" ? s.profile : null))
 	const userAvatarSrc = profile ? getProfileAvatarSrc(profile) : null
+	const displayText = turn.feedback?.profanity?.found ? censorProfanityText(turn.text) : turn.text
 
 	if (turn.role === "ai") {
 		return (
@@ -174,9 +176,9 @@ export function ConversationTurnView({ turn, aiName, isSpeaking, highlightCharIn
 				)}
 				<div className="flex-1 min-w-0">
 					<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-surface px-4 py-3">
-						<p className="text-[15px] text-foreground leading-relaxed">{turn.text}</p>
+						<p className="text-[15px] text-foreground leading-relaxed">{displayText}</p>
 					</div>
-					<TurnActions text={turn.text} ipa={turn.ipa} align="right" />
+					<TurnActions text={displayText} ipa={turn.ipa} align="right" />
 				</div>
 			</div>
 			{turn.feedback && (

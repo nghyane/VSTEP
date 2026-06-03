@@ -73,8 +73,10 @@ final class AssessmentDiagnosticsService
         }
 
         if ($attempt->skill === AssessmentSkill::Speaking) {
+            $raw = (array) ($signals['raw'] ?? []);
             $speech = (array) ($signals['speech'] ?? []);
             $pronunciation = (array) ($signals['pronunciation'] ?? []);
+            $profanity = (array) ($raw['profanity'] ?? []);
 
             return [
                 ...$diagnostics,
@@ -89,6 +91,7 @@ final class AssessmentDiagnosticsService
                 'pronunciation' => $this->pronunciation($pronunciation),
                 'content' => $this->content($contentEvidence),
                 'cohesion' => $this->cohesion($metrics),
+                'profanity' => $this->profanity($profanity),
             ];
         }
 

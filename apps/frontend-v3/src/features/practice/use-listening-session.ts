@@ -11,12 +11,15 @@ interface State {
 
 type Action =
 	| { type: "select"; questionId: string; index: number }
+	| { type: "set-many"; answers: Record<string, number> }
 	| { type: "submitted"; result: SubmitResult }
 
 function reducer(state: State, action: Action): State {
 	switch (action.type) {
 		case "select":
 			return { ...state, answers: { ...state.answers, [action.questionId]: action.index } }
+		case "set-many":
+			return { ...state, answers: { ...state.answers, ...action.answers } }
 		case "submitted":
 			return { ...state, result: action.result }
 	}
@@ -28,6 +31,7 @@ interface ListeningSession {
 	submitting: boolean
 	answeredCount: number
 	select: (questionId: string, index: number) => void
+	setMany: (answers: Record<string, number>) => void
 	submit: () => void
 }
 
@@ -59,6 +63,7 @@ export function useListeningSession(sessionId: string | null): ListeningSession 
 		submitting: mutation.isPending,
 		answeredCount: Object.keys(state.answers).length,
 		select: (questionId, index) => dispatch({ type: "select", questionId, index }),
+		setMany: (answers) => dispatch({ type: "set-many", answers }),
 		submit: () => mutation.mutate(),
 	}
 }

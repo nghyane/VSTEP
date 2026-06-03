@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Icon } from "#/components/Icon"
 import type { ConversationTurnFeedback } from "#/features/practice/types"
 import { useIpa } from "#/lib/phonemize"
+import { censorProfanityWords } from "#/lib/profanity"
 import { cn, speak } from "#/lib/utils"
 
 interface Props {
@@ -11,7 +12,10 @@ interface Props {
 export function ConversationFeedback({ feedback }: Props) {
 	const [open, setOpen] = useState(false)
 	const grammarCount = feedback.grammar_corrections?.length ?? 0
-	const summary = `${feedback.word_count.used}/${feedback.word_count.target} từ${grammarCount > 0 ? ` · ${grammarCount} gợi ý ngữ pháp` : " · Ngữ pháp OK"}`
+	const hasProfanity = feedback.profanity?.found ?? false
+	const summary = hasProfanity
+		? "Từ ngữ không phù hợp"
+		: `${feedback.word_count.used}/${feedback.word_count.target} từ${grammarCount > 0 ? ` · ${grammarCount} gợi ý ngữ pháp` : " · Ngữ pháp OK"}`
 	const betterIpa = useIpa(feedback.better ?? "", feedback.better_ipa)
 
 	return (
@@ -34,6 +38,24 @@ export function ConversationFeedback({ feedback }: Props) {
 
 			{open && (
 				<div className="mt-2 space-y-3">
+					{hasProfanity && feedback.profanity && (
+						<div className="rounded-(--radius-card) border-2 border-b-4 border-warning/30 bg-warning/5 p-3">
+							<div className="flex items-start gap-2">
+								<Icon name="lightning" size="xs" className="text-warning shrink-0 mt-0.5" />
+								<div>
+									<p className="text-sm font-bold text-warning">Nên dùng ngôn ngữ lịch sự khi luyện nói</p>
+									<p className="text-xs text-muted mt-1">
+										Phát hiện từ ngữ không phù hợp ({feedback.profanity.count} lần):{" "}
+										<span className="font-bold text-foreground">
+											{censorProfanityWords(feedback.profanity.words)}
+										</span>
+										. Hãy nói lại bằng tiếng Anh phù hợp với ngữ cảnh học thuật.
+									</p>
+								</div>
+							</div>
+						</div>
+					)}
+
 					{/* Sử dụng từ */}
 					{feedback.vocab_check.length > 0 && (
 						<div>

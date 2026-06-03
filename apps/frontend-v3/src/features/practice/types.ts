@@ -283,6 +283,11 @@ export interface ConversationTurnFeedback {
 	better: string | null
 	better_ipa: string | null
 	user_ipa: string | null
+	profanity?: {
+		found: boolean
+		words: string[]
+		count: number
+	}
 }
 
 export type ConversationTurnRole = "ai" | "user"
