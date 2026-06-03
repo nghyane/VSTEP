@@ -31,6 +31,7 @@ final class TopupService
     public function __construct(
         private readonly WalletService $walletService,
         private readonly NotificationService $notificationService,
+        private readonly NotificationEmailService $emailService,
         private readonly PaymentGatewayRegistry $gateways,
     ) {}
 
@@ -159,14 +160,29 @@ final class TopupService
                 'callback_received_at' => now(),
             ]);
 
-            DB::afterCommit(fn () => $this->notificationService->push(
-                profile: $order->profile,
-                type: NotificationType::TopupCompleted,
-                title: 'Nạp xu thành công',
-                body: "Bạn đã nhận {$order->coins_to_credit} xu.",
-                iconKey: IconKey::Coin,
-                dedupKey: "topup:{$order->id}",
-            ));
+            DB::afterCommit(function () use ($order): void {
+                $notification = $this->notificationService->push(
+                    profile: $order->profile,
+                    type: NotificationType::TopupCompleted,
+                    title: 'Nạp xu thành công',
+                    body: "Bạn đã nhận {$order->coins_to_credit} xu.",
+                    iconKey: IconKey::Coin,
+                    dedupKey: "topup:{$order->id}",
+                );
+
+                if ($notification !== null) {
+                    $this->emailService->sendToProfile(
+                        $order->profile,
+                        'Nạp xu VSTEP thành công',
+                        [
+                            "Bạn đã nhận {$order->coins_to_credit} xu vào ví VSTEP.",
+                            "Mã đơn: {$order->order_code}.",
+                        ],
+                        'Xem ví của bạn',
+                        '/dashboard',
+                    );
+                }
+            });
 
             return $order;
         });

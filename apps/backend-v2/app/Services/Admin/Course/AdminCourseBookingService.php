@@ -15,6 +15,7 @@ use App\Models\Course;
 use App\Models\TeacherBooking;
 use App\Models\TeacherSlot;
 use App\Services\Admin\Course\Contracts\AdminCourseBookingInterface;
+use App\Services\NotificationEmailService;
 use App\Services\NotificationService;
 use App\Services\WalletService;
 use Carbon\CarbonImmutable;
@@ -31,6 +32,7 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
     public function __construct(
         private readonly WalletService $wallet,
         private readonly NotificationService $notification,
+        private readonly NotificationEmailService $email,
     ) {}
 
     public function listSlots(Course $course, ?CarbonImmutable $start = null, ?CarbonImmutable $end = null): Collection
@@ -241,7 +243,7 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
             $body = "Trung tâm đã cập nhật link phòng học cho buổi {$startsAt}.";
         }
 
-        $this->notification->push(
+        $notification = $this->notification->push(
             $booking->profile,
             type: NotificationType::BookingMeetUrlUpdated,
             title: $title,
@@ -250,6 +252,16 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
             payload: ['booking_id' => $booking->id, 'meet_url' => $meetUrl],
             dedupKey: "booking_meet_url:{$booking->id}:".md5((string) $meetUrl),
         );
+
+        if ($notification !== null) {
+            $this->email->sendToProfile(
+                $booking->profile,
+                $title,
+                [$body],
+                'Xem lịch hẹn',
+                "/khoa-hoc/{$booking->slot->course_id}/dat-lich-1-1",
+            );
+        }
 
         return $booking->fresh(['slot', 'profile.account']);
     }
@@ -303,7 +315,7 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
             return $locked;
         });
 
-        $this->notification->push(
+        $notification = $this->notification->push(
             $booking->profile,
             type: NotificationType::BookingCancelled,
             title: 'Buổi học đã bị hủy',
@@ -311,6 +323,19 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
             iconKey: IconKey::Alert,
             dedupKey: "booking_cancelled:{$booking->id}",
         );
+
+        if ($notification !== null) {
+            $this->email->sendToProfile(
+                $booking->profile,
+                'Buổi học 1-1 đã bị hủy',
+                [
+                    "Buổi học {$booking->slot->starts_at->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i')} đã bị hủy bởi trung tâm.",
+                    'Nếu bạn đã bị trừ xu cho lịch hẹn này, hệ thống sẽ hoàn lại xu theo chính sách hiện tại.',
+                ],
+                'Xem lịch hẹn',
+                "/khoa-hoc/{$booking->slot->course_id}/dat-lich-1-1",
+            );
+        }
 
         return $booking->fresh(['slot', 'profile.account']);
     }
