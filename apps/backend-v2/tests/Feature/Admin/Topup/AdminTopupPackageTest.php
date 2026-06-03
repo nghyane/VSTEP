@@ -30,7 +30,7 @@ class AdminTopupPackageTest extends TestCase
 
     public function test_staff_can_list_packages_with_pagination_meta(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
+        $staff = User::factory()->create(['role' => Role::Admin]);
         WalletTopupPackage::factory()->count(3)->create();
 
         $token = $this->tokenFor($staff);
@@ -44,7 +44,7 @@ class AdminTopupPackageTest extends TestCase
 
     public function test_staff_can_filter_packages_by_is_active(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
+        $staff = User::factory()->create(['role' => Role::Admin]);
         WalletTopupPackage::factory()->create(['is_active' => true, 'label' => 'Active']);
         WalletTopupPackage::factory()->create(['is_active' => false, 'label' => 'Hidden']);
 
@@ -59,7 +59,7 @@ class AdminTopupPackageTest extends TestCase
 
     public function test_staff_can_create_package(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
+        $staff = User::factory()->create(['role' => Role::Admin]);
 
         $token = $this->tokenFor($staff);
         $res = $this->withHeader('Authorization', "Bearer {$token}")
@@ -79,7 +79,7 @@ class AdminTopupPackageTest extends TestCase
 
     public function test_store_package_rejects_amount_below_minimum(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
+        $staff = User::factory()->create(['role' => Role::Admin]);
 
         $token = $this->tokenFor($staff);
         $res = $this->withHeader('Authorization', "Bearer {$token}")
@@ -95,7 +95,7 @@ class AdminTopupPackageTest extends TestCase
 
     public function test_staff_can_update_package(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
+        $staff = User::factory()->create(['role' => Role::Admin]);
         $package = WalletTopupPackage::factory()->create(['label' => 'Old', 'bonus_coins' => 0]);
 
         $token = $this->tokenFor($staff);
@@ -112,7 +112,7 @@ class AdminTopupPackageTest extends TestCase
 
     public function test_activate_and_deactivate_endpoints_toggle_state(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
+        $staff = User::factory()->create(['role' => Role::Admin]);
         $package = WalletTopupPackage::factory()->create(['is_active' => false]);
 
         $token = $this->tokenFor($staff);
@@ -130,7 +130,7 @@ class AdminTopupPackageTest extends TestCase
 
     public function test_setting_best_value_unsets_previous_best_value(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
+        $staff = User::factory()->create(['role' => Role::Admin]);
         $oldBest = WalletTopupPackage::factory()->create(['is_best_value' => true, 'label' => 'Old']);
         $newBest = WalletTopupPackage::factory()->create(['is_best_value' => false, 'label' => 'New']);
 
@@ -147,7 +147,7 @@ class AdminTopupPackageTest extends TestCase
 
     public function test_creating_package_with_best_value_unsets_previous(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
+        $staff = User::factory()->create(['role' => Role::Admin]);
         $existing = WalletTopupPackage::factory()->create(['is_best_value' => true, 'label' => 'Old best']);
 
         $token = $this->tokenFor($staff);
@@ -166,7 +166,7 @@ class AdminTopupPackageTest extends TestCase
 
     public function test_unsetting_best_value_keeps_others_unchanged(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
+        $staff = User::factory()->create(['role' => Role::Admin]);
         $best = WalletTopupPackage::factory()->create(['is_best_value' => true]);
 
         $token = $this->tokenFor($staff);
@@ -203,7 +203,7 @@ class AdminTopupPackageTest extends TestCase
 
     public function test_store_package_rejects_amount_above_maximum(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
+        $staff = User::factory()->create(['role' => Role::Admin]);
 
         $token = $this->tokenFor($staff);
         $res = $this->withHeader('Authorization', "Bearer {$token}")
@@ -219,7 +219,7 @@ class AdminTopupPackageTest extends TestCase
 
     public function test_list_falls_back_to_default_sort_when_field_not_whitelisted(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
+        $staff = User::factory()->create(['role' => Role::Admin]);
         WalletTopupPackage::factory()->create(['display_order' => 2, 'label' => 'B']);
         WalletTopupPackage::factory()->create(['display_order' => 1, 'label' => 'A']);
 
@@ -234,7 +234,7 @@ class AdminTopupPackageTest extends TestCase
 
     public function test_delete_is_blocked_when_orders_reference_package(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
+        $staff = User::factory()->create(['role' => Role::Admin]);
         $package = WalletTopupPackage::factory()->create();
         WalletTopupOrder::create([
             'profile_id' => Profile::factory()->create()->id,
@@ -255,7 +255,7 @@ class AdminTopupPackageTest extends TestCase
 
     public function test_staff_can_delete_package(): void
     {
-        $staff = User::factory()->create(['role' => Role::Staff]);
+        $staff = User::factory()->create(['role' => Role::Admin]);
         $package = WalletTopupPackage::factory()->create();
 
         $token = $this->tokenFor($staff);

@@ -1,7 +1,7 @@
 export type SkillKey = "listening" | "reading" | "writing" | "speaking"
 export type SkillScores = Record<SkillKey, number | null>
 
-export interface Exam {
+export interface ExamBase {
 	id: string
 	slug: string
 	title: string
@@ -11,9 +11,58 @@ export interface Exam {
 	is_published: boolean
 	created_at: string
 	updated_at: string
-	/** Số lượt làm đã hoàn thành (submitted/graded/auto_submitted). Chỉ có ở list endpoint. */
-	attempts_count?: number
 }
+
+export interface Exam extends ExamBase {}
+
+export interface ExamListItem extends ExamBase {
+	attempts_count: number
+	user_state: ExamListUserState
+}
+
+export type ExamListUserStatus = "not_started" | "in_progress" | "submitted"
+
+export type ExamListStatusTone = "primary" | "success" | "warning"
+
+export type ExamListPrimaryAction = "start" | "continue" | "restart"
+
+interface ExamListUserStateBase<
+	TStatus extends ExamListUserStatus,
+	TTone extends ExamListStatusTone,
+	TAction extends ExamListPrimaryAction,
+> {
+	status: TStatus
+	status_label: string
+	status_tone: TTone
+	primary_action: TAction
+	primary_action_label: string
+}
+
+export type ExamNotStartedUserState = ExamListUserStateBase<"not_started", "success", "start"> & {
+	active_session_id: null
+	deadline_at: null
+	selected_skills: null
+	progress_label: null
+	session_count: 0
+}
+
+export type ExamInProgressUserState = ExamListUserStateBase<"in_progress", "warning", "continue"> & {
+	active_session_id: string
+	deadline_at: string
+	selected_skills: SkillKey[]
+	progress_label: string
+	session_count: 0
+}
+
+export type ExamSubmittedUserState = ExamListUserStateBase<"submitted", "primary", "restart"> & {
+	active_session_id: null
+	deadline_at: null
+	selected_skills: null
+	progress_label: null
+	session_count: number
+}
+
+export type ExamListUserState = ExamNotStartedUserState | ExamInProgressUserState | ExamSubmittedUserState
 
 export interface ExamVersionMcqItem {
 	id: string
@@ -100,7 +149,7 @@ export interface ExamSessionSummary {
 	mode: "full" | "custom"
 	selected_skills: SkillKey[]
 	is_full_test: boolean
-	status: "active" | "submitted" | "graded" | "auto_submitted"
+	status: "active" | "submitted" | "auto_submitted" | "grading" | "graded"
 	started_at: string
 	submitted_at: string | null
 	server_deadline_at: string
@@ -119,7 +168,7 @@ export interface ExamSessionData {
 	started_at: string
 	server_deadline_at: string
 	submitted_at: string | null
-	status: "active" | "submitted" | "graded"
+	status: "active" | "submitted" | "auto_submitted" | "grading" | "graded"
 	coins_charged: number
 }
 
@@ -210,7 +259,12 @@ export interface McqDetailItem {
 	answered_at: string | null
 }
 
-import type { AssessmentFeedback, CriterionScore } from "#/features/grading/types"
+import type {
+	AssessmentDiagnostics,
+	AssessmentFeedback,
+	AssessmentResultDisplay,
+	CriterionScore,
+} from "#/features/grading/types"
 
 export interface WritingFeedbackItem {
 	submission_id: string
@@ -220,6 +274,9 @@ export interface WritingFeedbackItem {
 	text: string
 	overall_band: number | null
 	criterion_scores: CriterionScore[] | null
+	caps_applied?: unknown
+	display?: AssessmentResultDisplay | null
+	diagnostics?: AssessmentDiagnostics | null
 	feedback: AssessmentFeedback | null
 	calculation_trace: unknown
 }
@@ -232,13 +289,40 @@ export interface SpeakingFeedbackItem {
 	transcript: string | null
 	overall_band: number | null
 	criterion_scores: CriterionScore[] | null
+	caps_applied?: unknown
+	display?: AssessmentResultDisplay | null
+	diagnostics?: AssessmentDiagnostics | null
 	feedback: AssessmentFeedback | null
 	calculation_trace: unknown
 }
 
+export interface ExamResultSummary {
+	mcq_score: number
+	mcq_total: number
+	score_on_10: number
+	overall_band: number | null
+	level: string
+	has_pending_ai: boolean
+}
+
+export interface ExamResultPerformanceRow {
+	skill: SkillKey
+	label: string
+	score_type: "accuracy" | "band"
+	status: "graded" | "pending" | "not_submitted"
+	total: number
+	correct: number | null
+	wrong: number | null
+	accuracy_pct: number | null
+	band: number | null
+}
+
 export interface SessionResultsData {
 	session: ExamSessionSummary
-	scores: SkillScores
+	exam: Pick<Exam, "id" | "title"> | null
+	scores: SkillScores | null
+	summary: ExamResultSummary
+	performance_rows: ExamResultPerformanceRow[]
 	overall_band: number | null
 	level: string
 	/** Aggregate MCQ: score (đã chấm) / total (số câu trong scope, câu không đáp tính sai). */

@@ -73,7 +73,10 @@ final class DemoProgressSeeder extends Seeder
             return;
         }
 
-        $version = ExamVersion::query()->first();
+        $version = ExamVersion::query()
+            ->where('is_active', true)
+            ->whereHas('exam', fn ($query) => $query->where('is_published', true))
+            ->first();
         if (! $version) {
             $this->command?->warn('No exam version found. Run ContentSeeder first.');
 

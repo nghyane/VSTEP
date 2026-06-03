@@ -116,6 +116,7 @@ final class DemoAccountSeeder extends Seeder
                 'password' => Hash::make(self::DEMO_PASSWORD),
                 'title' => $title,
                 'bio' => $bio,
+                'email_verified_at' => now(),
             ],
         );
 

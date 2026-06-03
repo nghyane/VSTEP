@@ -22,6 +22,8 @@ final class ProductionDatabaseSeeder extends Seeder
             GradingRubricSeeder::class,
             CefrVocabularySeeder::class,
             ContentSeeder::class,
+            ReferenceExamSeeder::class,
+            ReferencePracticeContentSeeder::class,
             LegacyCurriculumContentSeeder::class,
             VocabCurriculumSeeder::class,
             GrammarCurriculumSeeder::class,

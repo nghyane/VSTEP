@@ -1,5 +1,6 @@
 import { HTTPError } from "ky"
 import { create } from "zustand"
+import { useWelcomeGift } from "#/features/onboarding/use-welcome-gift"
 import { type ApiResponse, api } from "#/lib/api"
 import { queryClient } from "#/lib/query-client"
 import { useToast } from "#/lib/toast"
