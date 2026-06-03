@@ -1,9 +1,21 @@
 # Defense Pack — VSTEP Preparation System
 
+## Mục tiêu bộ tài liệu
+
+Tài liệu này dùng để gen slide/notes bảo vệ theo hướng: **nói core trước, demo sản phẩm sớm, chi tiết lệch scope để Q&A**.
+
 ## Đọc theo thứ tự
 
-1. `01-noi-dung-bao-ve.md` — slide outline, scope, demo flow.
-2. `02-cham-diem-va-kiem-chung.md` — scoring formula, AI role, validation, Q&A.
+1. `01-noi-dung-bao-ve.md` — blueprint main deck, scope chính, demo flow.
+2. `02-cham-diem-va-kiem-chung.md` — deep dive chấm điểm, validation, Q&A.
+
+## Quy ước gen docs/slide
+
+- Heading cấp 2 là section boundary.
+- Heading cấp 3 là subsection/slide detail.
+- Không biến mọi bullet thành slide riêng.
+- Main deck chỉ nên có 16–18 slide; phần chi tiết để backup/Q&A.
+- Demo chính trên learner web; admin dùng để chứng minh quản trị/rubric; mobile chỉ mở nhanh nếu cần.
 
 ## Tên đề tài
 
@@ -15,27 +27,43 @@
 
 > Hệ thống luyện thi VSTEP hỗ trợ luyện 4 kỹ năng, thi thử, chấm Writing/Speaking có căn cứ, phát hiện điểm yếu từ dữ liệu bài thi thử và gợi ý lộ trình học tiếp.
 
-## 4 nguyên tắc không được lệch
+## Core story phải giữ
 
-1. Không nói hệ thống chấm chuẩn như giám khảo VSTEP.
-2. Không nói AI quyết định điểm cuối.
-3. Không nói lộ trình học dựa trên mọi dữ liệu; hiện trình bày là dựa trên dữ liệu bài thi thử.
-4. Không claim dự đoán chính xác, 99% uptime hoặc dưới 3 giây nếu chưa có báo cáo đo kiểm.
+```text
+Người học luyện tập/thi thử → hệ thống chấm có căn cứ → phát hiện điểm yếu → gợi ý học tiếp → theo dõi tiến độ.
+```
 
-## 3 quyết định đã chốt
+## Nói chủ động vs để Q&A
 
-| Quyết định | Cách thể hiện trong slide/demo |
-|---|---|
-| Điểm cuối do hệ thống tính | Trình bày công thức và bảng tín hiệu đầu vào; AI chỉ hỗ trợ phân tích/feedback. |
-| Tiêu chí chấm có phiên bản | Bộ tiêu chí chấm được lưu theo phiên bản; kết quả cũ gắn với phiên bản tiêu chí tại thời điểm chấm. |
-| Ưu tiên demo sản phẩm | Lướt nhanh cấu trúc VSTEP/ôn tập ngắt quãng; dành thời gian cho cơ chế chấm và demo sản phẩm. |
+Nói chủ động trên slide:
+
+- Core learning loop và demo thật.
+- Luyện 4 kỹ năng + thi thử.
+- AI không quyết định điểm cuối; hệ thống tính theo rubric/formula.
+- Writing/Speaking là điểm luyện tập tham khảo.
+- Chưa claim official accuracy/SLA nếu chưa có số đo.
+
+Chỉ trả lời khi hội đồng hỏi:
+
+- Placement test riêng hiện chưa có.
+- Adaptive difficulty toàn hệ thống chưa hoàn chỉnh.
+- Predictive analytics hiện mới ở mức rule-based support/hướng phát triển.
+- Teacher giao module cá nhân hóa chưa có.
+- 99% uptime/<3s nếu bị hỏi.
 
 ## Từ nên dùng
 
-| Tránh nói | Nên nói |
-|---|---|
-| điểm chính thức | điểm thi thử tham khảo / điểm ước lượng năng lực |
-| AI chấm điểm | hệ thống tính điểm theo công thức, AI hỗ trợ phân tích/feedback |
-| chấm chuẩn VSTEP | bám tiêu chí đánh giá và có căn cứ chấm điểm |
-| dữ liệu vàng | bộ mẫu kiểm thử nội bộ / bộ mẫu đối chiếu |
-| dự đoán kết quả | báo cáo tiến độ và định hướng học tiếp |
+- Tránh “điểm chính thức” → nói “điểm thi thử tham khảo” hoặc “điểm ước lượng năng lực”.
+- Tránh “AI chấm điểm” → nói “hệ thống tính điểm theo công thức, AI hỗ trợ phân tích/feedback”.
+- Tránh “chấm chuẩn VSTEP” → nói “bám định dạng VSTEP và có căn cứ chấm điểm”.
+- Tránh “dữ liệu vàng” → nói “bộ mẫu kiểm thử nội bộ” hoặc “bộ mẫu đối chiếu”.
+- Tránh “dự đoán kết quả” → nói “báo cáo tiến độ và định hướng học tiếp”.
+
+## Code scope đã rà
+
+- `apps/backend-v2`: API/business logic cho auth/profile, practice, thi thử, assessment jobs/results, learning path/progress, courses, wallet, notifications, admin/teacher APIs.
+- `apps/frontend-v3`: learner web cho dashboard, luyện tập, thi thử, kết quả chấm, khóa học/đặt lịch, hồ sơ/wallet/promo.
+- `apps/admin`: staff/admin/teacher web cho quản lý nội dung, đề/version, rubric, courses/slots/bookings, users, topup/promo/config, analytics, teacher schedule/bookings/leave.
+- `apps/mobile-v2`: learner mobile companion cho tổng quan, luyện tập, thi thử, kết quả, khóa học, hồ sơ, wallet/topup, notifications.
+
+Không đưa `_deprecated` vào scope bảo vệ.

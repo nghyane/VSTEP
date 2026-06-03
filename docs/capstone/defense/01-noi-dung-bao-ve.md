@@ -2,61 +2,144 @@
 
 ## Message chính
 
-> Đây là nền tảng luyện thi VSTEP thích ứng. Hệ thống không chỉ cho làm đề, mà còn giúp người học thi thử, xem điểm yếu theo kỹ năng, nhận phản hồi Writing/Speaking và có lộ trình học tiếp dựa trên dữ liệu bài thi thử.
+> Đây là nền tảng luyện thi VSTEP thích ứng. Trọng tâm không phải chỉ là kho đề, mà là vòng học: luyện tập/thi thử → kết quả có căn cứ → phát hiện điểm yếu → gợi ý học tiếp → theo dõi tiến độ.
 
-## Slide outline đề xuất
+## Deck blueprint hợp lý
 
-| # | Slide | Nội dung phải có | Ghi chú trình bày |
-|---|---|---|---|
-| 1 | Title | Tên đề tài, nhóm, GVHD | Đọc đúng tên đề tài theo phiếu đăng ký. |
-| 2 | Context | VSTEP dùng cho tốt nghiệp, đầu vào cao học, chứng chỉ tiếng Anh | 1 slide, nói nhanh. |
-| 3 | VSTEP format | 4 kỹ năng, cấu trúc tổng quan, thang điểm/band | Không giảng học thuật sâu. |
-| 4 | Problems | Tài liệu rời rạc, luyện đề thiếu lộ trình, khó biết điểm yếu, GV khó theo dõi | Đặt vấn đề từ thực tế trung tâm/file tài liệu/bài đăng. |
-| 5 | Actors | Learner, Instructor, Admin | Chỉ 3 nhóm chính. |
-| 6 | Main features by actors | Bảng chức năng theo từng actor | Nhìn vào là hiểu scope. |
-| 7 | System architecture | Web/Mobile → API → Database → AI/Scoring services | Mức tổng quan, không nói code. |
-| 8 | Technology | React/Vite, Expo/React Native, Laravel API, database, queue/storage | Chỉ nêu công nghệ đang dùng. |
-| 9 | Assessment mechanism | Công thức chấm do hệ thống kiểm soát; AI chỉ hỗ trợ lấy tín hiệu/feedback | Slide quan trọng nhất. |
-| 10 | Rubric versioning | Tiêu chí chấm lưu theo phiên bản; admin tạo và activate version mới | Chứng minh không sửa tay bằng code sau mỗi lần thay đổi. |
-| 11 | Vocabulary review | Ôn tập ngắt quãng/SRS | Chỉ nói ngắn, để “See detail” nếu hỏi. |
-| 12 | Demo 1 | Người học đăng nhập, xem bài thi thử/luyện tập | Vào phần demo sớm. |
-| 13 | Demo 2 | Làm/xem kết quả Writing/Speaking | Nhấn mạnh có căn cứ chấm điểm. |
-| 14 | Demo 3 | Điểm yếu, lộ trình học, bảng tiến độ | Nói rõ dựa trên dữ liệu bài thi thử. |
-| 15 | Differences | Không chỉ bán tài liệu/luyện đề; có đánh giá, feedback, lộ trình | Nêu khác biệt sản phẩm. |
-| 16 | Achievements | Luồng chính hoàn chỉnh, chấm có công thức, có kiểm thử nội bộ | Không overclaim. |
-| 17 | Limitations | Điểm Writing/Speaking là tham khảo; chưa có dataset VSTEP chính thức; chưa claim dự đoán/99% uptime/<3s | Trung thực. |
-| 18 | Conclusion | Hệ thống hỗ trợ luyện thi có cấu trúc và định hướng học tiếp | Kết gọn. |
-| 19 | Thank you | Cảm ơn hội đồng | Chuẩn bị Q&A. |
+Gom deck thành 5 nhóm chính để hội đồng thấy mạch rõ: **vì sao làm → làm gì → làm thế nào → demo → kết quả/giới hạn**.
 
-## Main features by actors
+1. **Opening & problem** — slides 1–4: đặt bối cảnh, nói nhanh VSTEP format và vấn đề người học.
+2. **Product scope** — slides 5–7: chứng minh sản phẩm đúng đề tài qua core learning loop, actor/app scope và main features.
+3. **Solution design** — slides 8–11: giải thích architecture, assessment mechanism, rubric versioning, learning path/SRS.
+4. **Product demo** — slides 12–14: chứng minh hệ thống chạy thật theo luồng dashboard → practice/thi thử → result → learning path/progress.
+5. **Result & closing** — slides 15–18: chốt achievements, limitations, future work và Q&A.
 
-| Actor | Chức năng chính |
-|---|---|
-| Learner | Đăng ký/đăng nhập, luyện 4 kỹ năng, làm bài thi thử, xem kết quả, học từ vựng/ngữ pháp, xem lộ trình và tiến độ. |
-| Instructor | Theo dõi người học, xem kết quả/điểm yếu, hỗ trợ định hướng luyện tập. |
-| Admin | Quản lý người dùng, nội dung luyện tập/thi thử, tiêu chí chấm, báo cáo/thống kê. |
+## 1. Opening & problem
 
-## Đối chiếu phiếu đăng ký và sản phẩm thực tế
+### Slide nên có
 
-| Mục trong phiếu đăng ký | Cách nói khi bảo vệ |
-|---|---|
-| Comprehensive skill assessment | Có luyện tập và thi thử đủ 4 kỹ năng. |
-| Personalized learning support | Lộ trình học dựa trên điểm yếu từ dữ liệu bài thi thử. |
-| Adaptive exercises | Trình bày là gợi ý luyện tập theo điểm yếu; không nói thích ứng động hoàn toàn nếu chưa chứng minh. |
-| AI module | AI/công cụ phân tích hỗ trợ lấy tín hiệu và feedback; điểm cuối do hệ thống tính. |
-| Rubric update | Admin quản lý version tiêu chí chấm; kết quả cũ giữ liên kết với version đã dùng. |
-| Predictive analytics | Chỉ nói là hướng phát triển nếu chưa có đánh giá riêng. |
-| Mobile application | Có ứng dụng di động cho learner; demo chính trên web. |
-| 99% uptime / dưới 3 giây | Chỉ nêu nếu có số đo kiểm chứng. |
+- **Title:** tên đề tài, nhóm, GVHD; đọc đúng tên theo phiếu đăng ký.
+- **VSTEP context:** VSTEP phục vụ tốt nghiệp, cao học, chứng chỉ; nói nhanh trong 1 slide.
+- **VSTEP format:** 4 kỹ năng, thang band tổng quan; không giảng học thuật sâu.
+- **Problem:** tài liệu rời rạc, thiếu lộ trình, khó biết điểm yếu, Writing/Speaking thiếu feedback nhanh.
 
-## Demo flow ngắn
+### Câu chuyển
+
+> Vì vậy nhóm không chỉ làm một thư viện đề, mà thiết kế một vòng học khép kín từ luyện tập đến phản hồi và theo dõi tiến độ.
+
+## 2. Product scope
+
+### Scope chính nên nói trên slide
+
+- **Learner web:** dashboard, practice hub, vocab SRS, grammar, 4-skill practice, thi thử, grading result, courses/1-1 booking, profile, wallet/promo. Đây là demo chính.
+- **Mobile app:** tổng quan, luyện tập, thi thử, kết quả chấm, khóa học, hồ sơ, wallet/topup, notifications. Nói là learner companion app, không cần demo hết.
+- **Admin/staff web:** dashboard/analytics, vocab/grammar, đề thi/version, practice content, rubric, courses/slots/bookings, users, topup/promo/config. Dùng để chứng minh hệ thống quản trị được.
+- **Teacher web:** dashboard, lịch dạy, buổi học 1-1, đơn nghỉ. Nói đúng phạm vi hiện tại.
+- **Backend API:** auth/profile, assessment jobs/results, progress/learning path/streak/heatmap, audio, courses, wallet, notifications, admin/teacher APIs. Nêu trong architecture.
+
+### Main features by actor
+
+- **Learner:** quản lý hồ sơ/mục tiêu, luyện 4 kỹ năng, học vocab/grammar, thi thử, xem kết quả/rubric/feedback, learning path/progress/streak, đăng ký khóa học và đặt lịch 1-1.
+- **Teacher:** xem dashboard lịch dạy, lịch học chung/1-1, danh sách booking, gửi đơn nghỉ.
+- **Staff/Admin:** quản lý nội dung học, đề thi/version, practice content, rubric chấm điểm, khóa học/slot/booking, người dùng, wallet/topup/promo/config, analytics.
+
+## 3. Solution design
+
+### Architecture slide
+
+```text
+Learner Web / Mobile / Admin Web
+        ↓
+Laravel API
+        ↓
+Database + Queue + Storage
+        ↓
+AI / language / speech services as signal providers
+```
+
+Nói ngắn: frontend phục vụ learner/admin/teacher; backend giữ nghiệp vụ; tác vụ Writing/Speaking chạy qua assessment jobs/results.
+
+### Assessment mechanism slide
+
+Điểm cần nói chủ động:
+
+- Listening/Reading: chấm theo đáp án.
+- Writing/Speaking: hệ thống tính điểm theo rubric/formula.
+- AI/công cụ ngoài chỉ hỗ trợ trích tín hiệu và feedback.
+- Điểm Writing/Speaking là điểm luyện tập/thi thử tham khảo, không phải điểm chính thức.
+
+### Rubric versioning slide
+
+- Admin tạo draft từ version cũ.
+- Chỉnh policy/trọng số trong version mới.
+- Simulate/kiểm tra rồi activate.
+- Kết quả cũ giữ liên kết với version tiêu chí đã dùng.
+
+### Learning path/SRS slide
+
+Nói vừa đủ:
+
+- Learning path dùng mục tiêu profile, điểm thi thử và tiến độ luyện tập.
+- Vocab có SRS để ôn tập ngắt quãng.
+- Không cần trình bày sâu thuật toán nếu chưa bị hỏi.
+
+## 4. Product demo
+
+### Demo chính trên learner web
 
 1. Login learner.
-2. Mở bài thi thử / luyện tập 4 kỹ năng.
-3. Xem kết quả Writing/Speaking có tiêu chí và căn cứ.
-4. Xem điểm yếu và lộ trình học từ dữ liệu bài thi thử.
-5. Xem dashboard tiến độ.
-6. Nếu còn thời gian: màn hình quản lý của instructor/admin, đặc biệt phần rubric versioning nếu cần chứng minh khả năng quản trị.
+2. Dashboard: mục tiêu, streak, heatmap, năng lực 4 kỹ năng, điểm qua các lần thi.
+3. Practice hub: vocab/grammar, 4 kỹ năng, gợi ý ưu tiên từ learning path.
+4. Thi thử: thư viện đề, phiên đang làm/đã nộp, kết quả theo kỹ năng.
+5. Chi tiết kết quả: Listening/Reading đúng-sai; Writing/Speaking có rubric, feedback, transcript/audio nếu có.
+6. Quay lại learning path/progress để chỉ ra điểm yếu và next action.
+7. Nếu còn thời gian: admin rubric versioning hoặc mobile learner app.
+
+### Không đưa vào trọng tâm demo
+
+- Wallet/topup/promo: có trong code nhưng là vận hành, không phải giá trị học tập lõi.
+- Course enrollment/booking 1-1: chỉ demo nếu hỏi business flow.
+- Teacher leave/schedule: đúng scope teacher portal, không cần demo main flow.
+- Backend rule-based risk endpoint: không trình bày như predictive analytics đã kiểm chứng.
+
+## 5. Result & closing
+
+### Achievements nên nói
+
+- Hoàn chỉnh core learning loop cho learner.
+- Có luyện tập/thi thử đủ 4 kỹ năng.
+- Writing/Speaking có rubric, evidence, feedback và formula.
+- Có dashboard/progress/learning path/SRS.
+- Có admin quản trị nội dung, đề thi/version và rubric versioning.
+- Có learner mobile companion.
+
+### Limitations nên nói ngắn
+
+- **Writing/Speaking scoring:** điểm tham khảo để luyện tập, không thay điểm chính thức/giám khảo.
+- **Validation:** chưa có bộ dữ liệu VSTEP chính thức do giám khảo chấm quy mô lớn.
+- **Predictive/SLA:** chưa claim ML predictive accuracy, 99% uptime hoặc <3s nếu chưa có benchmark.
+
+### Future work nếu cần
+
+- Dynamic adaptive difficulty toàn hệ thống.
+- Predictive analytics khi có dữ liệu thực tế đủ lớn.
+- Teacher-assigned personalized modules.
+- Large-scale validation với bài chấm chính thức.
+- SLA/scale testing production.
+
+## Scope alignment với phiếu đăng ký
+
+### Nói chủ động trên slide
+
+- **Comprehensive skill assessment:** có luyện tập và thi thử đủ 4 kỹ năng; Listening/Reading chấm theo đáp án, Writing/Speaking chấm theo rubric/formula.
+- **Personalized learning support:** learning path/gợi ý học tiếp dựa trên mục tiêu, điểm thi thử và tiến độ luyện tập.
+- **Adaptive exercises:** trình bày là gợi ý luyện tập theo điểm yếu và SRS cho từ vựng.
+- **AI module:** AI/công cụ ngoài hỗ trợ lấy tín hiệu và feedback; điểm cuối do formula/rubric của hệ thống tính.
+- **Rubric update:** admin quản lý rubric versioning: draft, simulate, activate; kết quả cũ giữ version đã dùng.
+- **Mobile application:** có learner mobile companion; demo chính vẫn trên web.
+- **Reporting/analytics:** learner có dashboard/streak/heatmap/score trend; admin có analytics vận hành.
+
+Chi tiết các phần thu hẹp so với phiếu đăng ký để ở `02-cham-diem-va-kiem-chung.md` mục Q&A, không tự đưa hết lên slide chính.
 
 ## Câu chốt
 

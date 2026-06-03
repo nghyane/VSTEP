@@ -48,7 +48,7 @@
 
 ```text
 Member 1: VSTEP context, problem, solution, scope alignment
-Member 2: System modules, learner flow, practice/mock test demo
+Member 2: System modules, learner flow, practice/thi thử demo
 Member 3: Assessment Engine, scoring formula, validation numbers
 Member 4: Learning path, Anki/SRS, admin/course/progress, CI/CD, conclusion
 ```
