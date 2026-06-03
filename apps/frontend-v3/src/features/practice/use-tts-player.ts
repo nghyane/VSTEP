@@ -117,7 +117,7 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
 	const [playing, setPlaying] = useState(false)
 	const [activeWordIndex, setActiveWordIndex] = useState(-1)
 	const [activeTurnIndex, setActiveTurnIndex] = useState(-1)
-	const [speed, setSpeed] = useState<TTSSpeed>(0.85)
+	const [speed, setSpeed] = useState<TTSSpeed>(1)
 	const cancelledRef = useRef(false)
 	const wordTimerRef = useRef(0)
 
