@@ -245,7 +245,7 @@ class ProgressService
             'listening' => (int) $row->listening_exercise_count,
             'reading' => (int) $row->reading_exercise_count,
             'writing' => (int) $row->writing_submission_count,
-            'speaking' => (int) $row->speaking_submission_count,
+            'speaking' => (int) $row->speaking_submission_count + (int) $row->drill_session_count,
             'vocab' => (int) $row->vocab_review_count,
             'exam' => (int) $row->exam_session_count,
         ])->values()->toArray();

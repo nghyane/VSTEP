@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { SkillIcon } from "#/components/SkillIcon"
-import { examSessionsQuery, overviewQuery, selectTargetBand } from "#/features/dashboard/queries"
+import { overviewQuery, selectTargetBand } from "#/features/dashboard/queries"
+import type { ScoreTimelinePoint } from "#/features/dashboard/types"
 import { skills } from "#/lib/skills"
 import { formatShortDate, round } from "#/lib/utils"
 
@@ -9,22 +10,22 @@ const Y_MAX = 180
 const Y_MIN = 20
 const bandToY = (v: number) => Y_MAX - (v / 10) * (Y_MAX - Y_MIN)
 
-function computeAvg(scores: Record<string, number | null> | null): number {
-	if (!scores) return 0
-	const vals = skills.map((s) => scores[s.key]).filter((v): v is number => v !== null)
+function computeAvg(point: ScoreTimelinePoint): number {
+	const vals = skills.map((s) => point[s.key]).filter((v): v is number => v !== null)
 	return vals.length > 0 ? round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
 }
 
 export function ScoreTrend() {
+	const { data: overview, isLoading } = useQuery(overviewQuery)
 	const { data: targetBand } = useQuery({ ...overviewQuery, select: selectTargetBand })
-	const { data: sessions, isLoading } = useQuery(examSessionsQuery)
 	const [activeIdx, setActiveIdx] = useState<number | null>(null)
 
-	if (isLoading || !sessions || targetBand === undefined) return null
+	if (isLoading || !overview || targetBand === undefined) return null
 
 	const target = targetBand
+	const timeline = overview.data.scores.timeline
 
-	if (sessions.length === 0) {
+	if (timeline.length === 0) {
 		return (
 			<section className="card p-6">
 				<h3 className="font-extrabold text-lg text-foreground">Điểm qua các lần thi</h3>
@@ -33,7 +34,7 @@ export function ScoreTrend() {
 		)
 	}
 
-	const tests = sessions.slice(0, 10).reverse()
+	const tests = timeline.slice(-10)
 	const spacing = Math.min(98, 500 / tests.length)
 	const startX = 78
 	const centers = tests.map((_, i) => startX + i * spacing)
@@ -87,9 +88,9 @@ export function ScoreTrend() {
 					const cx = centers[ti] ?? 0
 					const isActive = activeIdx === ti
 					return (
-						<g key={test.id}>
+						<g key={`${test.date}-${ti}`}>
 							{skills.map((s, si) => {
-								const v = test.scores?.[s.key] ?? 0
+								const v = test[s.key] ?? 0
 								return (
 									<rect
 										key={s.key}
@@ -104,7 +105,7 @@ export function ScoreTrend() {
 								)
 							})}
 							<text x={cx} y={210} textAnchor="middle" fontSize="10" fill="var(--color-subtle)">
-								{test.submitted_at ? formatShortDate(test.submitted_at) : ""}
+								{formatShortDate(test.date)}
 							</text>
 							{/* Hover hit-area: full chart-height column. Pointer-events visible only on this rect. */}
 							<rect
@@ -137,11 +138,11 @@ export function ScoreTrend() {
 					fontWeight="700"
 					fill="var(--color-destructive)"
 				>
-					B2 = {target}
+					{overview.data.profile.target_level} = {target}
 				</text>
 
 				<polyline
-					points={tests.map((t, i) => `${centers[i]},${bandToY(computeAvg(t.scores))}`).join(" ")}
+					points={tests.map((t, i) => `${centers[i]},${bandToY(computeAvg(t))}`).join(" ")}
 					fill="none"
 					stroke="var(--color-primary-dark)"
 					strokeWidth={2}
@@ -149,9 +150,9 @@ export function ScoreTrend() {
 					strokeLinejoin="round"
 				/>
 				{tests.map((t, i) => {
-					const avg = computeAvg(t.scores)
+					const avg = computeAvg(t)
 					return (
-						<g key={`avg-${t.id}`}>
+						<g key={`avg-${t.date}-${i}`}>
 							<circle
 								cx={centers[i]}
 								cy={bandToY(avg)}
@@ -175,11 +176,7 @@ export function ScoreTrend() {
 				})}
 
 				{activeIdx !== null && tests[activeIdx] && (
-					<ScoreTooltip
-						test={tests[activeIdx]}
-						cx={centers[activeIdx] ?? 0}
-						submittedAt={tests[activeIdx].submitted_at}
-					/>
+					<ScoreTooltip test={tests[activeIdx]} cx={centers[activeIdx] ?? 0} />
 				)}
 			</svg>
 		</section>
@@ -187,12 +184,11 @@ export function ScoreTrend() {
 }
 
 interface ScoreTooltipProps {
-	test: { scores: Record<string, number | null> | null }
+	test: ScoreTimelinePoint
 	cx: number
-	submittedAt: string | null
 }
 
-function ScoreTooltip({ test, cx, submittedAt }: ScoreTooltipProps) {
+function ScoreTooltip({ test, cx }: ScoreTooltipProps) {
 	const TOOLTIP_W = 96
 	const TOOLTIP_H = 78
 	const PAD = 5
@@ -201,7 +197,7 @@ function ScoreTooltip({ test, cx, submittedAt }: ScoreTooltipProps) {
 	const placeRight = cx < 300
 	const x = placeRight ? cx + 28 : cx - 28 - TOOLTIP_W
 	const y = 28
-	const avg = computeAvg(test.scores)
+	const avg = computeAvg(test)
 	const headerY = y + 11
 	const firstRowY = y + 24
 	const dividerY = y + TOOLTIP_H - 14
@@ -220,10 +216,10 @@ function ScoreTooltip({ test, cx, submittedAt }: ScoreTooltipProps) {
 				strokeWidth={1}
 			/>
 			<text x={x + PAD} y={headerY} fontSize={FS} fontWeight="800" fill="var(--color-foreground)">
-				{submittedAt ? formatShortDate(submittedAt) : "—"}
+				{formatShortDate(test.date)}
 			</text>
 			{skills.map((s, idx) => {
-				const v = test.scores?.[s.key]
+				const v = test[s.key]
 				const rowY = firstRowY + idx * ROW_H
 				return (
 					<g key={s.key}>

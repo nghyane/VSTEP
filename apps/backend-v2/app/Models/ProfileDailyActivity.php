@@ -55,7 +55,7 @@ class ProfileDailyActivity extends Model
     ): void {
         $typeConfig = self::ACTIVITY_TYPES[$activityType]
             ?? throw new \InvalidArgumentException("Unknown activity type: {$activityType}");
-        $date = Carbon::now()->toDateString();
+        $date = self::todayLocalDate();
         $query = self::query()->where('profile_id', $profileId)->where('date_local', $date);
 
         if (! $query->exists()) {
@@ -79,7 +79,7 @@ class ProfileDailyActivity extends Model
 
     public static function trackSpending(string $profileId, int $coinsSpent): void
     {
-        $date = Carbon::now()->toDateString();
+        $date = self::todayLocalDate();
         $query = self::query()->where('profile_id', $profileId)->where('date_local', $date);
         if (! $query->exists()) {
             self::query()->insert(['profile_id' => $profileId, 'date_local' => $date, 'coins_spent' => $coinsSpent, 'updated_at' => now()]);
@@ -87,5 +87,12 @@ class ProfileDailyActivity extends Model
             return;
         }
         $query->incrementEach(['coins_spent' => $coinsSpent], ['updated_at' => now()]);
+    }
+
+    private static function todayLocalDate(): string
+    {
+        $timezone = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
+
+        return Carbon::now($timezone)->toDateString();
     }
 }

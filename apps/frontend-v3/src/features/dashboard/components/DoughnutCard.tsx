@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { SkillIcon } from "#/components/SkillIcon"
-import { examSessionsQuery } from "#/features/dashboard/queries"
-import type { ExamSessionResult } from "#/features/dashboard/types"
+import { overviewQuery } from "#/features/dashboard/queries"
+import type { ScoreTimelinePoint } from "#/features/dashboard/types"
 import { skills } from "#/lib/skills"
 
 const SIZE = 200
@@ -10,12 +10,11 @@ const RADIUS = 70
 const STROKE = 28
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
-function countBySkill(sessions: ExamSessionResult[]): Record<string, number> {
+function countBySkill(timeline: ScoreTimelinePoint[]): Record<string, number> {
 	const result: Record<string, number> = { listening: 0, reading: 0, writing: 0, speaking: 0 }
-	for (const s of sessions) {
-		if (s.submitted_at === null || !s.scores) continue
+	for (const point of timeline) {
 		for (const sk of skills) {
-			if (s.scores[sk.key] !== null && s.scores[sk.key] !== undefined) {
+			if (point[sk.key] !== null && point[sk.key] !== undefined) {
 				result[sk.key] = (result[sk.key] ?? 0) + 1
 			}
 		}
@@ -24,10 +23,10 @@ function countBySkill(sessions: ExamSessionResult[]): Record<string, number> {
 }
 
 export function DoughnutCard() {
-	const { data: sessions } = useQuery(examSessionsQuery)
-	if (!sessions) return null
+	const { data: overview } = useQuery(overviewQuery)
+	if (!overview) return null
 
-	const counts = countBySkill(sessions)
+	const counts = countBySkill(overview.data.scores.timeline)
 	const total = skills.reduce((acc, s) => acc + (counts[s.key] ?? 0), 0)
 
 	let cursor = 0

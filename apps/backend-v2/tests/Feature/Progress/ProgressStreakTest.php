@@ -62,13 +62,28 @@ class ProgressStreakTest extends TestCase
             ->count());
     }
 
+    public function test_speaking_drill_activity_appears_in_heatmap_as_speaking(): void
+    {
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+
+        ProfileDailyActivity::addActivity($profile->id, 'speaking_drill');
+
+        $today = now('Asia/Ho_Chi_Minh')->toDateString();
+        $row = collect($this->app->make(ProgressService::class)->getActivityHeatmap($profile))
+            ->firstWhere('date', $today);
+
+        $this->assertNotNull($row);
+        $this->assertSame(1, $row['speaking']);
+    }
+
     public function test_streak_increments_on_consecutive_full_tests(): void
     {
         [$profile, $version] = $this->seedExamVersion();
         $service = $this->app->make(ProgressService::class);
 
-        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now()->subDay()->toDateString(), 'listening_exercise_count' => 1]);
-        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now()->toDateString(), 'reading_exercise_count' => 1]);
+        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now('Asia/Ho_Chi_Minh')->subDay()->toDateString(), 'listening_exercise_count' => 1]);
+        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now('Asia/Ho_Chi_Minh')->toDateString(), 'reading_exercise_count' => 1]);
 
         $service->recordExamCompletion($this->createFullTestSession($profile, $version, now()->subDay()));
         $service->recordExamCompletion($this->createFullTestSession($profile, $version, now()));
@@ -83,8 +98,8 @@ class ProgressStreakTest extends TestCase
         [$profile, $version] = $this->seedExamVersion();
         $service = $this->app->make(ProgressService::class);
 
-        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now()->subDays(3)->toDateString(), 'listening_exercise_count' => 1]);
-        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now()->toDateString(), 'reading_exercise_count' => 1]);
+        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now('Asia/Ho_Chi_Minh')->subDays(3)->toDateString(), 'listening_exercise_count' => 1]);
+        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now('Asia/Ho_Chi_Minh')->toDateString(), 'reading_exercise_count' => 1]);
 
         $service->recordExamCompletion($this->createFullTestSession($profile, $version, now()->subDays(3)));
         $service->recordExamCompletion($this->createFullTestSession($profile, $version, now()));
@@ -122,7 +137,7 @@ class ProgressStreakTest extends TestCase
     public function test_streak_endpoint_returns_computed_streak(): void
     {
         [$profile, $version] = $this->seedExamVersion();
-        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now()->toDateString(), 'listening_exercise_count' => 1]);
+        ProfileDailyActivity::create(['profile_id' => $profile->id, 'date_local' => now('Asia/Ho_Chi_Minh')->toDateString(), 'listening_exercise_count' => 1]);
 
         $token = $this->postJson('/api/v1/auth/login', [
             'email' => $profile->account->email, 'password' => 'password',

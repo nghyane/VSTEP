@@ -20,8 +20,9 @@ interface Props {
 
 export function Header({ title, backTo }: Props) {
 	const { profile } = useSession()
+	const profileStreakQuery = { ...streakQuery, queryKey: ["streak", profile.id] as const }
 	const { data: walletData } = useQuery(walletBalanceQuery)
-	const { data: streakData } = useQuery(streakQuery)
+	const { data: streakData } = useQuery(profileStreakQuery)
 	const { data: unreadData } = useQuery(unreadCountQuery)
 
 	const balance = walletData ? walletData.data.balance : null
@@ -48,6 +49,7 @@ export function Header({ title, backTo }: Props) {
 
 	const [streakAnimKey, setStreakAnimKey] = useState(0)
 	const previousStreakRef = useRef<number | null>(null)
+	const previousProfileIdRef = useRef(profile.id)
 	const streakTargetRef = useRef<HTMLDivElement>(null)
 	const [streakReward, setStreakReward] = useState<{
 		key: number
@@ -59,6 +61,14 @@ export function Header({ title, backTo }: Props) {
 		setStreakAnimKey((k) => k + 1)
 		setStreakOpen(true)
 	}
+	useEffect(() => {
+		if (previousProfileIdRef.current === profile.id) return
+		previousProfileIdRef.current = profile.id
+		previousStreakRef.current = null
+		setDisplayedStreak(null)
+		setStreakReward(null)
+		setStreakAnimKey(0)
+	}, [profile.id])
 	useEffect(() => {
 		if (streak === null) return
 

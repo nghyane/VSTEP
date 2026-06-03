@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 import { SkillChip } from "#/components/SkillChip"
 import { OnboardingRow } from "#/features/dashboard/components/OnboardingRow"
-import { examSessionsQuery, overviewQuery } from "#/features/dashboard/queries"
-import type { ExamSessionResult } from "#/features/dashboard/types"
+import { overviewQuery } from "#/features/dashboard/queries"
+import type { ScoreSpider, ScoreTimelinePoint } from "#/features/dashboard/types"
 import { type Skill, skills } from "#/lib/skills"
 import { round } from "#/lib/utils"
 import { getTargetBand } from "#/lib/vstep"
@@ -12,14 +12,18 @@ interface SkillStat {
 	delta: number | null
 }
 
-function computeSkillStats(sessions: ExamSessionResult[]): Record<string, SkillStat> {
-	const submitted = sessions.filter((s) => s.submitted_at !== null && s.scores)
+function computeSkillStats(
+	timeline: ScoreTimelinePoint[],
+	spider: ScoreSpider | null,
+): Record<string, SkillStat> {
 	const result: Record<string, SkillStat> = {}
 	for (const s of skills) {
-		const history = submitted
-			.map((sess) => sess.scores?.[s.key])
+		const history = timeline
+			.slice()
+			.reverse()
+			.map((point) => point[s.key])
 			.filter((v): v is number => v !== null && v !== undefined)
-		const current = history[0] ?? null
+		const current = history[0] ?? spider?.[s.key] ?? null
 		const prev = history[1] ?? null
 		result[s.key] = {
 			current,
@@ -63,15 +67,14 @@ function SkillCard({ skill, stat, targetBand }: { skill: Skill; stat: SkillStat;
 
 export function StatsRow() {
 	const { data: overview } = useQuery(overviewQuery)
-	const { data: sessions } = useQuery(examSessionsQuery)
 
 	if (!overview) return null
 
-	const { profile, stats } = overview.data
+	const { profile, scores, stats } = overview.data
 	if (stats.total_tests === 0) return <OnboardingRow />
 
 	const targetBand = getTargetBand(profile.target_level)
-	const skillStats = computeSkillStats(sessions ?? [])
+	const skillStats = computeSkillStats(scores.timeline, scores.spider)
 
 	return (
 		<section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
