@@ -43,6 +43,39 @@ class AdminDashboardTest extends TestCase
         VocabTopic::factory()->create();
         GrammarPoint::factory()->create();
 
+        $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
+        $rubric = AssessmentRubric::query()->where('task_type', AssessmentTaskType::WritingTask2Essay)->firstOrFail();
+        $attempt = AssessmentAttempt::create([
+            'profile_id' => $profile->id,
+            'rubric_id' => $rubric->id,
+            'skill' => AssessmentSkill::Writing,
+            'task_type' => AssessmentTaskType::WritingTask2Essay,
+            'source_type' => AssessmentSourceType::Practice,
+            'source_id' => '00000000-0000-0000-0000-000000000001',
+            'prompt' => [],
+            'response_payload' => [],
+            'submitted_at' => now(),
+        ]);
+        AssessmentJob::create([
+            'attempt_id' => $attempt->id,
+            'status' => AssessmentJobStatus::Ready,
+            'completed_at' => now(),
+        ]);
+        AssessmentJob::create([
+            'attempt_id' => AssessmentAttempt::create([
+                'profile_id' => $profile->id,
+                'rubric_id' => $rubric->id,
+                'skill' => AssessmentSkill::Writing,
+                'task_type' => AssessmentTaskType::WritingTask2Essay,
+                'source_type' => AssessmentSourceType::Practice,
+                'source_id' => '00000000-0000-0000-0000-000000000002',
+                'prompt' => [],
+                'response_payload' => [],
+                'submitted_at' => now(),
+            ])->id,
+            'status' => AssessmentJobStatus::Pending,
+        ]);
+
         $response = $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/v1/admin/stats');
 
@@ -51,7 +84,10 @@ class AdminDashboardTest extends TestCase
             ->assertJsonPath('data.exams_total', fn ($v) => $v >= 2)
             ->assertJsonPath('data.exams_published', fn ($v) => $v >= 1)
             ->assertJsonPath('data.vocab_topics', fn ($v) => $v >= 1)
-            ->assertJsonPath('data.grammar_points', fn ($v) => $v >= 1);
+            ->assertJsonPath('data.grammar_points', fn ($v) => $v >= 1)
+            ->assertJsonPath('data.grading_done_today', fn ($v) => $v >= 1)
+            ->assertJsonPath('data.grading_pending', fn ($v) => $v >= 1)
+            ->assertJsonPath('data.grading_failed', fn ($v) => is_int($v));
     }
 
     public function test_alerts_detects_failed_assessment_jobs(): void

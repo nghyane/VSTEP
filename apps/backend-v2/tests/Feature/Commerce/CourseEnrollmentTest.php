@@ -11,6 +11,7 @@ use App\Enums\SlotStatus;
 use App\Models\CoinTransaction;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Models\CourseEnrollmentOrder;
 use App\Models\Exam;
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
@@ -50,7 +51,10 @@ class CourseEnrollmentTest extends TestCase
 
         $token = $this->tokenFor($user);
         $response = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos']);
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
+                'payment_provider' => 'payos',
+                'commitment_signature' => $this->signatureSvg(),
+            ]);
 
         $response->assertCreated();
         $response->assertJsonPath('data.status', 'pending');
@@ -75,6 +79,7 @@ class CourseEnrollmentTest extends TestCase
             'profile_id' => $profile->id,
             'course_id' => $course->id,
             'bonus_coins_received' => 200,
+            'commitment_signature' => $this->signatureSvg(),
         ]);
 
         // Bonus coins credited (onboarding bonus via SystemConfig may add more)
@@ -115,23 +120,64 @@ class CourseEnrollmentTest extends TestCase
 
         $token = $this->tokenFor($user);
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos'])
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
+                'payment_provider' => 'payos',
+                'commitment_signature' => $this->signatureSvg(),
+            ])
             ->assertStatus(422);
     }
 
-    public function test_enrollment_rejects_duplicate(): void
+    public function test_enrollment_order_replaces_pending_order(): void
     {
         [$user, $profile, $course] = $this->seedCourse(100_000, 200);
 
         $token = $this->tokenFor($user);
-        $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos'])
+        $first = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
+                'payment_provider' => 'payos',
+                'commitment_signature' => $this->signatureSvg(),
+            ])
             ->assertCreated();
 
-        // Second attempt — already has pending order
-        $this->withHeader('Authorization', "Bearer {$token}")
+        $second = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
+                'payment_provider' => 'payos',
+                'commitment_signature' => $this->signatureSvg(),
+            ])
+            ->assertCreated();
+
+        $this->assertDatabaseHas('course_enrollment_orders', [
+            'id' => $first->json('data.id'),
+            'status' => 'cancelled',
+        ]);
+        $this->assertDatabaseHas('course_enrollment_orders', [
+            'id' => $second->json('data.id'),
+            'status' => 'pending',
+        ]);
+        $this->assertSame(1, CourseEnrollmentOrder::query()->where('profile_id', $profile->id)->where('course_id', $course->id)->where('status', 'pending')->count());
+    }
+
+    public function test_enrollment_order_requires_commitment_signature(): void
+    {
+        [$user, $profile, $course] = $this->seedCourse(100_000, 200);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
             ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos'])
-            ->assertStatus(422);
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['commitment_signature']);
+    }
+
+    public function test_enrollment_order_rejects_non_svg_commitment_signature(): void
+    {
+        [$user, $profile, $course] = $this->seedCourse(100_000, 200);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
+                'payment_provider' => 'payos',
+                'commitment_signature' => 'not-svg',
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['commitment_signature']);
     }
 
     public function test_booking_requires_commitment_met(): void
@@ -347,8 +393,16 @@ class CourseEnrollmentTest extends TestCase
     private function createEnrollmentOrder(string $token, Course $course): int
     {
         return $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos'])
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
+                'payment_provider' => 'payos',
+                'commitment_signature' => $this->signatureSvg(),
+            ])
             ->json('data.order_code');
+    }
+
+    private function signatureSvg(): string
+    {
+        return '<svg xmlns="http://www.w3.org/2000/svg"><path d="M1 1L9 9"/></svg>';
     }
 
     private function confirmEnrollment(string $token, Course $course): void
@@ -361,8 +415,15 @@ class CourseEnrollmentTest extends TestCase
 
     private function tokenFor(User $user): string
     {
-        return $this->postJson('/api/v1/auth/login', [
-            'email' => $user->email, 'password' => 'password',
-        ])->json('data.access_token');
+        $response = $this
+            ->withServerVariables(['REMOTE_ADDR' => '127.0.1.'.random_int(1, 250)])
+            ->postJson('/api/v1/auth/login', [
+                'email' => $user->email,
+                'password' => 'password',
+            ]);
+
+        $response->assertOk();
+
+        return (string) $response->json('data.access_token');
     }
 }
