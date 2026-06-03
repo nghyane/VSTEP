@@ -50,8 +50,8 @@ const FEATURES: FeatureRow[] = [
 
 export function LandingFeatures() {
 	return (
-		<section className="py-24 bg-background">
-			<div className="max-w-[1140px] mx-auto px-8 flex flex-col gap-24">
+		<section className="py-14 sm:py-20 lg:py-24 bg-background">
+			<div className="max-w-[1140px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-14 sm:gap-20 lg:gap-24">
 				{FEATURES.map((f) => (
 					<FeatureRowView key={f.title} data={f} />
 				))}
@@ -63,9 +63,9 @@ export function LandingFeatures() {
 function FeatureRowView({ data }: { data: FeatureRow }) {
 	return (
 		<div
-			className={`flex flex-col gap-10 lg:gap-20 items-center ${data.flip ? "lg:flex-row-reverse" : "lg:flex-row"}`}
+			className={`flex flex-col gap-7 sm:gap-10 lg:gap-20 items-center ${data.flip ? "lg:flex-row-reverse" : "lg:flex-row"}`}
 		>
-			<div className="shrink-0 w-60 h-60 lg:w-[300px] lg:h-[300px] flex items-center justify-center">
+			<div className="shrink-0 w-44 h-44 sm:w-60 sm:h-60 lg:w-[300px] lg:h-[300px] flex items-center justify-center">
 				<img src={data.mascot} alt="" className="w-full h-full object-contain" />
 			</div>
 			<div className="flex-1 text-center lg:text-left">
@@ -80,7 +80,9 @@ function FeatureRowView({ data }: { data: FeatureRow }) {
 				<h2 className="font-sans font-extrabold text-2xl md:text-3xl lg:text-[36px] text-foreground leading-tight tracking-tight">
 					{data.title}
 				</h2>
-				<p className="text-base text-muted mt-4 max-w-lg mx-auto lg:mx-0 leading-relaxed">{data.body}</p>
+				<p className="text-sm sm:text-base text-muted mt-4 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+					{data.body}
+				</p>
 				<ul className="mt-5 space-y-2 text-sm text-muted max-w-lg mx-auto lg:mx-0">
 					{data.bullets.map((b) => (
 						<li key={b} className="flex items-start gap-2 leading-relaxed">

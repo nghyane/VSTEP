@@ -30,11 +30,11 @@ const TESTIMONIALS: Testimonial[] = [
 
 export function LandingSocial() {
 	return (
-		<section className="py-24">
-			<div className="max-w-[1140px] mx-auto px-8">
-				<div className="text-center mb-12 max-w-2xl mx-auto">
+		<section className="py-14 sm:py-20 lg:py-24">
+			<div className="max-w-[1140px] mx-auto px-4 sm:px-6 lg:px-8">
+				<div className="text-center mb-9 sm:mb-12 max-w-2xl mx-auto">
 					<RatingPill />
-					<h2 className="font-sans font-extrabold text-3xl md:text-4xl text-foreground leading-tight tracking-tight mt-5">
+					<h2 className="font-sans font-extrabold text-2xl sm:text-3xl md:text-4xl text-foreground leading-tight tracking-tight mt-5">
 						Học viên nói gì về VSTEP?
 					</h2>
 					<p className="text-muted text-base mt-3 leading-relaxed">
@@ -54,7 +54,7 @@ export function LandingSocial() {
 
 function RatingPill() {
 	return (
-		<div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-warning-tint">
+		<div className="inline-flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 px-3 py-1.5 rounded-full bg-warning-tint">
 			<div className="flex items-center gap-0.5">
 				{[1, 2, 3, 4, 5].map((s) => (
 					<Star key={s} />
@@ -78,7 +78,7 @@ function TestimonialCard({ data }: { data: Testimonial }) {
 	const avatarSrc = getAvatarUrl(data.avatarKey)
 
 	return (
-		<div className="card p-6 flex flex-col gap-4">
+		<div className="card p-4 sm:p-6 flex flex-col gap-4">
 			<Quote />
 			<p className="text-[15px] text-foreground/85 leading-relaxed flex-1">{data.text}</p>
 			<div className="flex items-center gap-3 pt-3 border-t border-border-light">

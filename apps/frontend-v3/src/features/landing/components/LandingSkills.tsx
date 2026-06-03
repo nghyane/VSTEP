@@ -37,11 +37,11 @@ const SKILLS: SkillCardData[] = [
 
 export function LandingSkills() {
 	return (
-		<section className="py-24">
-			<div className="max-w-[1140px] mx-auto px-8">
-				<div className="text-center mb-14 max-w-2xl mx-auto">
+		<section className="py-14 sm:py-20 lg:py-24">
+			<div className="max-w-[1140px] mx-auto px-4 sm:px-6 lg:px-8">
+				<div className="text-center mb-9 sm:mb-12 lg:mb-14 max-w-2xl mx-auto">
 					<p className="text-xs font-extrabold uppercase tracking-[0.18em] text-primary mb-3">4 kỹ năng</p>
-					<h2 className="font-sans font-extrabold text-3xl md:text-4xl text-foreground leading-tight tracking-tight">
+					<h2 className="font-sans font-extrabold text-2xl sm:text-3xl md:text-4xl text-foreground leading-tight tracking-tight">
 						Luyện đầy đủ Nghe — Đọc — Viết — Nói
 					</h2>
 					<p className="text-muted text-base mt-4 leading-relaxed">
@@ -60,7 +60,7 @@ export function LandingSkills() {
 
 function SkillCard({ data }: { data: SkillCardData }) {
 	return (
-		<div className="card p-6 group hover:-translate-y-1 transition-transform">
+		<div className="card p-4 sm:p-6 group hover:-translate-y-1 transition-transform">
 			<div className="flex items-center gap-3 mb-4">
 				<SkillIcon name={data.pngIcon} size="md" />
 				<div>

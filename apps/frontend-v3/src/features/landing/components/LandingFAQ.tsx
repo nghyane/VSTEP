@@ -34,11 +34,11 @@ const FAQS: FaqItem[] = [
 
 export function LandingFAQ() {
 	return (
-		<section className="py-24">
-			<div className="max-w-[820px] mx-auto px-8">
-				<div className="text-center mb-12">
+		<section className="py-14 sm:py-20 lg:py-24">
+			<div className="max-w-[820px] mx-auto px-4 sm:px-6 lg:px-8">
+				<div className="text-center mb-9 sm:mb-12">
 					<p className="text-xs font-extrabold uppercase tracking-[0.18em] text-primary mb-3">FAQ</p>
-					<h2 className="font-sans font-extrabold text-3xl md:text-4xl text-foreground leading-tight tracking-tight">
+					<h2 className="font-sans font-extrabold text-2xl sm:text-3xl md:text-4xl text-foreground leading-tight tracking-tight">
 						Câu hỏi thường gặp
 					</h2>
 				</div>
@@ -59,13 +59,13 @@ function FaqRow({ item }: { item: FaqItem }) {
 			<button
 				type="button"
 				onClick={() => setOpen((v) => !v)}
-				className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
+				className="w-full flex items-center justify-between gap-4 px-4 py-4 sm:px-5 text-left"
 			>
 				<span className="text-base font-extrabold text-foreground leading-snug">{item.question}</span>
 				<Chevron open={open} />
 			</button>
 			{open && (
-				<div className="px-5 pb-5 -mt-1 text-sm text-muted leading-relaxed border-t border-border-light pt-4">
+				<div className="px-4 pb-5 -mt-1 text-sm text-muted leading-relaxed border-t border-border-light pt-4 sm:px-5">
 					{item.answer}
 				</div>
 			)}
