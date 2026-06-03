@@ -50,7 +50,7 @@ Hệ thống không hỏi AI “bài này mấy điểm”. AI/công cụ ngoài
 
 **Slide:** Learner, Admin/Staff, Teacher, Mobile learner.
 
-**Nói:** Learner là trung tâm. Admin vận hành nội dung/rubric. Teacher và mobile là phần mở rộng đúng phạm vi hiện có.
+**Nói:** Learner là trung tâm. Admin vận hành nội dung/rubric. Teacher và mobile hỗ trợ hệ sinh thái học tập, nhưng không phải trọng tâm demo chính.
 
 ### Slide 6 — Learner Features
 
@@ -68,7 +68,7 @@ Hệ thống không hỏi AI “bài này mấy điểm”. AI/công cụ ngoài
 
 **Slide:** teacher lịch dạy/booking/đơn nghỉ; mobile companion cho learner.
 
-**Nói:** Phần này chỉ nói đúng scope hiện có, không claim teacher analytics sâu.
+**Nói:** Teacher hỗ trợ lịch dạy và booking; mobile là companion app cho learner. Nhóm giới thiệu ngắn phần này, còn demo chính tập trung vào learner web và admin.
 
 ### Slide 9 — System Architecture
 
@@ -109,6 +109,14 @@ WritingBand = round_to_0.5((Task1Score + 2 × Task2Score) / 3)
 
 **Callout:** bài quá ngắn/lạc đề/copy/spam bị giới hạn điểm.
 
+**Chú thích biến:**
+
+- `ContentCoverage`: mức độ đáp ứng yêu cầu đề.
+- `DevelopmentDepth`: mức độ phát triển ý.
+- `StructureRange`: độ đa dạng cấu trúc câu.
+- `GrammarAccuracy`: độ chính xác ngữ pháp.
+- `LexicalQuality`: chất lượng/độ đa dạng từ vựng.
+
 **Nói:** Writing có 4 tiêu chí, mỗi tiêu chí có công thức riêng. Backend tính điểm từng task, sau đó Task 2 có trọng số cao hơn trong Writing band.
 
 ### Slide 12 — Speaking Formula
@@ -128,6 +136,14 @@ SpeakingScore = round_to_0.5((GrammarScore + VocabularyScore + FluencyScore + Di
 ```
 
 **Callout:** bài quá ngắn/audio kém/lạc đề bị giới hạn điểm.
+
+**Chú thích biến:**
+
+- `SpeakingRateBonus`: điểm cộng theo tốc độ nói.
+- `PausePenalty`: điểm trừ khi ngập ngừng nhiều.
+- `ContentRelevance`: mức độ bám đề.
+- `Prosody`: ngữ điệu/trọng âm.
+- `Completeness`: mức độ đầy đủ của phần nói được nhận diện.
 
 **Nói:** Speaking bắt đầu từ audio. Hệ thống lấy transcript, tốc độ nói, pause, pronunciation và mức bám đề; backend tính 5 tiêu chí rồi lấy trung bình.
 
@@ -183,7 +199,15 @@ SpeakingScore = round_to_0.5((GrammarScore + VocabularyScore + FluencyScore + Di
 
 **Slide:** limitations bên trái, conclusion bên phải.
 
-**Nói:** Điểm tự động chỉ phục vụ luyện tập/thi thử tham khảo. Kết luận: hệ thống giúp learner biết hiện tại ở đâu, yếu gì và nên học gì tiếp.
+```text
+Probe takeaway:
+- Grammar/Vocabulary signals are usable for practice scoring, not official scoring
+- Writing probe passed; score drift mostly comes from conservative grammar/vocab evidence
+- Speaking probe passed; transcript-only answers miss fluency/pronunciation signals
+- Need official examiner dataset before claiming official accuracy
+```
+
+**Nói:** Probe cho thấy Grammar và Vocabulary đủ ổn để dùng cho điểm luyện tập, nhưng chưa phải điểm chính thức. Writing có thể lệch khi hệ thống bắt tín hiệu ngữ pháp/từ vựng hơi bảo thủ. Speaking có thể lệch nếu chỉ có transcript hoặc audio kém vì thiếu tín hiệu fluency/pronunciation. Vì chưa có bộ dữ liệu lớn do giám khảo VSTEP chấm, hệ thống dùng để feedback và định hướng học, không thay thế giám khảo.
 
 ### Slide 22 — Thank You
 
