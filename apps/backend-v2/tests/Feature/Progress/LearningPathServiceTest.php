@@ -309,6 +309,21 @@ final class LearningPathServiceTest extends TestCase
         $this->assertStringContainsString('đang yếu', (string) $writingSkill['suggestion']);
     }
 
+    public function test_exam_skill_below_target_band_suggests_practice(): void
+    {
+        $this->profile->update(['target_level' => 'B2']);
+        $chart = [
+            'writing' => 5.5,
+            'sample_size' => 2,
+        ];
+        $this->mockProgressService($chart);
+
+        $writingSkill = $this->skillFromResult('writing');
+
+        $this->assertSame(5.5, $writingSkill['band']);
+        $this->assertStringContainsString('5.5 < 6', (string) $writingSkill['suggestion']);
+    }
+
     public function test_exam_skill_with_strong_band_shows_no_urgent_suggestion(): void
     {
         $chart = [
@@ -320,7 +335,7 @@ final class LearningPathServiceTest extends TestCase
         $speakingSkill = $this->skillFromResult('speaking');
 
         $this->assertSame(7.0, $speakingSkill['band']);
-        $this->assertStringContainsString('đã vững', (string) $speakingSkill['suggestion']);
+        $this->assertStringContainsString('đã đạt mục tiêu', (string) $speakingSkill['suggestion']);
     }
 
     // ──── Level & deadline ────
