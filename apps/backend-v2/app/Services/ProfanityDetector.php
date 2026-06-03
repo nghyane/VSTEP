@@ -11,13 +11,19 @@ final class ProfanityDetector
         'fuck', 'shit', 'bitch', 'asshole', 'bastard', 'damn',
         'crap', 'dick', 'piss', 'slut', 'whore', 'moron',
         'idiot', 'stupid', 'dumb', 'suck', 'hell',
+        'fucker', 'fucking', 'motherfucker', 'motherfuckers', 'motherfucking',
+        'shitty', 'bullshit', 'bitches', 'assholes', 'dicks', 'prick', 'pricks',
+        'cunt', 'cunts', 'wanker', 'wankers', 'twat', 'twats',
+        'dit', 'dm', 'dmm', 'cl', 'lon', 'cac', 'buoi',
+        'địt', 'đm', 'đmm', 'lồn', 'cặc', 'buồi',
+        'ditme', 'ditmemay', 'dume', 'dumemay', 'du', 'đụ', 'đụmá', 'đụmẹ',
     ];
 
     /** @return array{found: bool, words: list<string>, count: int} */
     public function detect(string $text): array
     {
         $lower = mb_strtolower($text);
-        $words = explode(' ', preg_replace('/[^a-zA-Z\s]+/', ' ', $lower) ?? '');
+        $words = explode(' ', preg_replace('/[^\p{L}\s]+/u', ' ', $lower) ?? '');
         $found = array_values(array_intersect($words, self::WORDS));
         $unique = array_values(array_unique($found));
 

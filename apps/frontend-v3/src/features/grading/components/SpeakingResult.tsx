@@ -4,6 +4,7 @@ import { RubricBar } from "#/features/grading/components/RubricBar"
 import { feedbackImprovements } from "#/features/grading/feedback"
 import { speakingResultQuery } from "#/features/grading/queries"
 import type { RubricMeta, SpeakingGradingResult } from "#/features/grading/types"
+import { censorProfanityText, censorProfanityWords } from "#/lib/profanity"
 import { round } from "#/lib/utils"
 
 const COLOR = "var(--color-skill-speaking)"
@@ -76,6 +77,8 @@ export function SpeakingResult({ submissionId }: Props) {
 
 			<SpeakingDiagnosticsPanel result={result} />
 
+			<SpeakingProfanityWarning result={result} />
+
 			<RubricPanel result={result} rubric={rubric} />
 
 			<div className="card p-6">
@@ -91,6 +94,29 @@ export function SpeakingResult({ submissionId }: Props) {
 					<p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{result.transcript}</p>
 				</div>
 			)}
+		</div>
+	)
+}
+
+function SpeakingProfanityWarning({ result }: { result: SpeakingGradingResult }) {
+	const profanity = result.diagnostics?.profanity
+	if (!profanity?.found) return null
+
+	return (
+		<div className="card p-4 border-l-4 border-l-warning bg-warning/5">
+			<div className="flex items-start gap-3">
+				<span className="text-warning text-lg shrink-0">⚠</span>
+				<div>
+					<p className="text-sm font-bold text-warning">
+						Phát hiện từ ngữ không phù hợp trong bài nói ({profanity.count} lần)
+					</p>
+					<p className="mt-1 text-sm text-muted">
+						Transcript có chứa:{" "}
+						<span className="font-bold text-foreground">{censorProfanityWords(profanity.words)}</span>. Nên
+						tránh trong bài thi nói học thuật.
+					</p>
+				</div>
+			</div>
 		</div>
 	)
 }
@@ -135,6 +161,8 @@ function SpeakingDiagnosticsPanel({ result }: { result: SpeakingGradingResult })
 	}
 
 	const transcript = diagnostics.speech?.transcript ?? result.transcript ?? null
+	const displayTranscript =
+		diagnostics.profanity?.found && transcript ? censorProfanityText(transcript) : transcript
 	const pronunciation =
 		diagnostics.pronunciation?.overall ?? result.pronunciation_report?.accuracy_score ?? null
 	const hasMetrics = hasDiagnosticMetrics(result)
@@ -160,10 +188,10 @@ function SpeakingDiagnosticsPanel({ result }: { result: SpeakingGradingResult })
 					Chưa có dữ liệu chẩn đoán âm thanh cho bài này. Hệ thống không tự điền điểm giả định.
 				</p>
 			)}
-			{transcript && (
+			{displayTranscript && (
 				<div className="rounded-(--radius-card) border-2 border-border bg-background/40 p-3">
 					<p className="text-[10px] font-bold uppercase tracking-wide text-subtle mb-1">Transcript</p>
-					<p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">{transcript}</p>
+					<p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">{displayTranscript}</p>
 				</div>
 			)}
 		</div>

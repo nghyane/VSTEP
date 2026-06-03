@@ -22,6 +22,7 @@ use App\Services\Grading\SpeakingScoringFormula;
 use App\Services\LanguageToolService;
 use App\Services\Linguistics\SpeakingFeatureExtractor;
 use App\Services\Linguistics\VstepSpeakingDescriptorEvaluator;
+use App\Services\ProfanityDetector;
 use App\Services\RuleBasedScoringService;
 use App\Services\SpeechToText;
 use App\Services\SyntaxAnalyzer;
@@ -46,6 +47,7 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
         private readonly LanguageToolService $languageTool,
         private readonly SpeakingFeatureExtractor $speakingFeatures,
         private readonly VstepSpeakingDescriptorEvaluator $speakingDescriptors,
+        private readonly ProfanityDetector $profanityDetector,
     ) {}
 
     private function formula(): SpeakingScoringFormula
@@ -71,6 +73,7 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
         $metricResult = $this->metrics->analyze($transcript, $grammarErrors);
         $speakingFeatures = $this->speakingFeatures->extract($transcript);
         $descriptor = $this->speakingDescriptors->evaluate($this->taskType()->value, $speakingFeatures);
+        $profanity = $this->profanityDetector->detect($transcript);
 
         return new SignalBag(
             grammar: ['errors' => $grammarErrors, 'annotations' => $this->languageTool->toAnnotations($transcript, $grammarErrors)],
@@ -91,7 +94,7 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
                 'word_count' => (int) ($stt['word_count'] ?? 0),
             ],
             pronunciation: $this->pronunciation($stt),
-            raw: ['stt' => $stt, 'language_tool' => ['errors' => $grammarErrors]],
+            raw: ['stt' => $stt, 'language_tool' => ['errors' => $grammarErrors], 'profanity' => $profanity],
         );
     }
 

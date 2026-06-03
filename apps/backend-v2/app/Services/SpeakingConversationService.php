@@ -31,6 +31,7 @@ final class SpeakingConversationService implements ConversationServiceInterface
         private readonly EconomyConfigService $economyConfig,
         private readonly WalletService $walletService,
         private readonly ProgressService $progressService,
+        private readonly ProfanityDetector $profanityDetector,
     ) {}
 
     /** @return Collection<int,PracticeSpeakingScenario> */
@@ -122,16 +123,18 @@ final class SpeakingConversationService implements ConversationServiceInterface
 
         $lastAiTurn = $priorTurns->where('role', 'ai')->last();
         $suggestedVocab = $lastAiTurn?->suggested_words ?? $scenario->target_vocab ?? [];
+        $profanity = $this->profanityDetector->detect($text);
 
-        // Single LLM call — retry handled by AiClientManager transport layer.
-        $llmResult = $this->turnHandler->gradeAndReply(
-            character: $scenario->character_name,
-            systemPrompt: $scenario->system_prompt,
-            level: $scenario->level,
-            history: $turnsSerialized,
-            userText: $text,
-            vocabToCheck: $suggestedVocab,
-        );
+        $llmResult = $profanity['found']
+            ? $this->profanityRedirect($suggestedVocab, $profanity)
+            : $this->turnHandler->gradeAndReply(
+                character: $scenario->character_name,
+                systemPrompt: $scenario->system_prompt,
+                level: $scenario->level,
+                history: $turnsSerialized,
+                userText: $text,
+                vocabToCheck: $suggestedVocab,
+            );
 
         return DB::transaction(function () use ($session, $text, $llmResult, $suggestedVocab) {
             $locked = PracticeSpeakingConversationSession::query()
@@ -176,6 +179,30 @@ final class SpeakingConversationService implements ConversationServiceInterface
 
             return ['user_turn' => $userTurn, 'ai_turn' => $aiTurn, 'session' => $locked->refresh()];
         });
+    }
+
+    /** @param string[] $suggestedVocab @param array{found: bool, words: list<string>, count: int} $profanity */
+    private function profanityRedirect(array $suggestedVocab, array $profanity): array
+    {
+        return [
+            'feedback' => [
+                'word_count' => ['used' => 0, 'target' => count($suggestedVocab)],
+                'grammar_ok' => false,
+                'grammar_corrections' => [],
+                'vocab_check' => collect($suggestedVocab)->map(fn (string $phrase): array => [
+                    'phrase' => $phrase,
+                    'used' => false,
+                    'match_type' => 'miss',
+                ])->toArray(),
+                'better' => 'Let us keep the conversation polite and continue in English.',
+                'user_ipa' => null,
+                'better_ipa' => null,
+                'profanity' => $profanity,
+            ],
+            'reply' => 'Let us keep the conversation polite. Could you answer again in appropriate English?',
+            'reply_ipa' => null,
+            'suggested_words' => ['I mean that...', 'Let me try again', 'In my opinion'],
+        ];
     }
 
     public function endSession(PracticeSpeakingConversationSession $session): PracticeSpeakingConversationSession
@@ -244,16 +271,29 @@ final class SpeakingConversationService implements ConversationServiceInterface
      */
     public function pronunciationReview(Profile $profile, string $original, string $transcript, ?string $segmentId = null): array
     {
-        $metadata = [
-            'feedback_type' => 'shadowing_pronunciation',
-        ];
-        if ($segmentId !== null) {
-            $metadata['segment_id'] = $segmentId;
+        if ($this->profanityDetector->detect($transcript)['found']) {
+            return [
+                'pronunciation' => 'Không phân tích phát âm cho lượt nói có từ ngữ không phù hợp.',
+                'intonation' => 'Hãy thử lại bằng đúng câu mẫu và giữ ngôn ngữ lịch sự.',
+                'tip' => 'Nói lại chậm rãi, rõ từng cụm từ, không thêm nội dung ngoài câu shadowing.',
+            ];
         }
 
-        $this->chargeFeedback($profile, $metadata);
+        $submissionId = sha1(($segmentId ?? 'shadowing')."|{$original}|{$transcript}");
+        $request = $this->chargeFeedbackOnce($profile, 'shadowing_pronunciation', $submissionId, [
+            'feedback_type' => 'shadowing_pronunciation',
+            'segment_id' => $segmentId,
+        ]);
 
-        return $this->pronunciation->analyze($original, $transcript);
+        try {
+            $review = $this->pronunciation->analyze($original, $transcript);
+            $this->markFeedbackReady($request);
+
+            return $review;
+        } catch (\Throwable $exception) {
+            $this->markFeedbackFailed($request, $exception);
+            throw $exception;
+        }
     }
 
     /** @param array<string,mixed> $metadata */
@@ -273,6 +313,7 @@ final class SpeakingConversationService implements ConversationServiceInterface
     {
         return DB::transaction(function () use ($profile, $submissionType, $submissionId, $metadata) {
             $existing = PracticeFeedbackRequest::query()
+                ->where('profile_id', $profile->id)
                 ->where('submission_type', $submissionType)
                 ->where('submission_id', $submissionId)
                 ->lockForUpdate()

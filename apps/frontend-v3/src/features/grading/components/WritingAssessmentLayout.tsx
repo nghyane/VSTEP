@@ -16,6 +16,7 @@ import type {
 	RubricMeta,
 	WritingGradingResult,
 } from "#/features/grading/types"
+import { censorProfanityText, censorProfanityWords } from "#/lib/profanity"
 import { formatShortDate, round } from "#/lib/utils"
 
 const COLOR = "var(--color-skill-writing)"
@@ -232,6 +233,9 @@ function WritingPaperPanel({
 	result: WritingGradingResult
 }) {
 	if (!context) return <ContextCard context={context} />
+	const responseText = result.diagnostics?.profanity?.found
+		? censorProfanityText(context.responseText ?? "")
+		: context.responseText
 
 	return (
 		<div className="card p-5 space-y-4">
@@ -255,7 +259,7 @@ function WritingPaperPanel({
 				</section>
 			)}
 
-			{context.responseText && (
+			{responseText && (
 				<section className="rounded-2xl border-2 border-border bg-background/40 p-4">
 					<div className="mb-2 flex items-center justify-between gap-3">
 						<p className="text-xs font-extrabold uppercase tracking-wide text-subtle">Bài làm của bạn</p>
@@ -264,10 +268,7 @@ function WritingPaperPanel({
 						)}
 					</div>
 					<p className="whitespace-pre-wrap text-sm leading-7 text-foreground">
-						<AnnotatedWritingText
-							text={context.responseText}
-							annotations={result.diagnostics?.annotations ?? []}
-						/>
+						<AnnotatedWritingText text={responseText} annotations={result.diagnostics?.annotations ?? []} />
 					</p>
 				</section>
 			)}
@@ -515,7 +516,7 @@ function ProfanityWarning({ result }: { result: WritingGradingResult }) {
 	const profanity = result.diagnostics?.profanity
 	if (!profanity?.found) return null
 
-	const censored = profanity.words.map((w) => w[0] + "*".repeat(w.length - 2) + w[w.length - 1]).join(", ")
+	const censored = censorProfanityWords(profanity.words)
 
 	return (
 		<div className="card p-4 border-l-4 border-l-warning bg-warning/5">

@@ -9,6 +9,7 @@ import {
 import { ShadowingSidebar } from "#/features/practice/components/ShadowingSidebar"
 import { shadowingProgressQuery, useMarkShadowingDone } from "#/features/practice/shadowing-progress"
 import type { ShadowingLessonDetail } from "#/features/practice/types"
+import { detectProfanity } from "#/lib/profanity"
 import { useToast } from "#/lib/toast"
 import {
 	cn,
@@ -190,15 +191,21 @@ export function ShadowingInProgress({ lesson }: Props) {
 			const text = transcript.trim()
 			if (text) {
 				setEmptyWarning(false)
+				const profanity = detectProfanity(text)
 				const { results, correct } = compareWords(segment.text, text)
 				const accuracyPercent =
-					segment.word_count > 0 ? Math.min(100, Math.round((correct / segment.word_count) * 100)) : null
+					segment.word_count > 0 && !profanity.found
+						? Math.min(100, Math.round((correct / segment.word_count) * 100))
+						: null
 				setAttempts((prev) =>
 					new Map(prev).set(current, {
 						transcript: text,
-						wordResults: results,
-						correctCount: correct,
+						wordResults: profanity.found
+							? results.map((result) => ({ ...result, accuracy: "wrong" }))
+							: results,
+						correctCount: profanity.found ? 0 : correct,
 						accuracyPercent,
+						profanity,
 					}),
 				)
 				if (accuracyPercent !== null && accuracyPercent >= 50) {
@@ -313,6 +320,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 					<div className="flex-1 overflow-y-auto">
 						<div className="max-w-2xl mx-auto px-6 py-6">
 							<ShadowingSegmentView
+								key={`${segment.id}:${attempt?.transcript ?? ""}`}
 								segment={segment}
 								isSpeaking={mic === "speaking"}
 								speakingCharIndex={speakingCharIndex}
