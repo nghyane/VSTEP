@@ -1,16 +1,19 @@
+import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { createPortal } from "react-dom"
-
-const ZALO_URL = "https://zalo.me/0343062376"
+import { appConfigQuery } from "#/features/config/queries"
 
 export function SupportFab() {
 	const [open, setOpen] = useState(false)
+	const { data: configData } = useQuery(appConfigQuery)
+	const zaloPhone = configData?.data.support?.zalo_phone.replace(/\D/g, "") ?? ""
+	const zaloUrl = zaloPhone ? `https://zalo.me/${zaloPhone}` : null
 
 	return createPortal(
 		<div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
-			{open && (
+			{open && zaloUrl && (
 				<a
-					href={ZALO_URL}
+					href={zaloUrl}
 					target="_blank"
 					rel="noopener noreferrer"
 					className="flex items-center gap-2.5 rounded-full bg-[#0068FF] px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-transform hover:scale-105 animate-[slideIn_0.15s_ease-out]"

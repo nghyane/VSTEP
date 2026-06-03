@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
@@ -7,6 +7,7 @@ import { TranslateSelection } from "#/features/practice/components/TranslateSele
 import { WritingGradingScreen } from "#/features/practice/components/WritingGradingScreen"
 import { WritingSamplePanel } from "#/features/practice/components/WritingSamplePanel"
 import { WritingWordProgress } from "#/features/practice/components/WritingWordProgress"
+import { invalidateProgressQueries } from "#/features/practice/invalidate-progress"
 import type {
 	WritingPromptDetail,
 	WritingRealtimeDiagnostics,
@@ -26,6 +27,7 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 	const [text, setText] = useState("")
 	const [submission, setSubmission] = useState<WritingSubmission | null>(null)
 	const [showSample, setShowSample] = useState(false)
+	const queryClient = useQueryClient()
 	const textareaRef = useRef<HTMLTextAreaElement>(null)
 	const wc = countWords(text)
 	const hasSample = !!prompt.sample_answer
@@ -42,7 +44,10 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 
 	const mutation = useMutation({
 		mutationFn: () => submitWritingSession(sessionId, text),
-		onSuccess: (res) => setSubmission(res.data),
+		onSuccess: (res) => {
+			setSubmission(res.data)
+			invalidateProgressQueries(queryClient)
+		},
 	})
 
 	const handleInsertText = useCallback(

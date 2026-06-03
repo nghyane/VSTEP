@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { HTTPError } from "ky"
 import { useEffect, useRef, useState } from "react"
 import { COIN_SPEND_FX_MS, CoinSpendFly } from "#/components/CoinSpendFly"
@@ -10,6 +10,7 @@ import { ConversationReviewPopup } from "#/features/practice/components/Conversa
 import { ConversationScenarioCard } from "#/features/practice/components/ConversationScenarioCard"
 import { ConversationSuggestions } from "#/features/practice/components/ConversationSuggestions"
 import { ConversationTurnView } from "#/features/practice/components/ConversationTurnView"
+import { invalidateProgressQueries } from "#/features/practice/invalidate-progress"
 import type { ConversationSessionDetail, ConversationTurn } from "#/features/practice/types"
 import { extractFirstName, getAvatarUrl } from "#/lib/avatar"
 import { useToast } from "#/lib/toast"
@@ -47,6 +48,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	const [showReview, setShowReview] = useState(false)
 	const [spendFxKey, setSpendFxKey] = useState(0)
 	const [spendAnimating, setSpendAnimating] = useState(false)
+	const queryClient = useQueryClient()
 	const [emptyWarning, setEmptyWarning] = useState(false)
 	const [speakingTurnId, setSpeakingTurnId] = useState<string | null>(null)
 	const [speakingCharIndex, setSpeakingCharIndex] = useState(-1)
@@ -121,7 +123,10 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 
 	const handleEnd = () => {
 		stopSpeaking()
-		endConversation(sessionId).then(() => setSessionState("completed"))
+		endConversation(sessionId).then(() => {
+			setSessionState("completed")
+			invalidateProgressQueries(queryClient)
+		})
 	}
 
 	const handleReview = () => {

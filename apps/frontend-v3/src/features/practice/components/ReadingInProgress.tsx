@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router"
 import { useState } from "react"
 import { Icon } from "#/components/Icon"
 import { HighlightablePassage, PassageSpeechControl } from "#/features/exam/components/HighlightablePassage"
-import { ExerciseFeedbackCard } from "#/features/practice/components/ExerciseFeedbackCard"
+import { PracticeMcqResultPanel } from "#/features/practice/components/PracticeMcqResultPanel"
 import { QuestionList } from "#/features/practice/components/QuestionList"
 import { QuestionNav } from "#/features/practice/components/QuestionNav"
 import { TranslateSelection } from "#/features/practice/components/TranslateSelection"
@@ -17,6 +17,14 @@ interface Props {
 export function ReadingInProgress({ detail, session }: Props) {
 	const { exercise, questions } = detail
 	const [activeCharIndex, setActiveCharIndex] = useState<number | null>(null)
+	const resultConfig = {
+		backTo: "/luyen-tap/doc",
+		buttonClassName:
+			"inline-flex items-center justify-center py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-reading shadow-[0_3px_0_var(--color-skill-reading-dark)] active:shadow-[0_1px_0_var(--color-skill-reading-dark)] active:translate-y-[2px] transition uppercase",
+		contentId: exercise.id,
+		contentType: "practice_reading_exercise",
+		label: "Kết quả đọc",
+	} as const
 
 	return (
 		<div className="flex flex-col h-screen bg-background">
@@ -38,59 +46,67 @@ export function ReadingInProgress({ detail, session }: Props) {
 
 			{/* Scrollable content */}
 			<div className="flex-1 overflow-y-auto">
-				<div className="max-w-5xl mx-auto px-6 py-6">
-					{/* Result */}
-					{session.result && (
-						<div className="card p-6 text-center mb-6">
-							<img src="/mascot/lac-happy.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
-							<p className="font-extrabold text-2xl text-foreground">
-								{session.result.score}/{session.result.total}
-							</p>
-							<p className="text-sm text-muted mt-1">câu đúng</p>
-							<div className="flex justify-center gap-3 mt-4">
-								<Link
-									to="/luyen-tap/doc"
-									className="py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-reading shadow-[0_3px_0_var(--color-skill-reading-dark)] active:shadow-[0_1px_0_var(--color-skill-reading-dark)] active:translate-y-[2px] transition uppercase"
-								>
-									Về danh sách
-								</Link>
+				<div className="max-w-6xl mx-auto px-6 py-6">
+					{session.result ? (
+						<div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
+							<div className="lg:sticky lg:top-6">
+								<PracticeMcqResultPanel result={session.result} config={resultConfig} />
 							</div>
-							<div className="mx-auto mt-5 max-w-md">
-								<ExerciseFeedbackCard contentType="practice_reading_exercise" contentId={exercise.id} />
+							<div className="space-y-6">
+								<div className="card p-6">
+									<TranslateSelection>
+										<div className="mb-2 flex items-center justify-between gap-3">
+											<p className="text-xs font-bold text-skill-reading uppercase tracking-wide">
+												Part {exercise.part}
+											</p>
+											<PassageSpeechControl text={exercise.passage} onActiveCharChange={setActiveCharIndex} />
+										</div>
+										<h2 className="font-bold text-lg text-foreground mb-4">{exercise.title}</h2>
+										<HighlightablePassage
+											text={exercise.passage}
+											passageId={exercise.id}
+											activeCharIndex={activeCharIndex}
+											className="text-sm leading-relaxed text-foreground/90"
+										/>
+									</TranslateSelection>
+								</div>
+								<QuestionList
+									questions={questions}
+									answers={session.answers}
+									result={session.result}
+									onSelect={session.select}
+									accentColor="var(--color-skill-reading)"
+								/>
 							</div>
+						</div>
+					) : (
+						<div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+							<div className="card p-6 self-start lg:sticky lg:top-6">
+								<TranslateSelection>
+									<div className="mb-2 flex items-center justify-between gap-3">
+										<p className="text-xs font-bold text-skill-reading uppercase tracking-wide">
+											Part {exercise.part}
+										</p>
+										<PassageSpeechControl text={exercise.passage} onActiveCharChange={setActiveCharIndex} />
+									</div>
+									<h2 className="font-bold text-lg text-foreground mb-4">{exercise.title}</h2>
+									<HighlightablePassage
+										text={exercise.passage}
+										passageId={exercise.id}
+										activeCharIndex={activeCharIndex}
+										className="text-sm leading-relaxed text-foreground/90"
+									/>
+								</TranslateSelection>
+							</div>
+							<QuestionList
+								questions={questions}
+								answers={session.answers}
+								result={session.result}
+								onSelect={session.select}
+								accentColor="var(--color-skill-reading)"
+							/>
 						</div>
 					)}
-
-					{/* Two-column: passage + questions */}
-					<div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-						{/* Passage */}
-						<div className="card p-6 self-start lg:sticky lg:top-6">
-							<TranslateSelection>
-								<div className="mb-2 flex items-center justify-between gap-3">
-									<p className="text-xs font-bold text-skill-reading uppercase tracking-wide">
-										Part {exercise.part}
-									</p>
-									<PassageSpeechControl text={exercise.passage} onActiveCharChange={setActiveCharIndex} />
-								</div>
-								<h2 className="font-bold text-lg text-foreground mb-4">{exercise.title}</h2>
-								<HighlightablePassage
-									text={exercise.passage}
-									passageId={exercise.id}
-									activeCharIndex={activeCharIndex}
-									className="text-sm leading-relaxed text-foreground/90"
-								/>
-							</TranslateSelection>
-						</div>
-
-						{/* Questions */}
-						<QuestionList
-							questions={questions}
-							answers={session.answers}
-							result={session.result}
-							onSelect={session.select}
-							accentColor="var(--color-skill-reading)"
-						/>
-					</div>
 				</div>
 			</div>
 

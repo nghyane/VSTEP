@@ -51,7 +51,8 @@ class ProgressService
             'listening' => 'listening',
             'reading' => 'reading',
             'writing' => 'writing',
-            'speaking' => 'speaking_submission',
+            'speaking_drill' => 'speaking_drill',
+            'speaking_vstep_practice' => 'speaking_submission',
             default => 'mcq',
         };
 
@@ -60,6 +61,25 @@ class ProgressService
             activityType: $activityType,
             count: 1,
             durationSeconds: $session->duration_seconds ?? 0,
+        );
+    }
+
+    public function recordSpeakingConversationCompletion(string $profileId, int $durationSeconds): void
+    {
+        ProfileDailyActivity::addActivity(
+            profileId: $profileId,
+            activityType: 'speaking_submission',
+            count: 1,
+            durationSeconds: $durationSeconds,
+        );
+    }
+
+    public function recordSpeakingDrillActivity(string $profileId): void
+    {
+        ProfileDailyActivity::addActivity(
+            profileId: $profileId,
+            activityType: 'speaking_drill',
+            count: 1,
         );
     }
 

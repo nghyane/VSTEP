@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router"
 import { useState } from "react"
 import { Icon } from "#/components/Icon"
 import { AudioBar } from "#/features/practice/components/AudioBar"
-import { ExerciseFeedbackCard } from "#/features/practice/components/ExerciseFeedbackCard"
+import { PracticeMcqResultPanel } from "#/features/practice/components/PracticeMcqResultPanel"
 import { QuestionList } from "#/features/practice/components/QuestionList"
 import { QuestionNav } from "#/features/practice/components/QuestionNav"
 import { Subtitle } from "#/features/practice/components/Subtitle"
@@ -27,6 +27,49 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 	const hasTTS = !hasAudio && !!exercise.transcript
 	const tts = useTTSPlayer(hasTTS ? exercise.transcript : null)
 	const hasSub = !!exercise.transcript || exercise.word_timestamps.length > 0
+	const resultConfig = {
+		backTo: "/luyen-tap/nghe",
+		buttonClassName:
+			"inline-flex items-center justify-center py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-listening shadow-[0_3px_0_var(--color-skill-listening-dark)] active:shadow-[0_1px_0_var(--color-skill-listening-dark)] active:translate-y-[2px] transition uppercase",
+		contentId: exercise.id,
+		contentType: "practice_listening_exercise",
+		label: "Kết quả nghe",
+	} as const
+	const audioPanel = (
+		<div className="card p-4">
+			<p className="text-xs font-bold text-skill-listening uppercase tracking-wide mb-2">
+				Part {exercise.part}
+			</p>
+			<h2 className="font-bold text-lg text-foreground mb-1">{exercise.title}</h2>
+			{exercise.description && <p className="text-sm text-muted mb-4">{exercise.description}</p>}
+			<div className="flex items-center gap-3">
+				<div className="flex-1 min-w-0">
+					{hasAudio ? (
+						<AudioBar src={exercise.audio_url} onTimeUpdate={setAudioTime} />
+					) : hasTTS ? (
+						<TTSAudioBar player={tts} />
+					) : (
+						<p className="text-sm text-muted italic">Không có audio</p>
+					)}
+				</div>
+				{hasSub && (
+					<button
+						type="button"
+						onClick={() => setShowSub((v) => !v)}
+						className={cn(
+							"w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition shrink-0",
+							showSub
+								? "border-skill-listening bg-info-tint text-skill-listening"
+								: "border-border text-muted",
+						)}
+						aria-label="Bật/tắt phụ đề"
+					>
+						CC
+					</button>
+				)}
+			</div>
+		</div>
+	)
 
 	return (
 		<div className="flex flex-col h-screen bg-background">
@@ -63,72 +106,35 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 
 			{/* Scrollable content */}
 			<div className="flex-1 overflow-y-auto">
-				<div className="max-w-3xl mx-auto px-6 py-6 space-y-6">
-					{/* Audio card */}
-					<div className="card p-4">
-						<p className="text-xs font-bold text-skill-listening uppercase tracking-wide mb-2">
-							Part {exercise.part}
-						</p>
-						<h2 className="font-bold text-lg text-foreground mb-1">{exercise.title}</h2>
-						{exercise.description && <p className="text-sm text-muted mb-4">{exercise.description}</p>}
-						<div className="flex items-center gap-3">
-							<div className="flex-1 min-w-0">
-								{hasAudio ? (
-									<AudioBar src={exercise.audio_url} onTimeUpdate={setAudioTime} />
-								) : hasTTS ? (
-									<TTSAudioBar player={tts} />
-								) : (
-									<p className="text-sm text-muted italic">Không có audio</p>
-								)}
+				<div className="mx-auto max-w-5xl px-6 py-6">
+					{session.result ? (
+						<div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
+							<div className="lg:sticky lg:top-6">
+								<PracticeMcqResultPanel result={session.result} config={resultConfig} />
 							</div>
-							{hasSub && (
-								<button
-									type="button"
-									onClick={() => setShowSub((v) => !v)}
-									className={cn(
-										"w-8 h-8 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition shrink-0",
-										showSub
-											? "border-skill-listening bg-info-tint text-skill-listening"
-											: "border-border text-muted",
-									)}
-									aria-label="Bật/tắt phụ đề"
-								>
-									CC
-								</button>
-							)}
+							<div className="space-y-6">
+								{audioPanel}
+								<QuestionList
+									questions={questions}
+									answers={session.answers}
+									result={session.result}
+									onSelect={session.select}
+									accentColor="var(--color-skill-listening)"
+								/>
+							</div>
 						</div>
-					</div>
-
-					{/* Celebration */}
-					{session.result && (
-						<div className="card p-6 text-center">
-							<img src="/mascot/lac-happy.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
-							<p className="font-extrabold text-2xl text-foreground">
-								{session.result.score}/{session.result.total}
-							</p>
-							<p className="text-sm text-muted mt-1">câu đúng</p>
-							<div className="flex justify-center gap-3 mt-4">
-								<Link
-									to="/luyen-tap/nghe"
-									className="py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-listening shadow-[0_3px_0_var(--color-skill-listening-dark)] active:shadow-[0_1px_0_var(--color-skill-listening-dark)] active:translate-y-[2px] transition uppercase"
-								>
-									Về danh sách
-								</Link>
-							</div>
-							<div className="mx-auto mt-5 max-w-md">
-								<ExerciseFeedbackCard contentType="practice_listening_exercise" contentId={exercise.id} />
-							</div>
+					) : (
+						<div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
+							<div className="lg:sticky lg:top-6">{audioPanel}</div>
+							<QuestionList
+								questions={questions}
+								answers={session.answers}
+								result={session.result}
+								onSelect={session.select}
+								accentColor="var(--color-skill-listening)"
+							/>
 						</div>
 					)}
-
-					{/* Questions */}
-					<QuestionList
-						questions={questions}
-						answers={session.answers}
-						result={session.result}
-						onSelect={session.select}
-						accentColor="var(--color-skill-listening)"
-					/>
 				</div>
 			</div>
 

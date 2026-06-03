@@ -208,6 +208,22 @@
 		100% { opacity: 0; transform: scale(2.2); }
 	}
 
+	@keyframes streakRewardFly {
+		0% { opacity: 0; transform: translate(0, 0) scale(0.55); }
+		16% { opacity: 1; transform: translate(0, 0) scale(1.15); }
+		58% { opacity: 1; transform: translate(0, 0) scale(1); }
+		100% {
+			opacity: 0;
+			transform: translate(var(--streak-target-x), var(--streak-target-y)) scale(0.22);
+		}
+	}
+
+	@keyframes streakRewardGlow {
+		0% { filter: brightness(1.7) saturate(1.35); }
+		35% { filter: brightness(1.45) saturate(1.25); }
+		100% { filter: brightness(1) saturate(1); }
+	}
+
 	@keyframes warningBlink {
 		0%, 100% {
 			box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);

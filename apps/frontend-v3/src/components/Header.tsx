@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { useEffect, useRef, useState } from "react"
+import { type CSSProperties, useEffect, useRef, useState } from "react"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { ProfileDropdown } from "#/components/ProfileDropdown"
 import { StreakIcon } from "#/components/StreakIcon"
@@ -27,6 +27,7 @@ export function Header({ title, backTo }: Props) {
 	const balance = walletData ? walletData.data.balance : null
 	const streakInfo = streakData?.data ?? null
 	const streak = streakInfo ? streakInfo.current : null
+	const [displayedStreak, setDisplayedStreak] = useState<number | null>(null)
 	const unread = unreadData ? unreadData.data.count : 0
 	const initial = profile.nickname.charAt(0).toUpperCase()
 	const [topupOpen, setTopupOpen] = useState(false)
@@ -46,10 +47,54 @@ export function Header({ title, backTo }: Props) {
 	}, [pulse])
 
 	const [streakAnimKey, setStreakAnimKey] = useState(0)
+	const previousStreakRef = useRef<number | null>(null)
+	const streakTargetRef = useRef<HTMLDivElement>(null)
+	const [streakReward, setStreakReward] = useState<{
+		key: number
+		delta: number
+		targetX: number
+		targetY: number
+	} | null>(null)
 	function handleStreakClick() {
 		setStreakAnimKey((k) => k + 1)
 		setStreakOpen(true)
 	}
+	useEffect(() => {
+		if (streak === null) return
+
+		const previous = previousStreakRef.current
+		if (previous === null) {
+			previousStreakRef.current = streak
+			setDisplayedStreak(streak)
+			return
+		}
+
+		if (streak > previous) {
+			const rect = streakTargetRef.current?.getBoundingClientRect()
+			setDisplayedStreak(previous)
+			setStreakReward({
+				key: Date.now(),
+				delta: streak - previous,
+				targetX: rect ? rect.left + rect.width / 2 - window.innerWidth / 2 : 0,
+				targetY: rect ? rect.top + rect.height / 2 - window.innerHeight / 2 : 0,
+			})
+
+			const countTimer = window.setTimeout(() => {
+				setDisplayedStreak(streak)
+				setStreakAnimKey((k) => k + 1)
+			}, 1200)
+			const clearTimer = window.setTimeout(() => setStreakReward(null), 1650)
+			previousStreakRef.current = streak
+
+			return () => {
+				window.clearTimeout(countTimer)
+				window.clearTimeout(clearTimer)
+			}
+		}
+
+		if (streak !== previous) setDisplayedStreak(streak)
+		previousStreakRef.current = streak
+	}, [streak])
 	useEffect(() => {
 		if (streakAnimKey === 0) return
 		const t = setTimeout(() => setStreakAnimKey(0), 1000)
@@ -132,7 +177,7 @@ export function Header({ title, backTo }: Props) {
 						</>
 					)}
 				</div>
-				<div className="relative shrink-0">
+				<div ref={streakTargetRef} className="relative shrink-0">
 					<button
 						type="button"
 						onClick={handleStreakClick}
@@ -150,7 +195,7 @@ export function Header({ title, backTo }: Props) {
 							)}
 						/>
 						<span className="font-extrabold text-base text-streak tabular-nums leading-none">
-							{streak !== null ? streak : "–"}
+							{displayedStreak !== null ? displayedStreak : "–"}
 						</span>
 					</button>
 					{streakAnimKey > 0 && (
@@ -164,9 +209,33 @@ export function Header({ title, backTo }: Props) {
 				<ProfileDropdown unread={unread} initial={initial} />
 			</div>
 			<TopUpDialog open={topupOpen} onClose={() => setTopupOpen(false)} />
+			{streakReward && <StreakRewardFly key={streakReward.key} reward={streakReward} />}
 			{streakInfo && (
 				<StreakDialog open={streakOpen} onClose={() => setStreakOpen(false)} streak={streakInfo} />
 			)}
+		</div>
+	)
+}
+
+function StreakRewardFly({ reward }: { reward: { delta: number; targetX: number; targetY: number } }) {
+	return (
+		<div
+			aria-hidden
+			className="pointer-events-none fixed left-1/2 top-1/2 z-[70] -translate-x-1/2 -translate-y-1/2"
+			style={
+				{
+					"--streak-target-x": `${reward.targetX}px`,
+					"--streak-target-y": `${reward.targetY}px`,
+				} as CSSProperties
+			}
+		>
+			<div className="animate-[streakRewardFly_2400ms_cubic-bezier(0.34,1.56,0.64,1)_forwards]">
+				<StreakIcon
+					burning
+					burnKey={reward.delta}
+					className="h-36 w-auto animate-[streakRewardGlow_1200ms_ease-out_forwards] drop-shadow-[0_0_28px_rgba(255,200,0,0.75)]"
+				/>
+			</div>
 		</div>
 	)
 }

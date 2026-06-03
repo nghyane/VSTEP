@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Models\PracticeShadowingProgress;
+use App\Services\ProgressService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 final class ShadowingProgressController extends Controller
 {
+    public function __construct(
+        private readonly ProgressService $progressService,
+    ) {}
+
     /**
      * GET /practice/speaking/shadowing/progress
      * Returns: { data: { "lesson-id": [0, 2, 5], ... } }
@@ -58,6 +63,8 @@ final class ShadowingProgressController extends Controller
                 'accuracy_percent' => $validated['accuracy_percent'],
             ],
         );
+
+        $this->progressService->recordSpeakingDrillActivity($profile->id);
 
         return response()->json(['data' => [
             'lesson_id' => $progress->lesson_id,

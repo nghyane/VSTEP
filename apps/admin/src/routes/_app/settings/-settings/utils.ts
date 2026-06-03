@@ -23,7 +23,7 @@ const NAMESPACE_LABELS: Record<string, string> = {
 	streak: "Streak (chuỗi học liên tục)",
 	grading: "Chấm bài",
 	exam: "Đề thi (chi phí coin)",
-	support: "Hỗ trợ trong drill",
+	support: "Hỗ trợ",
 	onboarding: "Onboarding",
 	profile: "Profile",
 }
@@ -47,6 +47,7 @@ const KEY_LABELS: Record<string, string> = {
 	"exam.full_test_cost_coins": "Xu/lần thi Full VSTEP (4 kỹ năng)",
 	"exam.custom_per_skill_coins": "Xu/kỹ năng khi thi Custom VSTEP",
 	"support.level_costs": "Xu trừ khi bật gợi ý trong drill",
+	"support.zalo_phone": "Số điện thoại Zalo hỗ trợ",
 	"onboarding.initial_coins": "Xu tặng khi tạo profile đầu tiên",
 	"profile.max_profiles_per_account": "Số hồ sơ tối đa mỗi tài khoản",
 }
@@ -80,6 +81,8 @@ const KEY_DESCRIPTIONS: Record<string, string> = {
 		"Số xu trừ cho mỗi kỹ năng học viên chọn khi tạo đề Custom VSTEP. VD: chọn 2 kỹ năng → trừ 2 × giá trị này.",
 	"support.level_costs":
 		'Số xu trừ khi học viên bật mức gợi ý trong drill. JSON dạng {level: cost}. VD {"1": 1, "2": 2} = level 1 trừ 1 xu, level 2 trừ 2 xu.',
+	"support.zalo_phone":
+		"Số điện thoại dùng để mở chat Zalo khi học viên bấm nút hỗ trợ trên website. Nhập dạng số điện thoại, ví dụ 0343062376.",
 	"onboarding.initial_coins":
 		"Số xu hệ thống tự tặng vào ví khi học viên tạo profile đầu tiên (mỗi account chỉ nhận một lần duy nhất).",
 	"profile.max_profiles_per_account":
