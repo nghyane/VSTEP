@@ -6,10 +6,10 @@ namespace Tests\Feature\Auth;
 
 use App\Enums\CoinTransactionType;
 use App\Models\CoinTransaction;
-use App\Models\PracticeListeningExercise;
-use App\Models\PracticeListeningQuestion;
 use App\Models\User;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class RegisterTest extends TestCase
@@ -18,6 +18,8 @@ class RegisterTest extends TestCase
 
     public function test_register_creates_account_and_initial_profile(): void
     {
+        Notification::fake();
+
         $response = $this->postJson('/api/v1/auth/register', [
             'email' => 'phat@example.com',
             'password' => 'Secret123',
@@ -33,14 +35,17 @@ class RegisterTest extends TestCase
             'data' => [
                 'user' => ['id', 'email', 'role'],
                 'profile' => ['id', 'nickname', 'target_level', 'target_deadline', 'is_initial_profile'],
+                'email_verification_sent',
             ],
         ]);
         $response->assertJsonPath('data.user.email', 'phat@example.com');
         $response->assertJsonPath('data.user.role', 'learner');
         $response->assertJsonPath('data.profile.is_initial_profile', true);
+        $response->assertJsonMissingPath('data.access_token');
 
         $user = User::where('email', 'phat@example.com')->first();
         $this->assertNotNull($user);
+        $this->assertNull($user->email_verified_at);
         $this->assertCount(1, $user->profiles);
         $profile = $user->profiles->first();
         $this->assertTrue($profile->is_initial_profile);
@@ -54,39 +59,31 @@ class RegisterTest extends TestCase
         $this->assertNotNull($bonus);
         $this->assertSame(100, $bonus->delta);
         $this->assertSame(100, $bonus->balance_after);
+
+        Notification::assertSentTo($user, VerifyEmail::class);
     }
 
-    public function test_registered_account_can_submit_with_initial_token(): void
+    public function test_unverified_registered_account_cannot_login(): void
     {
-        $exercise = PracticeListeningExercise::factory()->create();
-        $question = PracticeListeningQuestion::factory()->create([
-            'exercise_id' => $exercise->id,
-            'correct_index' => 0,
-        ]);
+        Notification::fake();
 
-        $register = $this->postJson('/api/v1/auth/register', [
+        $this->postJson('/api/v1/auth/register', [
             'email' => 'submitter@example.com',
             'password' => 'Secret123',
             'nickname' => 'submitter-b2',
             'target_level' => 'B2',
             'target_deadline' => now()->addMonths(6)->toDateString(),
-        ]);
+        ])->assertCreated();
 
-        $register->assertCreated();
-        $token = $register->json('data.access_token');
-
-        $start = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson('/api/v1/practice/listening/sessions', [
-                'exercise_id' => $exercise->id,
+        $this->postJson('/api/v1/auth/login', [
+            'email' => 'submitter@example.com',
+            'password' => 'Secret123',
+        ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['email'])
+            ->assertJsonFragment([
+                'email' => ['Vui lòng xác thực email trước khi đăng nhập.'],
             ]);
-        $start->assertCreated();
-
-        $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/practice/listening/sessions/{$start->json('data.id')}/submit", [
-                'answers' => [['question_id' => $question->id, 'selected_index' => 0]],
-            ])
-            ->assertOk()
-            ->assertJsonPath('data.score', 1);
     }
 
     public function test_register_rejects_duplicate_email(): void

@@ -24,6 +24,7 @@ use App\Assessment\Strategies\SpeakingPart3DiscussionStrategy;
 use App\Assessment\Strategies\WritingTask1LetterStrategy;
 use App\Assessment\Strategies\WritingTask2EssayStrategy;
 use App\Models\Profile;
+use App\Models\User;
 use App\Services\Admin\Course\AdminCourseBookingService;
 use App\Services\Admin\Course\AdminCourseEnrollmentService;
 use App\Services\Admin\Course\AdminCourseScheduleService;
@@ -53,6 +54,7 @@ use App\Srs\FsrsConfig;
 use Carbon\CarbonImmutable;
 use Google\Client as GoogleClient;
 use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -60,11 +62,14 @@ use Illuminate\Queue\Events\JobFailed;
 use Illuminate\Queue\Events\JobProcessed;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
+    private const EMAIL_VERIFICATION_LINK_TTL_MINUTES = 60;
+
     public function register(): void
     {
         $this->app->singleton(FsrsConfig::class, fn () => FsrsConfig::default());
@@ -146,6 +151,27 @@ class AppServiceProvider extends ServiceProvider
                 ->action('Đặt lại mật khẩu', $url)
                 ->line('Liên kết đặt lại mật khẩu sẽ hết hạn sau 60 phút.')
                 ->line('Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này.');
+        });
+
+        VerifyEmail::createUrlUsing(function (object $notifiable): string {
+            if (! $notifiable instanceof User) {
+                throw new \RuntimeException('Email verification notification requires a User notifiable.');
+            }
+
+            return URL::temporarySignedRoute(
+                'verification.verify',
+                now()->addMinutes(self::EMAIL_VERIFICATION_LINK_TTL_MINUTES),
+                ['id' => (string) $notifiable->getKey(), 'hash' => sha1($notifiable->getEmailForVerification())],
+            );
+        });
+
+        VerifyEmail::toMailUsing(function (object $notifiable, string $url): MailMessage {
+            return (new MailMessage)
+                ->subject('Xác thực email VSTEP')
+                ->line('Bạn nhận được email này vì đã đăng ký tài khoản VSTEP.')
+                ->action('Xác thực email', $url)
+                ->line('Liên kết xác thực email sẽ hết hạn sau 60 phút.')
+                ->line('Nếu bạn không đăng ký tài khoản, hãy bỏ qua email này.');
         });
 
         Request::macro('profile', function (): Profile {

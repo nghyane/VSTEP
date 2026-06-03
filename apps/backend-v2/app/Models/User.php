@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\Role;
+use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -21,11 +23,12 @@ use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
 #[Fillable(['full_name', 'email', 'password', 'role', 'avatar_key', 'avatar_url', 'google_id', 'title', 'bio', 'active_profile_id', 'email_verified_at', 'deactivated_at'])]
 #[Hidden(['password'])]
-class User extends Authenticatable implements CanResetPasswordContract, JWTSubject
+class User extends Authenticatable implements CanResetPasswordContract, JWTSubject, MustVerifyEmailContract
 {
     use CanResetPassword;
     use HasFactory;
     use HasUuids;
+    use MustVerifyEmail;
     use Notifiable;
 
     protected function serializeDate(\DateTimeInterface $date): string

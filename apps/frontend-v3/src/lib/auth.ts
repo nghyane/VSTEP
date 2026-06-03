@@ -1,6 +1,5 @@
 import { HTTPError } from "ky"
 import { create } from "zustand"
-import { useWelcomeGift } from "#/features/onboarding/use-welcome-gift"
 import { type ApiResponse, api } from "#/lib/api"
 import { queryClient } from "#/lib/query-client"
 import { useToast } from "#/lib/toast"
@@ -31,11 +30,9 @@ interface LoginResponse {
 }
 
 interface RegisterResponse {
-	access_token: string
-	refresh_token: string
 	user: User
 	profile: Profile
-	onboarding_bonus?: OnboardingBonus
+	email_verification_sent: boolean
 }
 
 interface GoogleLoginResponse {
@@ -97,7 +94,7 @@ type AuthActions = {
 		entry_level: string
 		target_level: string
 		target_deadline: string
-	}) => Promise<void>
+	}) => Promise<{ email: string } | null>
 	loginWithGoogle: (idToken: string) => Promise<LoginResult | null>
 	completeOnboarding: (data: {
 		nickname: string
@@ -169,18 +166,11 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 	async register(input) {
 		try {
 			const { data } = await api.post("auth/register", { json: input }).json<ApiResponse<RegisterResponse>>()
-			tokens.setAccess(data.access_token)
-			tokens.setRefresh(data.refresh_token)
-			tokens.setUser(data.user)
-			queryClient.clear()
-			set({ status: "authenticated", user: data.user, profile: data.profile })
-			if (data.onboarding_bonus?.granted) {
-				useWelcomeGift.getState().show(data.onboarding_bonus.amount)
-			} else {
-				useToast.getState().add("Tạo tài khoản thành công", "success")
-			}
+			useToast.getState().add("Đã gửi email xác thực", "success")
+			return { email: data.user.email }
 		} catch (e) {
 			showError(e)
+			return null
 		}
 	},
 
