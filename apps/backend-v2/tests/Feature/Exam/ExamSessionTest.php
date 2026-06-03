@@ -95,6 +95,44 @@ class ExamSessionTest extends TestCase
         $submit->assertJsonPath('data.mcq.total', 2);
     }
 
+    public function test_session_results_returns_server_read_model(): void
+    {
+        [$user, , $exam] = $this->seedExam();
+        $token = $this->tokenFor($user);
+
+        $sessionId = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/exams/{$exam->id}/sessions", ['mode' => 'full'])
+            ->json('data.session_id');
+
+        $listeningItem = ExamVersionListeningItem::query()->firstOrFail();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/exam-sessions/{$sessionId}/submit", [
+                'mcq_answers' => [
+                    [
+                        'item_ref_type' => 'exam_listening_item',
+                        'item_ref_id' => $listeningItem->id,
+                        'selected_index' => $listeningItem->correct_index,
+                    ],
+                ],
+            ])
+            ->assertOk();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/exam-sessions/{$sessionId}/results")
+            ->assertOk()
+            ->assertJsonPath('data.summary.mcq_score', 1)
+            ->assertJsonPath('data.summary.mcq_total', 2)
+            ->assertJsonPath('data.summary.has_pending_ai', false)
+            ->assertJsonPath('data.performance_rows.0.label', 'Nghe · Part 1')
+            ->assertJsonPath('data.performance_rows.0.correct', 1)
+            ->assertJsonPath('data.performance_rows.1.label', 'Đọc · Passage 1')
+            ->assertJsonPath('data.performance_rows.1.wrong', 1)
+            ->assertJsonPath('data.performance_rows.2.status', 'not_submitted')
+            ->assertJsonPath('data.performance_rows.3.status', 'not_submitted')
+            ->assertJsonPath('data.mcq_detail.1.selected_index', null);
+    }
+
     public function test_submit_rejects_already_submitted(): void
     {
         [$user, , $exam] = $this->seedExam();

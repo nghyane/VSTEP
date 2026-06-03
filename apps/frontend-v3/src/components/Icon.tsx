@@ -47,10 +47,29 @@ import VolumeIcon from "#/assets/icons/volume-small.svg?react"
 import WeightsIcon from "#/assets/icons/weights-small.svg?react"
 import { cn } from "#/lib/utils"
 
+function ChevronDownIcon({ className, style }: React.SVGProps<SVGSVGElement>) {
+	return (
+		<svg
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="3"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			className={className}
+			style={style}
+			aria-hidden="true"
+		>
+			<path d="m6 9 6 6 6-6" />
+		</svg>
+	)
+}
+
 /** Mono-color icons (use currentColor, support dynamic color via style/className) */
 export const icons = {
 	back: BackIcon,
 	book: BookIcon,
+	"chevron-down": ChevronDownIcon,
 	check: CheckIcon,
 	clipboard: ClipboardIcon,
 	close: CloseIcon,

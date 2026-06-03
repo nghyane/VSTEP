@@ -9,6 +9,13 @@ import type {
 } from "#/features/exam/types"
 import type { AssessmentFeedback, CriterionScore, RubricCriteriaMeta } from "#/features/grading/types"
 
+const EMPTY_SCORES: SkillScores = {
+	listening: null,
+	reading: null,
+	writing: null,
+	speaking: null,
+}
+
 export interface ExamResultUi {
 	examTitle: string
 	overallBand: number | null
@@ -139,7 +146,7 @@ export function useExamResultUi(
 		examTitle,
 		overallBand: overall_band,
 		level,
-		scores,
+		scores: scores ?? EMPTY_SCORES,
 		activeSkills,
 		hasPending,
 		mcqParts,

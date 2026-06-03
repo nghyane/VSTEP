@@ -12,7 +12,6 @@ import type {
 	SkillKey,
 	SpeakingAnswerPayload,
 	SubmitSessionPayload,
-	SubmitSessionResult,
 	WritingAnswerPayload,
 } from "#/features/exam/types"
 import { useToast } from "#/lib/toast"
@@ -56,6 +55,7 @@ type ExamAction =
 	| { type: "HIDE_CONFIRM_NEXT" }
 	| { type: "SUBMITTING" }
 	| { type: "SUBMITTED" }
+	| { type: "SUBMISSION_FAILED" }
 	| { type: "TIME_EXPIRED" }
 
 function examReducer(state: ExamState, action: ExamAction): ExamState {
@@ -100,6 +100,8 @@ function examReducer(state: ExamState, action: ExamAction): ExamState {
 			return { ...state, phase: "submitting", confirmSubmit: false }
 		case "SUBMITTED":
 			return { ...state, phase: "submitted" }
+		case "SUBMISSION_FAILED":
+			return { ...state, phase: "active" }
 		case "TIME_EXPIRED":
 			if (state.phase !== "active") return state
 			return { ...state, phase: "expired" }
@@ -217,7 +219,7 @@ interface UseExamSessionOptions {
 	writingTasks: ExamVersionWritingTask[]
 	initialDraft: ExamDraft | null
 	remainingSeconds: number
-	onSubmitted: (result: SubmitSessionResult) => void
+	onSubmitted?: () => void
 }
 
 export function useExamSession({
@@ -227,20 +229,22 @@ export function useExamSession({
 	writingTasks,
 	initialDraft,
 	remainingSeconds,
-	onSubmitted,
+	onSubmitted = () => {},
 }: UseExamSessionOptions) {
 	const activeSkills = SKILL_ORDER.filter((sk) => session.selected_skills.includes(sk))
 
 	const [state, dispatch] = useReducer(examReducer, undefined, (): ExamState => {
 		const expired = new Date(session.server_deadline_at).getTime() <= Date.now()
-		const draft = !expired ? initialDraft : null
+		const phase: ExamPhase = expired ? "expired" : initialDraft ? "active" : "device-check"
 		return {
 			// Có draft => user đã bắt đầu làm => bỏ qua device-check
-			phase: draft ? "active" : "device-check",
-			skillIdx: draft?.skill_idx ?? 0,
-			mcqAnswers: new Map((draft?.mcq_answers ?? []).map((m) => [m.item_ref_id, m.selected_index] as const)),
-			writingAnswers: new Map((draft?.writing_answers ?? []).map((w) => [w.task_id, w.text] as const)),
-			speakingAnswers: buildInitialSpeakingAnswers(draft?.speaking_marks ?? []),
+			phase,
+			skillIdx: initialDraft?.skill_idx ?? 0,
+			mcqAnswers: new Map(
+				(initialDraft?.mcq_answers ?? []).map((m) => [m.item_ref_id, m.selected_index] as const),
+			),
+			writingAnswers: new Map((initialDraft?.writing_answers ?? []).map((w) => [w.task_id, w.text] as const)),
+			speakingAnswers: buildInitialSpeakingAnswers(initialDraft?.speaking_marks ?? []),
 			confirmSubmit: false,
 			confirmNextSkill: false,
 		}
@@ -293,7 +297,7 @@ export function useExamSession({
 
 	const submitMutation = useMutation({
 		mutationFn: (payload: SubmitSessionPayload) => submitExamSession(session.id, payload),
-		onSuccess: (result) => {
+		onSuccess: () => {
 			dispatch({ type: "SUBMITTED" })
 			qc.invalidateQueries({ queryKey: ["exam-sessions"] })
 			qc.invalidateQueries({ queryKey: ["exams"] })
@@ -306,15 +310,18 @@ export function useExamSession({
 			// page query (["booking", courseId]) cũng cần update commitment.completed.
 			qc.invalidateQueries({ queryKey: ["courses"] })
 			qc.invalidateQueries({ queryKey: ["booking"] })
-			onSubmitted(result)
+			onSubmitted()
 		},
 		onError: () => {
 			// Submit thất bại sau hết giờ (server đã auto-submit trước) → coi như submitted
-			if (state.phase === "expired" || state.phase === "submitting") {
+			if (autoSubmitFired.current) {
 				dispatch({ type: "SUBMITTED" })
 				qc.invalidateQueries({ queryKey: ["exam-sessions"] })
-				onSubmitted({ session_id: session.id } as SubmitSessionResult)
+				onSubmitted()
+				return
 			}
+
+			dispatch({ type: "SUBMISSION_FAILED" })
 		},
 	})
 
@@ -430,6 +437,7 @@ export function useExamSession({
 		nextSkill,
 		totalMcq,
 		answeredMcq,
+		isSubmitted: state.phase === "submitted",
 		isSubmitting: submitMutation.isPending,
 		isTimeExpired: state.phase === "expired" || (state.phase === "submitting" && autoSubmitFired.current),
 		handleStartExam,
