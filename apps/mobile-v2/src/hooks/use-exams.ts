@@ -28,7 +28,10 @@ export function useAppConfig() {
 export function useExams() {
   return useQuery({
     queryKey: ["exams"],
-    queryFn: () => api.get<Exam[]>("/api/v1/exams"),
+    queryFn: async () => {
+      const res = await api.get<Exam[] | { data: Exam[] }>("/api/v1/exams?per_page=50");
+      return Array.isArray(res) ? res : res.data;
+    },
   });
 }
 

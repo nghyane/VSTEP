@@ -199,6 +199,11 @@ export interface SpeakingConversationTurnFeedback {
   better?: string | null;
   betterIpa?: string | null;
   userIpa?: string | null;
+  profanity?: {
+    found: boolean;
+    words: string[];
+    count: number;
+  };
 }
 
 export interface SpeakingConversationSession {

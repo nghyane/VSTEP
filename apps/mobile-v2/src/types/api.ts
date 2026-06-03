@@ -5,7 +5,7 @@
 export type Skill = "listening" | "reading" | "writing" | "speaking";
 export type QuestionLevel = "A2" | "B1" | "B2" | "C1";
 export type VstepBand = "B1" | "B2" | "C1";
-export type ExamStatus = "in_progress" | "submitted" | "completed" | "abandoned";
+export type ExamStatus = "not_started" | "in_progress" | "submitted" | "completed" | "abandoned";
 export type SubmissionStatus = "pending" | "processing" | "completed" | "review_pending" | "failed";
 export type ExamType = "practice" | "placement" | "mock";
 export type ExamSkill = "listening" | "reading" | "writing" | "speaking" | "mixed";
@@ -76,15 +76,30 @@ export interface GoogleLoginResponse {
 
 export interface Exam {
   id: string;
+  slug?: string;
   title: string;
   description: string | null;
+  sourceSchool?: string | null;
   tags: string[];
   totalDurationMinutes: number;
-  type: ExamType;
-  skill: ExamSkill;
+  type?: ExamType;
+  skill?: ExamSkill;
   status?: ExamStatus;
   bestScore?: number | null;
   attemptCount?: number;
+  attemptsCount?: number;
+  userState?: {
+    status: "not_started" | "in_progress" | "submitted";
+    statusLabel: string;
+    statusTone: "primary" | "success" | "warning";
+    primaryAction: "start" | "continue" | "restart";
+    primaryActionLabel: string;
+    activeSessionId: string | null;
+    deadlineAt: string | null;
+    selectedSkills: Skill[] | null;
+    progressLabel: string | null;
+    sessionCount: number;
+  };
 }
 
 export interface ExamSession {

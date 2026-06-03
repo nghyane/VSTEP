@@ -28,6 +28,7 @@ import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { McqQuestion } from "@/hooks/use-practice";
 
 const COLOR = "#1CB0F6";
+const COLOR_DARK = "#0B7FB2";
 
 export default function ListeningExerciseScreen() {
   const { exerciseId } = useLocalSearchParams<{ exerciseId: string }>();
@@ -221,6 +222,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
             activeWordIndex={ttsPlayer.activeWordIndex}
             activeTurnIndex={ttsPlayer.activeTurnIndex}
             playing={ttsPlayer.playing}
+            showDialogue={exercise.part === 2}
             c={c}
             accentColor={COLOR}
           />
@@ -248,6 +250,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
                   playing={ttsPlayer.playing}
                   onToggle={togglePlay}
                   accentColor={COLOR}
+                  shadowColor={COLOR_DARK}
                   c={c}
                   fillAnim={ttsFillAnim}
                 />
@@ -271,9 +274,16 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
             <HapticTouchable
               onPress={togglePlay}
               disabled={!sound || !!audioError}
-              style={[s.playBtn, { backgroundColor: audioError ? c.mutedForeground : COLOR }]}
+              style={[
+                s.playBtn,
+                {
+                  backgroundColor: audioError ? c.mutedForeground : COLOR,
+                  borderColor: audioError ? c.mutedForeground : COLOR,
+                  borderBottomColor: audioError ? c.border : COLOR_DARK,
+                },
+              ]}
             >
-              <Ionicons name={playing ? "pause" : "play"} size={20} color="#fff" />
+              <Ionicons name={playing ? "stop" : "play"} size={20} color="#fff" />
             </HapticTouchable>
             <View style={{ flex: 1 }}>
               <View style={[s.audioTrack, { backgroundColor: c.muted }]}>
@@ -351,7 +361,7 @@ const s = StyleSheet.create({
   audioTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
   audioDesc: { fontSize: fontSize.xs, lineHeight: 18 },
   audioControls: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.sm },
-  playBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  playBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderBottomWidth: 4, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   audioTrack: { height: 6, borderRadius: 3, overflow: "hidden" },
   audioFill: { height: "100%", borderRadius: 3 },
   audioTimes: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },

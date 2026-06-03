@@ -9,6 +9,7 @@ interface Props {
   activeWordIndex: number;
   activeTurnIndex: number;
   playing: boolean;
+  showDialogue?: boolean;
   c: ThemeColors;
   accentColor: string;
 }
@@ -17,7 +18,7 @@ interface Props {
  * Hiển thị câu đang đọc với từ đã nói → đậm, từ chưa nói → mờ.
  */
 export function TTSSubtitlePanel({
-  turns, activeWordIndex, activeTurnIndex, playing, c, accentColor,
+  turns, activeWordIndex, activeTurnIndex, playing, showDialogue = true, c, accentColor,
 }: Props) {
   const speakers = useMemo(() => {
     const seen: string[] = [];
@@ -40,7 +41,7 @@ export function TTSSubtitlePanel({
     );
   }
 
-  const isDialogue = speakers.length > 1;
+  const isDialogue = showDialogue && speakers.length > 1;
   const speakerIndex = turn.speaker ? speakers.indexOf(turn.speaker) : -1;
   const isRight = isDialogue && speakerIndex === 1;
   const speakerColor = speakerIndex === 1 ? c.foreground : accentColor;

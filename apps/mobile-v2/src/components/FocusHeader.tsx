@@ -37,21 +37,22 @@ interface TtsBarProps {
   playing: boolean;
   onToggle: () => void;
   accentColor: string;
+  shadowColor?: string;
   c: ThemeColors;
   fillAnim: Animated.Value;
 }
 
 export function TtsBar({
-  playing, onToggle, accentColor, c, fillAnim,
+  playing, onToggle, accentColor, shadowColor = accentColor, c, fillAnim,
 }: TtsBarProps) {
   return (
     <View style={[ttsStyles.card, { backgroundColor: c.card, borderColor: c.border }]}>
       <HapticTouchable
         onPress={onToggle}
-        style={[ttsStyles.playBtn, { backgroundColor: accentColor }]}
+        style={[ttsStyles.playBtn, { backgroundColor: accentColor, borderColor: accentColor, borderBottomColor: shadowColor }]}
       >
         <Ionicons
-          name={playing ? "pause" : "volume-high"}
+          name={playing ? "stop" : "play"}
           size={20}
           color={c.primaryForeground}
         />
@@ -121,6 +122,8 @@ const ttsStyles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
+    borderWidth: 2,
+    borderBottomWidth: 4,
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,

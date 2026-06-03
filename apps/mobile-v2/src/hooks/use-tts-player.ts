@@ -9,6 +9,8 @@ export interface Turn {
 }
 
 export type TTSSpeed = 0.7 | 0.85 | 1;
+type SpeechVoice = Awaited<ReturnType<typeof Speech.getAvailableVoicesAsync>>[number];
+type SpeakerGender = "male" | "female";
 
 export interface TTSPlayer {
   playing: boolean;
@@ -24,6 +26,8 @@ export interface TTSPlayer {
 }
 
 const SPEAKER_RE = /^([A-Z][A-Za-z\s]+):\s*/;
+const MALE_VOICE_HINTS = ["male", "man", "guy", "david", "mark", "daniel", "arthur", "george", "thomas", "oliver", "james", "john", "matthew"];
+const FEMALE_VOICE_HINTS = ["female", "woman", "women", "jenny", "aria", "zira", "samantha", "ava", "susan", "karen", "moira", "tessa"];
 
 /** Estimate ms per word: ~150 wpm at rate 1.0 → ~400ms/word */
 function msPerWord(rate: number): number {
@@ -33,6 +37,40 @@ function msPerWord(rate: number): number {
 /** Count words in text */
 function countWords(text: string): number {
   return (text.match(/\S+/g) ?? []).length;
+}
+
+function englishVoices(voices: SpeechVoice[]): SpeechVoice[] {
+  return voices.filter((voice) => voice.language.toLowerCase().startsWith("en"));
+}
+
+function speakerGender(speaker: string): SpeakerGender | null {
+  const normalized = speaker.toLowerCase();
+  if (/\b(woman|women|female|lady|girl)\b/.test(normalized)) return "female";
+  if (/\b(man|men|male|gentleman|boy)\b/.test(normalized)) return "male";
+  return null;
+}
+
+function pickVoice(
+  voices: SpeechVoice[],
+  preferredGender: SpeakerGender | null,
+  fallback?: SpeechVoice,
+): SpeechVoice | undefined {
+  const candidates = englishVoices(voices);
+  if (candidates.length === 0) return fallback;
+  if (!preferredGender) return fallback ?? candidates[0];
+
+  const hints = preferredGender === "male" ? MALE_VOICE_HINTS : FEMALE_VOICE_HINTS;
+  const matched = candidates.find((voice) => hints.some((hint) => voice.name.toLowerCase().includes(hint)));
+  if (matched) return matched;
+  if (!fallback) return candidates[0];
+  return candidates.find((voice) => voice.identifier !== fallback.identifier) ?? fallback;
+}
+
+function pitchForSpeaker(speaker: string): number {
+  const gender = speakerGender(speaker);
+  if (gender === "male") return 0.85;
+  if (gender === "female") return 1.05;
+  return 1;
 }
 
 /** Extract word char positions from text */
@@ -111,11 +149,37 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
   const [activeWordIndex, setActiveWordIndex] = useState(-1);
   const [activeTurnIndex, setActiveTurnIndex] = useState(-1);
   const [speed, setSpeed] = useState<TTSSpeed>(0.85);
+  const [voices, setVoices] = useState<SpeechVoice[]>([]);
   const cancelledRef = useRef(false);
   const wordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const turns = useMemo(() => (transcript ? parseDialogue(transcript) : []), [transcript]);
   const totalWords = turns.length > 0 ? turns[turns.length - 1].globalWordEnd + 1 : 0;
+  const primaryVoice = useMemo(() => pickVoice(voices, "female"), [voices]);
+  const secondVoice = useMemo(() => pickVoice(voices, "male", primaryVoice), [voices, primaryVoice]);
+  const speakerVoices = useMemo(() => {
+    const speakers = [...new Set(turns.filter((turn) => turn.speaker).map((turn) => turn.speaker))];
+    const map = new Map<string, SpeechVoice | undefined>();
+    for (let i = 0; i < speakers.length; i++) {
+      const gender = speakerGender(speakers[i]);
+      map.set(speakers[i], gender ? pickVoice(voices, gender, gender === "male" ? secondVoice : primaryVoice) : i === 0 ? primaryVoice : secondVoice);
+    }
+    return map;
+  }, [turns, voices, primaryVoice, secondVoice]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Speech.getAvailableVoicesAsync()
+      .then((available) => {
+        if (!cancelled) setVoices(available);
+      })
+      .catch(() => {
+        if (!cancelled) setVoices([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const clearWordTimer = useCallback(() => {
     if (wordTimerRef.current) {
@@ -171,10 +235,13 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
       setActiveTurnIndex(turnIdx);
 
       const wordPositions = computeWordPositions(turn.text);
+      const voice = speakerVoices.get(turn.speaker) ?? primaryVoice;
       startWordTimer(turn, speed);
 
       Speech.speak(turn.text, {
         language: "en-US",
+        voice: voice?.identifier,
+        pitch: pitchForSpeaker(turn.speaker),
         rate: speed,
         onBoundary: (boundary: { charIndex: number; charLength: number }) => {
           if (wordTimerRef.current) clearWordTimer();
@@ -203,7 +270,7 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
         },
       });
     },
-    [turns, speed, startWordTimer, clearWordTimer],
+    [turns, speakerVoices, primaryVoice, speed, startWordTimer, clearWordTimer],
   );
 
   const startSpeaking = useCallback(() => {

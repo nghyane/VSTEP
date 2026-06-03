@@ -66,9 +66,7 @@ export default function ExamsScreen() {
     const matchesSearch = exam.title.toLowerCase().includes(search.toLowerCase());
     if (!matchesSearch) return false;
     if (statusFilter === "all") return true;
-    if (statusFilter === "not_started") return !exam.status && !exam.attemptCount;
-    if (statusFilter === "submitted") return exam.status === "submitted" || exam.status === "completed";
-    return exam.status === statusFilter;
+    return exam.userState?.status === statusFilter;
   });
   const showSubmittedSessions = statusFilter === "submitted";
 
@@ -308,16 +306,16 @@ function ExamCard({
                 <Text style={[styles.metaText, { color: c.coinDark }]}>{exam.bestScore.toFixed(1)}</Text>
               </>
             )}
-            {exam.attemptCount != null && exam.attemptCount > 0 && (
+            {getExamAttemptCount(exam) > 0 && (
               <>
                 <Text style={[styles.metaDot, { color: c.subtle }]}>·</Text>
-                <Text style={[styles.metaText, { color: c.subtle }]}>{exam.attemptCount} lần thi</Text>
+                <Text style={[styles.metaText, { color: c.subtle }]}>{getExamAttemptCount(exam)} lần thi</Text>
               </>
             )}
           </View>
 
           <View style={styles.skillRow}>
-            {(exam.skill === "mixed" ? SKILLS : SKILLS.filter((s) => s.key === exam.skill)).map((skill) => (
+            {getExamSkills(exam).map((skill) => (
               <SkillChip key={skill.key} skill={skill.key} label={skill.label} />
             ))}
           </View>
@@ -335,6 +333,15 @@ function ExamCard({
       </HapticTouchable>
     </Animated.View>
   );
+}
+
+function getExamAttemptCount(exam: Exam): number {
+  return exam.attemptsCount ?? exam.attemptCount ?? exam.userState?.sessionCount ?? 0;
+}
+
+function getExamSkills(exam: Exam): { key: Skill; label: string }[] {
+  if (!exam.skill || exam.skill === "mixed") return SKILLS;
+  return SKILLS.filter((skill) => skill.key === exam.skill);
 }
 
 function SkillChip({ skill, label }: { skill: Skill; label: string }) {
