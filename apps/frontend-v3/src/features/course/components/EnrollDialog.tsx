@@ -1,11 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { HTTPError } from "ky"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { ScrollArea } from "#/components/ScrollArea"
 import { createEnrollmentOrder } from "#/features/course/actions"
 import { EnrollFailurePopup } from "#/features/course/components/EnrollFailurePopup"
+import { SignaturePadField, type SignaturePadFieldRef } from "#/features/course/components/SignaturePadField"
 import type { CourseWithRelations } from "#/features/course/types"
 import { useSession } from "#/lib/auth"
 import { formatNumber, formatVnd } from "#/lib/utils"
@@ -26,11 +27,18 @@ type Phase = "form" | "failure"
 export function EnrollDialog({ open, onClose, course }: Props) {
 	const { profile } = useSession()
 	const [agreed, setAgreed] = useState(false)
+	const [signatureEmpty, setSignatureEmpty] = useState(true)
+	const signatureRef = useRef<SignaturePadFieldRef>(null)
 	const [phase, setPhase] = useState<Phase>("form")
 	const [errorMessage, setErrorMessage] = useState<string | undefined>()
 	const queryClient = useQueryClient()
 	const enroll = useMutation({
-		mutationFn: () => createEnrollmentOrder(course.id),
+		mutationFn: () => {
+			const signature = signatureRef.current?.getSvg()
+			if (!signature) throw new Error("Vui lòng ký xác nhận cam kết trước khi thanh toán.")
+
+			return createEnrollmentOrder(course.id, signature)
+		},
 		onSuccess: (order) => {
 			if (order.payment_url) {
 				window.location.href = order.payment_url
@@ -63,6 +71,7 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 	useEffect(() => {
 		if (!open) {
 			setAgreed(false)
+			setSignatureEmpty(true)
 			setPhase("form")
 			setErrorMessage(undefined)
 		}
@@ -203,7 +212,13 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 								<input
 									type="checkbox"
 									checked={agreed}
-									onChange={(e) => setAgreed(e.target.checked)}
+									onChange={(e) => {
+										setAgreed(e.target.checked)
+										if (!e.target.checked) {
+											signatureRef.current?.clear()
+											setSignatureEmpty(true)
+										}
+									}}
 									disabled={enroll.isPending}
 									className="mt-0.5 size-4 shrink-0 cursor-pointer accent-primary"
 								/>
@@ -211,6 +226,19 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 									Tôi đã đọc và đồng ý với điều khoản kỷ luật của khóa học.
 								</span>
 							</label>
+
+							{agreed && (
+								<div className="space-y-2 animate-[slideIn_0.18s_ease-out]">
+									<p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-foreground">
+										Ký xác nhận
+									</p>
+									<SignaturePadField
+										ref={signatureRef}
+										disabled={enroll.isPending}
+										onChange={setSignatureEmpty}
+									/>
+								</div>
+							)}
 						</div>
 
 						<div className="flex justify-end gap-2.5">
@@ -225,7 +253,7 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 							<button
 								type="button"
 								onClick={() => enroll.mutate()}
-								disabled={!agreed || enroll.isPending}
+								disabled={!agreed || signatureEmpty || enroll.isPending}
 								className="btn btn-primary text-sm disabled:cursor-not-allowed disabled:opacity-50"
 							>
 								{enroll.isPending

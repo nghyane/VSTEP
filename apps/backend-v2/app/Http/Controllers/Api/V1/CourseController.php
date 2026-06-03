@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Enums\PaymentProvider;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BookSlotRequest;
+use App\Http\Requests\Course\CreateEnrollmentOrderRequest;
 use App\Http\Resources\EnrollmentOrderResource;
 use App\Models\Course;
 use App\Models\TeacherSlot;
@@ -55,17 +56,15 @@ final class CourseController extends Controller
         ]]);
     }
 
-    public function createEnrollmentOrder(Request $request, Course $course): JsonResponse
+    public function createEnrollmentOrder(CreateEnrollmentOrderRequest $request, Course $course): JsonResponse
     {
-        $validated = $request->validate([
-            'payment_provider' => ['required', 'string', 'in:'.implode(',', PaymentProvider::values())],
-            'return_url' => ['nullable', 'url'],
-        ]);
+        $validated = $request->validated();
 
         $order = $this->courseOrderService->createOrder(
             $request->profile(),
             $course,
             PaymentProvider::from($validated['payment_provider']),
+            $validated['commitment_signature'],
             $validated['return_url'] ?? null,
         );
 

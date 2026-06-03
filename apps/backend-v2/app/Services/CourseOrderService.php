@@ -39,6 +39,7 @@ final class CourseOrderService
         Profile $profile,
         Course $course,
         PaymentProvider $provider,
+        string $commitmentSignature,
         ?string $returnUrl = null,
     ): CourseEnrollmentOrder {
         if (! $course->is_published) {
@@ -78,7 +79,7 @@ final class CourseOrderService
         $expiryMinutes = (int) config('payment.order_expiry_minutes', 15);
 
         try {
-            return DB::transaction(function () use ($profile, $course, $provider, $amount, $gateway, $expiryMinutes, $returnUrl) {
+            return DB::transaction(function () use ($profile, $course, $provider, $amount, $gateway, $expiryMinutes, $returnUrl, $commitmentSignature) {
                 $order = CourseEnrollmentOrder::create([
                     'order_code' => $this->nextOrderCode(),
                     'profile_id' => $profile->id,
@@ -86,6 +87,7 @@ final class CourseOrderService
                     'amount_vnd' => $amount,
                     'status' => OrderStatus::Pending,
                     'payment_provider' => $provider->value,
+                    'commitment_signature' => $commitmentSignature,
                     'expires_at' => now()->addMinutes($expiryMinutes),
                 ]);
 
@@ -179,6 +181,7 @@ final class CourseOrderService
                 profile: $locked->profile,
                 course: $locked->course,
                 creditBonus: true,
+                commitmentSignature: $locked->commitment_signature,
             );
 
             // Mark order paid
