@@ -1,60 +1,60 @@
-# 03. Assessment Engine
+# 03. Cơ chế chấm điểm Writing/Speaking
 
-## Key message
+## Thông điệp chính
 
-> External services chỉ cung cấp tín hiệu. Backend mới là nơi tính điểm cuối theo rubric/formula minh bạch.
+> Các công cụ bên ngoài chỉ hỗ trợ phân tích bài làm. Hệ thống là nơi tổng hợp tín hiệu và tính điểm cuối theo tiêu chí minh bạch.
 
-## Flow chung
+## Quy trình chung
 
 ```text
-Input bài làm
+Bài làm đầu vào
 → Trích xuất tín hiệu
-→ Ánh xạ rubric/descriptor
+→ Đối chiếu tiêu chí đánh giá
 → Tính điểm
-→ Trả feedback/evidence
+→ Trả phản hồi và căn cứ chấm điểm
 ```
 
 ## Writing
 
-Tiêu chí chính: Task Fulfillment, Organization, Grammar, Vocabulary.
+Tiêu chí chính: hoàn thành yêu cầu đề, tổ chức bài viết, ngữ pháp và từ vựng.
 
 Tín hiệu dùng:
 
-- LanguageTool: grammar/spelling/punctuation errors.
-- CEFR-J/Open Language Profiles: vocabulary level.
-- SyntaxAnalyzer: grammar structures.
-- Linguistic Reference DB: linking phrases, collocations.
-- Prompt/requirements: task relevance.
-- Format checks: Task 1 salutation, closing, tone.
+- Công cụ kiểm tra ngôn ngữ: lỗi ngữ pháp, chính tả và dấu câu.
+- Nguồn tham chiếu CEFR: mức độ từ vựng.
+- Phân tích cấu trúc câu: độ đa dạng ngữ pháp.
+- Cơ sở dữ liệu ngôn ngữ tham chiếu: từ nối, cụm từ và collocation.
+- Đề bài/yêu cầu: mức độ bám đề.
+- Kiểm tra định dạng Task 1: lời chào, lời kết và văn phong.
 
-Guardrails: lạc đề, quá ngắn, copy đề, lặp/spam, không phải tiếng Anh.
+Cơ chế giới hạn điểm: lạc đề, quá ngắn, copy đề, lặp/spam, không phải tiếng Anh.
 
 ## Speaking
 
-Tiêu chí chính: Grammar, Vocabulary, Fluency, Discourse Management, Pronunciation.
+Tiêu chí chính: ngữ pháp, từ vựng, độ trôi chảy, tổ chức ý và phát âm.
 
 Tín hiệu dùng:
 
-- Azure Speech: transcript, speaking rate, pauses, ASR confidence.
-- Azure pronunciation: độ chính xác phát âm, độ trôi chảy, ngữ điệu và mức độ hoàn thành bài nói.
-- LanguageTool filtered errors.
-- CEFR vocabulary và syntax structures.
-- Descriptor checklist theo từng speaking part.
+- Dịch vụ nhận dạng giọng nói: bản ghi lời nói, tốc độ nói, khoảng ngắt và độ tin cậy nhận dạng.
+- Phân tích phát âm: độ chính xác phát âm, độ trôi chảy, ngữ điệu và mức độ hoàn thành bài nói.
+- Công cụ kiểm tra ngôn ngữ: lỗi ngữ pháp phù hợp với bản ghi lời nói.
+- Nguồn tham chiếu CEFR và phân tích cấu trúc câu.
+- Checklist mô tả yêu cầu theo từng phần Speaking.
 
-Pronunciation formula:
+Ví dụ cách tổng hợp điểm phát âm:
 
 ```text
 45% độ chính xác phát âm + 20% độ trôi chảy + 20% ngữ điệu + 15% mức độ hoàn thành - lỗi phát âm theo từng từ
 ```
 
-Các trường hợp Speaking bị giới hạn điểm: transcript quá ngắn, câu trả lời quá ngắn, độ tin cậy nhận dạng giọng nói thấp, hoặc lạc đề khi có đề bài/yêu cầu.
+Các trường hợp Speaking bị giới hạn điểm: bản ghi lời nói quá ngắn, câu trả lời quá ngắn, độ tin cậy nhận dạng giọng nói thấp, hoặc lạc đề khi có đề bài/yêu cầu.
 
 ## Câu cần nói
 
-> AI không tự quyết định điểm. AI/external services chỉ hỗ trợ lấy tín hiệu; điểm cuối do backend tính theo rubric và công thức minh bạch.
+> AI không tự quyết định điểm. AI và các công cụ ngoài chỉ hỗ trợ phân tích bài làm; điểm cuối do hệ thống tính theo tiêu chí và công thức minh bạch.
 
 ## Tránh nói
 
 - “AI chấm thay giám khảo.”
-- “Azure quyết định điểm phát âm.”
-- “LanguageTool quyết định điểm grammar.”
+- “Dịch vụ nhận dạng giọng nói quyết định điểm phát âm.”
+- “Công cụ kiểm tra ngữ pháp quyết định điểm ngữ pháp.”

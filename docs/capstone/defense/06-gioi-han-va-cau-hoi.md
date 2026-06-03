@@ -2,29 +2,29 @@
 
 ## Giới hạn chính
 
-1. Automated scoring không thay thế giám khảo.
+1. Điểm chấm tự động không thay thế giám khảo.
 2. Chưa có bộ dữ liệu VSTEP chuẩn công khai có điểm giám khảo.
-3. Speaking grammar phụ thuộc LanguageTool rule-based.
-4. Pronunciation phụ thuộc Azure và chất lượng audio.
-5. Gợi ý học tập hiện dựa trên điểm yếu theo kỹ năng, chưa phải mô hình machine learning thích ứng hoàn chỉnh.
+3. Phân tích ngữ pháp bài nói phụ thuộc vào công cụ kiểm tra ngôn ngữ và chất lượng bản ghi lời nói.
+4. Phân tích phát âm phụ thuộc chất lượng âm thanh đầu vào.
+5. Gợi ý học tập hiện dựa trên điểm yếu theo kỹ năng, chưa phải mô hình thích ứng hoàn chỉnh.
 
-## Q&A sản phẩm
+## Câu hỏi-trả lời sản phẩm
 
 ### Hệ thống có chỉ là app chấm điểm không?
 
-Không. Chấm điểm là module lõi. Toàn hệ thống gồm practice 4 kỹ năng, Writing/Speaking feedback, vocabulary, mock test, learning path và progress dashboard.
+Không. Chấm điểm là phần lõi. Toàn hệ thống gồm luyện tập 4 kỹ năng, phản hồi Writing/Speaking, học từ vựng, thi thử, lộ trình học cá nhân hóa và bảng theo dõi tiến bộ.
 
-### Vocabulary liên quan gì đến assessment?
+### Từ vựng liên quan gì đến chấm điểm?
 
-Kết quả practice/mock test cho biết learner yếu từ vựng ở kỹ năng/chủ đề nào. Từ đó hệ thống gợi ý học và ôn từ theo phương pháp ôn tập ngắt quãng.
+Kết quả luyện tập/thi thử cho biết người học yếu từ vựng ở kỹ năng hoặc chủ đề nào. Từ đó hệ thống gợi ý học và ôn từ theo phương pháp ôn tập ngắt quãng.
 
-### Learning path cá nhân hóa bằng gì?
+### Lộ trình học cá nhân hóa bằng gì?
 
-Dựa trên điểm yếu theo kỹ năng, kết quả practice/mock test, từ vựng yếu và lịch sử tiến độ. Hiện là gợi ý học tập dựa trên điểm yếu.
+Dựa trên điểm yếu theo kỹ năng, kết quả luyện tập/thi thử, từ vựng yếu và lịch sử tiến độ. Hiện là gợi ý học tập dựa trên điểm yếu.
 
 ### Hệ thống có chấm chính xác như giám khảo VSTEP không?
 
-Không. Đây là practice assessment tool. Điểm chính thức vẫn cần giám khảo/instructor xác nhận.
+Không. Đây là công cụ chấm luyện tập và phản hồi học tập. Điểm chính thức vẫn cần giám khảo hoặc giáo viên xác nhận.
 
 ### Không có VSTEP chuẩn thì chứng minh bằng gì?
 
@@ -32,19 +32,19 @@ Bằng việc bám tiêu chí đánh giá, dùng tín hiệu có nguồn tham ch
 
 ### AI có tự chấm điểm không?
 
-Không. AI/external services chỉ cung cấp signals. Backend tính điểm cuối theo rubric/formula.
+Không. AI và các dịch vụ ngoài chỉ hỗ trợ phân tích đầu vào. Điểm cuối được hệ thống tính theo tiêu chí đánh giá và quy tắc đã thiết kế.
 
 ### Nếu thí sinh nói lạc đề thì sao?
 
-Hệ thống đánh giá content relevance khi có prompt/requirements. Nếu content factor thấp, hệ thống cap discourse và overall score.
+Hệ thống đánh giá mức độ bám đề khi có đề bài và yêu cầu cụ thể. Nếu nội dung lạc đề hoặc không trả lời đúng yêu cầu, điểm phần nội dung/tổ chức sẽ bị giới hạn để tránh chấm cao sai.
 
-### Mobile và payment có phải trọng tâm không?
+### Ứng dụng di động và thanh toán có phải trọng tâm không?
 
-Không. Demo chính trên web app. Mobile là learner module; payment/course booking là supporting module.
+Không. Trình diễn chính trên giao diện web. Ứng dụng di động là phần hỗ trợ người học; thanh toán và đặt lịch học là phần hỗ trợ.
 
 ### Hướng phát triển?
 
-- Thu thập human-rated VSTEP Writing/Speaking samples.
-- Tích hợp GEC model cho learner English nếu cần.
-- Mở rộng adaptive difficulty.
-- Cải thiện instructor analytics.
+- Thu thập thêm bài Writing/Speaking VSTEP do giáo viên hoặc giám khảo chấm.
+- Cải thiện kiểm tra lỗi tiếng Anh của người học nếu cần.
+- Mở rộng mức độ khó thích ứng.
+- Cải thiện báo cáo phân tích cho giáo viên.
