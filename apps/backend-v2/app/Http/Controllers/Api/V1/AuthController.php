@@ -13,6 +13,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\LogoutRequest;
 use App\Http\Requests\Auth\RefreshRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ResendEmailVerificationRequest;
 use App\Http\Requests\Auth\ResetPasswordRequest;
 use App\Http\Requests\Auth\SwitchProfileRequest;
 use App\Http\Resources\ProfileResource;
@@ -23,6 +24,7 @@ use App\Models\User;
 use App\Services\AuthService;
 use App\Services\GoogleTokenVerifier;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
@@ -50,11 +52,30 @@ final class AuthController extends Controller
         return response()->json(['data' => [
             'user' => new UserResource($result['user']),
             'profile' => new ProfileResource($result['profile']),
-            'access_token' => $result['access_token'],
-            'refresh_token' => $result['refresh_token'],
-            'expires_in' => $result['expires_in'],
-            'onboarding_bonus' => $this->onboardingBonusPayload(),
+            'email_verification_sent' => true,
         ]], 201);
+    }
+
+    public function verifyEmail(Request $request, string $id, string $hash): JsonResponse|RedirectResponse
+    {
+        $this->authService->verifyEmail($id, $hash);
+
+        if ($request->expectsJson()) {
+            return response()->json(['data' => ['success' => true]]);
+        }
+
+        $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
+
+        return redirect()->away($frontendUrl.'/?'.http_build_query([
+            'auth' => 'email-verified',
+        ]));
+    }
+
+    public function resendEmailVerification(ResendEmailVerificationRequest $request): JsonResponse
+    {
+        $this->authService->resendEmailVerification($request->validated('email'));
+
+        return response()->json(['data' => ['success' => true]]);
     }
 
     public function login(LoginRequest $request): JsonResponse

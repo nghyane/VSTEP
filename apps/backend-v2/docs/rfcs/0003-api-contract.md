@@ -37,10 +37,19 @@ Chia theo 10 nhóm endpoint tương ứng business module.
 ## 1. Auth
 
 ### `POST /api/v1/auth/register` — public
-Tạo account + profile đầu + cấp 100 xu.
+Tạo account + profile đầu + cấp 100 xu, sau đó gửi email xác thực.
 
 Request: `{ email, password, nickname, target_level, target_deadline }`
-Response: `{ access_token, refresh_token, user, profile }`
+Response: `{ user, profile, email_verification_sent }`
+
+### `GET /api/v1/auth/email/verify/{id}/{hash}` — public signed URL
+Xác thực email đăng ký. Browser request redirect về frontend success screen; JSON request trả `{ success }`.
+
+### `POST /api/v1/auth/email/verification-notification` — public
+Gửi lại email xác thực cho account chưa verify. Không expose account không tồn tại.
+
+Request: `{ email }`
+Response: `{ success }`
 
 ### `POST /api/v1/auth/login` — public
 Login, mặc định active profile = profile đầu của account.
