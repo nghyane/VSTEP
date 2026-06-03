@@ -30,7 +30,7 @@ export interface TTSPlayer {
 	replay: () => void
 }
 
-const SPEAKER_RE = /^([A-Z][A-Za-z\s]+):\s*/
+const SPEAKER_RE = /^([A-Z][A-Za-z0-9\s.-]*):\s*/
 
 function parseDialogue(transcript: string): DialogueTurn[] {
 	const rawLines = transcript
