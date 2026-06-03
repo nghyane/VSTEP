@@ -22,6 +22,14 @@
 3. Không nói lộ trình học dựa trên mọi dữ liệu; hiện trình bày là dựa trên dữ liệu bài thi thử.
 4. Không claim dự đoán chính xác, 99% uptime hoặc dưới 3 giây nếu chưa có báo cáo đo kiểm.
 
+## 3 quyết định đã chốt
+
+| Quyết định | Cách thể hiện trong slide/demo |
+|---|---|
+| Điểm cuối do hệ thống tính | Trình bày công thức và bảng tín hiệu đầu vào; AI chỉ hỗ trợ phân tích/feedback. |
+| Tiêu chí chấm có phiên bản | Bộ tiêu chí chấm được lưu theo phiên bản; kết quả cũ gắn với phiên bản tiêu chí tại thời điểm chấm. |
+| Ưu tiên demo sản phẩm | Lướt nhanh cấu trúc VSTEP/ôn tập ngắt quãng; dành thời gian cho cơ chế chấm và demo sản phẩm. |
+
 ## Từ nên dùng
 
 | Tránh nói | Nên nói |

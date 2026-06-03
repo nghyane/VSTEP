@@ -17,15 +17,16 @@
 | 7 | System architecture | Web/Mobile → API → Database → AI/Scoring services | Mức tổng quan, không nói code. |
 | 8 | Technology | React/Vite, Expo/React Native, Laravel API, database, queue/storage | Chỉ nêu công nghệ đang dùng. |
 | 9 | Assessment mechanism | Công thức chấm do hệ thống kiểm soát; AI chỉ hỗ trợ lấy tín hiệu/feedback | Slide quan trọng nhất. |
-| 10 | Vocabulary review | Ôn tập ngắt quãng/SRS | Chỉ nói ngắn, để “See detail” nếu hỏi. |
-| 11 | Demo 1 | Người học đăng nhập, xem bài thi thử/luyện tập | Vào demo sớm. |
-| 12 | Demo 2 | Làm/xem kết quả Writing/Speaking | Nhấn mạnh có căn cứ chấm điểm. |
-| 13 | Demo 3 | Điểm yếu, lộ trình học, bảng tiến độ | Nói rõ dựa trên dữ liệu bài thi thử. |
-| 14 | Differences | Không chỉ bán tài liệu/luyện đề; có đánh giá, phản hồi, lộ trình | Nêu khác biệt sản phẩm. |
-| 15 | Achievements | Luồng chính hoàn chỉnh, chấm có công thức, có kiểm thử nội bộ | Không overclaim. |
-| 16 | Limitations | Điểm Writing/Speaking là tham khảo; chưa có dataset VSTEP chính thức; chưa claim dự đoán/99% uptime/<3s | Trung thực. |
-| 17 | Conclusion | Hệ thống hỗ trợ luyện thi có cấu trúc và định hướng học tiếp | Kết gọn. |
-| 18 | Thank you | Cảm ơn hội đồng | Chuẩn bị Q&A. |
+| 10 | Rubric versioning | Tiêu chí chấm lưu theo phiên bản; admin tạo và activate version mới | Chứng minh không sửa tay bằng code sau mỗi lần thay đổi. |
+| 11 | Vocabulary review | Ôn tập ngắt quãng/SRS | Chỉ nói ngắn, để “See detail” nếu hỏi. |
+| 12 | Demo 1 | Người học đăng nhập, xem bài thi thử/luyện tập | Vào phần demo sớm. |
+| 13 | Demo 2 | Làm/xem kết quả Writing/Speaking | Nhấn mạnh có căn cứ chấm điểm. |
+| 14 | Demo 3 | Điểm yếu, lộ trình học, bảng tiến độ | Nói rõ dựa trên dữ liệu bài thi thử. |
+| 15 | Differences | Không chỉ bán tài liệu/luyện đề; có đánh giá, feedback, lộ trình | Nêu khác biệt sản phẩm. |
+| 16 | Achievements | Luồng chính hoàn chỉnh, chấm có công thức, có kiểm thử nội bộ | Không overclaim. |
+| 17 | Limitations | Điểm Writing/Speaking là tham khảo; chưa có dataset VSTEP chính thức; chưa claim dự đoán/99% uptime/<3s | Trung thực. |
+| 18 | Conclusion | Hệ thống hỗ trợ luyện thi có cấu trúc và định hướng học tiếp | Kết gọn. |
+| 19 | Thank you | Cảm ơn hội đồng | Chuẩn bị Q&A. |
 
 ## Main features by actors
 
@@ -43,8 +44,9 @@
 | Personalized learning support | Lộ trình học dựa trên điểm yếu từ dữ liệu bài thi thử. |
 | Adaptive exercises | Trình bày là gợi ý luyện tập theo điểm yếu; không nói thích ứng động hoàn toàn nếu chưa chứng minh. |
 | AI module | AI/công cụ phân tích hỗ trợ lấy tín hiệu và feedback; điểm cuối do hệ thống tính. |
+| Rubric update | Admin quản lý version tiêu chí chấm; kết quả cũ giữ liên kết với version đã dùng. |
 | Predictive analytics | Chỉ nói là hướng phát triển nếu chưa có đánh giá riêng. |
-| Mobile application | Có ứng dụng di động cho người học; demo chính trên web. |
+| Mobile application | Có ứng dụng di động cho learner; demo chính trên web. |
 | 99% uptime / dưới 3 giây | Chỉ nêu nếu có số đo kiểm chứng. |
 
 ## Demo flow ngắn
@@ -54,7 +56,7 @@
 3. Xem kết quả Writing/Speaking có tiêu chí và căn cứ.
 4. Xem điểm yếu và lộ trình học từ dữ liệu bài thi thử.
 5. Xem dashboard tiến độ.
-6. Nếu còn thời gian: màn hình quản lý của instructor/admin.
+6. Nếu còn thời gian: màn hình quản lý của instructor/admin, đặc biệt phần rubric versioning nếu cần chứng minh khả năng quản trị.
 
 ## Câu chốt
 
