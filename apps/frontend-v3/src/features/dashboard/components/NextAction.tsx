@@ -19,7 +19,7 @@ export function NextAction() {
 					Bắt đầu luyện tập hôm nay để duy trì streak {current} ngày
 				</p>
 			</div>
-			<Link to="/thi-thu" className="btn btn-primary shrink-0">
+			<Link to="/luyen-tap" className="btn btn-primary shrink-0">
 				Bắt đầu
 			</Link>
 		</section>

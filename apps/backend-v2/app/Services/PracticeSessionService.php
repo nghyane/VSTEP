@@ -14,11 +14,14 @@ use Illuminate\Support\Str;
  *
  * Session flow:
  * 1. start(): create row với module + content_ref.
- * 2. complete(): set ended_at + duration_seconds. Progress context sẽ
- *    listen event này ở Slice 9 (streak + study time).
+ * 2. complete(): set ended_at + duration_seconds and records activity.
  */
 final class PracticeSessionService
 {
+    public function __construct(
+        private readonly ProgressService $progressService,
+    ) {}
+
     public function start(
         Profile $profile,
         string $module,
@@ -47,7 +50,10 @@ final class PracticeSessionService
             'duration_seconds' => $duration,
         ]);
 
-        return $session->refresh();
+        $completed = $session->refresh();
+        $this->progressService->recordPracticeCompletion($completed);
+
+        return $completed;
     }
 
     private function refType(Model $content): string

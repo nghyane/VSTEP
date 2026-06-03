@@ -1,4 +1,5 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query"
+import { invalidateProgressQueries } from "#/features/practice/invalidate-progress"
 import { type ApiResponse, api } from "#/lib/api"
 
 interface SegmentProgress {
@@ -20,6 +21,7 @@ export function useMarkShadowingDone() {
 			api.post("practice/speaking/shadowing/progress", { json: params }).json(),
 		onSuccess: () => {
 			qc.invalidateQueries({ queryKey: ["practice", "speaking", "shadowing", "progress"] })
+			invalidateProgressQueries(qc)
 		},
 	})
 }

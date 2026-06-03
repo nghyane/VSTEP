@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useReducer, useRef } from "react"
+import { invalidateProgressQueries } from "#/features/practice/invalidate-progress"
 import type { SubmitResult } from "#/features/practice/types"
 
 interface State {
@@ -54,6 +55,7 @@ export function useMcqPracticeSession(
 		onSuccess: (res) => {
 			dispatch({ type: "submitted", result: res.data })
 			if (skill) qc.invalidateQueries({ queryKey: ["practice", skill, "progress"] })
+			invalidateProgressQueries(qc)
 		},
 	})
 

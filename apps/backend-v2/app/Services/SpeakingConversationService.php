@@ -30,6 +30,7 @@ final class SpeakingConversationService implements ConversationServiceInterface
         private readonly PronunciationAnalyzer $pronunciation,
         private readonly EconomyConfigService $economyConfig,
         private readonly WalletService $walletService,
+        private readonly ProgressService $progressService,
     ) {}
 
     /** @return Collection<int,PracticeSpeakingScenario> */
@@ -183,11 +184,15 @@ final class SpeakingConversationService implements ConversationServiceInterface
             throw new ResourceNotActiveException('Session already ended.');
         }
 
+        $durationSeconds = (int) now()->diffInSeconds($session->started_at);
+
         $session->update([
             'status' => ConversationStatus::Ended,
             'ended_at' => now(),
-            'duration_seconds' => (int) now()->diffInSeconds($session->started_at),
+            'duration_seconds' => $durationSeconds,
         ]);
+
+        $this->progressService->recordSpeakingConversationCompletion($session->profile_id, $durationSeconds);
 
         return $session->refresh();
     }

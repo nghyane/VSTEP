@@ -43,7 +43,7 @@ class ProfileDailyActivity extends Model
         'reading' => ['count' => 'reading_exercise_count'],
         'listening' => ['count' => 'listening_exercise_count'],
         'writing' => ['count' => 'writing_submission_count'],
-        'speaking_drill' => ['count' => 'speaking_drill_session_count', 'duration' => 'speaking_drill_duration_seconds'],
+        'speaking_drill' => ['count' => 'drill_session_count', 'duration' => 'drill_duration_seconds'],
         'speaking_submission' => ['count' => 'speaking_submission_count'],
         'vocab_review' => ['count' => 'vocab_review_count'],
         'exam_session' => ['count' => 'exam_session_count'],

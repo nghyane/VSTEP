@@ -257,7 +257,7 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 								))}
 							</div>
 							<p className="text-[11px] text-subtle">
-								Dùng để gợi ý lộ trình ban đầu. Bạn sẽ được cập nhật "Dự đoán" sau khi làm đủ 5 bài thi thử.
+								Dùng để tạo lộ trình ban đầu. Dự đoán năng lực sẽ cập nhật theo kết quả đánh giá và thi thử.
 							</p>
 						</div>
 

@@ -12,6 +12,7 @@ use App\Models\PracticeSession;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
 use App\Models\User;
+use App\Services\PracticeSessionService;
 use App\Services\ProgressService;
 use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,6 +38,28 @@ class ProgressStreakTest extends TestCase
 
         $this->assertSame(1, ProfileDailyActivity::query()
             ->where('profile_id', $profile->id)->count());
+    }
+
+    public function test_completing_practice_session_updates_streak_activity(): void
+    {
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+
+        $session = PracticeSession::create([
+            'profile_id' => $profile->id, 'module' => 'reading',
+            'content_ref_type' => 'test', 'content_ref_id' => $profile->id,
+            'started_at' => now()->subMinutes(5),
+        ]);
+
+        $this->app->make(PracticeSessionService::class)->complete($session);
+
+        $streak = $this->app->make(ProgressService::class)->getStreak($profile);
+        $this->assertSame(1, $streak['current']);
+        $this->assertTrue($streak['today_active']);
+        $this->assertSame(1, ProfileDailyActivity::query()
+            ->where('profile_id', $profile->id)
+            ->where('reading_exercise_count', 1)
+            ->count());
     }
 
     public function test_streak_increments_on_consecutive_full_tests(): void

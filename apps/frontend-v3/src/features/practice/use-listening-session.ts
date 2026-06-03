@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useReducer, useRef } from "react"
 import { submitListeningSession } from "#/features/practice/actions"
+import { invalidateProgressQueries } from "#/features/practice/invalidate-progress"
 import type { SubmitResult } from "#/features/practice/types"
 
 interface State {
@@ -48,6 +49,7 @@ export function useListeningSession(sessionId: string | null): ListeningSession 
 		onSuccess: (res) => {
 			dispatch({ type: "submitted", result: res.data })
 			qc.invalidateQueries({ queryKey: ["practice", "listening", "progress"] })
+			invalidateProgressQueries(qc)
 		},
 	})
 
