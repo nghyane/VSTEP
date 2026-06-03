@@ -45,6 +45,62 @@ class EmailVerificationTest extends TestCase
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
+    public function test_expired_email_verification_link_returns_json_error(): void
+    {
+        $user = User::factory()->unverified()->create(['email' => 'learner@example.com']);
+        $url = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->subMinute(),
+            ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())],
+        );
+
+        $this->getJson($url)
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Liên kết xác thực email không hợp lệ hoặc đã hết hạn.');
+
+        $this->assertNull($user->refresh()->email_verified_at);
+    }
+
+    public function test_browser_expired_email_verification_link_redirects_to_error_screen(): void
+    {
+        $user = User::factory()->unverified()->create(['email' => 'learner@example.com']);
+        $url = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->subMinute(),
+            ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())],
+        );
+
+        $this->get($url)->assertRedirect('http://localhost:5175/?auth=email-verification-invalid');
+
+        $this->assertNull($user->refresh()->email_verified_at);
+    }
+
+    public function test_expired_email_verification_link_for_verified_account_returns_success(): void
+    {
+        $user = User::factory()->create(['email' => 'learner@example.com']);
+        $url = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->subMinute(),
+            ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())],
+        );
+
+        $this->getJson($url)
+            ->assertOk()
+            ->assertJsonPath('data.success', true);
+    }
+
+    public function test_browser_expired_email_verification_link_for_verified_account_redirects_to_success_screen(): void
+    {
+        $user = User::factory()->create(['email' => 'learner@example.com']);
+        $url = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->subMinute(),
+            ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())],
+        );
+
+        $this->get($url)->assertRedirect('http://localhost:5175/?auth=email-verified');
+    }
+
     public function test_verified_account_can_login_after_email_verification(): void
     {
         $user = User::factory()->unverified()->create([

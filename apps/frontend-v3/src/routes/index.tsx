@@ -28,7 +28,8 @@ export const Route = createFileRoute("/")({
 			s.auth === "register" ||
 			s.auth === "forgot" ||
 			s.auth === "reset" ||
-			s.auth === "email-verified"
+			s.auth === "email-verified" ||
+			s.auth === "email-verification-invalid"
 				? s.auth
 				: undefined
 		const redirect = typeof s.redirect === "string" ? s.redirect : undefined
