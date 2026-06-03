@@ -1,10 +1,9 @@
-import { Link } from "@tanstack/react-router"
-import { useState } from "react"
-import { Icon } from "#/components/Icon"
+import { useEffect, useState } from "react"
 import { HighlightablePassage, PassageSpeechControl } from "#/features/exam/components/HighlightablePassage"
+import { PracticeCompletionPopup } from "#/features/practice/components/PracticeCompletionPopup"
+import { PracticeExamShell } from "#/features/practice/components/PracticeExamShell"
 import { PracticeMcqResultPanel } from "#/features/practice/components/PracticeMcqResultPanel"
 import { QuestionList } from "#/features/practice/components/QuestionList"
-import { QuestionNav } from "#/features/practice/components/QuestionNav"
 import { TranslateSelection } from "#/features/practice/components/TranslateSelection"
 import type { ReadingExerciseDetail } from "#/features/practice/types"
 import type { McqPracticeSession } from "#/features/practice/use-mcq-session"
@@ -17,6 +16,19 @@ interface Props {
 export function ReadingInProgress({ detail, session }: Props) {
 	const { exercise, questions } = detail
 	const [activeCharIndex, setActiveCharIndex] = useState<number | null>(null)
+	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+	const [finishRequested, setFinishRequested] = useState(false)
+	const [showCompletion, setShowCompletion] = useState(false)
+	const canFinish = questions.every((question) => session.answers[question.id] !== undefined)
+	const handleNext = () => setCurrentQuestionIndex((index) => (index + 1) % questions.length)
+	const handleFinish = () => {
+		setFinishRequested(true)
+		session.submit()
+	}
+
+	useEffect(() => {
+		if (finishRequested && session.result) setShowCompletion(true)
+	}, [finishRequested, session.result])
 	const resultConfig = {
 		backTo: "/luyen-tap/doc",
 		buttonClassName:
@@ -27,109 +39,61 @@ export function ReadingInProgress({ detail, session }: Props) {
 	} as const
 
 	return (
-		<div className="flex flex-col h-screen bg-background">
-			{/* Header */}
-			<div className="flex items-center gap-3 border-b-2 border-border bg-surface px-4 py-2.5 shrink-0">
-				<Link to="/luyen-tap/doc" className="p-1 hover:opacity-70 shrink-0">
-					<Icon name="close" size="xs" className="text-muted" />
-				</Link>
-				<div className="flex-1 h-1.5 bg-border rounded-full overflow-hidden">
-					<div
-						className="h-full bg-skill-reading rounded-full transition-all"
-						style={{ width: `${(session.answeredCount / questions.length) * 100}%` }}
+		<PracticeExamShell
+			backTo="/luyen-tap/doc"
+			title="Reading"
+			partLabel={`Part ${exercise.part}`}
+			questions={questions}
+			answers={session.answers}
+			result={session.result}
+			answeredCount={session.answeredCount}
+			accentColor="var(--color-skill-reading)"
+			primaryActionClassName="bg-skill-reading [--btn-shadow:var(--color-skill-reading-dark)]"
+			onSubmit={session.result ? undefined : session.submit}
+			submitting={session.submitting}
+			currentQuestionIndex={currentQuestionIndex}
+			onPrevious={() => setCurrentQuestionIndex((index) => Math.max(index - 1, 0))}
+			onNext={handleNext}
+			onFinish={handleFinish}
+			canFinish={canFinish}
+			finishLabel="Finish"
+			onQuestionJump={setCurrentQuestionIndex}
+			rightSidebar={
+				session.result ? <PracticeMcqResultPanel result={session.result} config={resultConfig} /> : undefined
+			}
+		>
+			<div className="overflow-hidden">
+				<div className="px-5 pt-5 pb-2 md:px-7">
+					<div className="mb-2 flex items-center justify-between gap-3">
+						<p className="text-xs font-bold uppercase tracking-[0.2em] text-skill-reading">Reading passage</p>
+						<PassageSpeechControl text={exercise.passage} onActiveCharChange={setActiveCharIndex} />
+					</div>
+					<h2 className="text-2xl font-extrabold text-foreground">{exercise.title}</h2>
+				</div>
+				<div className="space-y-6 p-5 md:p-7">
+					<TranslateSelection>
+						<HighlightablePassage
+							text={exercise.passage}
+							passageId={exercise.id}
+							activeCharIndex={activeCharIndex}
+							className="text-sm leading-relaxed text-foreground/90"
+						/>
+					</TranslateSelection>
+					<QuestionList
+						questions={questions}
+						answers={session.answers}
+						result={session.result}
+						onSelect={session.select}
+						accentColor="var(--color-skill-reading)"
+						visibleQuestionIndex={currentQuestionIndex}
 					/>
 				</div>
-				<span className="text-xs font-bold text-muted shrink-0">
-					{session.answeredCount}/{questions.length}
-				</span>
 			</div>
-
-			{/* Scrollable content */}
-			<div className="flex-1 overflow-y-auto">
-				<div className="max-w-6xl mx-auto px-6 py-6">
-					{session.result ? (
-						<div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
-							<div className="lg:sticky lg:top-6">
-								<PracticeMcqResultPanel result={session.result} config={resultConfig} />
-							</div>
-							<div className="space-y-6">
-								<div className="card p-6">
-									<TranslateSelection>
-										<div className="mb-2 flex items-center justify-between gap-3">
-											<p className="text-xs font-bold text-skill-reading uppercase tracking-wide">
-												Part {exercise.part}
-											</p>
-											<PassageSpeechControl text={exercise.passage} onActiveCharChange={setActiveCharIndex} />
-										</div>
-										<h2 className="font-bold text-lg text-foreground mb-4">{exercise.title}</h2>
-										<HighlightablePassage
-											text={exercise.passage}
-											passageId={exercise.id}
-											activeCharIndex={activeCharIndex}
-											className="text-sm leading-relaxed text-foreground/90"
-										/>
-									</TranslateSelection>
-								</div>
-								<QuestionList
-									questions={questions}
-									answers={session.answers}
-									result={session.result}
-									onSelect={session.select}
-									accentColor="var(--color-skill-reading)"
-								/>
-							</div>
-						</div>
-					) : (
-						<div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-							<div className="card p-6 self-start lg:sticky lg:top-6">
-								<TranslateSelection>
-									<div className="mb-2 flex items-center justify-between gap-3">
-										<p className="text-xs font-bold text-skill-reading uppercase tracking-wide">
-											Part {exercise.part}
-										</p>
-										<PassageSpeechControl text={exercise.passage} onActiveCharChange={setActiveCharIndex} />
-									</div>
-									<h2 className="font-bold text-lg text-foreground mb-4">{exercise.title}</h2>
-									<HighlightablePassage
-										text={exercise.passage}
-										passageId={exercise.id}
-										activeCharIndex={activeCharIndex}
-										className="text-sm leading-relaxed text-foreground/90"
-									/>
-								</TranslateSelection>
-							</div>
-							<QuestionList
-								questions={questions}
-								answers={session.answers}
-								result={session.result}
-								onSelect={session.select}
-								accentColor="var(--color-skill-reading)"
-							/>
-						</div>
-					)}
-				</div>
-			</div>
-
-			{/* Footer */}
-			<div className="flex items-center gap-2 border-t-2 border-border bg-surface px-4 py-2.5 shrink-0">
-				<QuestionNav
-					questions={questions}
-					answers={session.answers}
-					result={session.result}
-					accentColor="var(--color-skill-reading)"
-				/>
-				<div className="flex-1" />
-				{!session.result && (
-					<button
-						type="button"
-						onClick={session.submit}
-						disabled={session.submitting || session.answeredCount < questions.length}
-						className="py-2 px-6 text-sm font-bold rounded-(--radius-button) text-primary-foreground bg-skill-reading shadow-[0_3px_0_var(--color-skill-reading-dark)] active:shadow-[0_1px_0_var(--color-skill-reading-dark)] active:translate-y-[2px] transition disabled:opacity-50 uppercase"
-					>
-						Nộp bài
-					</button>
-				)}
-			</div>
-		</div>
+			<PracticeCompletionPopup
+				open={showCompletion}
+				backTo="/luyen-tap/doc"
+				onKeepReviewing={() => setShowCompletion(false)}
+			/>
+		</PracticeExamShell>
 	)
 }
