@@ -12,3 +12,9 @@ export async function resetPassword(input: {
 }) {
 	return api.post("auth/reset-password", { json: input }).json<ApiResponse<{ success: boolean }>>()
 }
+
+export async function resendEmailVerification(email: string) {
+	return api
+		.post("auth/email/verification-notification", { json: { email } })
+		.json<ApiResponse<{ success: boolean }>>()
+}

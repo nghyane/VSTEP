@@ -111,8 +111,21 @@ POST /auth/register { email, password, nickname, target_level, target_deadline }
     → dispatch ProfileCreated event
   → event listener:
     → create coin_transaction (type=onboarding_bonus, delta=100) — system_configs['onboarding.initial_coins']
-  → issue tokens
-  → return { access_token, refresh_token, user, profile }
+  → send Laravel signed email verification link through configured Laravel mailer
+  → return { user, profile, email_verification_sent }
+
+GET /auth/email/verify/{id}/{hash}
+  → verify Laravel signed URL + email hash
+  → mark users.email_verified_at
+  → redirect to frontend email verification success screen, or return { success: true } for JSON requests
+
+POST /auth/email/verification-notification { email }
+  → if account exists and is unverified: resend signed verification link
+  → if account does not exist: return success response without sending mail (avoid email enumeration)
+
+POST /auth/login { email, password }
+  → reject unverified local accounts with validation error
+  → issue tokens after email is verified
 ```
 
 ### Forgot password flow
@@ -147,9 +160,8 @@ SMTP transport via environment variables (`MAIL_HOST=smtp.resend.com`,
 `MAIL_USERNAME=resend`, `MAIL_PASSWORD=<Resend API key>`). The mail transport is
 shared infrastructure and can be reused for future transactional emails.
 
-Do not reuse `password_reset_tokens` for signup email verification. If signup
-verification is added later, use Laravel signed verification URLs after account
-creation, or a dedicated OTP/code store for pre-registration verification.
+Signup email verification uses Laravel signed verification URLs after account
+creation. Do not reuse `password_reset_tokens` for verification or OTP flows.
 
 ### Middleware chain
 

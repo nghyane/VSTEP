@@ -6,7 +6,7 @@ import { PasswordInput } from "#/features/auth/PasswordInput"
 import { inputClass } from "#/features/auth/styles"
 import { useAuth } from "#/lib/auth"
 
-export function LoginForm() {
+export function LoginForm({ verified = false }: { verified?: boolean } = {}) {
 	const login = useAuth((s) => s.login)
 	const loginWithGoogle = useAuth((s) => s.loginWithGoogle)
 	const navigate = useNavigate()
@@ -38,8 +38,15 @@ export function LoginForm() {
 		<>
 			<div className="text-center mb-6">
 				<h1 className="font-extrabold text-2xl text-foreground">Đăng nhập</h1>
-				<p className="text-sm text-subtle mt-1">Chào mừng bạn quay lại!</p>
+				<p className="text-sm text-subtle mt-1">
+					{verified ? "Email đã được xác thực. Bạn có thể đăng nhập." : "Chào mừng bạn quay lại!"}
+				</p>
 			</div>
+			{verified && (
+				<p className="text-sm font-bold text-success text-center bg-success/10 rounded-(--radius-button) py-2 mb-4">
+					Xác thực email thành công.
+				</p>
+			)}
 
 			<GoogleButton onToken={handleGoogleToken} text="signin_with" disabled={googleLoading} />
 
