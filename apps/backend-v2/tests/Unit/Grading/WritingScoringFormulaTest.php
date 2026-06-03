@@ -60,41 +60,43 @@ final class WritingScoringFormulaTest extends TestCase
     }
 
     /* ─── Vocabulary ───
-     * V = min(cap, clampRound(base + B_u + B_l + B_r + B_c))
-     * base=2, cap=8 (v11 recalibrated)
-     * B_u: unique_ratio >0.50→1, >0.60→2, >0.70→3
-     * B_l: avg_word_len >5.0→1, >6.0→2
-     * B_r: readability >10→1, >12→2
+     * Evidence model = lexical range, sophistication, diversity, readability.
+     * Missing CEFR evidence keeps lexical range conservative instead of applying a hard cap.
      */
 
-    /** unique_ratio=0.3 → B_u=0, word_len=4.0 → B_l=0. base=2 → 2.0. */
+    /** Low diversity and missing CEFR evidence stay conservative. */
     public function test_vocabulary_low_unique(): void
     {
         $score = $this->formula->vocabulary([
             'unique_ratio' => 0.3,
             'avg_word_length' => 4.0,
         ]);
-        $this->assertSame(2.0, $score);
+        $this->assertSame(3.0, $score);
     }
 
-    /** unique_ratio=0.7 → B_u=3, word_len=5.8 → B_l=1. base=2+3+1=6. */
+    /** High diversity alone is not enough for high vocabulary without CEFR/sophistication evidence. */
     public function test_vocabulary_high_unique_long_words(): void
     {
         $score = $this->formula->vocabulary([
             'unique_ratio' => 0.7,
             'avg_word_length' => 5.8,
         ]);
-        $this->assertSame(6.0, $score);
+        $this->assertSame(4.0, $score);
     }
 
-    /** unique_ratio=0.9 → B_u=3, word_len=6.5 → B_l=2, readability=13 → B_r=2. 2+3+2+2=9 → cap 8. */
-    public function test_vocabulary_capped_at_8(): void
+    public function test_vocabulary_uses_cefr_and_sophistication_evidence(): void
     {
         $score = $this->formula->vocabulary([
-            'unique_ratio' => 0.9,
-            'avg_word_length' => 6.5,
+            'word_count' => 150,
+            'unique_ratio' => 0.7,
+            'avg_word_length' => 5.8,
+            'readability_grade' => 10,
+            'complex_vocab_count' => 6,
+            'cefr_weighted_avg' => 2.8,
+            'cefr_advanced_ratio' => 0.2,
+            'cefr_vocab_count' => 40,
         ]);
-        $this->assertLessThanOrEqual(8.0, $score);
+        $this->assertSame(7.5, $score);
     }
 
     /* ─── Task Fulfillment ───

@@ -14,6 +14,7 @@ use App\Assessment\Data\FeedbackBag;
 use App\Assessment\Data\ScoreBag;
 use App\Assessment\Data\SignalBag;
 use App\Assessment\Enums\CriterionKey;
+use App\Assessment\Services\AssessmentManager;
 use App\DTOs\Grading\Params\TaskFulfillmentParams;
 use App\Exceptions\AssessmentFailedException;
 use App\Models\AssessmentRubric;
@@ -33,13 +34,18 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
         private readonly LanguageToolService $languageTool,
         private readonly RuleBasedScoringService $ruleScoring,
         private readonly SyntaxAnalyzer $syntax,
-        private readonly WritingScoringFormula $formula,
+        private readonly AssessmentManager $assessments,
         private readonly TaskFulfillmentAssessor $taskAssessor,
         private readonly WritingFeedbackGenerator $feedbackGenerator,
         private readonly RubricResolver $rubricResolver,
         private readonly CefrVocabularyClassifier $cefrClassifier,
         private readonly ProfanityDetector $profanityDetector,
     ) {}
+
+    private function formula(): WritingScoringFormula
+    {
+        return $this->assessments->writingFormula();
+    }
 
     public function collectSignals(AssessmentInput $input): SignalBag
     {
@@ -152,17 +158,18 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
         $part = (int) ($rubric->task_type->value === 'writing_task_1_letter' ? 1 : 2);
         $metrics = $signals->vocabulary;
         $scoringRubric = $this->rubricResolver->active('writing');
+        $formula = $this->formula();
 
         $scores = [
-            'grammar' => $this->formula->grammar(
+            'grammar' => $formula->grammar(
                 $signals->syntax,
                 (int) $metrics['grammar_error_count'],
                 (int) $metrics['sentence_count'],
                 (int) ($metrics['punctuation_error_count'] ?? 0),
             ),
-            'vocabulary' => $this->formula->vocabulary($metrics),
-            'task_fulfillment' => $this->formula->taskFulfillment($evidence->task, $part),
-            'organization' => $this->formula->organization(
+            'vocabulary' => $formula->vocabulary($metrics),
+            'task_fulfillment' => $formula->taskFulfillment($evidence->task, $part),
+            'organization' => $formula->organization(
                 (int) $metrics['paragraph_count'],
                 (int) $metrics['linking_word_count'],
                 (int) $metrics['sentence_count'],
@@ -173,7 +180,7 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
             ),
         ];
 
-        $capped = $this->formula->applyTfCap($scores, $scoringRubric);
+        $capped = $formula->applyTfCap($scores, $scoringRubric);
         $scores = $capped['rubricScores'];
         $capsApplied = [];
 
@@ -205,7 +212,7 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
             );
         }
 
-        $shortResponseCap = $this->formula->applyShortResponseCap($scores, $wordCount, $scoringRubric);
+        $shortResponseCap = $formula->applyShortResponseCap($scores, $wordCount, $scoringRubric);
         $scores = $shortResponseCap['rubricScores'];
         if ($shortResponseCap['capApplied'] !== null) {
             $capsApplied['short_response_word_count'] = $shortResponseCap['capApplied'];
@@ -221,7 +228,7 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
 
     public function buildFeedback(ScoreBag $scores, EvidenceBag $evidence, SignalBag $signals): FeedbackBag
     {
-        return new FeedbackBag(evidenceNotes: $this->formula->insights(
+        return new FeedbackBag(evidenceNotes: $this->formula()->insights(
             $signals->syntax,
             $signals->vocabulary,
             $evidence->task,

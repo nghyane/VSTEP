@@ -6,6 +6,7 @@ namespace App\Services\Grading;
 
 use App\DTOs\Grading\Params\OrganizationParams;
 use App\DTOs\Grading\Params\TaskFulfillmentParams;
+use App\DTOs\Grading\Params\VocabularyParams;
 use App\Models\GradingRubric;
 
 final class WritingScoringFormula
@@ -78,23 +79,7 @@ final class WritingScoringFormula
     {
         $p = $this->rubric->vocabularyParams();
 
-        $uniqueBonus = $this->resolveThreshold((float) ($metrics['unique_ratio'] ?? 0), $p->uniqueThresholds);
-        $lengthBonus = $this->resolveThreshold((float) ($metrics['avg_word_length'] ?? 4), $p->lengthThresholds);
-        $readabilityBonus = $this->resolveThreshold((float) ($metrics['readability_grade'] ?? 0), $p->readabilityThresholds);
-
-        $cefrAvg = (float) ($metrics['cefr_weighted_avg'] ?? 0);
-        $cefrAdvanced = (float) ($metrics['cefr_advanced_ratio'] ?? 0);
-
-        $cefrBonus = $this->resolveThreshold($cefrAvg, $p->cefrThresholds);
-        $advancedBonus = $this->resolveThreshold($cefrAdvanced, $p->advancedThresholds);
-
-        // Fallback: use complex_vocab_count if CEFR data insufficient
-        $complexCount = (int) ($metrics['complex_vocab_count'] ?? 0);
-        $complexBonus = $this->resolveThreshold((float) $complexCount, $p->complexThresholds);
-
-        $vocabDepth = max($cefrBonus + $advancedBonus, $complexBonus);
-
-        $score = min($p->cap, $this->clampRound($p->base + $uniqueBonus + $lengthBonus + $readabilityBonus + $vocabDepth));
+        $score = $this->vocabularyEvidenceScore($metrics, $p);
 
         // Spelling sub-signal (from rubric DB)
         $spelling = $this->rubric->subSignalParams('vocabulary', 'spelling');
@@ -131,7 +116,7 @@ final class WritingScoringFormula
             - ($irrelevant ? $p->irrelevantPenalty : 0)
         );
 
-        $taskFulfillmentCap = $wordCount === null ? null : $p->taskFulfillmentScoreCap($wordCount);
+        $taskFulfillmentCap = $wordCount === null ? null : $p->taskFulfillmentScoreCap($wordCount, $part);
         if ($taskFulfillmentCap !== null) {
             $score = min($score, $taskFulfillmentCap);
         }
@@ -192,7 +177,7 @@ final class WritingScoringFormula
         $varietyBonus = $this->resolveThreshold($sentenceVariety, $p->varietyThresholds);
 
         // Letter format bonus: salutation + closing
-        $formatBonus = ($hasSalutation ? 1 : 0) + ($hasClosing ? 1 : 0);
+        $formatBonus = ($hasSalutation ? 0.5 : 0) + ($hasClosing ? 0.5 : 0);
 
         // No compact penalty for letters
         return $this->clampRound($p->base + $paraBonus + $linkingBonus + $varietyBonus + $formatBonus);
@@ -223,17 +208,87 @@ final class WritingScoringFormula
         return $band;
     }
 
-    /** @param list<array{threshold: float, bonus: int}> $thresholds */
-    private function resolveThreshold(float $value, array $thresholds): int
+    /** @param list<array{threshold: float, bonus: float}> $thresholds */
+    private function resolveThreshold(float $value, array $thresholds): float
     {
-        $bonus = 0;
+        $bonus = 0.0;
         foreach ($thresholds as $entry) {
             if ($value >= (float) ($entry['threshold'] ?? 0)) {
-                $bonus = (int) ($entry['bonus'] ?? 0);
+                $bonus = (float) ($entry['bonus'] ?? 0);
             }
         }
 
         return $bonus;
+    }
+
+    private function vocabularyEvidenceScore(array $metrics, VocabularyParams $params): float
+    {
+        $model = $params->model;
+        if ($model === []) {
+            throw new \RuntimeException('Writing vocabulary scoring model is not configured.');
+        }
+
+        if ($metrics === []) {
+            return (float) ($model['empty_score'] ?? $params->base);
+        }
+
+        $wordCount = max(0, (int) ($metrics['word_count'] ?? 0));
+        $cefrCount = max(0, (int) ($metrics['cefr_vocab_count'] ?? 0));
+        $cefrAvg = (float) ($metrics['cefr_weighted_avg'] ?? 0);
+        $advancedRatio = (float) ($metrics['cefr_advanced_ratio'] ?? 0);
+        $collocationDensity = $wordCount > 0 ? ((int) ($metrics['complex_vocab_count'] ?? 0) / $wordCount) * 100 : 0.0;
+        $sophisticationSignal = ($advancedRatio * 10) + $collocationDensity;
+
+        $confidenceConfig = (array) ($model['confidence'] ?? []);
+        $rangeConfidence = min(1.0, $cefrCount / max(1, (int) ($confidenceConfig['min_classified_tokens'] ?? 30)));
+        $rangeBaseline = (float) ($confidenceConfig['range_baseline'] ?? 4.0);
+        $rangeBand = $this->resolveBandThreshold($cefrAvg, (array) $model['lexical_range_bands']);
+        $rangeBand = ($rangeBand * $rangeConfidence) + ($rangeBaseline * (1 - $rangeConfidence));
+
+        $featureScores = [
+            'lexical_range' => $rangeBand,
+            'sophistication' => $this->resolveBandThreshold($sophisticationSignal, (array) $model['sophistication_bands']),
+            'diversity' => $this->resolveBandThreshold((float) ($metrics['unique_ratio'] ?? 0), (array) $model['diversity_bands']),
+            'readability' => $this->resolveBandThreshold((float) ($metrics['readability_grade'] ?? 0), (array) $model['readability_bands']),
+        ];
+
+        $weights = (array) $model['feature_weights'];
+        $weightedSum = 0.0;
+        $totalWeight = 0.0;
+        foreach ($featureScores as $feature => $score) {
+            $weight = (float) ($weights[$feature] ?? 0.0);
+            $weightedSum += $score * $weight;
+            $totalWeight += $weight;
+        }
+
+        if ($totalWeight <= 0.0) {
+            throw new \RuntimeException('Writing vocabulary scoring model has no feature weights.');
+        }
+
+        $control = (array) ($model['control'] ?? []);
+        $spellingPenalty = min(
+            (float) ($control['max_spelling_penalty'] ?? 0.0),
+            (int) ($metrics['spelling_error_count'] ?? 0) * (float) ($control['spelling_penalty_per_error'] ?? 0.0),
+        );
+
+        return min($params->cap, $this->clampRound(($weightedSum / $totalWeight) - $spellingPenalty));
+    }
+
+    /** @param list<array{threshold: float, band: float}> $bands */
+    private function resolveBandThreshold(float $value, array $bands): float
+    {
+        if ($bands === []) {
+            throw new \RuntimeException('Writing vocabulary scoring model has an empty band table.');
+        }
+
+        $band = (float) ($bands[0]['band'] ?? 1.0);
+        foreach ($bands as $entry) {
+            if ($value >= (float) ($entry['threshold'] ?? 0.0)) {
+                $band = (float) ($entry['band'] ?? $band);
+            }
+        }
+
+        return $band;
     }
 
     private function resolveMaxAccuracy(int $typeCount, array $maxAccuracy): float

@@ -19,6 +19,8 @@ final readonly class TaskFulfillmentParams
     /**
      * @param  list<array{max_words: int, cap: float}>  $shortResponseCaps
      * @param  list<array{max_words: int, cap: float}>  $taskFulfillmentWordCaps
+     * @param  list<array{max_words: int, cap: float}>  $taskFulfillmentWordCapsTask1
+     * @param  list<array{max_words: int, cap: float}>  $taskFulfillmentWordCapsTask2
      */
     public function __construct(
         public float $coverageMultiplier,
@@ -32,6 +34,8 @@ final readonly class TaskFulfillmentParams
         public int $nonAssessableWordLimit,
         public array $shortResponseCaps,
         public array $taskFulfillmentWordCaps,
+        public array $taskFulfillmentWordCapsTask1,
+        public array $taskFulfillmentWordCapsTask2,
         public float $tfCapRatio,
         public int $severeMinimumWordsTask1,
         public int $severeMinimumWordsTask2,
@@ -56,6 +60,8 @@ final readonly class TaskFulfillmentParams
             nonAssessableWordLimit: (int) $data['non_assessable_word_limit'],
             shortResponseCaps: (array) $shortResponseCaps,
             taskFulfillmentWordCaps: (array) $data['task_fulfillment_word_caps'],
+            taskFulfillmentWordCapsTask1: (array) ($data['task_fulfillment_word_caps_task1'] ?? $data['task_fulfillment_word_caps']),
+            taskFulfillmentWordCapsTask2: (array) ($data['task_fulfillment_word_caps_task2'] ?? $data['task_fulfillment_word_caps']),
             tfCapRatio: (float) $data['tf_cap_ratio'],
             severeMinimumWordsTask1: (int) $data['severe_minimum_words_task1'],
             severeMinimumWordsTask2: (int) $data['severe_minimum_words_task2'],
@@ -78,9 +84,15 @@ final readonly class TaskFulfillmentParams
         return $this->resolveCap($wordCount, $this->shortResponseCaps);
     }
 
-    public function taskFulfillmentScoreCap(int $wordCount): ?float
+    public function taskFulfillmentScoreCap(int $wordCount, ?int $part = null): ?float
     {
-        return $this->resolveCap($wordCount, $this->taskFulfillmentWordCaps);
+        $caps = match ($part) {
+            1 => $this->taskFulfillmentWordCapsTask1,
+            2 => $this->taskFulfillmentWordCapsTask2,
+            default => $this->taskFulfillmentWordCaps,
+        };
+
+        return $this->resolveCap($wordCount, $caps);
     }
 
     private static function validate(array $data): void
@@ -108,7 +120,7 @@ final readonly class TaskFulfillmentParams
             throw new InvalidArgumentException('TaskFulfillmentParams missing keys: short_response_caps');
         }
 
-        foreach (['short_response_caps', 'short_essay_caps', 'task_fulfillment_word_caps'] as $key) {
+        foreach (['short_response_caps', 'short_essay_caps', 'task_fulfillment_word_caps', 'task_fulfillment_word_caps_task1', 'task_fulfillment_word_caps_task2'] as $key) {
             if (! array_key_exists($key, $data)) {
                 continue;
             }

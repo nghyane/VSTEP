@@ -17,15 +17,16 @@ use App\Assessment\Enums\AssessmentSkill;
 use App\Assessment\Enums\AssessmentSourceType;
 use App\Assessment\Enums\AssessmentTaskType;
 use App\Assessment\Enums\CriterionKey;
+use App\Assessment\Services\AssessmentManager;
 use App\Assessment\Services\AssessmentProcessingService;
 use App\Assessment\Services\AssessmentSubmissionService;
-use App\Assessment\Services\StrategyRegistry;
 use App\Jobs\ProcessAssessmentJob;
 use App\Models\AssessmentRubric;
 use App\Models\GradingRubric;
 use App\Models\Profile;
 use App\Models\User;
 use App\Services\AssessmentResultDisplayService;
+use App\Services\Grading\RubricResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -35,9 +36,7 @@ final class AssessmentProcessingTest extends TestCase
 
     public function test_submits_and_processes_assessment_attempt(): void
     {
-        $this->app->singleton(StrategyRegistry::class, fn () => new StrategyRegistry([
-            new PassingAssessmentStrategy,
-        ]));
+        $this->fakeAssessmentManager(PassingAssessmentStrategy::class);
 
         $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
         $rubric = $this->activeRubric();
@@ -75,9 +74,7 @@ final class AssessmentProcessingTest extends TestCase
 
     public function test_marks_job_failed_when_evidence_is_invalid(): void
     {
-        $this->app->singleton(StrategyRegistry::class, fn () => new StrategyRegistry([
-            new FailingAssessmentStrategy,
-        ]));
+        $this->fakeAssessmentManager(FailingAssessmentStrategy::class);
 
         $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
         $this->activeRubric();
@@ -106,9 +103,7 @@ final class AssessmentProcessingTest extends TestCase
 
     public function test_queue_job_processes_assessment_job(): void
     {
-        $this->app->singleton(StrategyRegistry::class, fn () => new StrategyRegistry([
-            new PassingAssessmentStrategy,
-        ]));
+        $this->fakeAssessmentManager(PassingAssessmentStrategy::class);
 
         $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
         $this->activeRubric();
@@ -248,6 +243,16 @@ final class AssessmentProcessingTest extends TestCase
                 'effective_from' => now(),
             ],
         );
+    }
+
+    /** @param class-string<AssessmentStrategy> $strategyClass */
+    private function fakeAssessmentManager(string $strategyClass): void
+    {
+        $this->app->singleton(AssessmentManager::class, fn ($app) => new AssessmentManager(
+            $app,
+            $app->make(RubricResolver::class),
+            [AssessmentTaskType::WritingTask2Essay->value => $strategyClass],
+        ));
     }
 }
 

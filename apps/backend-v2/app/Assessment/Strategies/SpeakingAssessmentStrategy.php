@@ -14,6 +14,7 @@ use App\Assessment\Data\ScoreBag;
 use App\Assessment\Data\SignalBag;
 use App\Assessment\Enums\AssessmentSourceType;
 use App\Assessment\Enums\CriterionKey;
+use App\Assessment\Services\AssessmentManager;
 use App\Exceptions\AssessmentFailedException;
 use App\Models\AssessmentRubric;
 use App\Services\AudioStorageService;
@@ -40,12 +41,17 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
         private readonly AudioStorageService $audio,
         private readonly SyntaxAnalyzer $syntax,
         private readonly RuleBasedScoringService $metrics,
-        private readonly SpeakingScoringFormula $formula,
+        private readonly AssessmentManager $assessments,
         private readonly ContentRelevanceAssessor $relevance,
         private readonly LanguageToolService $languageTool,
         private readonly SpeakingFeatureExtractor $speakingFeatures,
         private readonly VstepSpeakingDescriptorEvaluator $speakingDescriptors,
     ) {}
+
+    private function formula(): SpeakingScoringFormula
+    {
+        return $this->assessments->speakingFormula();
+    }
 
     public function collectSignals(AssessmentInput $input): SignalBag
     {
@@ -112,12 +118,14 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
 
     public function score(EvidenceBag $evidence, SignalBag $signals, AssessmentRubric $rubric): ScoreBag
     {
+        $formula = $this->formula();
+
         $scores = [
-            'grammar' => $this->formula->grammar($signals->syntax, (int) $signals->vocabulary['grammar_error_count'], (int) $signals->vocabulary['sentence_count']),
-            'vocabulary' => $this->formula->vocabulary($signals->vocabulary),
-            'fluency' => $this->formula->fluency((float) $signals->speech['speaking_rate'], (int) $signals->speech['pause_count'], (int) $signals->speech['word_count']),
+            'grammar' => $formula->grammar($signals->syntax, (int) $signals->vocabulary['grammar_error_count'], (int) $signals->vocabulary['sentence_count']),
+            'vocabulary' => $formula->vocabulary($signals->vocabulary),
+            'fluency' => $formula->fluency((float) $signals->speech['speaking_rate'], (int) $signals->speech['pause_count'], (int) $signals->speech['word_count']),
             'discourse_management' => $this->descriptorDiscourseScore($signals, $evidence),
-            'pronunciation' => $this->formula->pronunciation([
+            'pronunciation' => $formula->pronunciation([
                 ...$signals->pronunciation,
                 'word_count' => (int) $signals->speech['word_count'],
             ]),
@@ -142,7 +150,7 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
 
     public function buildFeedback(ScoreBag $scores, EvidenceBag $evidence, SignalBag $signals): FeedbackBag
     {
-        return new FeedbackBag(evidenceNotes: $this->formula->insights(
+        return new FeedbackBag(evidenceNotes: $this->formula()->insights(
             $signals->syntax,
             $signals->vocabulary,
             (float) $signals->speech['speaking_rate'],

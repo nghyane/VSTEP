@@ -15,8 +15,9 @@ use App\Ai\Contracts\SpeakingFeedbackGenerator;
 use App\Ai\Contracts\TaskFulfillmentAssessor;
 use App\Ai\Contracts\WritingFeedbackGenerator;
 use App\Assessment\Contracts\RubricResolver as AssessmentRubricResolver;
+use App\Assessment\Enums\AssessmentTaskType;
 use App\Assessment\Rubrics\DatabaseRubricResolver;
-use App\Assessment\Services\StrategyRegistry as AssessmentStrategyRegistry;
+use App\Assessment\Services\AssessmentManager;
 use App\Assessment\Strategies\SpeakingPart1PersonalStrategy;
 use App\Assessment\Strategies\SpeakingPart2SolutionStrategy;
 use App\Assessment\Strategies\SpeakingPart3DiscussionStrategy;
@@ -95,25 +96,20 @@ class AppServiceProvider extends ServiceProvider
         // Rubric resolver — scoped so cache resets per request (Octane-safe).
         $this->app->scoped(RubricResolver::class);
 
-        $this->app->scoped(WritingScoringFormula::class, fn ($app) => new WritingScoringFormula(
-            $app->make(RubricResolver::class)->active('writing'),
-        ));
-
-        $this->app->scoped(SpeakingScoringFormula::class, fn ($app) => new SpeakingScoringFormula(
-            $app->make(RubricResolver::class)->active('speaking'),
-        ));
+        $this->app->scoped(WritingScoringFormula::class, fn ($app) => $app->make(AssessmentManager::class)->writingFormula());
+        $this->app->scoped(SpeakingScoringFormula::class, fn ($app) => $app->make(AssessmentManager::class)->speakingFormula());
 
         $this->app->bind(ConversationServiceInterface::class, SpeakingConversationService::class);
 
         $this->app->bind(LearningPathInterface::class, LearningPathService::class);
 
         $this->app->bind(AssessmentRubricResolver::class, DatabaseRubricResolver::class);
-        $this->app->singleton(AssessmentStrategyRegistry::class, fn ($app) => new AssessmentStrategyRegistry([
-            $app->make(WritingTask1LetterStrategy::class),
-            $app->make(WritingTask2EssayStrategy::class),
-            $app->make(SpeakingPart1PersonalStrategy::class),
-            $app->make(SpeakingPart2SolutionStrategy::class),
-            $app->make(SpeakingPart3DiscussionStrategy::class),
+        $this->app->scoped(AssessmentManager::class, fn ($app) => new AssessmentManager($app, $app->make(RubricResolver::class), [
+            AssessmentTaskType::WritingTask1Letter->value => WritingTask1LetterStrategy::class,
+            AssessmentTaskType::WritingTask2Essay->value => WritingTask2EssayStrategy::class,
+            AssessmentTaskType::SpeakingPart1Personal->value => SpeakingPart1PersonalStrategy::class,
+            AssessmentTaskType::SpeakingPart2Solution->value => SpeakingPart2SolutionStrategy::class,
+            AssessmentTaskType::SpeakingPart3Discussion->value => SpeakingPart3DiscussionStrategy::class,
         ]));
 
         $this->app->bind(AdminCourseBookingInterface::class, AdminCourseBookingService::class);

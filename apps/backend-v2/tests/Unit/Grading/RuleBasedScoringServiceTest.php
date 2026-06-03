@@ -100,4 +100,11 @@ final class RuleBasedScoringServiceTest extends TestCase
 
         $this->assertContains('high_error_rate', $result['flags']);
     }
+
+    public function test_tone_detection_uses_word_boundaries(): void
+    {
+        $result = $this->service->analyze('Technology resources can support learners.', []);
+
+        $this->assertSame(0, $result['metrics']['tone_signals']['informal_count']);
+    }
 }

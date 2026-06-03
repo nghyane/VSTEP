@@ -15,13 +15,15 @@ use App\Models\GradingRubric;
  */
 final class SpeakingScoringFormula
 {
+    private ?GradingRubric $rubric = null;
+
     public function __construct(
-        private readonly GradingRubric $rubric,
+        private readonly RubricResolver $rubricResolver,
     ) {}
 
     public function grammar(array $syntax, int $languageToolErrors, int $sentenceCount): float
     {
-        $p = $this->rubric->grammarParams();
+        $p = $this->rubric()->grammarParams();
         $typeCount = $syntax['count'] ?? 0;
         $gRange = $this->resolveBand($typeCount, $p->bandThresholds);
 
@@ -34,7 +36,7 @@ final class SpeakingScoringFormula
 
     public function vocabulary(array $metrics): float
     {
-        $p = $this->rubric->vocabularyParams();
+        $p = $this->rubric()->vocabularyParams();
 
         $uniqueBonus = $this->resolveThreshold((float) ($metrics['unique_ratio'] ?? 0), $p->uniqueThresholds);
         $lengthBonus = $this->resolveThreshold((float) ($metrics['avg_word_length'] ?? 4), $p->lengthThresholds);
@@ -56,7 +58,7 @@ final class SpeakingScoringFormula
 
     public function fluency(float $speakingRate, int $pauseCount, int $wordCount): float
     {
-        $p = $this->rubric->fluencyParams();
+        $p = $this->rubric()->fluencyParams();
         $rateBonus = $this->resolveThreshold($speakingRate, $p->wpmThresholds);
 
         $pausesPer100 = $wordCount > 0 ? ($pauseCount / $wordCount) * 100 : 0;
@@ -67,7 +69,7 @@ final class SpeakingScoringFormula
 
     public function discourse(int $linkingWordCount, float $sentenceVariety, float $contentFactor = 1.0): float
     {
-        $p = $this->rubric->discourseParams();
+        $p = $this->rubric()->discourseParams();
         $linkingBonus = min($p->linkingCap, $linkingWordCount * $p->linkingFactor);
         $varietyBonus = $this->resolveThreshold($sentenceVariety, $p->varietyThresholds);
 
@@ -227,5 +229,10 @@ final class SpeakingScoringFormula
         return min(1.0, ($mispronunciations / $wordCount) * 20)
             + min(0.5, ($breakErrors / $wordCount) * 10)
             + min(0.5, ($monotoneMarkers / $wordCount) * 10);
+    }
+
+    private function rubric(): GradingRubric
+    {
+        return $this->rubric ??= $this->rubricResolver->active('speaking');
     }
 }

@@ -13,7 +13,7 @@ final readonly class VocabularyParams
         'readability_thresholds', 'complex_thresholds',
     ];
 
-    /** @param list<array{threshold: float, bonus: int}> $uniqueThresholds, $lengthThresholds, $readabilityThresholds, $complexThresholds, $cefrThresholds, $advancedThresholds */
+    /** @param list<array{threshold: float, bonus: float}> $uniqueThresholds, $lengthThresholds, $readabilityThresholds, $complexThresholds, $cefrThresholds, $advancedThresholds */
     public function __construct(
         public int $base,
         public float $cap,
@@ -23,6 +23,7 @@ final readonly class VocabularyParams
         public array $complexThresholds,
         public array $cefrThresholds,
         public array $advancedThresholds,
+        public array $model,
     ) {}
 
     /** @param array<string,mixed> $data */
@@ -39,6 +40,7 @@ final readonly class VocabularyParams
             complexThresholds: (array) $data['complex_thresholds'],
             cefrThresholds: (array) ($data['cefr_thresholds'] ?? []),
             advancedThresholds: (array) ($data['advanced_thresholds'] ?? []),
+            model: (array) ($data['model'] ?? []),
         );
     }
 

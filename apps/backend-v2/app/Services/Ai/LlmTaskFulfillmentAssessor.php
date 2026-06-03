@@ -6,11 +6,13 @@ namespace App\Services\Ai;
 
 use App\Ai\AiClient;
 use App\Ai\Contracts\TaskFulfillmentAssessor;
+use App\Services\WritingContentQualityAnalyzer;
 
 final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
 {
     public function __construct(
         private readonly AiClient $ai,
+        private readonly WritingContentQualityAnalyzer $contentQuality,
     ) {}
 
     public function assess(string $text, string $promptText, array $requirements, array $grammarErrors, array $ruleAnalysis, int $part = 2): array
@@ -38,10 +40,11 @@ final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
             toolDescription: 'Return a boolean array — one entry per requirement in the same order as listed.',
             parametersSchema: [
                 'requirements_met' => ['type' => 'array', 'items' => ['type' => 'boolean']],
+                'has_irrelevant_content' => ['type' => 'boolean'],
             ],
             instructions: 'You are grading a VSTEP '.($part === 1 ? 'letter/email (Task 1)' : 'essay (Task 2)').' against task requirements. '
                 .'Read the full text carefully. For each requirement, output true (YES) if it is addressed even briefly, false (NO) if completely absent. '
-                .'Output one boolean per requirement, in order.',
+                .'Also flag has_irrelevant_content=true when the response is mostly about another topic or does not answer the prompt.',
         );
 
         $requirementsMet = $structured['requirements_met'] ?? [];
@@ -83,6 +86,10 @@ final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
                 || str_contains($lowerText, 'in conclusion');
         }
 
+        $contentQuality = $this->contentQuality->analyze($text, $promptText, $requirements);
+        $hasIrrelevantContent = (($structured['has_irrelevant_content'] ?? null) === true)
+            || ($metCount === 0 && $contentQuality['is_irrelevant']);
+
         return [
             'points_covered' => $metCount,
             'points_required' => $total,
@@ -90,11 +97,11 @@ final class LlmTaskFulfillmentAssessor implements TaskFulfillmentAssessor
             'depth_factor' => round($depthFactor, 2),
             'has_examples' => $hasExamples,
             'has_clear_position' => $hasPosition,
-            'has_irrelevant_content' => false, // LLM doesn't check this with binary approach
+            'has_irrelevant_content' => $hasIrrelevantContent,
+            'content_relevance' => $contentQuality,
         ];
     }
 
-    /** @return list<string> */
     /** @return list<string> */
     private function detectedLinkingWords(string $text): array
     {

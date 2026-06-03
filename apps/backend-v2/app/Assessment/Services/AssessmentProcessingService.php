@@ -21,7 +21,7 @@ use Throwable;
 final readonly class AssessmentProcessingService
 {
     public function __construct(
-        private StrategyRegistry $strategies,
+        private AssessmentManager $assessments,
     ) {}
 
     public function process(AssessmentJob $job): AssessmentResult
@@ -41,7 +41,7 @@ final readonly class AssessmentProcessingService
             $attempt = $job->attempt;
             $rubric = $attempt->rubric;
             $input = $this->inputFromAttempt($attempt);
-            $strategy = $this->strategies->for($attempt->task_type);
+            $strategy = $this->assessments->strategy($attempt->task_type);
 
             $signals = $strategy->collectSignals($input);
             $evidence = $strategy->extractEvidence($input, $signals, $rubric);

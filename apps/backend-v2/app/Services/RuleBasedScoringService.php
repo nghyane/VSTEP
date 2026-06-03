@@ -302,7 +302,7 @@ final class RuleBasedScoringService
         $informalCount = 0;
         $foundInformal = [];
         foreach ($informalWords as $word) {
-            if (str_contains($text, $word)) {
+            if ($this->containsPhrase($text, $word)) {
                 $informalCount++;
                 $foundInformal[] = $word;
             }
@@ -310,7 +310,7 @@ final class RuleBasedScoringService
 
         $formalCount = 0;
         foreach ($formalWords as $word) {
-            if (str_contains($text, $word)) {
+            if ($this->containsPhrase($text, $word)) {
                 $formalCount++;
             }
         }
@@ -320,5 +320,10 @@ final class RuleBasedScoringService
             'informal_count' => $informalCount,
             'informal_words' => $foundInformal,
         ];
+    }
+
+    private function containsPhrase(string $text, string $phrase): bool
+    {
+        return preg_match('/(?<![a-z])'.preg_quote($phrase, '/').'(?![a-z])/u', $text) === 1;
     }
 }
