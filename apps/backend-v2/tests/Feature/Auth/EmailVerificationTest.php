@@ -70,7 +70,7 @@ class EmailVerificationTest extends TestCase
             ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())],
         );
 
-        $this->get($url)->assertRedirect('http://localhost:5175/?auth=email-verification-invalid');
+        $this->get($url)->assertRedirect(config('app.frontend_url').'/?auth=email-verification-invalid');
 
         $this->assertNull($user->refresh()->email_verified_at);
     }
@@ -98,7 +98,7 @@ class EmailVerificationTest extends TestCase
             ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())],
         );
 
-        $this->get($url)->assertRedirect('http://localhost:5175/?auth=email-verified');
+        $this->get($url)->assertRedirect(config('app.frontend_url').'/?auth=email-verified');
     }
 
     public function test_verified_account_can_login_after_email_verification(): void

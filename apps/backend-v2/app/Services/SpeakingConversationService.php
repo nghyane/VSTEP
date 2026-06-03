@@ -19,6 +19,7 @@ use App\Models\Profile;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Ramsey\Uuid\Uuid;
 
 final class SpeakingConversationService implements ConversationServiceInterface
 {
@@ -279,7 +280,7 @@ final class SpeakingConversationService implements ConversationServiceInterface
             ];
         }
 
-        $submissionId = sha1(($segmentId ?? 'shadowing')."|{$original}|{$transcript}");
+        $submissionId = Uuid::uuid5(Uuid::NAMESPACE_URL, ($segmentId ?? 'shadowing')."|{$original}|{$transcript}")->toString();
         $request = $this->chargeFeedbackOnce($profile, 'shadowing_pronunciation', $submissionId, [
             'feedback_type' => 'shadowing_pronunciation',
             'segment_id' => $segmentId,
