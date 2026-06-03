@@ -44,6 +44,9 @@ class SystemConfigSeeder extends Seeder
 
             // Profile limits.
             'profile.max_profiles_per_account' => [5, 'Số hồ sơ tối đa mỗi tài khoản học viên được tạo.'],
+
+            // Public support contact.
+            'support.zalo_phone' => ['0343062376', 'Số điện thoại Zalo dùng cho nút hỗ trợ học viên.'],
         ];
 
         foreach ($defaults as $key => [$value, $description]) {
