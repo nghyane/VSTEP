@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Services\EconomyConfigService;
 use App\Services\ProfileConfigService;
+use App\Services\SupportConfigService;
 use Illuminate\Http\JsonResponse;
 
 final class ConfigController extends Controller
@@ -14,6 +15,7 @@ final class ConfigController extends Controller
     public function __construct(
         private readonly EconomyConfigService $economyConfig,
         private readonly ProfileConfigService $profileConfig,
+        private readonly SupportConfigService $supportConfig,
     ) {}
 
     public function show(): JsonResponse
@@ -28,6 +30,9 @@ final class ConfigController extends Controller
                 ],
                 'profile' => [
                     'max_profiles_per_account' => $this->profileConfig->maxProfilesPerAccount(),
+                ],
+                'support' => [
+                    'zalo_phone' => $this->supportConfig->zaloPhone(),
                 ],
                 'pricing' => [
                     'exam' => [

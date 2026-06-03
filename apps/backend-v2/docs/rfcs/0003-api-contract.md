@@ -452,7 +452,16 @@ Recent messages.
 
 ---
 
-## 12. Admin (admin panel)
+## 12. Public Config
+
+### `GET /api/v1/config` — public
+Public runtime config consumed by learner frontend.
+
+Response: `{ wallet: { onboarding_initial_coins }, profile: { max_profiles_per_account }, support: { zalo_phone }, pricing: { exam: { full_test_cost_coins, custom_per_skill_coins, max_cost_coins }, practice: { feedback_cost_coins } } }`
+
+---
+
+## 13. Admin (admin panel)
 
 Under `/api/v1/admin`, auth `jwt:admin`.
 
@@ -474,7 +483,7 @@ Under `/api/v1/admin`, auth `jwt:admin`.
 
 ---
 
-## 13. Teacher panel
+## 14. Teacher panel
 
 > **Updated**: Teacher không tự set lịch (trung tâm quản lý). Xem RFC 0011.
 

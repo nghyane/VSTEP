@@ -42,6 +42,9 @@ final class UpdateSystemConfigRequest extends FormRequest
 
             case 'string':
                 $rules['value'][] = 'string';
+                if ($key === 'support.zalo_phone') {
+                    $rules['value'][] = 'regex:/^[0-9+().\-\s]+$/';
+                }
                 break;
 
             case 'boolean':
