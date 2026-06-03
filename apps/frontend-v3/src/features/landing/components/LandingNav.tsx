@@ -11,12 +11,16 @@ export function LandingNav({ showCta }: LandingNavProps) {
 			className="sticky top-0 z-40 bg-surface/95 backdrop-blur-sm border-b border-transparent transition-colors"
 			style={showCta ? { borderBottomColor: "var(--color-border)" } : undefined}
 		>
-			<div className="flex items-center justify-between px-8 py-4 max-w-6xl mx-auto">
+			<div className="flex items-center justify-between px-4 py-3 sm:px-6 sm:py-4 lg:px-8 max-w-6xl mx-auto">
 				<Logo size="lg" />
 				<div
 					className={`transition-all duration-300 ${showCta ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2 pointer-events-none"}`}
 				>
-					<Link to="/" search={{ auth: "register" }} className="btn btn-primary text-sm px-6 py-2.5">
+					<Link
+						to="/"
+						search={{ auth: "register" }}
+						className="btn btn-primary text-sm px-4 py-2 sm:px-6 sm:py-2.5"
+					>
 						Bắt đầu
 					</Link>
 				</div>

@@ -1,13 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
+import { LandingAppBanner } from "#/features/landing/components/LandingAppBanner"
 import { type LandingAuthMode, LandingAuthOverlay } from "#/features/landing/components/LandingAuthOverlay"
 import { LandingCTA } from "#/features/landing/components/LandingCTA"
 import { LandingFAQ } from "#/features/landing/components/LandingFAQ"
 import { LandingFeatures } from "#/features/landing/components/LandingFeatures"
 import { LandingHero } from "#/features/landing/components/LandingHero"
+import { LandingMobileAppNotice } from "#/features/landing/components/LandingMobileAppNotice"
 import { LandingNav } from "#/features/landing/components/LandingNav"
 import { LandingSkills } from "#/features/landing/components/LandingSkills"
 import { LandingSocial } from "#/features/landing/components/LandingSocial"
+import { useMobileLanding } from "#/features/landing/use-mobile-landing"
 import { useAuth } from "#/lib/auth"
 
 type AuthParam = LandingAuthMode | undefined
@@ -48,6 +51,8 @@ function LandingPage() {
 	const { auth, redirect: redirectTo, onboarding, email, token, verified } = Route.useSearch()
 	const ctaRef = useRef<HTMLDivElement>(null)
 	const [showBtn, setShowBtn] = useState(false)
+	const isMobileLanding = useMobileLanding()
+	const showMobileAppNotice = isMobileLanding && (auth === "register" || auth === "login")
 
 	useEffect(() => {
 		if (status === "authenticated") navigate({ to: redirectTo || "/dashboard" })
@@ -68,17 +73,20 @@ function LandingPage() {
 			<LandingNav showCta={showBtn} />
 
 			<LandingHero ctaRef={ctaRef} />
+			<LandingAppBanner />
 			<LandingSkills />
 			<LandingFeatures />
 			<LandingSocial />
 			<LandingFAQ />
 			<LandingCTA />
 
-			<footer className="border-t border-border py-8 text-center text-sm text-subtle">
+			<footer className="border-t border-border px-4 py-6 text-center text-xs text-subtle sm:py-8 sm:text-sm">
 				© 2025 VSTEP · Luyện thi chứng chỉ tiếng Anh quốc gia
 			</footer>
 
-			{auth && (
+			{showMobileAppNotice ? (
+				<LandingMobileAppNotice mode={auth === "login" ? "login" : "register"} />
+			) : auth ? (
 				<LandingAuthOverlay
 					mode={auth}
 					onboarding={onboarding === true}
@@ -86,7 +94,7 @@ function LandingPage() {
 					token={token}
 					verified={verified === true}
 				/>
-			)}
+			) : null}
 		</div>
 	)
 }
