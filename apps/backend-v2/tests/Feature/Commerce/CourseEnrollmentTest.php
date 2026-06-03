@@ -11,6 +11,7 @@ use App\Enums\SlotStatus;
 use App\Models\CoinTransaction;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Models\CourseEnrollmentOrder;
 use App\Models\Exam;
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
@@ -126,25 +127,34 @@ class CourseEnrollmentTest extends TestCase
             ->assertStatus(422);
     }
 
-    public function test_enrollment_rejects_duplicate(): void
+    public function test_enrollment_order_replaces_pending_order(): void
     {
         [$user, $profile, $course] = $this->seedCourse(100_000, 200);
 
         $token = $this->tokenFor($user);
-        $this->withHeader('Authorization', "Bearer {$token}")
+        $first = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
                 'payment_provider' => 'payos',
                 'commitment_signature' => $this->signatureSvg(),
             ])
             ->assertCreated();
 
-        // Second attempt — already has pending order
-        $this->withHeader('Authorization', "Bearer {$token}")
+        $second = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
                 'payment_provider' => 'payos',
                 'commitment_signature' => $this->signatureSvg(),
             ])
-            ->assertStatus(422);
+            ->assertCreated();
+
+        $this->assertDatabaseHas('course_enrollment_orders', [
+            'id' => $first->json('data.id'),
+            'status' => 'cancelled',
+        ]);
+        $this->assertDatabaseHas('course_enrollment_orders', [
+            'id' => $second->json('data.id'),
+            'status' => 'pending',
+        ]);
+        $this->assertSame(1, CourseEnrollmentOrder::query()->where('profile_id', $profile->id)->where('course_id', $course->id)->where('status', 'pending')->count());
     }
 
     public function test_enrollment_order_requires_commitment_signature(): void

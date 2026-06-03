@@ -60,18 +60,14 @@ final class CourseOrderService
             throw ValidationException::withMessages(['course' => ['Bạn đã ghi danh khóa học này.']]);
         }
 
-        // Check if user already has paid or pending order for this course
         $existing = CourseEnrollmentOrder::query()
             ->where('profile_id', $profile->id)
             ->where('course_id', $course->id)
             ->whereIn('status', OrderStatus::activeValues())
             ->first();
 
-        if ($existing !== null) {
-            if ($existing->isPaid()) {
-                throw ValidationException::withMessages(['course' => ['Bạn đã ghi danh khóa học này.']]);
-            }
-            throw ValidationException::withMessages(['course' => ['Bạn đang có đơn thanh toán chờ xác nhận cho khóa học này.']]);
+        if ($existing?->isPaid()) {
+            throw ValidationException::withMessages(['course' => ['Bạn đã ghi danh khóa học này.']]);
         }
 
         $amount = $course->price_vnd;
@@ -80,6 +76,12 @@ final class CourseOrderService
 
         try {
             return DB::transaction(function () use ($profile, $course, $provider, $amount, $gateway, $expiryMinutes, $returnUrl, $commitmentSignature) {
+                CourseEnrollmentOrder::query()
+                    ->where('profile_id', $profile->id)
+                    ->where('course_id', $course->id)
+                    ->where('status', OrderStatus::Pending)
+                    ->update(['status' => OrderStatus::Cancelled]);
+
                 $order = CourseEnrollmentOrder::create([
                     'order_code' => $this->nextOrderCode(),
                     'profile_id' => $profile->id,
@@ -91,8 +93,8 @@ final class CourseOrderService
                     'expires_at' => now()->addMinutes($expiryMinutes),
                 ]);
 
-                $paymentReturnUrl = $returnUrl ?? config('app.frontend_url')."/courses/return?order={$order->id}";
-                $cancelUrl = config('app.frontend_url')."/courses/{$course->id}";
+                $paymentReturnUrl = $returnUrl ?? config('app.frontend_url')."/khoa-hoc/{$course->id}";
+                $cancelUrl = config('app.frontend_url')."/khoa-hoc/{$course->id}";
                 $response = $gateway->createPayment($order, $paymentReturnUrl, $cancelUrl);
 
                 $order->update([

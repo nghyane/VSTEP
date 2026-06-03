@@ -89,7 +89,11 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 					queryClient.invalidateQueries({ queryKey: ["courses"] })
 					onClose()
 				}}
-				onRetry={() => enroll.mutate()}
+				onRetry={() => {
+					setErrorMessage(undefined)
+					setSignatureEmpty(true)
+					setPhase("form")
+				}}
 			/>
 		)
 	}
