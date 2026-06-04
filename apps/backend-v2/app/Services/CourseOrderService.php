@@ -94,7 +94,7 @@ final class CourseOrderService
                 ]);
 
                 $paymentReturnUrl = $returnUrl ?? config('app.frontend_url')."/khoa-hoc/{$course->id}";
-                $cancelUrl = config('app.frontend_url')."/khoa-hoc/{$course->id}";
+                $cancelUrl = config('app.frontend_url')."/khoa-hoc/{$course->id}?cancel_order={$order->id}";
                 $response = $gateway->createPayment($order, $paymentReturnUrl, $cancelUrl);
 
                 $order->update([
@@ -225,6 +225,34 @@ final class CourseOrderService
         return CourseEnrollmentOrder::query()
             ->with(['course', 'profile'])
             ->findOrFail($orderId);
+    }
+
+    public function cancelPendingOrder(Profile $profile, CourseEnrollmentOrder $order): CourseEnrollmentOrder
+    {
+        if ($order->profile_id !== $profile->id) {
+            throw ValidationException::withMessages(['order' => ['Đơn hàng không thuộc hồ sơ hiện tại.']]);
+        }
+
+        return DB::transaction(function () use ($order): CourseEnrollmentOrder {
+            $locked = CourseEnrollmentOrder::query()
+                ->whereKey($order->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($locked->status === OrderStatus::Cancelled) {
+                return $locked;
+            }
+
+            if ($locked->status !== OrderStatus::Pending) {
+                throw ValidationException::withMessages([
+                    'order' => ["Đơn hàng ở trạng thái {$locked->status->value} không thể hủy."],
+                ]);
+            }
+
+            $locked->update(['status' => OrderStatus::Cancelled]);
+
+            return $locked;
+        });
     }
 
     public function getProfileOrders(Profile $profile): Collection

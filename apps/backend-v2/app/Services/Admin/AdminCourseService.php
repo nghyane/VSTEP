@@ -19,7 +19,6 @@ use App\Services\NotificationService;
 use App\Services\WalletService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -169,8 +168,7 @@ final class AdminCourseService
 
     // ─── Delegates to AdminCourseBookingService ──
 
-    /** @return Collection<int,TeacherSlot> */
-    public function listSlots(Course $course, ?CarbonImmutable $start = null, ?CarbonImmutable $end = null): Collection
+    public function listSlots(Course $course, ?CarbonImmutable $start = null, ?CarbonImmutable $end = null): Builder
     {
         return $this->booking->listSlots($course, $start, $end);
     }

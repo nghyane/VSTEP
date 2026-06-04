@@ -26,8 +26,10 @@ interface Props {
 }
 
 export function SlotsTab({ courseId, courseStartDate, courseEndDate }: Props) {
-	const { data, isLoading } = useQuery(slotsQuery(courseId))
+	const [page, setPage] = useState(1)
+	const { data, isLoading } = useQuery(slotsQuery(courseId, page))
 	const slots = data?.data ?? []
+	const totalSlots = data?.meta.total ?? 0
 
 	const [createOpen, setCreateOpen] = useState(false)
 	const [bulkOpen, setBulkOpen] = useState(false)
@@ -57,9 +59,9 @@ export function SlotsTab({ courseId, courseStartDate, courseEndDate }: Props) {
 		<Flex vertical gap={16}>
 			<Flex justify="space-between" align="center" wrap="wrap" gap={12}>
 				<div style={{ fontSize: 14, color: "rgba(0,0,0,0.55)" }}>
-					{slots.length === 0
+					{totalSlots === 0
 						? "Chưa có slot 1-1 nào trong 4 tuần tới."
-						: `Tổng ${slots.length} slot trong khung hiển thị · ${bookedCount} đã đặt · ${openCount} trống.`}
+						: `Tổng ${totalSlots} slot · trang này ${bookedCount} đã đặt · ${openCount} trống.`}
 				</div>
 				<Space size={8}>
 					<Button variant="ghost" icon={<ThunderboltOutlined />} onClick={() => setBulkOpen(true)}>
@@ -78,7 +80,17 @@ export function SlotsTab({ courseId, courseStartDate, courseEndDate }: Props) {
 					rowKey="id"
 					loading={isLoading}
 					dataSource={slots}
-					pagination={false}
+					pagination={
+						data && data.meta.last_page > 1
+							? {
+									current: data.meta.current_page,
+									total: data.meta.total,
+									pageSize: data.meta.per_page,
+									onChange: (p) => setPage(p),
+									showSizeChanger: false,
+								}
+							: false
+					}
 					scroll={{ x: 800 }}
 					columns={[
 						{

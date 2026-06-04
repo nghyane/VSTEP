@@ -208,14 +208,17 @@ final class CourseController extends Controller
 
     // ─── Teacher slots (lịch rảnh 1-1) ─────────────────────
 
-    public function indexSlots(Request $request, string $id): AnonymousResourceCollection
+    public function indexSlots(Request $request, string $id): ResourceCollection
     {
         /** @var Course $course */
         $course = Course::query()->findOrFail($id);
+        $perPage = max(1, min((int) $request->integer('per_page', 20), 100));
         $start = $request->filled('start') ? CarbonImmutable::parse($request->string('start')->toString()) : null;
         $end = $request->filled('end') ? CarbonImmutable::parse($request->string('end')->toString()) : null;
 
-        return AdminTeacherSlotResource::collection($this->service->listSlots($course, $start, $end));
+        return AdminTeacherSlotResource::collection(
+            $this->service->listSlots($course, $start, $end)->paginate($perPage),
+        );
     }
 
     public function storeSlot(StoreSlotRequest $request, string $id): JsonResponse

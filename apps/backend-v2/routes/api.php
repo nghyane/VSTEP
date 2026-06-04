@@ -191,6 +191,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/courses/{course}', [CourseController::class, 'show']);
         Route::post('/courses/{course}/enrollment-orders', [CourseController::class, 'createEnrollmentOrder']);
         Route::get('/courses/enrollment-orders', [CourseController::class, 'enrollmentOrders']);
+        Route::post('/courses/enrollment-orders/{order}/cancel', [CourseController::class, 'cancelEnrollmentOrder'])->whereUuid('order');
         Route::get('/courses/{course}/bookings', [CourseController::class, 'bookings']);
         Route::post('/courses/{course}/bookings', [CourseController::class, 'bookSlot']);
 
@@ -253,6 +254,13 @@ Route::prefix('v1')->group(function () {
             Route::get('/streak-distribution', [Admin\AnalyticsController::class, 'streakDistribution']);
             Route::get('/promo-stats', [Admin\AnalyticsController::class, 'promoStats']);
             Route::get('/top-content', [Admin\AnalyticsController::class, 'topContent']);
+        });
+
+        Route::middleware('role:admin')->prefix('finance')->group(function () {
+            Route::get('/summary', [Admin\FinanceController::class, 'summary']);
+            Route::get('/orders', [Admin\FinanceController::class, 'orders']);
+            Route::get('/orders/{type}/{id}', [Admin\FinanceController::class, 'show'])->whereIn('type', ['topup', 'course'])->whereUuid('id');
+            Route::get('/top-products', [Admin\FinanceController::class, 'topProducts']);
         });
 
         // Exam management

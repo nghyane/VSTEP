@@ -22,7 +22,6 @@ use Carbon\CarbonImmutable;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -35,7 +34,7 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
         private readonly NotificationEmailService $email,
     ) {}
 
-    public function listSlots(Course $course, ?CarbonImmutable $start = null, ?CarbonImmutable $end = null): Collection
+    public function listSlots(Course $course, ?CarbonImmutable $start = null, ?CarbonImmutable $end = null): Builder
     {
         $query = TeacherSlot::query()
             ->where('course_id', $course->id)
@@ -49,7 +48,7 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
             $query->whereBetween('starts_at', [$start, $end]);
         }
 
-        return $query->get();
+        return $query;
     }
 
     public function createSlot(Course $course, array $data): TeacherSlot

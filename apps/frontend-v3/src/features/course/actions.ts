@@ -17,3 +17,10 @@ export async function createEnrollmentOrder(
 		.json<ApiResponse<EnrollmentOrder>>()
 	return res.data
 }
+
+export async function cancelEnrollmentOrder(orderId: string): Promise<EnrollmentOrder> {
+	const res = await api
+		.post(`courses/enrollment-orders/${orderId}/cancel`)
+		.json<ApiResponse<EnrollmentOrder>>()
+	return res.data
+}
