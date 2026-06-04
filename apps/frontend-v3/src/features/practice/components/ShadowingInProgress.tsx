@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
 import {
 	type ShadowingAttemptResult,
 	ShadowingSegmentView,
 } from "#/features/practice/components/ShadowingSegmentView"
 import { ShadowingSidebar } from "#/features/practice/components/ShadowingSidebar"
+import { TTSVoicePicker } from "#/features/practice/components/TTSVoicePicker"
 import { shadowingProgressQuery, useMarkShadowingDone } from "#/features/practice/shadowing-progress"
 import type { ShadowingLessonDetail } from "#/features/practice/types"
 import { detectProfanity } from "#/lib/profanity"
@@ -27,6 +28,8 @@ interface Props {
 }
 
 type MicState = "idle" | "listening" | "speaking" | "recording"
+const VOICE_ERROR_MESSAGE =
+	"Giọng đọc này không phát được trên trình duyệt hiện tại. Vui lòng chọn giọng khác."
 
 export function ShadowingInProgress({ lesson }: Props) {
 	const { segments } = lesson
@@ -51,6 +54,17 @@ export function ShadowingInProgress({ lesson }: Props) {
 
 	const segment = segments[current]
 	const attempt = attempts.get(current) ?? null
+	const handleVoiceChange = useCallback((nextVoice: SpeechSynthesisVoice) => {
+		stopSpeaking()
+		setMic("idle")
+		setSpeakingCharIndex(-1)
+		setVoice(nextVoice)
+	}, [])
+	const handleVoiceError = useCallback(() => {
+		setMic("idle")
+		setSpeakingCharIndex(-1)
+		useToast.getState().add(VOICE_ERROR_MESSAGE)
+	}, [])
 
 	useEffect(() => {
 		if (voice) return
@@ -76,13 +90,14 @@ export function ShadowingInProgress({ lesson }: Props) {
 				voice,
 				boundaryFallback: false,
 				onBoundary: (ci) => setSpeakingCharIndex(ci),
+				onError: handleVoiceError,
 				onEnd: () => {
 					setMic("idle")
 					setSpeakingCharIndex(-1)
 				},
 			})
 		}, 500)
-	}, [voice, segment.text])
+	}, [voice, segment.text, handleVoiceError])
 
 	const handleListen = () => {
 		if (mic === "speaking") {
@@ -103,6 +118,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 				voice,
 				boundaryFallback: false,
 				onBoundary: (ci) => setSpeakingCharIndex(ci),
+				onError: handleVoiceError,
 				onEnd: () => {
 					setMic("idle")
 					setSpeakingCharIndex(-1)
@@ -271,6 +287,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 				voice,
 				boundaryFallback: false,
 				onBoundary: (ci) => setSpeakingCharIndex(ci),
+				onError: handleVoiceError,
 				onEnd: () => {
 					setMic("idle")
 					setSpeakingCharIndex(-1)
@@ -304,6 +321,11 @@ export function ShadowingInProgress({ lesson }: Props) {
 				<span className="text-xs font-bold text-muted shrink-0">
 					{mergedDone.size}/{segments.length}
 				</span>
+				<TTSVoicePicker
+					voice={voice}
+					onVoiceChange={handleVoiceChange}
+					accentClassName="border-skill-speaking text-skill-speaking"
+				/>
 				<button
 					type="button"
 					onClick={() => setSidebarOpen((v) => !v)}

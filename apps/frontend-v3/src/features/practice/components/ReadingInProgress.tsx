@@ -5,8 +5,10 @@ import { PracticeExamShell } from "#/features/practice/components/PracticeExamSh
 import { PracticeMcqResultPanel } from "#/features/practice/components/PracticeMcqResultPanel"
 import { QuestionList } from "#/features/practice/components/QuestionList"
 import { TranslateSelection } from "#/features/practice/components/TranslateSelection"
+import { TTSVoicePicker } from "#/features/practice/components/TTSVoicePicker"
 import type { ReadingExerciseDetail } from "#/features/practice/types"
 import type { McqPracticeSession } from "#/features/practice/use-mcq-session"
+import { pickBoundaryEnglishVoice, stopSpeaking } from "#/lib/utils"
 
 interface Props {
 	detail: ReadingExerciseDetail
@@ -19,8 +21,14 @@ export function ReadingInProgress({ detail, session }: Props) {
 	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
 	const [finishRequested, setFinishRequested] = useState(false)
 	const [showCompletion, setShowCompletion] = useState(false)
+	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickBoundaryEnglishVoice())
 	const canFinish = questions.every((question) => session.answers[question.id] !== undefined)
 	const handleNext = () => setCurrentQuestionIndex((index) => (index + 1) % questions.length)
+	const handleVoiceChange = (nextVoice: SpeechSynthesisVoice) => {
+		stopSpeaking()
+		setActiveCharIndex(null)
+		setVoice(nextVoice)
+	}
 	const handleFinish = () => {
 		setFinishRequested(true)
 		session.submit()
@@ -58,6 +66,13 @@ export function ReadingInProgress({ detail, session }: Props) {
 			canFinish={canFinish}
 			finishLabel="Finish"
 			onQuestionJump={setCurrentQuestionIndex}
+			topBarContent={
+				<TTSVoicePicker
+					voice={voice}
+					onVoiceChange={handleVoiceChange}
+					accentClassName="border-skill-reading text-skill-reading"
+				/>
+			}
 			rightSidebar={
 				session.result ? <PracticeMcqResultPanel result={session.result} config={resultConfig} /> : undefined
 			}
@@ -66,7 +81,13 @@ export function ReadingInProgress({ detail, session }: Props) {
 				<div className="px-5 pt-5 pb-2 md:px-7">
 					<div className="mb-2 flex items-center justify-between gap-3">
 						<p className="text-xs font-bold uppercase tracking-[0.2em] text-skill-reading">Reading passage</p>
-						<PassageSpeechControl text={exercise.passage} onActiveCharChange={setActiveCharIndex} />
+						<PassageSpeechControl
+							text={exercise.passage}
+							onActiveCharChange={setActiveCharIndex}
+							voice={voice}
+							onVoiceChange={handleVoiceChange}
+							showVoicePicker={false}
+						/>
 					</div>
 					<h2 className="text-2xl font-extrabold text-foreground">{exercise.title}</h2>
 				</div>

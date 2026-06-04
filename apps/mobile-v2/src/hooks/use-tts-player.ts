@@ -100,6 +100,13 @@ function findWordAtChar(
   return globalStart;
 }
 
+function textFromWordOffset(text: string, wordOffset: number): string {
+  if (wordOffset <= 0) return text;
+  const positions = computeWordPositions(text);
+  const position = positions[wordOffset];
+  return position ? text.slice(position.start) : text;
+}
+
 /** Parse transcript into dialogue turns and strip speaker names from spoken text. */
 function parseDialogue(transcript: string): Turn[] {
   const rawLines = transcript
@@ -152,6 +159,8 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
   const [voices, setVoices] = useState<SpeechVoice[]>([]);
   const cancelledRef = useRef(false);
   const wordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const activeWordIndexRef = useRef(-1);
+  const activeTurnIndexRef = useRef(-1);
 
   const turns = useMemo(() => (transcript ? parseDialogue(transcript) : []), [transcript]);
   const totalWords = turns.length > 0 ? turns[turns.length - 1].globalWordEnd + 1 : 0;
@@ -188,6 +197,16 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
     }
   }, []);
 
+  const setActiveWord = useCallback((index: number) => {
+    activeWordIndexRef.current = index;
+    setActiveWordIndex(index);
+  }, []);
+
+  const setActiveTurn = useCallback((index: number) => {
+    activeTurnIndexRef.current = index;
+    setActiveTurnIndex(index);
+  }, []);
+
   const stop = useCallback(() => {
     cancelledRef.current = true;
     clearWordTimer();
@@ -197,62 +216,69 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
 
   useEffect(() => {
     stop();
-    setActiveWordIndex(-1);
-    setActiveTurnIndex(-1);
-  }, [transcript, stop]);
+    setActiveWord(-1);
+    setActiveTurn(-1);
+  }, [transcript, stop, setActiveWord, setActiveTurn]);
 
   const startWordTimer = useCallback(
-    (turn: Turn, rate: number) => {
+    (turn: Turn, rate: number, startWordOffset = 0) => {
       clearWordTimer();
       const wordCount = turn.globalWordEnd - turn.globalWordStart + 1;
-      let currentWord = 0;
-      setActiveWordIndex(turn.globalWordStart);
+      let currentWord = startWordOffset;
+      setActiveWord(turn.globalWordStart + startWordOffset);
       wordTimerRef.current = setInterval(() => {
         currentWord++;
         if (currentWord >= wordCount) {
           clearWordTimer();
           return;
         }
-        setActiveWordIndex(turn.globalWordStart + currentWord);
+        setActiveWord(turn.globalWordStart + currentWord);
       }, msPerWord(rate));
     },
-    [clearWordTimer],
+    [clearWordTimer, setActiveWord],
   );
 
   const speakTurn = useCallback(
-    (turnIdx: number) => {
-      if (turnIdx >= turns.length || cancelledRef.current) {
+    (turnIdx: number, startWordOffset = 0) => {
+      if (cancelledRef.current) {
+        setPlaying(false);
+        clearWordTimer();
+        return;
+      }
+      if (turnIdx >= turns.length) {
         setPlaying(false);
         clearWordTimer();
         if (turns.length > 0) {
-          setActiveWordIndex(turns[turns.length - 1].globalWordEnd);
-          setActiveTurnIndex(turns.length - 1);
+          setActiveWord(turns[turns.length - 1].globalWordEnd);
+          setActiveTurn(turns.length - 1);
         }
         return;
       }
 
       const turn = turns[turnIdx];
-      setActiveTurnIndex(turnIdx);
+      const safeStartWordOffset = Math.max(0, Math.min(startWordOffset, turn.globalWordEnd - turn.globalWordStart));
+      const text = textFromWordOffset(turn.text, safeStartWordOffset);
+      setActiveTurn(turnIdx);
 
-      const wordPositions = computeWordPositions(turn.text);
+      const wordPositions = computeWordPositions(text);
       const voice = speakerVoices.get(turn.speaker) ?? primaryVoice;
-      startWordTimer(turn, speed);
+      startWordTimer(turn, speed, safeStartWordOffset);
 
-      Speech.speak(turn.text, {
+      Speech.speak(text, {
         language: "en-US",
         voice: voice?.identifier,
         pitch: pitchForSpeaker(turn.speaker),
         rate: speed,
         onBoundary: (boundary: { charIndex: number; charLength: number }) => {
           if (wordTimerRef.current) clearWordTimer();
-          setActiveWordIndex(
-            findWordAtChar(boundary.charIndex, wordPositions, turn.globalWordStart),
+          setActiveWord(
+            findWordAtChar(boundary.charIndex, wordPositions, turn.globalWordStart + safeStartWordOffset),
           );
         },
         onDone: () => {
           if (cancelledRef.current) return;
           clearWordTimer();
-          setActiveWordIndex(turn.globalWordEnd);
+          setActiveWord(turn.globalWordEnd);
           const delay = turns.some((item) => item.speaker) ? 600 : 400;
           setTimeout(() => {
             if (!cancelledRef.current) speakTurn(turnIdx + 1);
@@ -270,21 +296,28 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
         },
       });
     },
-    [turns, speakerVoices, primaryVoice, speed, startWordTimer, clearWordTimer],
+    [turns, speakerVoices, primaryVoice, speed, startWordTimer, clearWordTimer, setActiveWord, setActiveTurn],
   );
 
-  const startSpeaking = useCallback(() => {
+  const startSpeaking = useCallback((resume = false) => {
     if (!transcript || turns.length === 0) return;
     cancelledRef.current = false;
     setPlaying(true);
-    setActiveWordIndex(-1);
-    setActiveTurnIndex(-1);
-    speakTurn(0);
-  }, [transcript, turns, speakTurn]);
+    if (!resume || activeWordIndexRef.current < 0 || activeWordIndexRef.current >= totalWords - 1) {
+      setActiveWord(-1);
+      setActiveTurn(-1);
+      speakTurn(0);
+      return;
+    }
+    const turnIdx = Math.max(0, activeTurnIndexRef.current);
+    const turn = turns[turnIdx];
+    const startWordOffset = turn ? Math.max(0, activeWordIndexRef.current - turn.globalWordStart) : 0;
+    speakTurn(turnIdx, startWordOffset);
+  }, [transcript, turns, totalWords, speakTurn, setActiveWord, setActiveTurn]);
 
   const toggle = useCallback(() => {
     if (playing) stop();
-    else startSpeaking();
+    else startSpeaking(true);
   }, [playing, stop, startSpeaking]);
 
   useEffect(() => {

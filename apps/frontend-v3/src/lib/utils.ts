@@ -198,11 +198,14 @@ interface SpeakOptions {
 	rate?: number
 	voice?: SpeechSynthesisVoice
 	onEnd?: () => void
+	onError?: (error: string) => void
 	onBoundary?: (charIndex: number) => void
 	boundaryFallback?: boolean
 	/** Skip synth.cancel() before speaking */
 	skipCancel?: boolean
 }
+
+const CANCELLED_SPEECH_ERRORS = new Set(["canceled", "interrupted"])
 
 function wordStartIndexes(text: string): number[] {
 	const indexes: number[] = []
@@ -265,6 +268,7 @@ function attachSpeechCleanup(
 	synth: SpeechSynthesis,
 	onBoundaryCleanup: () => void,
 	onEnd: (() => void) | undefined,
+	onError: ((error: string) => void) | undefined,
 ) {
 	const keepAlive = setInterval(() => {
 		if (!synth.speaking) {
@@ -282,9 +286,13 @@ function attachSpeechCleanup(
 		cleanup()
 		onEnd?.()
 	}
-	u.onerror = () => {
+	u.onerror = (event) => {
 		cleanup()
-		onEnd?.()
+		if (CANCELLED_SPEECH_ERRORS.has(event.error)) {
+			onEnd?.()
+			return
+		}
+		onError?.(event.error)
 	}
 }
 
@@ -308,6 +316,7 @@ export function warmupTTS() {
 
 export function speak(text: string, opts: SpeakOptions = {}) {
 	if (!window.speechSynthesis) {
+		opts.onError?.("unsupported")
 		opts.onEnd?.()
 		return
 	}
@@ -328,7 +337,7 @@ export function speak(text: string, opts: SpeakOptions = {}) {
 			opts.onBoundary,
 			opts.boundaryFallback ?? true,
 		)
-		attachSpeechCleanup(u, synth, boundaryCleanup, opts.onEnd)
+		attachSpeechCleanup(u, synth, boundaryCleanup, opts.onEnd, opts.onError)
 		synth.speak(u)
 	}
 

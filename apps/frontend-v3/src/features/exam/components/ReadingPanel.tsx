@@ -3,7 +3,8 @@ import { ScrollArea } from "#/components/ScrollArea"
 import { HighlightablePassage, PassageSpeechControl } from "#/features/exam/components/HighlightablePassage"
 import { MCQQuestion } from "#/features/exam/components/MCQQuestion"
 import type { ExamVersionReadingPassage } from "#/features/exam/types"
-import { cn } from "#/lib/utils"
+import { TTSVoicePicker } from "#/features/practice/components/TTSVoicePicker"
+import { cn, pickBoundaryEnglishVoice, stopSpeaking } from "#/lib/utils"
 
 interface FooterAction {
 	skillLabel: string
@@ -26,6 +27,7 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 
 	const [activeIdx, setActiveIdx] = useState(0)
 	const [activeCharIndex, setActiveCharIndex] = useState<number | null>(null)
+	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickBoundaryEnglishVoice())
 
 	const activePassage = sorted[activeIdx]
 
@@ -50,6 +52,11 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 		setActiveCharIndex(null)
 		setActiveIdx(index)
 	}, [])
+	const handleVoiceChange = useCallback((nextVoice: SpeechSynthesisVoice) => {
+		stopSpeaking()
+		setActiveCharIndex(null)
+		setVoice(nextVoice)
+	}, [])
 
 	const handleJump = useCallback((itemIndex: number) => {
 		document
@@ -63,6 +70,13 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
+			<div className="flex shrink-0 justify-end border-b border-border bg-surface px-5 py-3">
+				<TTSVoicePicker
+					voice={voice}
+					onVoiceChange={handleVoiceChange}
+					accentClassName="border-skill-reading text-skill-reading"
+				/>
+			</div>
 			{/* Split layout: passage left | questions right */}
 			<div className="flex flex-1 overflow-hidden">
 				{/* Passage */}
@@ -79,6 +93,9 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 								key={activePassage.id}
 								text={activePassage.passage}
 								onActiveCharChange={setActiveCharIndex}
+								voice={voice}
+								onVoiceChange={handleVoiceChange}
+								showVoicePicker={false}
 							/>
 						</div>
 						<h2 className="text-base font-bold text-foreground">{activePassage.title}</h2>
