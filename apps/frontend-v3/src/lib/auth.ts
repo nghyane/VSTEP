@@ -1,5 +1,6 @@
 import { HTTPError } from "ky"
 import { create } from "zustand"
+import { useWelcomeGift } from "#/features/onboarding/use-welcome-gift"
 import { type ApiResponse, api } from "#/lib/api"
 import { queryClient } from "#/lib/query-client"
 import { useToast } from "#/lib/toast"
@@ -76,6 +77,30 @@ type AuthState =
  * RoleRejectedDialog mount ở __root.tsx).
  */
 const LEARNER_ROLE = "learner"
+
+const PROFILE_SCOPED_QUERY_PREFIXES = new Set([
+	"activity-heatmap",
+	"assessment-attempts",
+	"booking",
+	"conversation-review",
+	"courses",
+	"exams",
+	"exam-sessions",
+	"grammar",
+	"learning-path",
+	"notifications",
+	"overview",
+	"practice",
+	"shadowing-pronunciation-review",
+	"streak",
+	"vocab",
+	"wallet",
+])
+
+function isProfileScopedQuery(queryKey: readonly unknown[]): boolean {
+	const prefix = queryKey[0]
+	return typeof prefix === "string" && PROFILE_SCOPED_QUERY_PREFIXES.has(prefix)
+}
 
 export interface LoginResult {
 	needsOnboarding: boolean
@@ -237,6 +262,7 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 
 	async switchProfile(profileId) {
 		try {
+			await queryClient.cancelQueries({ predicate: (query) => isProfileScopedQuery(query.queryKey) })
 			const refreshToken = tokens.getRefresh()
 			if (!refreshToken) throw new Error("No refresh token")
 			const { data } = await api
@@ -250,6 +276,8 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			if (state.status === "authenticated") {
 				set({ status: "authenticated", user: state.user, profile: data.profile })
 			}
+			queryClient.removeQueries({ predicate: (query) => isProfileScopedQuery(query.queryKey) })
+			queryClient.invalidateQueries({ predicate: (query) => isProfileScopedQuery(query.queryKey) })
 			useToast.getState().add("Đã chuyển hồ sơ", "success")
 		} catch (e) {
 			showError(e)

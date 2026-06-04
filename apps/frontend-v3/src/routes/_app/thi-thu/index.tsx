@@ -5,27 +5,36 @@ import { Header } from "#/components/Header"
 import { Icon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
 import { SegmentedTabs } from "#/components/SegmentedTabs"
-import { ExamCard, type ExamCardState } from "#/features/exam/components/ExamCard"
-import { appConfigQuery, examsQuery, mySessionsQuery } from "#/features/exam/queries"
-import type { SkillKey } from "#/features/exam/types"
-import { avgSkillScores, normalizeVi } from "#/lib/utils"
+import { ExamCard } from "#/features/exam/components/ExamCard"
+import { appConfigQuery, examsQuery } from "#/features/exam/queries"
 
-type StatusFilter = "all" | "not-started" | "in-progress" | "submitted"
+type StatusFilter = "all" | "not_started" | "in_progress" | "submitted"
+type SortOption = "newest" | "popular"
+type ExamSearch = { q?: string; status?: Exclude<StatusFilter, "all">; sort?: SortOption; page?: number }
+
+const EXAM_PAGE_SIZE = 12
+
+function toSearch(next: ExamSearch): ExamSearch {
+	const s: ExamSearch = {}
+	if (next.q) s.q = next.q
+	if (next.status) s.status = next.status
+	if (next.sort && next.sort !== "newest") s.sort = next.sort
+	if (next.page && next.page > 1) s.page = next.page
+	return s
+}
 
 export const Route = createFileRoute("/_app/thi-thu/")({
-	validateSearch: (s: Record<string, unknown>): { q?: string; status?: StatusFilter } => {
-		const out: { q?: string; status?: StatusFilter } = {}
+	validateSearch: (s: Record<string, unknown>): ExamSearch => {
+		const out: ExamSearch = {}
 		if (typeof s.q === "string" && s.q.length > 0) out.q = s.q
-		if (s.status === "not-started" || s.status === "in-progress" || s.status === "submitted")
+		if (s.status === "not_started" || s.status === "in_progress" || s.status === "submitted")
 			out.status = s.status
+		if (s.sort === "newest" || s.sort === "popular") out.sort = s.sort
+		const page = typeof s.page === "string" ? Number(s.page) : s.page
+		if (typeof page === "number" && Number.isInteger(page) && page > 1) out.page = page
 		return out
 	},
-	loader: ({ context: { queryClient } }) =>
-		Promise.all([
-			queryClient.ensureQueryData(examsQuery),
-			queryClient.ensureQueryData(appConfigQuery),
-			queryClient.ensureQueryData(mySessionsQuery),
-		]),
+	loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(appConfigQuery),
 	component: ThiThuPage,
 })
 
@@ -44,9 +53,14 @@ function ThiThuPage() {
 
 const STATUS_TABS: { value: StatusFilter; label: string }[] = [
 	{ value: "all", label: "Tất cả" },
-	{ value: "not-started", label: "Chưa làm" },
-	{ value: "in-progress", label: "Đang làm dở" },
+	{ value: "not_started", label: "Chưa làm" },
+	{ value: "in_progress", label: "Đang làm dở" },
 	{ value: "submitted", label: "Đã nộp" },
+]
+
+const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+	{ value: "newest", label: "Mới nhất" },
+	{ value: "popular", label: "Phổ biến" },
 ]
 
 function EmptyExams({
@@ -97,14 +111,19 @@ function EmptyExams({
 }
 
 function ExamListContent() {
-	const { q, status } = Route.useSearch()
+	const { q, status, sort, page } = Route.useSearch()
 	const navigate = useNavigate({ from: "/thi-thu" })
 
-	const { data: examsData } = useSuspenseQuery(examsQuery)
+	const currentStatus = status ?? "all"
+	const currentSort = sort ?? "newest"
+	const currentPage = page ?? 1
+	const { data: examsData } = useSuspenseQuery(
+		examsQuery({ q, status, sort: currentSort, page: currentPage, per_page: EXAM_PAGE_SIZE }),
+	)
 	const { data: configData } = useSuspenseQuery(appConfigQuery)
-	const { data: mySessionsData } = useSuspenseQuery(mySessionsQuery)
 
 	const exams = examsData.data
+	const pagination = examsData.meta
 	const fullTestCoinCost = configData.data.pricing.exam.full_test_cost_coins
 
 	// Local input value (type mượt), debounced commit to URL
@@ -118,109 +137,56 @@ function ExamListContent() {
 				navigate({
 					search: () => {
 						const nextQ = next.length > 0 ? next : undefined
-						const s: { q?: string; status?: StatusFilter } = {}
-						if (nextQ) s.q = nextQ
-						if (status) s.status = status
-						return s as never
+						return toSearch({ q: nextQ, status, sort: currentSort }) as never
 					},
 					replace: true,
 				})
 			}, 250)
 		},
-		[navigate, status],
+		[navigate, status, currentSort],
 	)
 	// Sync URL → local when external change (e.g. reset)
 	useEffect(() => {
-		if (q !== undefined && q !== localQ) setLocalQ(q)
+		const nextQ = q ?? ""
+		if (nextQ !== localQ) setLocalQ(nextQ)
 	}, [q, localQ])
 
 	function clearQ() {
 		commitQ("")
 	}
 
-	const currentStatus = status ?? "all"
 	const setStatus = (next: StatusFilter) => {
 		navigate({
 			search: () => {
-				const s: { q?: string; status?: StatusFilter } = {}
-				if (q) s.q = q
-				if (next !== "all") s.status = next
-				return s as never
+				return toSearch({
+					q,
+					status: next === "all" ? undefined : next,
+					sort: currentSort,
+				}) as never
 			},
 			replace: true,
 		})
 	}
 
-	const cardStateByExamId = useMemo(() => {
-		const map = new Map<string, ExamCardState>()
-		const sessions = mySessionsData.data
-		const now = Date.now()
-		const terminal = sessions.filter(
-			(s) =>
-				s.exam_id && (s.status === "submitted" || s.status === "graded" || s.status === "auto_submitted"),
-		)
+	const setSort = (next: SortOption) => {
+		navigate({
+			search: () => toSearch({ q, status, sort: next }) as never,
+			replace: true,
+		})
+	}
 
-		// Group terminal sessions by exam_id, sorted newest first
-		const terminalByExam = new Map<
-			string,
-			Array<{ id: string; submittedAt: string | null; scores: Record<SkillKey, number | null> | null }>
-		>()
-		for (const s of terminal) {
-			if (!s.exam_id) continue
-			const eid = s.exam_id
-			const group = terminalByExam.get(eid) ?? []
-			group.push({ id: s.id, submittedAt: s.submitted_at, scores: s.scores })
-			terminalByExam.set(eid, group)
-		}
+	const handleSortChange = (value: string) => {
+		if (value === "newest" || value === "popular") setSort(value)
+	}
 
-		for (const s of sessions) {
-			if (!s.exam_id) continue
-
-			// Active session (not expired) — highest priority
-			if (s.status === "active" && new Date(s.server_deadline_at).getTime() > now) {
-				if (!map.has(s.exam_id)) {
-					map.set(s.exam_id, {
-						status: "in-progress",
-						sessionId: s.id,
-						selectedSkills: s.selected_skills,
-					})
-				}
-				continue
-			}
-
-			// Terminal — only set if no active
-			if (!map.has(s.exam_id) && terminalByExam.has(s.exam_id)) {
-				const group = terminalByExam.get(s.exam_id)
-				if (!group) continue
-				group.sort((a, b) => new Date(b.submittedAt ?? 0).getTime() - new Date(a.submittedAt ?? 0).getTime())
-				map.set(s.exam_id, {
-					status: "submitted",
-					latestScore: avgSkillScores(group[0].scores),
-					sessionCount: group.length,
-				})
-			}
-		}
-		return map
-	}, [mySessionsData])
-
-	const filtered = useMemo(
-		() =>
-			exams.filter((e) => {
-				if (q) {
-					const needle = normalizeVi(q)
-					if (!normalizeVi(e.title).includes(needle)) return false
-				}
-				if (currentStatus !== "all") {
-					const s = cardStateByExamId.get(e.id)?.status ?? "not-started"
-					if (s !== currentStatus) return false
-				}
-				return true
-			}),
-		[exams, q, currentStatus, cardStateByExamId],
-	)
+	const setPage = (next: number) => {
+		navigate({
+			search: () => toSearch({ q, status, sort: currentSort, page: next }) as never,
+		})
+	}
 
 	function pickEmptyVariant(): "no-data" | "no-match" | "no-submitted" {
-		if (exams.length === 0) return "no-data"
+		if (pagination.total === 0 && !q && currentStatus === "all") return "no-data"
 		if (currentStatus === "submitted" && !(q !== undefined && q.length > 0)) return "no-submitted"
 		return "no-match"
 	}
@@ -230,28 +196,12 @@ function ExamListContent() {
 		navigate({ search: () => ({}) as never, replace: true })
 	}
 
-	// Count per tab
-	const tabCounts = useMemo(() => {
-		const c: Record<StatusFilter, number> = {
-			all: exams.length,
-			"not-started": 0,
-			"in-progress": 0,
-			submitted: 0,
-		}
-		for (const e of exams) {
-			const kind = cardStateByExamId.get(e.id)?.status ?? "not-started"
-			c[kind]++
-		}
-		return c
-	}, [exams, cardStateByExamId])
-	const tabItems = STATUS_TABS.map((t) => ({ ...t, count: tabCounts[t.value] }))
-
 	return (
 		<div className="space-y-8">
 			{/* Toolbar */}
 			<div className="flex flex-wrap items-center gap-3">
 				{/* Search */}
-				<div className="relative w-full sm:w-56">
+				<div className="relative w-full sm:w-72">
 					<Icon
 						name="search"
 						size="xs"
@@ -279,25 +229,63 @@ function ExamListContent() {
 				{/* Divider */}
 				<div className="w-px h-6 bg-border hidden sm:block" />
 
-				<SegmentedTabs items={tabItems} value={currentStatus} onChange={setStatus} />
+				<SegmentedTabs items={STATUS_TABS} value={currentStatus} onChange={setStatus} />
+
+				<div className="ml-auto relative hidden sm:block">
+					<select
+						value={currentSort}
+						onChange={(e) => handleSortChange(e.target.value)}
+						aria-label="Sắp xếp đề thi"
+						className="h-10 appearance-none rounded-(--radius-button) border-2 border-border bg-surface pl-3 pr-8 text-sm font-bold text-muted outline-none transition-colors hover:border-border-focus focus:border-border-focus"
+					>
+						{SORT_OPTIONS.map((option) => (
+							<option key={option.value} value={option.value}>
+								{option.label}
+							</option>
+						))}
+					</select>
+					<Icon
+						name="chevron-down"
+						size="xs"
+						className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-subtle"
+					/>
+				</div>
 			</div>
 
-			{/* Count */}
-			<p className="text-sm text-subtle">{filtered.length} đề thi</p>
-
 			{/* Grid */}
-			{filtered.length === 0 ? (
+			{exams.length === 0 ? (
 				<EmptyExams variant={pickEmptyVariant()} onReset={resetFilters} />
 			) : (
-				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-					{filtered.map((exam) => (
-						<ExamCard
-							key={exam.id}
-							exam={exam}
-							coinCost={fullTestCoinCost}
-							state={cardStateByExamId.get(exam.id) ?? { status: "not-started" }}
-						/>
-					))}
+				<div className="space-y-6">
+					<div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+						{exams.map((exam) => (
+							<ExamCard key={exam.id} exam={exam} coinCost={fullTestCoinCost} />
+						))}
+					</div>
+
+					{pagination.last_page > 1 && (
+						<div className="flex items-center justify-center gap-4 pt-2">
+							<button
+								type="button"
+								disabled={pagination.current_page <= 1}
+								onClick={() => setPage(pagination.current_page - 1)}
+								className="btn btn-secondary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+							>
+								Trước
+							</button>
+							<span className="text-sm font-bold text-subtle">
+								{pagination.current_page} / {pagination.last_page}
+							</span>
+							<button
+								type="button"
+								disabled={pagination.current_page >= pagination.last_page}
+								onClick={() => setPage(pagination.current_page + 1)}
+								className="btn btn-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+							>
+								Tiếp
+							</button>
+						</div>
+					)}
 				</div>
 			)}
 		</div>

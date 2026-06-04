@@ -18,17 +18,26 @@ export async function translateText(
 ): Promise<string> {
   if (!text.trim()) return text;
   try {
-    const url = `${TRANSLATE_URL}?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
-    const res = await fetch(url);
-    if (!res.ok) return text;
-    const data: unknown = await res.json();
-    if (!Array.isArray(data)) return text;
-    const segments = data[0];
-    if (!Array.isArray(segments)) return text;
-    return segments
-      .map((seg) => (Array.isArray(seg) ? (seg as RawSegment)[0] ?? "" : ""))
-      .join("");
+    return await translateTextStrict(text, from, to);
   } catch {
     return text;
   }
+}
+
+export async function translateTextStrict(
+  text: string,
+  from = "en",
+  to = "vi",
+): Promise<string> {
+  if (!text.trim()) return text;
+  const url = `${TRANSLATE_URL}?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Translate failed: ${res.status}`);
+  const data: unknown = await res.json();
+  if (!Array.isArray(data)) throw new Error("Translate response is not an array");
+  const segments = data[0];
+  if (!Array.isArray(segments)) throw new Error("Translate response has no segments");
+  return segments
+    .map((seg) => (Array.isArray(seg) ? (seg as RawSegment)[0] ?? "" : ""))
+    .join("");
 }

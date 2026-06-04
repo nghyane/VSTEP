@@ -26,6 +26,43 @@ import type { McqQuestion } from "@/hooks/use-practice";
 
 const COLOR = "#7850C8";
 
+function normalizeForCompare(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function cleanPassageTranslation(value: string, title: string): string {
+  const titleKey = normalizeForCompare(title);
+  const blocks = value.split(/\n{2,}/).map((block) => block.trim()).filter(Boolean);
+  const candidates = blocks.length > 1 ? blocks : value.split(/\n+/).map((block) => block.trim()).filter(Boolean);
+
+  if (candidates.length >= 2) {
+    const firstKey = normalizeForCompare(candidates[0]);
+    const lastKey = normalizeForCompare(candidates[candidates.length - 1]);
+    if (firstKey && firstKey === lastKey && candidates[0].length <= 140) {
+      candidates.shift();
+      candidates.pop();
+    }
+  }
+
+  return candidates
+    .filter((block) => normalizeForCompare(block) !== titleKey)
+    .join("\n\n");
+}
+
+function isUsablePassageTranslation(value: string, title: string, passage: string): boolean {
+  const cleaned = cleanPassageTranslation(value, title);
+  if (!cleaned) return false;
+  if (normalizeForCompare(cleaned) === normalizeForCompare(title)) return false;
+
+  const passageWords = passage.match(/\S+/g)?.length ?? 0;
+  const translatedWords = cleaned.match(/\S+/g)?.length ?? 0;
+  return translatedWords >= Math.max(12, Math.floor(passageWords * 0.25));
+}
+
 export default function ReadingExerciseScreen() {
   const { exerciseId } = useLocalSearchParams<{ exerciseId: string }>();
   const { data: detail, isLoading } = useReadingExerciseDetail(exerciseId ?? "");
@@ -123,15 +160,15 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
     }
     setWordTapMode(true);
     const existingTranslation = exercise.vietnameseTranslation?.trim();
-    if (existingTranslation) {
-      setTranslation(existingTranslation);
+    if (existingTranslation && isUsablePassageTranslation(existingTranslation, exercise.title, exercise.passage)) {
+      setTranslation(cleanPassageTranslation(existingTranslation, exercise.title));
       return;
     }
     if (translationLoading) return;
     setTranslationLoading(true);
     setTranslationError(false);
     translateText(exercise.passage, "en", "vi")
-      .then((res) => setTranslation(res ?? ""))
+      .then((res) => setTranslation(cleanPassageTranslation(res ?? "", exercise.title)))
       .catch(() => setTranslationError(true))
       .finally(() => setTranslationLoading(false));
   }
@@ -182,6 +219,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
                 </HapticTouchable>
               </View>
             </View>
+            <Text style={[s.sectionLabel, { color: c.subtle }]}>Tiếng Anh</Text>
             <PassageWordView
               passage={exercise.passage}
               wordTapMode={wordTapMode}
@@ -190,7 +228,7 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
             />
             {translation ? (
               <View style={[s.translationBlock, { borderLeftColor: COLOR + "66" }]}>
-                <Text style={[s.translationLabel, { color: COLOR }]}>Dịch</Text>
+                <Text style={[s.translationLabel, { color: COLOR }]}>Tiếng Việt</Text>
                 <Text style={[s.translationText, { color: c.mutedForeground }]}>{translation}</Text>
               </View>
             ) : translationError ? (
@@ -253,9 +291,10 @@ const s = StyleSheet.create({
   toggleText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   panelScroll: { paddingHorizontal: spacing.xl, paddingTop: spacing.md, gap: spacing.md },
   passageCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
-  passageHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  passageTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
-  passageActions: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  passageHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm },
+  passageTitle: { flex: 1, minWidth: 0, fontSize: fontSize.base, fontFamily: fontFamily.bold, lineHeight: 22 },
+  passageActions: { flexDirection: "row", alignItems: "center", gap: spacing.xs, flexShrink: 0 },
+  sectionLabel: { fontSize: 10, fontFamily: fontFamily.extraBold, textTransform: "uppercase", letterSpacing: 1, marginTop: spacing.xs },
   wtapToggle: { padding: spacing.xs },
   wtapBtn: {
     fontSize: 10,

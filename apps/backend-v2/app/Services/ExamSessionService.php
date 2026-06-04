@@ -18,7 +18,6 @@ use App\Models\ExamVersion;
 use App\Models\ExamWritingSubmission;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -35,17 +34,6 @@ final class ExamSessionService
         private readonly EconomyConfigService $economyConfig,
         private readonly AudioStorageService $audioStorage,
     ) {}
-
-    /** @return Collection<int,Exam> */
-    public function listPublished(): Collection
-    {
-        return Exam::query()
-            ->where('is_published', true)
-            ->whereHas('versions', fn ($q) => $q->where('is_active', true))
-            ->withCount(['sessions as attempts_count' => fn ($q) => $q->whereIn('status', ExamSessionStatus::countableValues())])
-            ->orderBy('created_at', 'desc')
-            ->get();
-    }
 
     public function getExamWithActiveVersion(string $examId): array
     {

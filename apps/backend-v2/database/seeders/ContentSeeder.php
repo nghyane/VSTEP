@@ -139,12 +139,14 @@ class ContentSeeder extends Seeder
         $errors = [];
         foreach ($versions as $version) {
             $vid = $version['id'];
+            $versionSections = collect($sectionsByVersion->get($vid, []));
+            $versionPassages = collect($passagesByVersion->get($vid, []));
 
             $versionErrors = $validator->validateFixtureData(
-                collect($sectionsByVersion->get($vid, [])),
-                $itemsBySection,
-                collect($passagesByVersion->get($vid, [])),
-                $itemsByPassage,
+                $versionSections,
+                $itemsBySection->only($versionSections->pluck('id')->all()),
+                $versionPassages,
+                $itemsByPassage->only($versionPassages->pluck('id')->all()),
                 collect($writingByVersion->get($vid, [])),
                 collect($speakingByVersion->get($vid, [])),
             );

@@ -20,6 +20,8 @@ final class DatabaseSeeder extends Seeder
             GrammarPatternSeeder::class,
             CefrVocabularySeeder::class,
             ContentSeeder::class,
+            ReferenceExamSeeder::class,
+            ReferencePracticeContentSeeder::class,
             LegacyCurriculumContentSeeder::class,
             VocabCurriculumSeeder::class,
             GrammarCurriculumSeeder::class,

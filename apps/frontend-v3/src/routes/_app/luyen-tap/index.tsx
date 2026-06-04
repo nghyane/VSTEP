@@ -56,7 +56,7 @@ function PracticeGoalSummary() {
 		<div className="space-y-2">
 			<div className="flex flex-wrap items-center gap-2">
 				<span className="rounded-full border-2 border-border bg-surface px-3 py-1.5 text-sm font-extrabold text-foreground">
-					Mục tiêu: {target_level}
+					Mục tiêu: {target_level} = {requiredBand.toFixed(1)} điểm
 				</span>
 				<span className="rounded-full bg-surface px-3 py-1.5 text-sm font-bold text-subtle">
 					Hiện tại: {current_level}

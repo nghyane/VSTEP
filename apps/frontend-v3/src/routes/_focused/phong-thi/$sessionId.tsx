@@ -1,33 +1,16 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
-import { Icon } from "#/components/Icon"
-import { ScrollArea } from "#/components/ScrollArea"
 import { DeviceCheckScreen } from "#/features/exam/components/DeviceCheckScreen"
 import { ExamRoomHeader } from "#/features/exam/components/ExamRoomHeader"
-import { LacCoinMascot } from "#/features/exam/components/LacCoinMascot"
 import { ListeningPanel } from "#/features/exam/components/ListeningPanel"
 import { ReadingPanel } from "#/features/exam/components/ReadingPanel"
-import { ResultBackground } from "#/features/exam/components/ResultBackground"
 import { SpeakingPanel } from "#/features/exam/components/SpeakingPanel"
+import { SubmittedExamRoom } from "#/features/exam/components/SubmittedExamRoom"
 import { WritingPanel } from "#/features/exam/components/WritingPanel"
-import {
-	examDetailQuery,
-	examDraftQuery,
-	examSessionQuery,
-	sessionResultsQuery,
-} from "#/features/exam/queries"
-import type {
-	Exam,
-	ExamDraft,
-	ExamSessionData,
-	ExamVersion,
-	SkillKey,
-	SpeakingFeedbackItem,
-	SubmitSessionResult,
-	WritingFeedbackItem,
-} from "#/features/exam/types"
+import { examDetailQuery, examDraftQuery, examSessionQuery } from "#/features/exam/queries"
+import type { Exam, ExamDraft, ExamSessionData, ExamVersion, SkillKey } from "#/features/exam/types"
 import { useExamSession, useExamTimer } from "#/features/exam/use-exam-session"
 import { cn } from "#/lib/utils"
 
@@ -60,441 +43,31 @@ const SKILL_COLOR: Record<SkillKey, string> = {
 	speaking: "text-skill-speaking",
 }
 
-// ─── Result screen (shown after submit) ──────────────────────────────────────
-
-interface PerfRow {
-	label: string
-	total: number
-	correct: number
-	wrong: number
-	accuracyPct: number
-	pending?: boolean
-	/** AI band 0–10 (writing/speaking) — chỉ set khi đã graded */
-	band?: number
-}
-
-function buildPerfRows(
-	version: ExamVersion,
-	activeSkills: SkillKey[],
-	items: SubmitSessionResult["mcq"]["items"],
-	writingFeedback: WritingFeedbackItem[] = [],
-	speakingFeedback: SpeakingFeedbackItem[] = [],
-): PerfRow[] {
-	const correctByItemId = new Map<string, boolean>()
-	for (const it of items) correctByItemId.set(it.item_ref_id, it.is_correct)
-
-	const rows: PerfRow[] = []
-
-	if (activeSkills.includes("listening")) {
-		// Gộp section cùng `part` (VSTEP Part 1 = 8 announcements × 1 item, vụn vặt nếu hiển thị riêng).
-		const byPart = new Map<number, typeof version.listening_sections>()
-		for (const sec of version.listening_sections) {
-			const arr = byPart.get(sec.part) ?? []
-			arr.push(sec)
-			byPart.set(sec.part, arr)
-		}
-		const partsAsc = [...byPart.entries()].sort((a, b) => a[0] - b[0])
-		for (const [part, secs] of partsAsc) {
-			const allItems = secs.flatMap((s) => s.items)
-			const total = allItems.length
-			const correct = allItems.reduce((n, it) => n + (correctByItemId.get(it.id) ? 1 : 0), 0)
-			rows.push({
-				label: `Nghe · Part ${part}`,
-				total,
-				correct,
-				wrong: total - correct,
-				accuracyPct: total > 0 ? Math.round((correct / total) * 100) : 0,
-			})
-		}
-	}
-	if (activeSkills.includes("reading")) {
-		const sorted = [...version.reading_passages].sort(
-			(a, b) => a.part - b.part || a.display_order - b.display_order,
-		)
-		for (const p of sorted) {
-			const total = p.items.length
-			const correct = p.items.reduce((n, it) => n + (correctByItemId.get(it.id) ? 1 : 0), 0)
-			rows.push({
-				label: `Đọc · ${p.title}`,
-				total,
-				correct,
-				wrong: total - correct,
-				accuracyPct: total > 0 ? Math.round((correct / total) * 100) : 0,
-			})
-		}
-	}
-	if (activeSkills.includes("writing")) {
-		const n = version.writing_tasks.length
-		const graded = writingFeedback.filter((w) => w.overall_band !== null)
-		const allGraded = writingFeedback.length > 0 && graded.length === writingFeedback.length
-		const avg = allGraded
-			? graded.reduce((sum, w) => sum + (w.overall_band ?? 0), 0) / graded.length
-			: undefined
-		rows.push({
-			label: `Viết · ${n} bài`,
-			total: n,
-			correct: 0,
-			wrong: 0,
-			accuracyPct: avg !== undefined ? Math.round((avg / 10) * 100) : 0,
-			pending: !allGraded,
-			band: avg,
-		})
-	}
-	if (activeSkills.includes("speaking")) {
-		const n = version.speaking_parts.length
-		const graded = speakingFeedback.filter((s) => s.overall_band !== null)
-		const allGraded = speakingFeedback.length > 0 && graded.length === speakingFeedback.length
-		const avg = allGraded
-			? graded.reduce((sum, s) => sum + (s.overall_band ?? 0), 0) / graded.length
-			: undefined
-		rows.push({
-			label: `Nói · ${n} phần`,
-			total: n,
-			correct: 0,
-			wrong: 0,
-			accuracyPct: avg !== undefined ? Math.round((avg / 10) * 100) : 0,
-			pending: !allGraded,
-			band: avg,
-		})
-	}
-	return rows
-}
-
-function ResultScreen({
-	result,
-	examTitle,
-	examId,
-	sessionId,
-	version,
-	activeSkills,
-	writingFeedback,
-	speakingFeedback,
-}: {
-	result: SubmitSessionResult
-	examTitle: string
-	examId: string
-	sessionId: string
-	version: ExamVersion
-	activeSkills: SkillKey[]
-	writingFeedback?: WritingFeedbackItem[]
-	speakingFeedback?: SpeakingFeedbackItem[]
-}) {
-	const { score: mcqScore, total: mcqTotal } = result.mcq
-	const scoreOn10 = mcqTotal > 0 ? (mcqScore / mcqTotal) * 10 : 0
-	const rows = useMemo(
-		() => buildPerfRows(version, activeSkills, result.mcq.items, writingFeedback, speakingFeedback),
-		[version, activeSkills, result.mcq.items, writingFeedback, speakingFeedback],
-	)
-	const hasPending = rows.some((r) => r.pending)
-
-	return (
-		<div className="relative flex min-h-screen flex-col items-center overflow-hidden">
-			<ResultBackground />
-
-			{/* Top-right "Hoàn thành" pill — gamified */}
-			<div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6">
-				<Link
-					to="/thi-thu"
-					className="group inline-flex items-center gap-2.5 rounded-full border-2 border-b-4 border-white/50 bg-white/25 py-2 pl-2 pr-5 text-base font-extrabold text-white shadow-lg backdrop-blur-md transition-all hover:-translate-y-0.5 hover:bg-white/35 active:translate-y-0 active:border-b-2"
-				>
-					<span className="flex size-7 items-center justify-center rounded-full border-2 border-b-[3px] border-coin-dark bg-coin shadow-inner transition-transform group-hover:rotate-12">
-						<Icon name="check" size="xs" className="text-white" />
-					</span>
-					Hoàn thành
-				</Link>
-			</div>
-
-			<div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center px-4 py-10">
-				<h1 className="mb-5 text-xl font-extrabold text-white drop-shadow-sm">Kết quả</h1>
-
-				<div className="w-full max-w-3xl overflow-hidden rounded-(--radius-banner) border-2 border-b-4 border-white/20 bg-white shadow-2xl">
-					{/* Top: mascot + congrats */}
-					<div className="flex items-center gap-5 px-8 py-6">
-						<LacCoinMascot score={scoreOn10} className="w-40 shrink-0 sm:w-52" />
-
-						<div className="min-w-0 flex-1">
-							<p className="text-sm text-subtle">Chúc mừng!</p>
-							<p className="mt-0.5 text-2xl font-extrabold text-foreground sm:text-3xl">Thí sinh</p>
-							<p className="mt-1 text-sm text-muted">
-								đã hoàn thành bài kiểm tra <span className="font-bold text-foreground">{examTitle}</span>
-							</p>
-
-							<div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1.5">
-								<ScorePill value={mcqScore} total={mcqTotal} label="Số câu đúng" variant="success" />
-								<ScorePill
-									value={mcqTotal - mcqScore}
-									total={mcqTotal}
-									label="Câu trả lời sai"
-									variant="danger"
-								/>
-							</div>
-						</div>
-					</div>
-
-					<div className="mx-6 h-px bg-border" />
-
-					{/* Performance table */}
-					<div className="px-6 py-5">
-						<p className="mb-4 text-base font-extrabold text-foreground">Performance</p>
-						<ScrollArea
-							className="rounded-(--radius-card) border-2 border-b-4 border-border"
-							maxHeight={320}
-							thumbClassName="w-1.5 bg-placeholder/70 hover:bg-subtle"
-						>
-							<PerformanceTable rows={rows} />
-						</ScrollArea>
-						{hasPending && (
-							<div className="mt-3 inline-flex items-center gap-2 rounded-full border-2 border-warning/40 bg-warning/10 px-3 py-1.5">
-								<span className="relative flex size-1.5 shrink-0">
-									<span className="absolute inline-flex size-full animate-ping rounded-full bg-warning opacity-60" />
-									<span className="relative inline-flex size-1.5 rounded-full bg-warning" />
-								</span>
-								<span className="text-[11px] font-extrabold text-foreground">
-									AI đang chấm — bạn có thể quay về sảnh, kết quả sẽ tự cập nhật
-								</span>
-							</div>
-						)}
-					</div>
-
-					<div className="flex flex-wrap justify-center gap-3 px-6 pb-7">
-						<Link to="/thi-thu" className="btn btn-secondary">
-							Về danh sách đề
-						</Link>
-						{(mcqTotal > 0 ||
-							(writingFeedback && writingFeedback.length > 0) ||
-							(speakingFeedback && speakingFeedback.length > 0)) && (
-							<Link
-								to="/phong-thi/$sessionId/chi-tiet"
-								params={{ sessionId }}
-								search={{ examId }}
-								className="btn btn-primary"
-							>
-								Xem chi tiết
-								<Icon name="lightning" size="xs" className="text-white" />
-							</Link>
-						)}
-					</div>
-				</div>
-			</div>
-		</div>
-	)
-}
-
-function ScorePill({
-	value,
-	total,
-	label,
-	variant,
-}: {
-	value: number
-	total: number
-	label: string
-	variant: "success" | "danger"
-}) {
-	const isSuccess = variant === "success"
-	return (
-		<div className="inline-flex items-baseline gap-2">
-			<div
-				className={cn(
-					"inline-flex items-center rounded-(--radius-button) border-2 border-b-4 px-3 py-1",
-					isSuccess ? "border-primary/30 bg-primary-tint" : "border-destructive/30 bg-destructive-tint",
-				)}
-			>
-				<span
-					className={cn(
-						"text-lg font-extrabold tabular-nums leading-none",
-						isSuccess ? "text-primary" : "text-destructive",
-					)}
-				>
-					{value}/{total}
-				</span>
-			</div>
-			<span className="text-xs text-muted">{label}</span>
-		</div>
-	)
-}
-
-function PerformanceTable({ rows }: { rows: PerfRow[] }) {
-	return (
-		<div className="overflow-x-auto">
-			<table className="w-full text-sm">
-				<thead>
-					<tr className="sticky top-0 z-10 border-b-2 border-border bg-background">
-						<th className="px-4 py-3 text-left text-xs font-extrabold uppercase tracking-wide text-subtle">
-							Loại câu hỏi
-						</th>
-						<th className="px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-subtle">
-							Tổng
-						</th>
-						<th className="px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-subtle">
-							Đúng
-						</th>
-						<th className="px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-subtle">
-							Sai
-						</th>
-						<th className="px-4 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-subtle">
-							Tỷ lệ
-						</th>
-					</tr>
-				</thead>
-				<tbody>
-					{rows.map((row, idx) => (
-						<tr
-							key={row.label}
-							className={cn(
-								"border-b border-border-light last:border-0",
-								idx % 2 === 1 && "bg-background/40",
-							)}
-						>
-							<td className="px-4 py-3 font-medium text-foreground">{row.label}</td>
-							<td className="px-4 py-3 text-center tabular-nums text-muted">{row.total}</td>
-							<td className="px-4 py-3 text-center tabular-nums">
-								{row.pending ? (
-									<span className="text-subtle">—</span>
-								) : (
-									<span className={cn("font-bold", row.correct > 0 ? "text-primary" : "text-subtle")}>
-										{row.correct}
-									</span>
-								)}
-							</td>
-							<td className="px-4 py-3 text-center tabular-nums">
-								{row.pending ? (
-									<span className="text-subtle">—</span>
-								) : (
-									<span className={row.wrong > 0 ? "text-destructive" : "text-subtle"}>{row.wrong}</span>
-								)}
-							</td>
-							<td className="px-4 py-3 text-center">
-								{row.pending ? (
-									<PendingBadge />
-								) : row.band !== undefined ? (
-									<BandBadge band={row.band} />
-								) : (
-									<AccuracyBadge pct={row.accuracyPct} />
-								)}
-							</td>
-						</tr>
-					))}
-				</tbody>
-			</table>
-		</div>
-	)
-}
-
-function BandBadge({ band }: { band: number }) {
-	const tone =
-		band >= 7
-			? "border-primary/30 bg-primary-tint text-primary"
-			: band >= 5
-				? "border-warning/30 bg-warning-tint text-warning"
-				: "border-destructive/30 bg-destructive-tint text-destructive"
-	return (
-		<span
-			className={cn(
-				"inline-flex items-center justify-center rounded-full border-2 border-b-4 px-2.5 py-0.5 text-xs font-extrabold tabular-nums",
-				tone,
-			)}
-		>
-			Band {band.toFixed(1)}
-		</span>
-	)
-}
-
-function AccuracyBadge({ pct }: { pct: number }) {
-	const tone =
-		pct >= 70
-			? "border-primary/30 bg-primary-tint text-primary"
-			: pct >= 40
-				? "border-warning/30 bg-warning-tint text-warning"
-				: "border-destructive/30 bg-destructive-tint text-destructive"
-	return (
-		<span
-			className={cn(
-				"inline-flex items-center justify-center rounded-full border-2 border-b-4 px-2.5 py-0.5 text-xs font-extrabold tabular-nums",
-				tone,
-			)}
-		>
-			{pct}%
-		</span>
-	)
-}
-
-function PendingBadge() {
-	return (
-		<span className="inline-flex items-center gap-1.5 rounded-full border-2 border-b-4 border-warning/30 bg-warning-tint px-2.5 py-0.5 text-xs font-extrabold text-warning">
-			<span className="relative flex size-1.5">
-				<span className="absolute inline-flex size-full animate-ping rounded-full bg-warning opacity-60" />
-				<span className="relative inline-flex size-1.5 rounded-full bg-warning" />
-			</span>
-			AI đang chấm
-		</span>
-	)
-}
-
-// ─── Submitted session view (re-render result from server) ───────────────────
-
-function SubmittedResultView({
-	sessionId,
-	exam,
-	version,
-	session,
-}: {
-	sessionId: string
-	exam: Exam
-	version: ExamVersion
-	session: ExamSessionData
-}) {
-	const { data: resultsRes } = useSuspenseQuery(sessionResultsQuery(sessionId))
-	const mcqDetail = resultsRes.data.mcq_detail
-	const { score, total } = resultsRes.data.mcq
-
-	const result: SubmitSessionResult = {
-		session_id: sessionId,
-		status: session.status,
-		submitted_at: session.submitted_at ?? "",
-		mcq: {
-			score,
-			total,
-			items: mcqDetail.map((d) => ({
-				item_ref_type: d.item_ref_type,
-				item_ref_id: d.item_ref_id,
-				selected_index: d.selected_index ?? -1,
-				correct_index: d.correct_index,
-				is_correct: d.is_correct,
-			})),
-		},
-		writing_jobs: [],
-		speaking_jobs: [],
-	}
-
-	return (
-		<ResultScreen
-			result={result}
-			examTitle={exam.title}
-			examId={exam.id}
-			sessionId={sessionId}
-			version={version}
-			activeSkills={session.selected_skills}
-			writingFeedback={resultsRes.data.writing_feedback}
-			speakingFeedback={resultsRes.data.speaking_feedback}
-		/>
-	)
-}
-
 // ─── Inner exam room (data loaded) ───────────────────────────────────────────
 
 function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) {
 	const { data: sessionRes } = useSuspenseQuery(examSessionQuery(sessionId))
-	const { data: examRes } = useSuspenseQuery(examDetailQuery(examId))
-	const { data: draftRes } = useSuspenseQuery(examDraftQuery(sessionId))
-
 	const session = sessionRes.data
-	const { version, exam } = examRes.data
-	const initialDraft = draftRes.data
 
 	if (session.status !== "active") {
-		return <SubmittedResultView sessionId={sessionId} exam={exam} version={version} session={session} />
+		return <SubmittedExamRoom sessionId={sessionId} examId={examId} />
 	}
+
+	return <ActiveExamRoomLoader sessionId={sessionId} examId={examId} session={session} />
+}
+
+function ActiveExamRoomLoader({
+	sessionId,
+	examId,
+	session,
+}: {
+	sessionId: string
+	examId: string
+	session: ExamSessionData
+}) {
+	const { data: examRes } = useSuspenseQuery(examDetailQuery(examId))
+	const { data: draftRes } = useSuspenseQuery(examDraftQuery(sessionId))
+	const { version, exam } = examRes.data
 
 	return (
 		<ActiveExamRoom
@@ -502,7 +75,7 @@ function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) 
 			session={session}
 			exam={exam}
 			version={version}
-			initialDraft={initialDraft}
+			initialDraft={draftRes.data}
 		/>
 	)
 }
@@ -521,15 +94,10 @@ function ActiveExamRoom({
 	initialDraft: ExamDraft | null
 }) {
 	const navigate = useNavigate()
-	const [submitResult, setSubmitResult] = useState<SubmitSessionResult | null>(null)
 	const [confirmExit, setConfirmExit] = useState(false)
 
 	const listeningItems = version.listening_sections.flatMap((s) => s.items)
 	const readingItems = version.reading_passages.flatMap((p) => p.items)
-
-	const handleSubmitted = (result: SubmitSessionResult) => {
-		setSubmitResult(result)
-	}
 
 	const remainingSeconds = useExamTimer(session.server_deadline_at)
 
@@ -554,6 +122,7 @@ function ActiveExamRoom({
 		handleShowConfirmSubmit,
 		handleHideConfirmSubmit,
 		handleSubmit,
+		isSubmitted,
 	} = useExamSession({
 		session,
 		listeningItems,
@@ -561,7 +130,6 @@ function ActiveExamRoom({
 		writingTasks: version.writing_tasks,
 		initialDraft,
 		remainingSeconds,
-		onSubmitted: handleSubmitted,
 	})
 
 	const skillDurationMinutes = useMemo<Record<SkillKey, number>>(
@@ -579,14 +147,14 @@ function ActiveExamRoom({
 
 	// Cảnh báo khi user cố đóng tab / refresh / bấm back browser trong lúc làm bài.
 	useEffect(() => {
-		if (state.phase !== "active" || submitResult) return
+		if (state.phase !== "active") return
 		const handler = (e: BeforeUnloadEvent) => {
 			e.preventDefault()
 			e.returnValue = ""
 		}
 		window.addEventListener("beforeunload", handler)
 		return () => window.removeEventListener("beforeunload", handler)
-	}, [state.phase, submitResult])
+	}, [state.phase])
 
 	// Only the CURRENT (last) skill is actionable at submit time — other skills are locked
 	const currentSkillPending: { count: number; unit: string } | null = (() => {
@@ -622,30 +190,8 @@ function ActiveExamRoom({
 			? `Còn ${currentSkillPending.count} ${currentSkillPending.unit} chưa làm ở phần ${SKILL_LABEL[currentSkill]}`
 			: undefined
 
-	if (submitResult) {
-		// Đi qua SubmittedResultView để dùng sessionResultsQuery (poll mỗi 5s tới khi
-		// AI chấm xong Writing/Speaking). Nếu chỉ render từ submitResult local thì pending mãi.
-		return (
-			<Suspense
-				fallback={
-					<ResultScreen
-						result={submitResult}
-						examTitle={exam.title}
-						examId={exam.id}
-						sessionId={session.id}
-						version={version}
-						activeSkills={activeSkills}
-					/>
-				}
-			>
-				<SubmittedResultView
-					sessionId={session.id}
-					exam={exam}
-					version={version}
-					session={{ ...session, status: "submitted" }}
-				/>
-			</Suspense>
-		)
+	if (isSubmitted) {
+		return <SubmittedExamRoom sessionId={session.id} examId={exam.id} />
 	}
 
 	// Hết giờ — hiện overlay thông báo đang nộp bài tự động

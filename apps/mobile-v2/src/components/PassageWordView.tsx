@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator, Modal, Pressable, StyleSheet,
   Text, TouchableOpacity, View,
@@ -31,36 +31,7 @@ export function PassageWordView({ passage, wordTapMode, accentColor, c }: Props)
   const [meaning, setMeaning] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Paragraph-level translation (cached, triggers when wordTapMode ON)
-  const [paraTr, setParaTr] = useState<Record<number, string>>({});
-  const [trLoading, setTrLoading] = useState(false);
-  const trDoneRef = useRef(false);
-
   const paragraphs = passage.split(/\n\n+/);
-
-  useEffect(() => {
-    if (!wordTapMode || trDoneRef.current) return;
-    trDoneRef.current = true;
-
-    const doTranslate = async () => {
-      setTrLoading(true);
-      try {
-        const results = await Promise.all(
-          paragraphs.map((para) =>
-            translateText(para, "en", "vi").catch(() => para)
-          )
-        );
-        const map: Record<number, string> = {};
-        results.forEach((res, i) => {
-          if (res && res !== paragraphs[i]) map[i] = res;
-        });
-        setParaTr(map);
-      } finally {
-        setTrLoading(false);
-      }
-    };
-    doTranslate();
-  }, [wordTapMode, paragraphs]);
 
   const handleWordTap = useCallback(async (word: string) => {
     if (!wordTapMode) return;
@@ -105,19 +76,8 @@ export function PassageWordView({ passage, wordTapMode, accentColor, c }: Props)
 
   return (
     <View style={s.container}>
-      {/* Global translating indicator */}
-      {trLoading && (
-        <View style={s.trLoadingRow}>
-          <ActivityIndicator size="small" color={accentColor} />
-          <Text style={[s.trLoadingText, { color: c.mutedForeground }]}>
-            Đang dịch...
-          </Text>
-        </View>
-      )}
-
       {paragraphs.map((para, pi) => {
         const tokens = tokenize(para);
-        const translation = paraTr[pi];
         return (
           <View key={pi}>
             <Text style={[s.paragraph, { color: c.foreground }]}>
@@ -143,14 +103,6 @@ export function PassageWordView({ passage, wordTapMode, accentColor, c }: Props)
                 );
               })}
             </Text>
-            {wordTapMode && translation && (
-              <View style={[s.transBlock, { borderLeftColor: accentColor + "60" }]}>
-                <Text style={[s.transLabel, { color: accentColor }]}>Dịch</Text>
-                <Text style={[s.transText, { color: c.mutedForeground }]}>
-                  {translation}
-                </Text>
-              </View>
-            )}
           </View>
         );
       })}
@@ -220,35 +172,6 @@ const s = StyleSheet.create({
   },
   nonWord: {
     fontFamily: fontFamily.medium,
-  },
-  trLoadingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-  },
-  trLoadingText: {
-    fontSize: fontSize.xs,
-    fontFamily: fontFamily.medium,
-    fontStyle: "italic",
-  },
-  transBlock: {
-    marginTop: spacing.sm,
-    paddingLeft: spacing.md,
-    borderLeftWidth: 2,
-    gap: 2,
-  },
-  transLabel: {
-    fontSize: 10,
-    fontFamily: fontFamily.extraBold,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-  },
-  transText: {
-    fontSize: fontSize.xs,
-    fontFamily: fontFamily.medium,
-    fontStyle: "italic",
-    lineHeight: 20,
   },
   overlay: {
     flex: 1,

@@ -38,8 +38,12 @@ use App\Services\Ai\LlmPronunciationAnalyzer;
 use App\Services\Ai\LlmSpeakingFeedbackGenerator;
 use App\Services\Ai\LlmTaskFulfillmentAssessor;
 use App\Services\Ai\LlmWritingFeedbackGenerator;
+use App\Services\Contracts\ExamCatalogInterface;
+use App\Services\Contracts\ExamSessionResultInterface;
 use App\Services\Contracts\LearningPathInterface;
 use App\Services\ConversationServiceInterface;
+use App\Services\ExamCatalogService;
+use App\Services\ExamSessionResultService;
 use App\Services\Grading\RubricResolver;
 use App\Services\Grading\SpeakingScoringFormula;
 use App\Services\Grading\WritingScoringFormula;
@@ -107,6 +111,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ConversationServiceInterface::class, SpeakingConversationService::class);
 
         $this->app->bind(LearningPathInterface::class, LearningPathService::class);
+
+        $this->app->bind(ExamCatalogInterface::class, ExamCatalogService::class);
+
+        $this->app->bind(ExamSessionResultInterface::class, ExamSessionResultService::class);
 
         $this->app->bind(AssessmentRubricResolver::class, DatabaseRubricResolver::class);
         $this->app->scoped(AssessmentManager::class, fn ($app) => new AssessmentManager($app, $app->make(RubricResolver::class), [
