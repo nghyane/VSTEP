@@ -1,8 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import clsx from "clsx"
 import type { ReactNode } from "react"
-import { useState } from "react"
-import { COIN_SPEND_FX_MS, CoinSpendFly } from "#/components/CoinSpendFly"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
 import { StaticIcon } from "#/components/Icon"
 import { FeedbackSection, RewriteSection } from "#/features/grading/components/FeedbackSection"
@@ -369,11 +367,8 @@ function AIFeedbackLoading() {
 }
 
 function AIFeedbackButton({ action, hasFeedback }: { action: WritingFeedbackAction; hasFeedback: boolean }) {
-	const [spendFxKey, setSpendFxKey] = useState(0)
-	const [spendAnimating, setSpendAnimating] = useState(false)
 	if (!action.canRequest) return null
-	const disabled = action.pending || spendAnimating
-	const shouldShowSpendFx = !hasFeedback && !action.requested && action.cost > 0
+	const disabled = action.pending
 	const label = action.pending
 		? "Đang xử lý..."
 		: hasFeedback
@@ -382,21 +377,10 @@ function AIFeedbackButton({ action, hasFeedback }: { action: WritingFeedbackActi
 				? "Tải nhận xét AI"
 				: "Nhận xét từ AI"
 	const handleClick = () => {
-		if (spendAnimating) return
 		if (hasFeedback) {
 			document.getElementById("ai-writing-feedback")?.scrollIntoView({ behavior: "smooth", block: "start" })
 			return
 		}
-		if (shouldShowSpendFx) {
-			setSpendAnimating(true)
-			setSpendFxKey((key) => key + 1)
-			window.setTimeout(() => {
-				setSpendAnimating(false)
-				action.onRequest()
-			}, COIN_SPEND_FX_MS)
-			return
-		}
-
 		if (!hasFeedback) action.onRequest()
 	}
 
@@ -415,7 +399,6 @@ function AIFeedbackButton({ action, hasFeedback }: { action: WritingFeedbackActi
 					)}
 				</p>
 				<div className="relative inline-flex self-start sm:self-auto">
-					{spendFxKey > 0 && shouldShowSpendFx && <CoinSpendFly key={spendFxKey} cost={action.cost} />}
 					<button
 						type="button"
 						onClick={handleClick}

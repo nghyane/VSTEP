@@ -536,7 +536,7 @@ final class DemoProgressSeeder extends Seeder
                 'content_type' => 'practice_reading_exercise',
                 'content_id' => $exercise->id,
                 'rating' => 5,
-                'comment' => 'Bài đọc rất sát với đề thi VSTEP thật. Phần giải thích rõ ràng, dễ hiểu!',
+                'comment' => null,
             ]);
         }
 
@@ -550,7 +550,7 @@ final class DemoProgressSeeder extends Seeder
                 'content_type' => 'practice_listening_exercise',
                 'content_id' => $exercise2->id,
                 'rating' => 4,
-                'comment' => 'Audio chất lượng tốt, nhưng tốc độ hơi nhanh. Nên có thêm phần tua lại.',
+                'comment' => null,
             ]);
         }
     }

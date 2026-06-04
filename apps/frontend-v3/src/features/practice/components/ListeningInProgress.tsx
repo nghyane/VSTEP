@@ -29,8 +29,10 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 	const hasTTS = !hasAudio && !!exercise.transcript
 	const tts = useTTSPlayer(hasTTS ? exercise.transcript : null)
 	const hasSub = !!exercise.transcript || exercise.word_timestamps.length > 0
-	const canFinish = questions.every((question) => session.answers[question.id] !== undefined)
-	const handleNext = () => setCurrentQuestionIndex((index) => (index + 1) % questions.length)
+	const canFinish =
+		questions.length > 0 && questions.every((question) => session.answers[question.id] !== undefined)
+	const handleNext = () =>
+		setCurrentQuestionIndex((index) => (questions.length > 0 ? (index + 1) % questions.length : 0))
 	const handleFinish = () => {
 		setFinishRequested(true)
 		session.submit()
@@ -41,7 +43,7 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 			onClick={() => setShowSub((v) => !v)}
 			className="btn btn-secondary min-h-10 w-40 px-4 py-2 text-sm text-muted"
 		>
-			{showSub ? "Ẩn transcript" : "Hiện transcript"}
+			{showSub ? "Ẩn lời thoại" : "Hiện lời thoại"}
 		</button>
 	) : null
 	const topBarContent = (

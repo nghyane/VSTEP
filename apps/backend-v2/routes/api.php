@@ -210,6 +210,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/action-items', [Admin\DashboardController::class, 'actionItems']);
         Route::get('/content-status', [Admin\DashboardController::class, 'contentStatus']);
         Route::get('/recent-activity', [Admin\DashboardController::class, 'recentActivity']);
+        Route::get('/feedback', [Admin\FeedbackController::class, 'index']);
 
         // Audio upload (presigned PUT to R2) — staff only.
         Route::post('/audio/presign-upload', [Admin\AudioUploadController::class, 'presignUpload']);

@@ -10,6 +10,11 @@ interface RefreshTokenResponse {
 	user: unknown
 }
 
+interface ApiErrorBody {
+	message?: string
+	errors?: Record<string, string[]>
+}
+
 let refreshPromise: Promise<RefreshTokenResponse> | null = null
 
 function clearAuthAndRedirect() {
@@ -45,12 +50,30 @@ async function refreshSession(refreshToken: string): Promise<RefreshTokenRespons
  * Components read `error.message` for display.
  * Components needing field-level validation errors read `error.data.errors`.
  */
-function normalizeErrorMessage({ error }: { error: Error }): Error {
+function isApiErrorBody(value: unknown): value is ApiErrorBody {
+	return typeof value === "object" && value !== null
+}
+
+async function readHttpErrorBody(error: HTTPError): Promise<ApiErrorBody | null> {
+	const cached = (error as { data?: unknown }).data
+	if (isApiErrorBody(cached)) return cached
+	if (error.response.bodyUsed) return null
+
+	try {
+		const parsed = (await error.response.clone().json()) as unknown
+		return isApiErrorBody(parsed) ? parsed : null
+	} catch {
+		return null
+	}
+}
+
+async function normalizeErrorMessage({ error }: { error: Error }): Promise<Error> {
 	if (error instanceof HTTPError) {
-		const body = error.data as { message?: string } | undefined
+		const body = await readHttpErrorBody(error)
 		if (body?.message) {
 			error.message = body.message
 		}
+		if (body) Object.assign(error, { data: body })
 	}
 	return error
 }

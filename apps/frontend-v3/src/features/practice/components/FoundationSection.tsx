@@ -41,7 +41,7 @@ export function FoundationSection() {
 						<SkillIcon name="vocabulary" size="md" className="shrink-0" />
 						<div className="flex-1 min-w-0">
 							<h4 className="font-bold text-lg text-foreground">Từ vựng</h4>
-							<p className="text-sm text-subtle mt-0.5">Flashcard SRS · 30 chủ đề theo level</p>
+							<p className="text-sm text-subtle mt-0.5">Flashcard SRS theo chủ đề và level</p>
 						</div>
 					</div>
 				</Link>
@@ -51,7 +51,7 @@ export function FoundationSection() {
 						<SkillIcon name="grammar" size="md" className="shrink-0" />
 						<div className="flex-1 min-w-0">
 							<h4 className="font-bold text-lg text-foreground">Ngữ pháp</h4>
-							<p className="text-sm text-subtle mt-0.5">38 điểm ngữ pháp · 3 cấp độ</p>
+							<p className="text-sm text-subtle mt-0.5">Điểm ngữ pháp theo cấp độ và kỹ năng</p>
 						</div>
 					</div>
 				</Link>

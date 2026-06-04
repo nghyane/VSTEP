@@ -100,7 +100,12 @@ export function ReadingForm({ initial, onSubmit, onCancel, submitting }: Props) 
 						</FormField>
 					</Col>
 					<Col span={8}>
-						<FormField label="Thời lượng (phút)" htmlFor="minutes" required error={errors.estimated_minutes}>
+						<FormField
+							label="~ Thời lượng ước tính (phút)"
+							htmlFor="minutes"
+							required
+							error={errors.estimated_minutes}
+						>
 							<Input
 								id="minutes"
 								type="number"

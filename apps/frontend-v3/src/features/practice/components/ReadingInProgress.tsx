@@ -22,8 +22,10 @@ export function ReadingInProgress({ detail, session }: Props) {
 	const [finishRequested, setFinishRequested] = useState(false)
 	const [showCompletion, setShowCompletion] = useState(false)
 	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickBoundaryEnglishVoice())
-	const canFinish = questions.every((question) => session.answers[question.id] !== undefined)
-	const handleNext = () => setCurrentQuestionIndex((index) => (index + 1) % questions.length)
+	const canFinish =
+		questions.length > 0 && questions.every((question) => session.answers[question.id] !== undefined)
+	const handleNext = () =>
+		setCurrentQuestionIndex((index) => (questions.length > 0 ? (index + 1) % questions.length : 0))
 	const handleVoiceChange = (nextVoice: SpeechSynthesisVoice) => {
 		stopSpeaking()
 		setActiveCharIndex(null)

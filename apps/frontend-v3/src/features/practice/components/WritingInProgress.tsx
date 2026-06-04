@@ -97,6 +97,7 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 						diagnostics,
 						loading: diagnosticsLoading,
 						error: diagnosticsQuery.isError,
+						errorMessage: diagnosticsQuery.error instanceof Error ? diagnosticsQuery.error.message : null,
 					}}
 				/>
 			</div>
@@ -326,10 +327,11 @@ interface RealtimePanelState {
 	diagnostics: WritingRealtimeDiagnostics | undefined
 	loading: boolean
 	error: boolean
+	errorMessage: string | null
 }
 
 function WritingRealtimeHeader({ prompt, state }: RealtimePanelProps) {
-	const { diagnostics, loading, error } = state
+	const { diagnostics, loading, error, errorMessage } = state
 	const [showLanguageDetails, setShowLanguageDetails] = useState(false)
 	const taskCoverage = diagnostics?.diagnostics.task_coverage
 	const format = diagnostics?.diagnostics.format
@@ -349,7 +351,7 @@ function WritingRealtimeHeader({ prompt, state }: RealtimePanelProps) {
 	const missingRequirement = taskCoverage?.requirements.find((requirement) => requirement.met === false)
 	const firstReadinessReason = diagnostics?.readiness.reasons[0]?.message
 	const statusText = error
-		? "Chưa tải được kiểm tra."
+		? (errorMessage ?? "Chưa tải được kiểm tra.")
 		: !languageErrorsAvailable
 			? "Tạm thời chưa kiểm tra lỗi ngôn ngữ."
 			: loading

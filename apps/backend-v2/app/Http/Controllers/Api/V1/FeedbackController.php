@@ -7,17 +7,19 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Feedback\StoreFeedbackRequest;
 use App\Models\ExerciseFeedback;
+use App\Services\ExerciseFeedbackService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 final class FeedbackController extends Controller
 {
+    public function __construct(
+        private readonly ExerciseFeedbackService $service,
+    ) {}
+
     public function store(StoreFeedbackRequest $request): JsonResponse
     {
-        $feedback = ExerciseFeedback::create([
-            'profile_id' => $request->profile()->id,
-            ...$request->validated(),
-        ]);
+        $feedback = $this->service->store($request->profile()->id, $request->validated());
 
         return response()->json(['data' => $feedback], 201);
     }

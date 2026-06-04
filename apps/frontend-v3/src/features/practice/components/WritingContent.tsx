@@ -52,7 +52,7 @@ export function WritingContent() {
 										key={p.id}
 										title={p.title}
 										description={null}
-										meta={`${p.min_words}–${p.max_words} từ${p.estimated_minutes ? ` · ${p.estimated_minutes} phút` : ""}`}
+										meta={`${p.min_words}–${p.max_words} từ${p.estimated_minutes ? ` · ~${p.estimated_minutes} phút` : ""}`}
 										overlay={
 											<Link
 												to="/writing/$promptId"

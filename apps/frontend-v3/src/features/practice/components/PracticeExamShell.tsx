@@ -114,7 +114,7 @@ export function PracticeExamShell({
 						<DefaultActions
 							onSubmit={onSubmit}
 							submitting={submitting}
-							disabled={!!result || answeredCount < questions.length}
+							disabled={!!result || questions.length === 0}
 							primaryActionClassName={primaryActionClassName}
 							currentQuestionIndex={currentQuestionIndex}
 							onPrevious={onPrevious}
@@ -169,7 +169,9 @@ function DefaultActions({
 			<button
 				type="button"
 				onClick={action}
-				disabled={showFinish ? !(action && canFinish && !disabled && !submitting) : !action}
+				disabled={
+					showFinish ? !(action && canFinish && !disabled && !submitting) : !action || disabled || submitting
+				}
 				className={cn(
 					"btn min-h-12 text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50",
 					primaryActionClassName,
