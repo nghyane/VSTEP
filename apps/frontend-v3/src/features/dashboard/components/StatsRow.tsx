@@ -60,7 +60,7 @@ function SkillCard({ skill, stat, targetBand }: { skill: Skill; stat: SkillStat;
 				<span className="text-sm text-subtle font-normal"> / 10</span>
 			</p>
 			<p className={`text-xs font-bold ${gap.tone}`}>{gap.text}</p>
-			<p className="text-[11px] text-subtle">Mục tiêu: {targetBand.toFixed(1)}</p>
+			<p className="text-[11px] text-subtle">Mục tiêu: ≥ {targetBand.toFixed(1)}</p>
 		</div>
 	)
 }

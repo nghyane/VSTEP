@@ -138,7 +138,7 @@ export function ScoreTrend() {
 					fontWeight="700"
 					fill="var(--color-destructive)"
 				>
-					{overview.data.profile.target_level} = {target}
+					{overview.data.profile.target_level} ≥ {target}
 				</text>
 
 				<polyline

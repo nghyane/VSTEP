@@ -4,18 +4,13 @@ import { Header } from "#/components/Header"
 import { FoundationSection } from "#/features/practice/components/FoundationSection"
 import { SkillsSection } from "#/features/practice/components/SkillsSection"
 import { learningPathQuery } from "#/features/practice/queries"
+import { getTargetBand } from "#/lib/vstep"
 
 const EXAM_SKILL_LABELS: Record<string, string> = {
 	listening: "Listening",
 	reading: "Reading",
 	writing: "Writing",
 	speaking: "Speaking",
-}
-
-function targetBand(targetLevel: string): number {
-	if (targetLevel === "C1") return 8.5
-	if (targetLevel === "B2") return 6.0
-	return 4.0
 }
 
 export const Route = createFileRoute("/_app/luyen-tap/")({
@@ -40,7 +35,7 @@ function PracticeGoalSummary() {
 	if (!data) return null
 
 	const { current_level, target_level, days_remaining, skills } = data.data
-	const requiredBand = targetBand(target_level)
+	const requiredBand = getTargetBand(target_level)
 	const scoredSkills = skills
 		.filter((skill) => skill.band !== null && skill.skill in EXAM_SKILL_LABELS)
 		.sort((a, b) => (a.band ?? 0) - (b.band ?? 0))
@@ -49,14 +44,14 @@ function PracticeGoalSummary() {
 		scoredSkills.length === 0
 			? "Làm thi thử để hệ thống phân tích kỹ năng."
 			: prioritySkill
-				? `Ưu tiên hiện tại: ${EXAM_SKILL_LABELS[prioritySkill.skill]} ${prioritySkill.band?.toFixed(1)}/${requiredBand.toFixed(1)}`
+				? `Ưu tiên hiện tại: ${EXAM_SKILL_LABELS[prioritySkill.skill]} ${prioritySkill.band?.toFixed(1)}, cần ≥ ${requiredBand.toFixed(1)}`
 				: "Các kỹ năng đã đạt mục tiêu. Tiếp tục duy trì."
 
 	return (
 		<div className="space-y-2">
 			<div className="flex flex-wrap items-center gap-2">
 				<span className="rounded-full border-2 border-border bg-surface px-3 py-1.5 text-sm font-extrabold text-foreground">
-					Mục tiêu: {target_level} = {requiredBand.toFixed(1)} điểm
+					Mục tiêu: {target_level} ≥ {requiredBand.toFixed(1)} điểm
 				</span>
 				<span className="rounded-full bg-surface px-3 py-1.5 text-sm font-bold text-subtle">
 					Hiện tại: {current_level}
