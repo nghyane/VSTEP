@@ -35,6 +35,25 @@ export interface SubmitResult {
   items: { questionId: string; isCorrect: boolean; correctIndex: number; explanation: string }[];
 }
 
+export type ExerciseFeedbackContentType = "practice_listening_exercise" | "practice_reading_exercise";
+
+export interface ExerciseFeedbackPayload {
+  contentType: ExerciseFeedbackContentType;
+  contentId: string;
+  rating: number;
+  comment?: string;
+}
+
+export interface ExerciseFeedback {
+  id: string;
+  contentType: ExerciseFeedbackContentType;
+  contentId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ReadingExercise {
   id: string; slug: string; title: string;
   description: string | null; part: number;
@@ -625,6 +644,10 @@ export async function submitReadingSession(
   answers: { question_id: string; selected_index: number }[],
 ) {
   return api.post<SubmitResult>(`/api/v1/practice/reading/sessions/${sessionId}/submit`, { answers });
+}
+
+export async function submitExerciseFeedback(payload: ExerciseFeedbackPayload) {
+  return api.post<ExerciseFeedback>("/api/v1/feedback", payload);
 }
 
 export async function startWritingSession(promptId: string) {

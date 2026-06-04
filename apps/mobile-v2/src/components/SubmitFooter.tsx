@@ -23,7 +23,8 @@ export function SubmitFooter({
   onSubmit,
   c,
 }: SubmitFooterProps) {
-  const canSubmit = answeredCount >= total;
+  const hasQuestions = total > 0;
+  const canSubmit = hasQuestions && answeredCount >= total;
   const missingCount = Math.max(0, total - answeredCount);
 
   return (
@@ -68,6 +69,8 @@ export function SubmitFooter({
 
       {submitError ? (
         <Text style={[s.hint, { color: c.destructive }]}>Không thể nộp bài: {submitError}</Text>
+      ) : !hasQuestions ? (
+        <Text style={[s.hint, { color: c.mutedForeground }]}>Bài luyện này chưa có câu hỏi.</Text>
       ) : !canSubmit ? (
         <Text style={[s.hint, { color: c.mutedForeground }]}>Trả lời thêm {missingCount} câu để nộp bài.</Text>
       ) : null}
