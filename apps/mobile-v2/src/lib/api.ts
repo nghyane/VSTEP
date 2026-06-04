@@ -303,6 +303,19 @@ export async function googleLoginApi(idToken: string) {
   return api.post<import("@/types/api").GoogleLoginResponse>("/api/v1/auth/google", { idToken });
 }
 
+export async function requestPasswordResetApi(email: string) {
+  return api.post<{ success: boolean }>("/api/v1/auth/forgot-password", { email });
+}
+
+export async function resetPasswordApi(input: {
+  email: string;
+  token: string;
+  password: string;
+  passwordConfirmation: string;
+}) {
+  return api.post<{ success: boolean }>("/api/v1/auth/reset-password", input);
+}
+
 export async function completeOnboardingApi(nickname: string, targetLevel: string, targetDeadline: string) {
   return api.post<{
     accessToken: string;

@@ -50,19 +50,9 @@ export default function WritingListScreen() {
         <Text style={[s.backText, { color: c.foreground }]}>Luyện tập</Text>
       </HapticTouchable>
 
-      <View style={s.headerRow}>
-        <View>
-          <Text style={[s.title, { color: c.foreground }]}>Luyện viết</Text>
-          <Text style={[s.sub, { color: c.mutedForeground }]}>Thư + luận · AI chấm theo rubric Bộ GD</Text>
-        </View>
-        <View style={[s.historyBtn, { borderColor: c.border }]}>
-          <HapticTouchable
-            scalePress
-            onPress={() => router.push("/(app)/practice/writing/history" as never)}
-          >
-            <Ionicons name="time-outline" size={18} color={c.primary} />
-          </HapticTouchable>
-        </View>
+      <View>
+        <Text style={[s.title, { color: c.foreground }]}>Luyện viết</Text>
+        <Text style={[s.sub, { color: c.mutedForeground }]}>Thư + luận · AI chấm theo rubric Bộ GD</Text>
       </View>
 
       {isLoading && (
@@ -134,10 +124,8 @@ const s = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.xl, gap: spacing.lg, paddingBottom: spacing["3xl"] },
   backRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   backText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   sub: { fontSize: fontSize.sm, marginTop: spacing.xs },
-  historyBtn: { borderWidth: 2, borderRadius: radius.full, padding: spacing.sm, marginTop: spacing.sm },
   center: { paddingVertical: spacing["2xl"], alignItems: "center" },
   partLabel: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, marginBottom: 2 },
   partDesc: { fontSize: fontSize.xs, marginBottom: spacing.md },

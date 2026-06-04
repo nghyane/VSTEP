@@ -13,7 +13,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Audio } from "expo-av";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
@@ -295,7 +294,6 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
             fullWidth
             disabled={submitMutation.isPending}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               submitMutation.mutate();
             }}
             style={{ backgroundColor: COLOR, borderColor: COLOR }}

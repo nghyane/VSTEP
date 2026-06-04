@@ -17,7 +17,6 @@ import { useMutation } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
@@ -383,7 +382,6 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
             fullWidth
             disabled={submitMutation.isPending}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               submitMutation.mutate();
             }}
             style={{ backgroundColor: COLOR, borderColor: COLOR }}

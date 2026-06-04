@@ -240,7 +240,13 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPw}
+                keyboardType="default"
+                autoCapitalize="none"
+                autoCorrect={false}
+                spellCheck={false}
                 autoComplete="password"
+                textContentType="password"
+                importantForAutofill="yes"
               />
               <TouchableOpacity onPress={() => setShowPw(!showPw)}>
                 <Ionicons
@@ -258,6 +264,12 @@ export default function LoginScreen() {
           <DepthButton onPress={handleLogin} fullWidth disabled={loading || googleLoading}>
             {loading ? <ActivityIndicator color={c.primaryForeground} size="small" /> : "Đăng nhập"}
           </DepthButton>
+
+          <Link href="/(auth)/forgot-password" asChild>
+            <TouchableOpacity>
+              <Text style={[s.forgotLink, { color: c.primary }]}>Quên mật khẩu?</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
 
         <View style={s.footer}>
@@ -344,6 +356,7 @@ const s = StyleSheet.create({
   input: { flex: 1, fontSize: fontSize.base, fontFamily: fontFamily.regular, minHeight: 28 },
   fieldError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   fieldHint: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, textAlign: "center", lineHeight: 18 },
+  forgotLink: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, textAlign: "center" },
   footer: { flexDirection: "row", justifyContent: "center", alignItems: "center" },
   footerText: { fontSize: fontSize.sm },
   footerLink: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },

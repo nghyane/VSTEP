@@ -1,7 +1,6 @@
 // 3D Depth Button — Duolingo press effect, synced with frontend-v3 .btn-primary
 import { useRef, useState, type ReactNode } from "react";
 import { Animated, Pressable, StyleSheet, Text, type ViewStyle } from "react-native";
-import * as Haptics from "expo-haptics";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
 type Variant = "primary" | "secondary" | "destructive" | "coin" | "info";
@@ -48,7 +47,6 @@ export function DepthButton({
 
   function handlePress() {
     if (disabled) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
     onPress?.();
   }
 

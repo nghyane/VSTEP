@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,6 +20,7 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { Mascot } from "@/components/Mascot";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AvatarPickerSheet } from "@/features/profile/AvatarPickerSheet";
+import { ChangePasswordDialog } from "@/features/profile/ChangePasswordDialog";
 import { CreateProfileSheet } from "@/features/profile/CreateProfileSheet";
 import { EditProfileSheet } from "@/features/profile/EditProfileSheet";
 import { PromoRedeemCard } from "@/features/wallet/PromoRedeemCard";
@@ -48,6 +50,7 @@ export default function ProfileScreen() {
   const [pendingSwitch, setPendingSwitch] = useState<Profile | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const [confirmSignOut, setConfirmSignOut] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   function requestSwitch(p: Profile) {
     if (p.id === activeProfile?.id || switchMutation.isPending) return;
@@ -82,6 +85,7 @@ export default function ProfileScreen() {
   const maxProfiles = config?.profile.maxProfilesPerAccount ?? 5;
   const profileCount = profiles?.length ?? 0;
   const canCreateProfile = profileCount < maxProfiles;
+  const zaloPhone = config?.support?.zaloPhone?.replace(/\D/g, "") ?? "";
 
   async function handleProfileCreated(created: Profile) {
     const res = await switchMutation.mutateAsync(created.id);
@@ -152,6 +156,39 @@ export default function ProfileScreen() {
 
       <PromoRedeemCard />
 
+      {/* Account */}
+      <Text style={[s.sectionLabel, { color: c.subtle }]}>TÀI KHOẢN</Text>
+      <View style={[s.accountCard, { backgroundColor: c.card, borderColor: c.border }]}>
+        <View style={s.accountRow}>
+          <Text style={[s.accountLabel, { color: c.mutedForeground }]}>Email</Text>
+          <Text style={[s.accountValue, { color: c.foreground }]} numberOfLines={1}>{user?.email}</Text>
+        </View>
+        <View style={[s.divider, { backgroundColor: c.borderLight }]} />
+        <View style={s.passwordRow}>
+          <View style={s.passwordCopy}>
+            <Text style={[s.accountLabel, { color: c.mutedForeground }]}>Mật khẩu</Text>
+            <Text style={[s.accountHint, { color: c.subtle }]}>
+              {!user?.hasPassword
+                ? "Bạn đăng nhập bằng Google — mật khẩu do Google quản lý."
+                : "Đổi mật khẩu định kỳ để bảo vệ tài khoản."}
+            </Text>
+          </View>
+          <DepthButton
+            variant="secondary"
+            size="sm"
+            onPress={() => {
+              if (!user?.hasPassword) {
+                void Linking.openURL("https://myaccount.google.com/security");
+                return;
+              }
+              setShowChangePassword(true);
+            }}
+          >
+            {!user?.hasPassword ? "Mở Google" : "Đổi mật khẩu"}
+          </DepthButton>
+        </View>
+      </View>
+
       {/* Settings */}
       <Text style={[s.sectionLabel, { color: c.subtle }]}>CÀI ĐẶT</Text>
       <View style={[s.menuGroup, { backgroundColor: c.card, borderColor: c.border }]}>
@@ -169,8 +206,14 @@ export default function ProfileScreen() {
         <View style={[s.divider, { backgroundColor: c.borderLight }]} />
         <MenuRow
           icon="help-circle-outline"
-          label="Trung tâm hỗ trợ"
-          onPress={() => Alert.alert("Hỗ trợ", "Liên hệ: support@vstepgo.com")}
+          label="Chat Zalo hỗ trợ"
+          onPress={() => {
+            if (!zaloPhone) {
+              Alert.alert("Hỗ trợ", "Liên hệ: support@vstepgo.com");
+              return;
+            }
+            void Linking.openURL(`https://zalo.me/${zaloPhone}`);
+          }}
         />
       </View>
 
@@ -189,6 +232,11 @@ export default function ProfileScreen() {
       <CreateProfileSheet visible={showCreate} onClose={() => setShowCreate(false)} onCreated={handleProfileCreated} />
       <EditProfileSheet profile={editing} onClose={() => setEditing(null)} />
       <AvatarPickerSheet visible={showAvatarPicker} onClose={() => setShowAvatarPicker(false)} />
+      <ChangePasswordDialog
+        visible={showChangePassword}
+        onClose={() => setShowChangePassword(false)}
+        onSuccess={() => Alert.alert("Thành công", "Đã đổi mật khẩu thành công.")}
+      />
 
       <ConfirmDialog
         open={!!pendingSwitch}
@@ -379,6 +427,32 @@ const s = StyleSheet.create({
   profileMeta: { fontSize: fontSize.xs },
   activeBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
   activeBadgeText: { color: "#FFFFFF", fontSize: 10, fontFamily: fontFamily.bold },
+  accountCard: {
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.xl,
+    overflow: "hidden",
+  },
+  accountRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+  },
+  accountLabel: { fontSize: fontSize.sm },
+  accountValue: { flex: 1, textAlign: "right", fontSize: fontSize.sm, fontFamily: fontFamily.bold },
+  passwordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+  },
+  passwordCopy: { flex: 1, minWidth: 0 },
+  accountHint: { fontSize: fontSize.xs, lineHeight: 18, marginTop: 2 },
   menuGroup: {
     borderWidth: 2,
     borderBottomWidth: 4,

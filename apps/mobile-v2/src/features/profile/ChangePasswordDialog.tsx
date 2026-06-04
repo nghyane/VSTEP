@@ -5,12 +5,16 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -33,6 +37,7 @@ interface FieldErrors {
 
 export function ChangePasswordDialog({ visible, onClose, onSuccess }: Props) {
   const c = useThemeColors();
+  const { height } = useWindowDimensions();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -102,84 +107,84 @@ export function ChangePasswordDialog({ visible, onClose, onSuccess }: Props) {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
-      <Pressable style={styles.overlay} onPress={handleClose}>
-        <Pressable
-          onPress={() => undefined}
-          style={[styles.card, { backgroundColor: c.card, borderColor: c.border }]}
-        >
-          <View style={[styles.header, { backgroundColor: c.primaryTint }]}>
-            <HapticTouchable
-              style={styles.closeBtn}
-              onPress={handleClose}
-              disabled={submitting}
-            >
-              <Ionicons name="close" size={20} color={c.mutedForeground} />
-            </HapticTouchable>
-            <View style={[styles.lockBadge, { backgroundColor: c.primary }]}>
-              <Ionicons name="lock-closed" size={28} color={c.primaryForeground} />
-            </View>
-            <Text style={[styles.title, { color: c.foreground }]}>Đổi mật khẩu</Text>
-            <Text style={[styles.subtitle, { color: c.subtle }]}>
-              Bảo vệ tài khoản — chỉ bạn biết mật khẩu mới.
-            </Text>
-          </View>
+      <KeyboardAvoidingView style={styles.keyboardWrap} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <Pressable style={styles.overlay} onPress={handleClose}>
+          <Pressable
+            onPress={() => undefined}
+            style={[styles.card, { backgroundColor: c.card, borderColor: c.border, maxHeight: height - spacing["3xl"] }]}
+          >
+            <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              <View style={[styles.header, { backgroundColor: c.primaryTint }]}>
+                <HapticTouchable
+                  style={styles.closeBtn}
+                  onPress={handleClose}
+                  disabled={submitting}
+                >
+                  <Ionicons name="close" size={20} color={c.mutedForeground} />
+                </HapticTouchable>
+                <View style={[styles.lockBadge, { backgroundColor: c.primary }]}>
+                  <Ionicons name="lock-closed" size={28} color={c.primaryForeground} />
+                </View>
+                <Text style={[styles.title, { color: c.foreground }]}>Đổi mật khẩu</Text>
+                <Text style={[styles.subtitle, { color: c.subtle }]}>
+                  Bảo vệ tài khoản — chỉ bạn biết mật khẩu mới.
+                </Text>
+              </View>
 
-          <View style={styles.body}>
-            <PasswordField
-              label="Mật khẩu hiện tại"
-              value={current}
-              onChangeText={(v) => {
-                setCurrent(v);
-                if (errors.currentPassword) setErrors((s) => ({ ...s, currentPassword: undefined }));
-              }}
-              show={showCurrent}
-              onToggleShow={() => setShowCurrent((v) => !v)}
-              error={errors.currentPassword}
-              textContentType="password"
-            />
+              <View style={styles.body}>
+                <PasswordField
+                  label="Mật khẩu hiện tại"
+                  value={current}
+                  onChangeText={(v) => {
+                    setCurrent(v);
+                    if (errors.currentPassword) setErrors((s) => ({ ...s, currentPassword: undefined }));
+                  }}
+                  show={showCurrent}
+                  onToggleShow={() => setShowCurrent((v) => !v)}
+                  error={errors.currentPassword}
+                  textContentType="password"
+                />
 
-            <PasswordField
-              label="Mật khẩu mới"
-              value={next}
-              onChangeText={(v) => {
-                setNext(v);
-                if (errors.newPassword) setErrors((s) => ({ ...s, newPassword: undefined }));
-              }}
-              show={showNext}
-              onToggleShow={() => setShowNext((v) => !v)}
-              error={errors.newPassword}
-              hint="Tối thiểu 8 ký tự, khác mật khẩu hiện tại."
-              textContentType="newPassword"
-            />
+                <PasswordField
+                  label="Mật khẩu mới"
+                  value={next}
+                  onChangeText={(v) => {
+                    setNext(v);
+                    if (errors.newPassword) setErrors((s) => ({ ...s, newPassword: undefined }));
+                  }}
+                  show={showNext}
+                  onToggleShow={() => setShowNext((v) => !v)}
+                  error={errors.newPassword}
+                  hint="Tối thiểu 8 ký tự, khác mật khẩu hiện tại."
+                  textContentType="newPassword"
+                />
 
-            <PasswordField
-              label="Nhập lại mật khẩu mới"
-              value={confirm}
-              onChangeText={(v) => {
-                setConfirm(v);
-                if (errors.confirm) setErrors((s) => ({ ...s, confirm: undefined }));
-              }}
-              show={showNext}
-              onToggleShow={() => setShowNext((v) => !v)}
-              error={errors.confirm}
-              textContentType="newPassword"
-            />
+                <PasswordField
+                  label="Nhập lại mật khẩu mới"
+                  value={confirm}
+                  onChangeText={(v) => {
+                    setConfirm(v);
+                    if (errors.confirm) setErrors((s) => ({ ...s, confirm: undefined }));
+                  }}
+                  show={showNext}
+                  onToggleShow={() => setShowNext((v) => !v)}
+                  error={errors.confirm}
+                  textContentType="newPassword"
+                />
 
-            <View style={styles.actionRow}>
-              <DepthButton variant="secondary" onPress={handleClose} disabled={submitting} style={styles.actionBtn}>
-                Hủy
-              </DepthButton>
-              <DepthButton onPress={handleSubmit} disabled={submitting} style={styles.actionBtn}>
-                {submitting ? (
-                  <ActivityIndicator color={c.primaryForeground} />
-                ) : (
-                  "Đổi mật khẩu"
-                )}
-              </DepthButton>
-            </View>
-          </View>
+                <View style={styles.actionRow}>
+                  <DepthButton variant="secondary" onPress={handleClose} disabled={submitting} style={styles.actionBtn}>
+                    Hủy
+                  </DepthButton>
+                  <DepthButton onPress={handleSubmit} disabled={submitting} style={styles.actionBtn}>
+                    {submitting ? <ActivityIndicator color={c.primaryForeground} /> : "Đổi mật khẩu"}
+                  </DepthButton>
+                </View>
+              </View>
+            </ScrollView>
+          </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -221,9 +226,13 @@ function PasswordField({
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={!show}
+          keyboardType="default"
           autoCapitalize="none"
           autoCorrect={false}
+          spellCheck={false}
+          autoComplete={textContentType === "newPassword" ? "new-password" : "password"}
           textContentType={textContentType}
+          importantForAutofill="yes"
           placeholder="••••••••"
           placeholderTextColor={c.placeholder}
         />
@@ -241,6 +250,7 @@ function PasswordField({
 }
 
 const styles = StyleSheet.create({
+  keyboardWrap: { flex: 1 },
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.6)",
