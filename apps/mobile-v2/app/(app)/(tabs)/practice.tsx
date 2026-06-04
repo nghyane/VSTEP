@@ -6,8 +6,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { GameIcon, type GameIconName } from "@/components/GameIcon";
 import { Mascot } from "@/components/Mascot";
-import { RecommendationSection } from "@/features/practice/RecommendationSection";
+import { useLearningPath } from "@/features/practice/use-learning-path";
+import { getTargetBand } from "@/lib/vstep";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import type { LearningPathSkill, Skill } from "@/types/api";
 
 type PracticeRoute =
   | "/(app)/vocabulary"
@@ -29,10 +31,37 @@ interface PracticeItem {
   route: PracticeRoute;
 }
 
+const EXAM_SKILL_LABELS: Record<Skill, string> = {
+  listening: "Listening",
+  reading: "Reading",
+  writing: "Writing",
+  speaking: "Speaking",
+};
+
+const SKILL_ORDER: Skill[] = ["listening", "reading", "writing", "speaking"];
+
+function isExamSkill(skill: LearningPathSkill): skill is LearningPathSkill & { skill: Skill } {
+  return SKILL_ORDER.includes(skill.skill as Skill);
+}
+
+function scoredExamSkills(skills: LearningPathSkill[]): (LearningPathSkill & { skill: Skill; band: number })[] {
+  return skills
+    .filter((skill): skill is LearningPathSkill & { skill: Skill; band: number } => isExamSkill(skill) && skill.band !== null)
+    .sort((a, b) => a.band - b.band);
+}
+
+function priorityLabel(skill: LearningPathSkill & { band: number }, targetLevel: string, index: number): string {
+  const requiredBand = getTargetBand(targetLevel);
+  if (skill.band >= requiredBand) return "Duy trì";
+  if (index === 0) return "Ưu tiên";
+  return "Cải thiện";
+}
+
 export default function PracticeHubScreen() {
   const c = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { data: learningPath } = useLearningPath();
   const fadeAnims = useRef(Array.from({ length: 5 }, () => new Animated.Value(0))).current;
 
   const foundationItems: PracticeItem[] = [
@@ -135,9 +164,11 @@ export default function PracticeHubScreen() {
         <Text style={[styles.subtitle, { color: c.mutedForeground }]}>Chọn mục luyện để vào học ngay.</Text>
       </Animated.View>
 
-      <Animated.View style={animStyle(1)}>
-        <RecommendationSection />
-      </Animated.View>
+      {learningPath ? (
+        <Animated.View style={animStyle(1)}>
+          <PracticeGoalSummary path={learningPath} />
+        </Animated.View>
+      ) : null}
 
       <Animated.View style={[styles.section, animStyle(2)]}>
         <SectionHeader title="Nền tảng" subtitle="Từ vựng và ngữ pháp — gốc rễ mọi kỹ năng" />
@@ -181,6 +212,80 @@ export default function PracticeHubScreen() {
 
       <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
+  );
+}
+
+function PracticeGoalSummary({ path }: { path: { currentLevel: string; targetLevel: string; daysRemaining: number | null; skills: LearningPathSkill[] } }) {
+  const c = useThemeColors();
+  const requiredBand = getTargetBand(path.targetLevel);
+  const scoredSkills = scoredExamSkills(path.skills);
+  const prioritySkill = scoredSkills.find((skill) => skill.band < requiredBand);
+  const currentAction = scoredSkills.length === 0
+    ? "Làm thi thử để hệ thống phân tích kỹ năng."
+    : prioritySkill
+      ? `Ưu tiên hiện tại: ${EXAM_SKILL_LABELS[prioritySkill.skill]} ${prioritySkill.band.toFixed(1)}, cần ≥ ${requiredBand.toFixed(1)}`
+      : "Các kỹ năng đã đạt mục tiêu. Tiếp tục duy trì.";
+
+  return (
+    <View style={[styles.goalCard, { backgroundColor: c.card, borderColor: c.border }]}>
+      <View style={styles.goalTopRow}>
+        <View style={styles.goalMain}>
+          <Text style={[styles.goalEyebrow, { color: c.subtle }]}>Mục tiêu hiện tại</Text>
+          <Text style={[styles.goalTitle, { color: c.foreground }]}>{path.targetLevel} ≥ {requiredBand.toFixed(1)} điểm</Text>
+        </View>
+        <View style={[styles.goalMiniPill, { backgroundColor: c.muted }]}>
+          <Text style={[styles.goalMiniText, { color: c.mutedForeground }]}>{path.currentLevel}</Text>
+        </View>
+        {path.daysRemaining !== null ? (
+          <View style={[styles.goalMiniPill, { backgroundColor: c.muted }]}>
+            <Text style={[styles.goalMiniText, { color: c.mutedForeground }]}>{path.daysRemaining} ngày</Text>
+          </View>
+        ) : null}
+      </View>
+      <View style={[styles.goalActionStrip, { backgroundColor: c.surfaceTint }]}>
+        <Text style={[styles.goalActionText, { color: c.foreground }]}>{currentAction}</Text>
+      </View>
+      <SkillScorePills skills={path.skills} targetLevel={path.targetLevel} compact />
+    </View>
+  );
+}
+
+function SkillScorePills({ skills, targetLevel, compact = false }: { skills: LearningPathSkill[]; targetLevel: string; compact?: boolean }) {
+  const c = useThemeColors();
+  const scoredSkills = scoredExamSkills(skills);
+  if (scoredSkills.length === 0) {
+    return (
+      <View style={[styles.noScorePill, { backgroundColor: compact ? c.card : c.surface }]}>
+        <Text style={[styles.noScoreText, { color: c.subtle }]}>Làm thi thử để có điểm phân tích kỹ năng</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={compact ? styles.scoreCompactWrap : styles.scorePillsWrap}>
+      {!compact ? <Text style={[styles.suggestLabel, { color: c.mutedForeground }]}>Gợi ý</Text> : null}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scorePillList}>
+        {scoredSkills.map((skill, index) => (
+          <ScorePill key={skill.skill} skill={skill} targetLevel={targetLevel} index={index} />
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+function ScorePill({ skill, targetLevel, index }: { skill: LearningPathSkill & { skill: Skill; band: number }; targetLevel: string; index: number }) {
+  const c = useThemeColors();
+  const requiredBand = getTargetBand(targetLevel);
+  const dotColor = skill.band >= requiredBand ? c.info : index === 0 ? c.destructive : c.warning;
+
+  return (
+    <View style={[styles.scorePill, { backgroundColor: c.surface, borderColor: c.border }]}>
+      <View style={[styles.scoreDot, { backgroundColor: dotColor }]} />
+      <Text style={[styles.scorePillText, { color: c.subtle }]}>
+        <Text style={{ color: c.foreground, fontFamily: fontFamily.extraBold }}>{EXAM_SKILL_LABELS[skill.skill]}</Text>
+        {` ${skill.band.toFixed(1)} / ≥${requiredBand.toFixed(1)} · ${priorityLabel(skill, targetLevel, index)}`}
+      </Text>
+    </View>
   );
 }
 
@@ -235,10 +340,28 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"], gap: spacing.xl },
   title: { fontSize: fontSize["3xl"], fontFamily: fontFamily.extraBold, letterSpacing: -0.4 },
   subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs, lineHeight: 20 },
+  goalCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.md, gap: spacing.sm },
+  goalTopRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  goalMain: { flex: 1, minWidth: 0 },
+  goalEyebrow: { fontSize: 10, fontFamily: fontFamily.extraBold, textTransform: "uppercase", letterSpacing: 0.8 },
+  goalTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, marginTop: 1 },
+  goalMiniPill: { borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  goalMiniText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  goalActionStrip: { borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  goalActionText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, lineHeight: 18 },
   section: { gap: spacing.md },
   sectionHeader: { gap: 2 },
   sectionTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
   sectionSubtitle: { fontSize: fontSize.sm, lineHeight: 20 },
+  scorePillsWrap: { gap: spacing.sm },
+  scoreCompactWrap: { marginHorizontal: -spacing.md },
+  suggestLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold, textTransform: "uppercase", letterSpacing: 1 },
+  scorePillList: { gap: spacing.sm, paddingHorizontal: spacing.md },
+  scorePill: { flexDirection: "row", alignItems: "center", gap: spacing.xs, borderWidth: 2, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  scoreDot: { width: 8, height: 8, borderRadius: 4 },
+  scorePillText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  noScorePill: { alignSelf: "flex-start", borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
+  noScoreText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   foundationList: { gap: spacing.md },
   foundationCard: {
     borderWidth: 2,

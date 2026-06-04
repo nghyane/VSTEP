@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,10 +7,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
-import { GameIcon } from "@/components/GameIcon";
-import { LevelFilters, type Level } from "@/components/LevelFilters";
+import { Mascot } from "@/components/Mascot";
 import { MascotEmpty } from "@/components/MascotStates";
-import { useVocabTopics, useVocabSrsQueue, type VocabTopic } from "@/hooks/use-vocab";
+import {
+  groupVocabTopics,
+  recommendedProgress,
+  topicFocusLabel,
+  useVocabTopics,
+  useVocabSrsQueue,
+  type TopicGroup,
+} from "@/hooks/use-vocab";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 export default function VocabularyScreen() {
@@ -20,15 +26,10 @@ export default function VocabularyScreen() {
 
   const { data: topics, isLoading: topicsLoading } = useVocabTopics();
   const { data: srsQueue, isLoading: srsLoading } = useVocabSrsQueue();
-  const [level, setLevel] = useState<Level | null>(null);
 
   const dueCount = srsQueue ? srsQueue.newCount + srsQueue.learningCount + srsQueue.reviewCount : 0;
   const isLoading = topicsLoading || srsLoading;
-  const filteredTopics = useMemo(() => {
-    const allTopics = topics ?? [];
-    if (!level) return allTopics;
-    return allTopics.filter((topic) => topic.level.toUpperCase() === level);
-  }, [level, topics]);
+  const topicGroups = useMemo(() => groupVocabTopics(topics ?? []), [topics]);
 
   return (
     <ScrollView
@@ -48,37 +49,25 @@ export default function VocabularyScreen() {
 
       {/* SRS Hero */}
       {srsQueue && dueCount > 0 ? (
-        <DepthCard variant="primary" style={s.srsCard}>
-          <GameIcon name="lightning" size={32} />
-          <Text style={[s.srsTitle, { color: c.primaryDark }]}>Ôn tập hôm nay</Text>
-          <View style={s.srsStats}>
-            {srsQueue.newCount > 0 ? (
-              <View style={[s.srsPill, { backgroundColor: c.infoTint }]}>
-                <Text style={[s.srsPillText, { color: c.info }]}>{srsQueue.newCount} mới</Text>
-              </View>
-            ) : null}
-            {srsQueue.learningCount > 0 ? (
-              <View style={[s.srsPill, { backgroundColor: c.warningTint }]}>
-                <Text style={[s.srsPillText, { color: c.warning }]}>{srsQueue.learningCount} đang học</Text>
-              </View>
-            ) : null}
-            {srsQueue.reviewCount > 0 ? (
-              <View style={[s.srsPill, { backgroundColor: c.primaryTint }]}>
-                <Text style={[s.srsPillText, { color: c.primary }]}>{srsQueue.reviewCount} ôn tập</Text>
-              </View>
-            ) : null}
+        <DepthCard style={s.srsCard}>
+          <Mascot name="vocabulary" size={92} animation="none" />
+          <View style={s.srsCopy}>
+            <Text style={[s.srsTitle, { color: c.foreground }]}>Ôn tập từ vựng</Text>
+            <Text style={[s.srsSub, { color: c.mutedForeground }]}>Bạn có {dueCount} từ cần ôn lại hôm nay để không bị quên</Text>
+            <View style={s.srsButtonWrap}>
+              <DepthButton onPress={() => router.push("/(app)/vocabulary/srs-review" as never)}>
+                Bắt đầu ôn tập
+              </DepthButton>
+            </View>
           </View>
-          <DepthButton fullWidth onPress={() => router.push("/(app)/vocabulary/srs-review" as any)}>
-            {`Bắt đầu · ${dueCount} từ`}
-          </DepthButton>
         </DepthCard>
       ) : srsQueue && dueCount === 0 ? (
         <DepthCard style={s.srsCard}>
-          <GameIcon name="check" size={32} />
-          <Text style={[s.srsTitle, { color: c.foreground }]}>Hôm nay đã ôn xong!</Text>
-          <Text style={[s.srsSub, { color: c.mutedForeground }]}>
-            Quay lại vào ngày mai hoặc chọn chủ đề mới bên dưới.
-          </Text>
+          <Mascot name="vocabulary" size={92} animation="none" />
+          <View style={s.srsCopy}>
+            <Text style={[s.srsTitle, { color: c.foreground }]}>Tuyệt vời!</Text>
+            <Text style={[s.srsSub, { color: c.mutedForeground }]}>Bạn đã ôn xong tất cả từ vựng hôm nay. Hẹn gặp lại vào ngày mai!</Text>
+          </View>
         </DepthCard>
       ) : null}
 
@@ -99,26 +88,25 @@ export default function VocabularyScreen() {
       {topics && topics.length > 0 ? (
         <View style={s.topicSection}>
           <Text style={[s.sectionTitle, { color: c.foreground }]}>Chủ đề</Text>
-          <Text style={[s.sectionSub, { color: c.subtle }]}>Chọn chủ đề để học từ mới</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterWrap}>
-            <LevelFilters level={level} onLevelChange={setLevel} />
-          </ScrollView>
+          <Text style={[s.sectionSub, { color: c.subtle }]}>Chọn một chủ đề, sau đó lọc cấp độ trong trang chi tiết</Text>
 
-          {filteredTopics.length === 0 ? (
+          {topicGroups.length === 0 ? (
             <DepthCard style={s.emptyFilterCard}>
-              <Text style={[s.emptyFilterTitle, { color: c.foreground }]}>Không có chủ đề phù hợp</Text>
-              <Text style={[s.emptyFilterSub, { color: c.mutedForeground }]}>Thử đổi level để xem thêm chủ đề khác.</Text>
+              <Text style={[s.emptyFilterTitle, { color: c.foreground }]}>Chưa có chủ đề nào</Text>
             </DepthCard>
           ) : (
             <View style={s.topicGrid}>
-              {filteredTopics.map((topic) => (
-                <View key={topic.id} style={s.topicGridItem}>
-                  <TopicCard
-                    topic={topic}
-                    onPress={() => router.push(`/(app)/vocabulary/${topic.id}` as any)}
-                  />
-                </View>
-              ))}
+              {topicGroups.map((topic) => {
+                const focus = recommendedProgress(topic);
+                return (
+                  <View key={topic.key} style={s.topicGridItem}>
+                    <TopicCard
+                      topic={topic}
+                      onPress={() => router.push(`/(app)/vocabulary/${focus.topic.id}` as never)}
+                    />
+                  </View>
+                );
+              })}
             </View>
           )}
         </View>
@@ -129,54 +117,60 @@ export default function VocabularyScreen() {
   );
 }
 
-function TopicCard({ topic, onPress }: { topic: VocabTopic; onPress: () => void }) {
+function TopicCard({ topic, onPress }: { topic: TopicGroup; onPress: () => void }) {
   const c = useThemeColors();
-  const learned = topic.learnedCount ?? 0;
-  const total = topic.wordCount ?? 0;
-  const pct = total > 0 ? Math.round((learned / total) * 100) : 0;
-  const meta = topic.tasks.join(" · ") || "Từ vựng";
+  const focus = recommendedProgress(topic);
+  const pct = topic.wordCount > 0 ? Math.round((topic.learnedCount / topic.wordCount) * 100) : 0;
+  const topicComplete = topic.wordCount > 0 && topic.learnedCount >= topic.wordCount;
+  const focusLabel = topicFocusLabel(focus, topicComplete);
+  const meta =
+    topic.wordCount > 0 ? `${topic.wordCount} từ · ${topic.levels.length} cấp độ` : `${topic.levels.length} cấp độ`;
 
   return (
-    <HapticTouchable onPress={onPress} activeOpacity={0.85}>
+    <HapticTouchable onPress={onPress} activeOpacity={0.92} scalePress>
       <DepthCard style={s.topicCard}>
         <View style={s.topicHeader}>
           <Text style={[s.topicName, { color: c.foreground }]} numberOfLines={1}>
             {topic.name}
           </Text>
-          <View style={[s.levelBadge, { backgroundColor: c.primaryTint }]}>
-            <Text style={[s.levelText, { color: c.primary }]}>{topic.level}</Text>
+          <View style={[s.levelBadge, { backgroundColor: c.muted }]}>
+            <Text style={[s.levelText, { color: c.mutedForeground }]}>{pct}%</Text>
           </View>
         </View>
-
-        {topic.description ? (
-          <Text style={[s.topicDesc, { color: c.subtle }]} numberOfLines={2}>
-            {topic.description}
-          </Text>
-        ) : null}
 
         <Text style={[s.topicMeta, { color: c.mutedForeground }]} numberOfLines={1}>
           {meta}
         </Text>
 
-        {/* Progress bar — matching FE v3 */}
-        {total > 0 ? (
-          <View style={s.progressSection}>
-            <View style={s.progressLabelRow}>
-              <Text style={[s.progressLabel, { color: c.subtle }]}>
-                {learned}/{total} từ
-              </Text>
-              <Text style={[s.progressPct, { color: c.mutedForeground }]}>{pct}%</Text>
-            </View>
-            <View style={[s.progressTrack, { backgroundColor: c.muted }]}>
-              <View
-                style={[s.progressFill, { backgroundColor: c.primary, width: `${pct}%` }]}
-              />
-            </View>
+        <View style={s.focusBlock}>
+          <Text style={[s.focusLabel, { color: c.subtle }]}>{focusLabel}</Text>
+          <Text style={[s.focusText, { color: c.foreground }]} numberOfLines={1}>
+            {topicComplete
+              ? "Ôn lại khi cần"
+              : `${focus.level} · ${focusProgressText(focus.learnedCount, focus.wordCount)}`}
+          </Text>
+        </View>
+
+        <View style={s.progressSection}>
+          <View style={s.progressLabelRow}>
+            <Text style={[s.progressLabel, { color: c.subtle }]}>Tổng chủ đề</Text>
+            <Text style={[s.progressPct, { color: c.mutedForeground }]}>
+              {topic.learnedCount}/{topic.wordCount} từ
+            </Text>
           </View>
-        ) : null}
+          <View style={[s.progressTrack, { backgroundColor: c.muted }]}>
+            <View style={[s.progressFill, { backgroundColor: c.primary, width: `${pct}%` }]} />
+          </View>
+        </View>
       </DepthCard>
     </HapticTouchable>
   );
+}
+
+function focusProgressText(learned: number, total: number): string {
+  if (total <= 0) return "Chưa có từ";
+  if (learned <= 0) return "Chưa học";
+  return `${learned}/${total} từ`;
 }
 
 const s = StyleSheet.create({
@@ -188,12 +182,11 @@ const s = StyleSheet.create({
   sub: { fontSize: fontSize.sm, lineHeight: 20 },
 
   // SRS Hero
-  srsCard: { alignItems: "center", gap: spacing.md, padding: spacing.xl },
-  srsTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
-  srsSub: { fontSize: fontSize.sm, textAlign: "center" },
-  srsStats: { flexDirection: "row", gap: spacing.md },
-  srsPill: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full },
-  srsPillText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  srsCard: { flexDirection: "row", alignItems: "center", gap: spacing.lg, padding: spacing.lg },
+  srsCopy: { flex: 1, gap: spacing.xs, alignItems: "flex-start" },
+  srsTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
+  srsSub: { fontSize: fontSize.sm, lineHeight: 20 },
+  srsButtonWrap: { marginTop: spacing.sm, alignSelf: "flex-start" },
 
   loadingWrap: { paddingVertical: spacing["2xl"], alignItems: "center" },
 
@@ -201,7 +194,6 @@ const s = StyleSheet.create({
   topicSection: { gap: spacing.xs },
   sectionTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
   sectionSub: { fontSize: fontSize.sm, marginBottom: spacing.md },
-  filterWrap: { paddingBottom: spacing.sm },
   topicGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -215,13 +207,15 @@ const s = StyleSheet.create({
   emptyFilterCard: { alignItems: "center", gap: spacing.xs, paddingVertical: spacing.xl },
   emptyFilterTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold, textAlign: "center" },
   emptyFilterSub: { fontSize: fontSize.sm, textAlign: "center" },
-  topicCard: { gap: spacing.xs, minHeight: 138 },
+  topicCard: { gap: spacing.xs, minHeight: 168 },
   topicHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   topicName: { fontSize: fontSize.base, fontFamily: fontFamily.bold, flex: 1 },
   levelBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full, marginLeft: spacing.sm },
   levelText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
-  topicDesc: { fontSize: fontSize.sm, lineHeight: 18, minHeight: 36 },
   topicMeta: { fontSize: fontSize.xs, lineHeight: 16, minHeight: 16 },
+  focusBlock: { marginTop: spacing.sm, gap: 2 },
+  focusLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  focusText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
 
   // Progress bar (FE v3 style)
   progressSection: { marginTop: "auto", paddingTop: spacing.sm },

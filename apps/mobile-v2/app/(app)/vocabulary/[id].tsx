@@ -7,8 +7,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { HapticTouchable } from "@/components/HapticTouchable";
+import { LevelFilters, type Level } from "@/components/LevelFilters";
 import { canBuildFillBlank, type PracticeMode } from "@/features/vocab/use-practice-session";
-import { useVocabTopicDetail, type FsrsState, type WordWithState } from "@/hooks/use-vocab";
+import {
+  toVocabLevel,
+  topicGroupKey,
+  useVocabTopicDetail,
+  useVocabTopics,
+  type FsrsState,
+  type VocabTopic,
+  type WordWithState,
+} from "@/hooks/use-vocab";
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
 
 interface ModeOption {
@@ -36,6 +45,7 @@ export default function VocabTopicDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const topicId = id ?? "";
   const { data, isLoading } = useVocabTopicDetail(topicId);
+  const { data: topics } = useVocabTopics();
   const words = data?.words ?? [];
   const hasFillBlank = canBuildFillBlank(words);
   const [selectedMode, setSelectedMode] = useState<PracticeMode>("flashcard");
@@ -97,9 +107,25 @@ export default function VocabTopicDetailScreen() {
   }
 
   const { topic } = data;
-  const learnedCount = words.filter((entry) => bucket(entry.state) === "known").length;
-  const progress = words.length > 0 ? learnedCount / words.length : 0;
+  const currentLevel = toVocabLevel(topic.level);
+  const groupKey = topicGroupKey(topic);
+  const siblingTopics = (topics ?? [])
+    .filter((item) => topicGroupKey(item) === groupKey)
+    .sort((a, b) => a.displayOrder - b.displayOrder);
+  const availableLevels = availableTopicLevels(siblingTopics, currentLevel);
+  const progressSummary = topicProgressSummary(topic, words.length, siblingTopics);
+  const fallbackLearned = words.filter((entry) => bucket(entry.state) === "known").length;
+  const currentLearned = topic.learnedCount ?? fallbackLearned;
+  const currentTotal = topic.wordCount ?? words.length;
+  const progress = currentTotal > 0 ? currentLearned / currentTotal : 0;
   const selectedAvailable = modeOptions.some((option) => option.mode === selectedMode && option.available);
+
+  const selectLevel = (nextLevel: Level | null) => {
+    if (!nextLevel || nextLevel === currentLevel) return;
+    const nextTopic = siblingTopics.find((item) => toVocabLevel(item.level) === nextLevel);
+    if (!nextTopic) return;
+    router.replace(`/(app)/vocabulary/${nextTopic.id}` as never);
+  };
 
   return (
     <ScrollView
@@ -123,13 +149,21 @@ export default function VocabTopicDetailScreen() {
         {topic.description ? (
           <Text style={[s.heroDesc, { color: c.mutedForeground }]}>{topic.description}</Text>
         ) : null}
+        {availableLevels.length > 1 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.levelControls}>
+            <LevelFilters
+              level={currentLevel}
+              availableLevels={availableLevels}
+              allowClear={false}
+              onLevelChange={selectLevel}
+            />
+          </ScrollView>
+        ) : null}
         <View style={s.progressRow}>
           <View style={[s.progressTrack, { backgroundColor: c.muted }]}>
             <View style={[s.progressFill, { backgroundColor: c.primary, width: `${progress * 100}%` }]} />
           </View>
-          <Text style={[s.progressText, { color: c.subtle }]}>
-            {learnedCount}/{words.length}
-          </Text>
+          <Text style={[s.progressText, { color: c.subtle }]}>{progressSummary}</Text>
         </View>
         <DepthButton
           fullWidth
@@ -178,18 +212,27 @@ function ExerciseMode({
     <HapticTouchable
       onPress={onPress}
       disabled={disabled}
-      activeOpacity={0.85}
+      activeOpacity={0.9}
+      scalePress
       style={[
         s.modeCard,
         {
           borderColor: selected ? c.primary : c.border,
-          borderBottomColor: selected ? c.primaryDark : c.border,
           backgroundColor: selected ? c.primaryTint : c.surface,
           opacity: disabled ? 0.45 : 1,
+          transform: [{ scale: selected ? 1.01 : 1 }],
         },
       ]}
     >
-      <View style={[s.modeIconWrap, { backgroundColor: selected ? c.surface : c.muted }]}>
+      <View
+        style={[
+          s.modeIconWrap,
+          {
+            backgroundColor: selected ? c.surface : c.background,
+            borderColor: selected ? c.primary : c.border,
+          },
+        ]}
+      >
         <Ionicons name={option.icon} size={20} color={selected ? c.primary : c.mutedForeground} />
       </View>
       <View style={s.modeCopy}>
@@ -198,8 +241,16 @@ function ExerciseMode({
           {option.subtitle}
         </Text>
       </View>
-      <View style={[s.radioOuter, { borderColor: selected ? c.primary : c.border }]}>
-        {selected ? <View style={[s.radioInner, { backgroundColor: c.primary }]} /> : null}
+      <View
+        style={[
+          s.radioOuter,
+          {
+            borderColor: selected ? c.primary : c.border,
+            backgroundColor: selected ? c.primary : c.surface,
+          },
+        ]}
+      >
+        {selected ? <View style={[s.radioInner, { backgroundColor: c.surface }]} /> : null}
       </View>
     </HapticTouchable>
   );
@@ -226,6 +277,7 @@ function WordListSection({ words }: { words: WordWithState[] }) {
             <HapticTouchable
               key={item.key}
               onPress={() => setFilter(item.key)}
+              activeOpacity={1}
               style={[
                 s.wordFilter,
                 {
@@ -297,6 +349,25 @@ function stateBadge(state: FsrsState): { text: string; bg: string; fg: string } 
   return { text: "Đang học", bg: "#FFF0DC", fg: "#FF9B00" };
 }
 
+function availableTopicLevels(topics: VocabTopic[], fallbackLevel: Level | null): Level[] {
+  const levels = topics.map((item) => toVocabLevel(item.level)).filter((level) => level !== null);
+  if (levels.length === 0 && fallbackLevel) return [fallbackLevel];
+  return Array.from(new Set(levels));
+}
+
+function topicProgressSummary(currentTopic: VocabTopic, currentTotal: number, topics: VocabTopic[]): string {
+  const currentLevel = currentTopic.level;
+  const current = topics.find((item) => item.level === currentLevel);
+  const currentLearned = current?.learnedCount ?? currentTopic.learnedCount ?? 0;
+  const currentWords = current?.wordCount ?? currentTopic.wordCount ?? currentTotal;
+  const summaryTopics = topics.length > 0 ? topics : [currentTopic];
+  const overallLearned = summaryTopics.reduce((sum, item) => sum + (item.learnedCount ?? 0), 0);
+  const overallWords = summaryTopics.reduce((sum, item) => sum + (item.wordCount ?? 0), 0);
+
+  if (overallWords <= 0) return `${currentLevel}: ${currentLearned}/${currentWords} từ`;
+  return `${currentLevel}: ${currentLearned}/${currentWords} từ · Tổng: ${overallLearned}/${overallWords} từ`;
+}
+
 const s = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
@@ -308,10 +379,11 @@ const s = StyleSheet.create({
   levelText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   heroTitle: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold, textAlign: "center" },
   heroDesc: { fontSize: fontSize.sm, textAlign: "center", lineHeight: 20 },
-  progressRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, width: "100%", maxWidth: 260 },
+  levelControls: { paddingVertical: spacing.xs },
+  progressRow: { gap: spacing.xs, width: "100%" },
   progressTrack: { flex: 1, height: 8, borderRadius: radius.full, overflow: "hidden" },
   progressFill: { height: 8, borderRadius: radius.full },
-  progressText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  progressText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, textAlign: "center" },
   section: { gap: spacing.sm },
   sectionLabel: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
   sectionSub: { fontSize: fontSize.sm, lineHeight: 20 },
@@ -320,23 +392,23 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 2,
-    borderBottomWidth: 4,
-    borderRadius: radius.xl,
-    padding: spacing.base,
+    borderRadius: radius.button,
+    padding: 10,
     gap: spacing.md,
   },
   modeIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: radius.lg,
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
   },
   modeCopy: { flex: 1, gap: 2 },
   modeTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   modeDesc: { fontSize: 11, lineHeight: 16 },
-  radioOuter: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  radioInner: { width: 8, height: 8, borderRadius: 4 },
+  radioOuter: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  radioInner: { width: 6, height: 6, borderRadius: 3 },
   wordCard: { overflow: "hidden" },
   wordHeader: { paddingHorizontal: spacing.lg, paddingTop: spacing.lg },
   wordHeaderTitle: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold },

@@ -19,10 +19,13 @@ export type Level = (typeof LEVELS)[number];
 interface Props {
   level: Level | null;
   onLevelChange: (next: Level | null) => void;
+  availableLevels?: readonly Level[];
+  allowClear?: boolean;
 }
 
-export function LevelFilters({ level, onLevelChange }: Props) {
+export function LevelFilters({ level, onLevelChange, availableLevels, allowClear = true }: Props) {
   const c = useThemeColors();
+  const available = availableLevels ? new Set(availableLevels) : null;
 
   // Active tint per level — mirrors FE v3 LEVEL_COLORS.
   function activeTint(lv: Level): { bg: string; fg: string } {
@@ -39,16 +42,20 @@ export function LevelFilters({ level, onLevelChange }: Props) {
     <View style={s.row}>
       {LEVELS.map((lv) => {
         const active = level === lv;
+        const disabled = available ? !available.has(lv) : false;
         const tint = activeTint(lv);
         return (
           <HapticTouchable
             key={lv}
-            onPress={() => onLevelChange(active ? null : lv)}
+            disabled={disabled}
+            activeOpacity={1}
+            onPress={() => onLevelChange(active && allowClear ? null : lv)}
             style={[
               s.pill,
               {
                 backgroundColor: active ? tint.bg : c.surface,
                 borderColor: active ? tint.fg : c.border,
+                opacity: disabled ? 0.35 : 1,
               },
             ]}
           >
