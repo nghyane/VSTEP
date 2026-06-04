@@ -13,6 +13,7 @@ function progressText(skill: LearningPathSkill | undefined, fallbackTotal: numbe
 export function FoundationSection() {
 	const { data } = useQuery(learningPathQuery)
 	const hasPathData = data !== undefined
+	const targetLevel = data?.data.target_level ?? "B1"
 	const pathSkills = data?.data.skills ?? []
 	const vocabulary = pathSkills.find((skill) => skill.skill === "vocabulary")
 	const grammar = pathSkills.find((skill) => skill.skill === "grammar")
@@ -31,7 +32,11 @@ export function FoundationSection() {
 						title="Từ vựng"
 						text={progressText(vocabulary, 120, `từ ${vocabulary?.level ?? "B1"}`)}
 					/>
-					<ProgressPill title="Ngữ pháp" text={progressText(grammar, 10, "chủ điểm")} />
+					<ProgressPill
+						title="Ngữ pháp"
+						text={progressText(grammar, 10, "chủ điểm")}
+						detail={`Mục tiêu ${targetLevel}`}
+					/>
 				</div>
 			)}
 
@@ -60,10 +65,11 @@ export function FoundationSection() {
 	)
 }
 
-function ProgressPill({ title, text }: { title: string; text: string }) {
+function ProgressPill({ title, text, detail }: { title: string; text: string; detail?: string }) {
 	return (
 		<span className="rounded-full border-2 border-border bg-surface px-3 py-1.5 text-xs font-bold text-subtle tabular-nums">
 			<span className="font-extrabold text-foreground">{title}</span> · {text}
+			{detail ? <span className="normal-case tabular-nums"> · {detail}</span> : null}
 		</span>
 	)
 }
