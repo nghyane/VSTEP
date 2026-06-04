@@ -78,6 +78,25 @@ class AdminCourseServiceDecompositionTest extends TestCase
             ->assertJsonPath('data.is_published', false);
     }
 
+    public function test_admin_can_create_duplicate_title_as_draft_but_cannot_publish_it(): void
+    {
+        $token = $this->actingAsAdmin();
+        Course::factory()->create(['title' => 'B2 Intensive']);
+
+        $draft = Course::factory()->unpublished()->create(['title' => 'B2 Intensive']);
+
+        $this->assertDatabaseHas('courses', [
+            'id' => $draft->id,
+            'title' => 'B2 Intensive',
+            'is_published' => false,
+        ]);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/admin/courses/{$draft->id}/publish")
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['title']);
+    }
+
     // ── Domain 2: Schedule Items ──
 
     public function test_admin_can_manage_schedule_items(): void
