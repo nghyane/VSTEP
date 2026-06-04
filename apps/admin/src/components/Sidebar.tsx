@@ -3,6 +3,7 @@ import {
 	CalendarOutlined,
 	CheckSquareOutlined,
 	DatabaseOutlined,
+	DollarOutlined,
 	EditOutlined,
 	GiftOutlined,
 	HomeOutlined,
@@ -127,6 +128,11 @@ function buildStaffItems(isAdmin: boolean): ItemType[] {
 			label: "Quản trị",
 			children: [
 				{
+					key: "/finance",
+					icon: <DollarOutlined />,
+					label: <Link to={t("/finance")}>Đơn hàng & dòng tiền</Link>,
+				},
+				{
 					key: "/grading",
 					icon: <CheckSquareOutlined />,
 					label: <Link to={t("/grading")}>Tiêu chí chấm điểm</Link>,
@@ -162,6 +168,7 @@ const STAFF_KEYS = [
 	"/practice/speaking-drills",
 	"/practice/speaking-scenarios",
 	"/courses",
+	"/finance",
 	"/leave-requests",
 	"/grading",
 	"/topup-packages",

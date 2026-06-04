@@ -255,6 +255,13 @@ Route::prefix('v1')->group(function () {
             Route::get('/top-content', [Admin\AnalyticsController::class, 'topContent']);
         });
 
+        Route::middleware('role:admin')->prefix('finance')->group(function () {
+            Route::get('/summary', [Admin\FinanceController::class, 'summary']);
+            Route::get('/orders', [Admin\FinanceController::class, 'orders']);
+            Route::get('/orders/{type}/{id}', [Admin\FinanceController::class, 'show'])->whereIn('type', ['topup', 'course'])->whereUuid('id');
+            Route::get('/top-products', [Admin\FinanceController::class, 'topProducts']);
+        });
+
         // Exam management
         Route::prefix('exams')->group(function () {
             Route::post('/import', [Admin\ExamController::class, 'import']);
