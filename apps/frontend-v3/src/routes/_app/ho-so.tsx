@@ -77,8 +77,8 @@ function ProfilePage() {
 					</div>
 					{!canCreateProfile && (
 						<p className="mt-6 text-xs font-bold text-subtle">
-							Bạn đã đạt giới hạn {maxProfiles} hồ sơ. Hãy xoá hồ sơ không dùng hoặc liên hệ hỗ trợ nếu cần
-							tạo thêm.
+							Tài khoản này đã có đủ {maxProfiles} hồ sơ. Vui lòng liên hệ hỗ trợ nếu bạn cần tạo thêm
+							mục tiêu học tập.
 						</p>
 					)}
 				</section>
