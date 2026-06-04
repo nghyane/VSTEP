@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature\Exam;
 
 use App\Enums\CoinTransactionType;
+use App\Enums\ExamSessionStatus;
 use App\Models\Exam;
+use App\Models\ExamSession;
 use App\Models\ExamVersion;
 use App\Models\ExamVersionListeningItem;
 use App\Models\ExamVersionListeningSection;
@@ -147,6 +149,54 @@ class ExamSessionTest extends TestCase
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson("/api/v1/exam-sessions/{$sessionId}/submit")->assertStatus(422);
+    }
+
+    public function test_my_sessions_submitted_filter_includes_terminal_statuses(): void
+    {
+        [$user, $profile, , $version] = $this->seedExam();
+        $token = $this->tokenFor($user);
+
+        foreach ([
+            ExamSessionStatus::Submitted,
+            ExamSessionStatus::AutoSubmitted,
+            ExamSessionStatus::Grading,
+            ExamSessionStatus::Graded,
+        ] as $index => $status) {
+            ExamSession::create([
+                'profile_id' => $profile->id,
+                'exam_version_id' => $version->id,
+                'mode' => 'full',
+                'selected_skills' => ['listening', 'reading', 'writing', 'speaking'],
+                'is_full_test' => true,
+                'status' => $status,
+                'started_at' => now()->subMinutes($index + 1),
+                'submitted_at' => now()->subMinutes($index),
+                'server_deadline_at' => now()->addHour(),
+                'coins_charged' => 25,
+            ]);
+        }
+        ExamSession::create([
+            'profile_id' => $profile->id,
+            'exam_version_id' => $version->id,
+            'mode' => 'full',
+            'selected_skills' => ['listening', 'reading', 'writing', 'speaking'],
+            'is_full_test' => true,
+            'status' => ExamSessionStatus::Active,
+            'started_at' => now(),
+            'submitted_at' => null,
+            'server_deadline_at' => now()->addHour(),
+            'coins_charged' => 25,
+        ]);
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/v1/exam-sessions?status=submitted')
+            ->assertOk()
+            ->assertJsonCount(4, 'data');
+
+        $this->assertEqualsCanonicalizing(
+            ['submitted', 'auto_submitted', 'grading', 'graded'],
+            array_column($response->json('data'), 'status'),
+        );
     }
 
     public function test_submit_speaking_uses_audio_key_and_stores_public_url(): void

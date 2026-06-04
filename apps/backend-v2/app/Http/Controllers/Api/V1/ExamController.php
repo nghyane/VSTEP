@@ -122,7 +122,9 @@ final class ExamController extends Controller
             ->orderByDesc('started_at')
             ->limit(50);
 
-        if ($status !== null && $status !== 'all') {
+        if ($status === 'submitted') {
+            $query->whereIn('status', ExamSessionStatus::terminalValues());
+        } elseif ($status !== null && $status !== 'all') {
             $query->where('status', $status);
         }
 

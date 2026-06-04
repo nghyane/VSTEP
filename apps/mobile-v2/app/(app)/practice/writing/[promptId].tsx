@@ -33,7 +33,7 @@ import {
   type WritingSampleMarker,
 } from "@/hooks/use-practice";
 import { getApiErrorMessage } from "@/lib/api";
-import { translateText } from "@/lib/translate";
+import { translateText, translateTextStrict } from "@/lib/translate";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 const COLOR = "#58CC02";
@@ -41,15 +41,6 @@ const COLOR_DARK = "#478700";
 
 function countWords(text: string) {
   return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
-}
-
-async function translateSampleSegment(text: string): Promise<string> {
-  if (text.trim().length === 0) return text;
-  const leading = text.match(/^\s*/)?.[0] ?? "";
-  const trailing = text.match(/\s*$/)?.[0] ?? "";
-  const core = text.trim();
-  const translated = await translateText(core, "en", "vi").catch(() => core);
-  return `${leading}${translated.trim()}${trailing}`;
 }
 
 export default function WritingExerciseScreen() {
@@ -139,7 +130,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
   const [promptTr, setPromptTr] = useState<string | null>(null);
   const [promptTrLoading, setPromptTrLoading] = useState(false);
   const [promptTrError, setPromptTrError] = useState(false);
-  const [sampleTrSegments, setSampleTrSegments] = useState<SampleSegment[] | null>(null);
+  const [sampleTr, setSampleTr] = useState<string | null>(null);
   const [sampleTrLoading, setSampleTrLoading] = useState(false);
   const [sampleTrError, setSampleTrError] = useState(false);
   const inputRef = useRef<TextInput>(null);
@@ -194,28 +185,16 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
   }
 
   function toggleSampleTr() {
-    if (sampleTrSegments) {
-      setSampleTrSegments(null);
+    if (sampleTr) {
+      setSampleTr(null);
       setSampleTrError(false);
       return;
     }
     if (sampleTrLoading) return;
     setSampleTrLoading(true);
     setSampleTrError(false);
-    const segments = buildSampleSegments(detail.sampleAnswer!, detail.sampleMarkers);
-    Promise.all(
-      segments.map((segment) =>
-        translateSampleSegment(segment.text),
-      ),
-    )
-      .then((translated) => {
-        setSampleTrSegments(
-          segments.map((segment, index) => ({
-            ...segment,
-            text: translated[index] ?? segment.text,
-          })),
-        );
-      })
+    translateTextStrict(detail.sampleAnswer!, "en", "vi")
+      .then((res) => setSampleTr(res))
       .catch(() => {
         setSampleTrError(true);
       })
@@ -424,7 +403,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
           visible={showSample}
           answer={detail.sampleAnswer}
           markers={detail.sampleMarkers}
-          translationSegments={sampleTrSegments}
+          translation={sampleTr}
           translationLoading={sampleTrLoading}
           translationError={sampleTrError}
           onToggleTranslation={toggleSampleTr}
@@ -454,7 +433,7 @@ function WritingSampleModal({
   visible,
   answer,
   markers,
-  translationSegments,
+  translation,
   translationLoading,
   translationError,
   onToggleTranslation,
@@ -464,7 +443,7 @@ function WritingSampleModal({
   visible: boolean;
   answer: string;
   markers: WritingSampleMarker[];
-  translationSegments: SampleSegment[] | null;
+  translation: string | null;
   translationLoading: boolean;
   translationError: boolean;
   onToggleTranslation: () => void;
@@ -473,8 +452,7 @@ function WritingSampleModal({
 }) {
   const [activeSegment, setActiveSegment] = useState<SampleSegment | null>(null);
   const segments = useMemo(() => buildSampleSegments(answer, markers), [answer, markers]);
-  const displaySegments = translationSegments ?? segments;
-  const isTranslated = translationSegments !== null;
+  const isTranslated = translation !== null;
   const handleClose = () => {
     setActiveSegment(null);
     onClose();
@@ -519,7 +497,7 @@ function WritingSampleModal({
               <Text style={[s.transText, { color: c.destructive }]}>Không thể dịch. Thử lại sau.</Text>
             ) : null}
             <Text style={[s.sampleText, { color: c.foreground }]}>
-              {displaySegments.map((segment, index) => {
+              {segments.map((segment, index) => {
                 if (!segment.marker) return <Text key={index}>{segment.text}</Text>;
                 return (
                   <Text
@@ -538,6 +516,12 @@ function WritingSampleModal({
                 );
               })}
             </Text>
+            {translation ? (
+              <View style={[s.transBlock, { borderLeftColor: COLOR + "60" }]}>
+                <Text style={[s.transLabel, { color: COLOR }]}>Dịch</Text>
+                <Text style={[s.transText, { color: c.mutedForeground }]}>{translation}</Text>
+              </View>
+            ) : null}
           </DepthCard>
         </ScrollView>
 
