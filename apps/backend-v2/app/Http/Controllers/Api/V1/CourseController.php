@@ -10,6 +10,7 @@ use App\Http\Requests\BookSlotRequest;
 use App\Http\Requests\Course\CreateEnrollmentOrderRequest;
 use App\Http\Resources\EnrollmentOrderResource;
 use App\Models\Course;
+use App\Models\CourseEnrollmentOrder;
 use App\Models\TeacherSlot;
 use App\Services\CourseOrderService;
 use App\Services\CourseService;
@@ -79,6 +80,13 @@ final class CourseController extends Controller
         return EnrollmentOrderResource::collection(
             $this->courseOrderService->getProfileOrders($request->profile())
         )->response();
+    }
+
+    public function cancelEnrollmentOrder(Request $request, CourseEnrollmentOrder $order): JsonResponse
+    {
+        $cancelled = $this->courseOrderService->cancelPendingOrder($request->profile(), $order);
+
+        return response()->json(['data' => EnrollmentOrderResource::make($cancelled)]);
     }
 
     /**

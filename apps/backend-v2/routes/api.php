@@ -191,6 +191,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/courses/{course}', [CourseController::class, 'show']);
         Route::post('/courses/{course}/enrollment-orders', [CourseController::class, 'createEnrollmentOrder']);
         Route::get('/courses/enrollment-orders', [CourseController::class, 'enrollmentOrders']);
+        Route::post('/courses/enrollment-orders/{order}/cancel', [CourseController::class, 'cancelEnrollmentOrder'])->whereUuid('order');
         Route::get('/courses/{course}/bookings', [CourseController::class, 'bookings']);
         Route::post('/courses/{course}/bookings', [CourseController::class, 'bookSlot']);
 

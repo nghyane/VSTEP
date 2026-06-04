@@ -157,6 +157,31 @@ class CourseEnrollmentTest extends TestCase
         $this->assertSame(1, CourseEnrollmentOrder::query()->where('profile_id', $profile->id)->where('course_id', $course->id)->where('status', 'pending')->count());
     }
 
+    public function test_enrollment_order_can_be_cancelled_by_owner(): void
+    {
+        [$user, $profile, $course] = $this->seedCourse(100_000, 200);
+
+        $token = $this->tokenFor($user);
+        $orderId = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
+                'payment_provider' => 'payos',
+                'commitment_signature' => $this->signatureSvg(),
+            ])
+            ->assertCreated()
+            ->json('data.id');
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/enrollment-orders/{$orderId}/cancel")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled');
+
+        $this->assertDatabaseHas('course_enrollment_orders', [
+            'id' => $orderId,
+            'profile_id' => $profile->id,
+            'status' => 'cancelled',
+        ]);
+    }
+
     public function test_enrollment_order_requires_commitment_signature(): void
     {
         [$user, $profile, $course] = $this->seedCourse(100_000, 200);
