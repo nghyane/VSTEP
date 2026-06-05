@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import Svg, { Circle, G, Line, Polyline, Rect, Text as SvgText } from "react-native-svg";
 
@@ -85,6 +85,7 @@ function outlierNotice(quality: ScoreQuality | undefined): string | null {
 
 export function ScoreTrend() {
   const c = useThemeColors();
+  const { width } = useWindowDimensions();
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [zoomOpen, setZoomOpen] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<Skill[]>(SKILLS);
@@ -100,6 +101,7 @@ export function ScoreTrend() {
       .slice(0, MAX_TESTS)
       .reverse();
   }, [data]);
+  const zoomChartWidth = Math.max(720, Math.min(1240, width + tests.length * 72));
 
   if (isLoading || !overview) {
     return (
@@ -194,6 +196,7 @@ export function ScoreTrend() {
         onClose={() => setZoomOpen(false)}
         colors={c}
         visibleSkills={visibleSkills}
+        chartWidth={zoomChartWidth}
       />
     </DepthCard>
   );
@@ -377,6 +380,7 @@ function ScoreTrendZoomModal({
   onClose,
   colors,
   visibleSkills,
+  chartWidth,
 }: {
   visible: boolean;
   tests: ScoredSession[];
@@ -386,6 +390,7 @@ function ScoreTrendZoomModal({
   onClose: () => void;
   colors: ThemeColors;
   visibleSkills: readonly Skill[];
+  chartWidth: number;
 }) {
   const activeTest = activeIdx !== null ? tests[activeIdx] : null;
   const activeAvg = activeTest ? computeAvg(activeTest.scores, visibleSkills) : null;
@@ -416,7 +421,7 @@ function ScoreTrendZoomModal({
                 onSelect={onSelect}
                 colors={colors}
                 visibleSkills={visibleSkills}
-                width={920}
+                width={chartWidth}
                 height={368}
               />
             </View>
@@ -612,6 +617,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   zoomChartCanvas: {
-    width: 920,
+    minWidth: 720,
   },
 });

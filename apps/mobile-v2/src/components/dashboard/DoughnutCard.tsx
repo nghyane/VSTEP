@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View, type GestureResponderEvent } from "react-native";
+import { Pressable, StyleSheet, Text, View, useWindowDimensions, type GestureResponderEvent } from "react-native";
 import Svg, { Circle, Text as SvgText } from "react-native-svg";
 
 import { DepthCard } from "@/components/DepthCard";
@@ -9,8 +9,7 @@ import { fontFamily, fontSize, radius, spacing, type ThemeColors, useThemeColors
 import type { ExamSessionResult, Skill } from "@/types/api";
 
 const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
-const SIZE = 200;
-const CENTER = SIZE / 2;
+const BASE_SIZE = 200;
 const RADIUS = 70;
 const STROKE = 28;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -56,10 +55,14 @@ function averageBySkill(sessions: ExamSessionResult[]): Record<Skill, number | n
   return result;
 }
 
-function selectedSkillFromPress(event: GestureResponderEvent, segments: { skill: Skill; value: number; percent: number; offsetDeg: number }[]): Skill | null {
+function selectedSkillFromPress(
+  event: GestureResponderEvent,
+  segments: { skill: Skill; value: number; percent: number; offsetDeg: number }[],
+  center: number,
+): Skill | null {
   const { locationX, locationY } = event.nativeEvent;
-  const dx = locationX - CENTER;
-  const dy = locationY - CENTER;
+  const dx = locationX - center;
+  const dy = locationY - center;
   const distance = Math.sqrt(dx * dx + dy * dy);
   const innerRadius = RADIUS - STROKE / 2 - 8;
   const outerRadius = RADIUS + STROKE / 2 + 8;
@@ -79,8 +82,11 @@ function selectedSkillFromPress(event: GestureResponderEvent, segments: { skill:
 
 export function DoughnutCard() {
   const c = useThemeColors();
+  const { width } = useWindowDimensions();
   const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
   const { data: sessions } = useExamSessions();
+  const size = width >= 768 ? 240 : BASE_SIZE;
+  const center = size / 2;
 
   if (!sessions) return null;
 
@@ -103,7 +109,7 @@ export function DoughnutCard() {
   const centerLabel = activeSegment ? SKILL_META[activeSegment.skill].vi : "LƯỢT";
 
   function handleChartPress(event: GestureResponderEvent) {
-    const skill = selectedSkillFromPress(event, segments);
+    const skill = selectedSkillFromPress(event, segments, center);
     setActiveSkill((current) => (skill === current ? null : skill));
   }
 
@@ -113,16 +119,16 @@ export function DoughnutCard() {
       <Text style={[styles.subtitle, { color: c.subtle }]}>{total > 0 ? `Tổng ${total} lượt làm theo từng kỹ năng` : "Chưa có bài thi nào được hoàn thành"}</Text>
 
       <View style={styles.chartWrap}>
-        <Pressable style={styles.chartPressable} onPress={handleChartPress}>
-          <Svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
-            <Circle cx={CENTER} cy={CENTER} r={RADIUS} fill="none" stroke={c.background} strokeWidth={STROKE} />
+        <Pressable style={[styles.chartPressable, { width: size, height: size }]} onPress={handleChartPress}>
+          <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+            <Circle cx={center} cy={center} r={RADIUS} fill="none" stroke={c.background} strokeWidth={STROKE} />
             {total > 0
               ? segments.map((segment) =>
                   segment.value === 0 ? null : (
                     <Circle
                       key={segment.skill}
-                      cx={CENTER}
-                      cy={CENTER}
+                      cx={center}
+                      cy={center}
                       r={activeSkill === segment.skill ? RADIUS + 2 : RADIUS}
                       fill="none"
                       stroke={getSkillColor(segment.skill, c)}
@@ -130,15 +136,15 @@ export function DoughnutCard() {
                       strokeDasharray={`${segment.dash} ${CIRCUMFERENCE - segment.dash}`}
                       strokeDashoffset={0}
                       strokeLinecap="butt"
-                      transform={`rotate(${segment.offsetDeg - 90} ${CENTER} ${CENTER})`}
+                      transform={`rotate(${segment.offsetDeg - 90} ${center} ${center})`}
                       opacity={activeSkill !== null && activeSkill !== segment.skill ? 0.35 : 0.95}
                     />
                   ),
                 )
               : null}
             <SvgText
-              x={CENTER}
-              y={CENTER - 6}
+              x={center}
+              y={center - 6}
               textAnchor="middle"
               alignmentBaseline="central"
               fontSize={36}
@@ -148,8 +154,8 @@ export function DoughnutCard() {
               {centerValue}
             </SvgText>
             <SvgText
-              x={CENTER}
-              y={CENTER + 22}
+              x={center}
+              y={center + 22}
               textAnchor="middle"
               alignmentBaseline="central"
               fontSize={activeSegment ? 13 : 11}
@@ -179,6 +185,7 @@ export function DoughnutCard() {
             onPress={() => setActiveSkill(activeSkill === skill ? null : skill)}
             style={[
               styles.legendItem,
+              width >= 768 ? styles.legendItemWide : styles.legendItemNarrow,
               { borderColor: activeSkill === skill ? getSkillColor(skill, c) : "transparent", backgroundColor: activeSkill === skill ? c.surface : "transparent" },
             ]}
           >
@@ -210,8 +217,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.base,
   },
   chartPressable: {
-    width: SIZE,
-    height: SIZE,
+    width: BASE_SIZE,
+    height: BASE_SIZE,
   },
   legendGrid: {
     flexDirection: "row",
@@ -235,7 +242,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   legendItem: {
-    width: "48%",
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
@@ -243,6 +249,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.button,
     padding: spacing.sm,
   },
+  legendItemNarrow: { width: "48%" },
+  legendItemWide: { width: "31.5%" },
   legendLabel: {
     flex: 1,
     fontSize: fontSize.sm,
