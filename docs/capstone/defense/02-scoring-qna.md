@@ -5,17 +5,17 @@ File này dùng khi hội đồng hỏi sâu. Trên main deck chỉ nên đưa b
 ## Cách trình bày trên slide chính
 
 ```text
-Parameter              Source             Formula role
-Word count             Text analyzer      WordCountCap
-Spelling errors        Text analyzer      SpellingPenalty
-Topic relevance        AI signal          Relevance / OffTopicPenalty
-Pause count            Speech analyzer    PausePenalty
-Pronunciation signals  Speech service     PronunciationScore
+Input metric           Extracted by          Used for
+Word count             Text analyzer         Length cap
+Spelling errors        Text analyzer         Spelling penalty
+Topic relevance        AI-assisted analysis  Relevance score / off-topic penalty
+Pause count            Speech analyzer       Fluency penalty
+Pronunciation signals  Speech service        Pronunciation score
 
-PracticeScore = Formula(parameters) + caps/penalties
+Writing/Speaking score = fixed formula(input metrics) + caps / penalties
 ```
 
-AI/công cụ ngoài chỉ lấy tham số và hỗ trợ feedback. Điểm luyện tập do backend tính bằng công thức cố định.
+AI/công cụ ngoài chỉ lấy chỉ số đầu vào và hỗ trợ feedback. Điểm Writing/Speaking trong practice/mock test do backend tính bằng công thức cố định.
 
 ## Công thức tổng
 
@@ -116,8 +116,8 @@ Result: Linguistic probe passed.
 
 ### Grammar/Vocabulary đã ổn chưa?
 
-- Đủ ổn cho **practice score** vì writing/speaking probes đều pass trong ngưỡng kiểm tra.
-- Chưa claim official accuracy vì chưa có large official VSTEP examiner-graded dataset.
+- Đủ ổn cho **điểm tham khảo trong luyện tập/thi thử** vì writing/speaking probes đều pass trong ngưỡng kiểm tra.
+- Chưa khẳng định độ chính xác tương đương chấm chính thức vì chưa có bộ dữ liệu lớn do giám khảo VSTEP chấm.
 - Grammar đang hơi conservative: writing probe thường cho GrammarScore khoảng 6.0 khi grammar-types chỉ 2–3.
 - Vocabulary nhạy với evidence: writing vocab dao động 4.5–7.5; speaking có case VocabularyScore lên 10.0 nên có thể kéo điểm lên.
 
@@ -175,7 +175,7 @@ Writing có OffTopicPenalty, WordCountCap và TaskFulfillmentCap. Speaking có C
 
 ### Q6. Điểm này có thay giám khảo không?
 
-Không. Writing/Speaking score là điểm luyện tập/thi thử tham khảo, không phải điểm chính thức.
+Không. Điểm Writing/Speaking là điểm tham khảo cho luyện tập/thi thử, không phải điểm chính thức.
 
 ## Code evidence nếu bị hỏi
 
