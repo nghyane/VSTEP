@@ -55,7 +55,12 @@ export function CourseCard({ course, enrolled, enrollment }: Props) {
 	if (ctaDisabled) return card
 
 	return (
-		<Link to="/khoa-hoc/$courseId" params={{ courseId: course.id }} className="block">
+		<Link
+			to="/khoa-hoc/$courseId"
+			params={{ courseId: course.id }}
+			search={{ cancel_order: undefined }}
+			className="block"
+		>
 			{card}
 		</Link>
 	)
@@ -214,6 +219,7 @@ function EnrolledCardActions({ course, status }: { course: Course; status: { act
 					<Link
 						to="/khoa-hoc/$courseId"
 						params={{ courseId: course.id }}
+						search={{ cancel_order: undefined }}
 						className="btn btn-secondary text-sm"
 					>
 						Chi tiết
@@ -223,6 +229,7 @@ function EnrolledCardActions({ course, status }: { course: Course; status: { act
 				<Link
 					to="/khoa-hoc/$courseId"
 					params={{ courseId: course.id }}
+					search={{ cancel_order: undefined }}
 					className="btn btn-primary w-full text-sm"
 				>
 					{status.active ? "Vào khóa học" : "Xem chi tiết"}
