@@ -4,14 +4,78 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Mail\CourseEnrollmentInvoiceMail;
+use App\Mail\TopupInvoiceMail;
+use App\Models\CourseEnrollmentOrder;
 use App\Models\Profile;
 use App\Models\TeacherSlot;
 use App\Models\User;
+use App\Models\WalletTopupOrder;
 use Illuminate\Mail\Message;
 use Illuminate\Support\Facades\Mail;
 
 final class NotificationEmailService
 {
+    public function sendCourseEnrollmentInvoice(Profile $profile, CourseEnrollmentOrder $order): void
+    {
+        $order->loadMissing('course');
+        $paidAt = $order->paid_at?->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i') ?? now('Asia/Ho_Chi_Minh')->format('d/m/Y H:i');
+        $profile->loadMissing('account');
+        $account = $profile->account;
+        if ($account === null) {
+            throw new \RuntimeException('Course invoice email requires a profile account.');
+        }
+
+        $email = trim((string) $account->email);
+        if ($email === '') {
+            throw new \RuntimeException('Course invoice email requires a recipient email.');
+        }
+
+        $courseTitle = $order->course?->title ?? 'Khóa học VSTEP';
+        $body = $this->bodyHtml(
+            [
+                'Thanh toán đăng ký khóa học của bạn đã thành công.',
+                'Khóa học: '.$courseTitle.'.',
+                'Mã đơn: '.$order->order_code.'.',
+                'Số tiền: '.number_format($order->amount_vnd, 0, ',', '.').'đ.',
+                'Thời gian thanh toán: '.$paidAt.'.',
+            ],
+            'Xem khóa học',
+            "/khoa-hoc/{$order->course_id}",
+        );
+
+        Mail::to($email)->send(new CourseEnrollmentInvoiceMail($body));
+    }
+
+    public function sendTopupInvoice(Profile $profile, WalletTopupOrder $order): void
+    {
+        $paidAt = $order->paid_at?->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i') ?? now('Asia/Ho_Chi_Minh')->format('d/m/Y H:i');
+        $profile->loadMissing('account');
+        $account = $profile->account;
+        if ($account === null) {
+            throw new \RuntimeException('Topup invoice email requires a profile account.');
+        }
+
+        $email = trim((string) $account->email);
+        if ($email === '') {
+            throw new \RuntimeException('Topup invoice email requires a recipient email.');
+        }
+
+        $body = $this->bodyHtml(
+            [
+                'Thanh toán nạp xu của bạn đã thành công.',
+                'Mã đơn: '.$order->order_code.'.',
+                'Số tiền: '.number_format($order->amount_vnd, 0, ',', '.').'đ.',
+                'Số xu đã cộng: '.number_format($order->coins_to_credit, 0, ',', '.').' xu.',
+                'Thời gian thanh toán: '.$paidAt.'.',
+            ],
+            'Xem ví của bạn',
+            '/dashboard',
+        );
+
+        Mail::to($email)->send(new TopupInvoiceMail($body));
+    }
+
     public function sendCourseEnrolled(Profile $profile, string $subject, string $body, string $courseId): void
     {
         $this->sendToProfile(

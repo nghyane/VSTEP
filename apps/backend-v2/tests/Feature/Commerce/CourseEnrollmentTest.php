@@ -8,6 +8,7 @@ use App\Enums\BookingStatus;
 use App\Enums\CoinTransactionType;
 use App\Enums\ExamSessionStatus;
 use App\Enums\SlotStatus;
+use App\Jobs\SendPaymentInvoiceEmail;
 use App\Models\CoinTransaction;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
@@ -24,7 +25,10 @@ use App\Services\CourseOrderService;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -109,6 +113,8 @@ class CourseEnrollmentTest extends TestCase
     {
         [$user, $profile, $course] = $this->seedCourse(100_000, 200);
         $wallet = $this->app->make(WalletService::class);
+        Mail::fake();
+        Queue::fake();
 
         $token = $this->tokenFor($user);
         $orderCode = $this->createEnrollmentOrder($token, $course);
@@ -128,6 +134,10 @@ class CourseEnrollmentTest extends TestCase
 
         // Bonus coins credited (onboarding bonus via SystemConfig may add more)
         $this->assertGreaterThanOrEqual(200, $wallet->getBalance($profile));
+        Queue::assertPushed(SendPaymentInvoiceEmail::class, function (SendPaymentInvoiceEmail $job) use ($confirmed): bool {
+            return $job->orderType === SendPaymentInvoiceEmail::TYPE_COURSE_ENROLLMENT
+                && $job->orderId === $confirmed->id;
+        });
     }
 
     public function test_enrollment_confirm_idempotent(): void
@@ -149,6 +159,35 @@ class CourseEnrollmentTest extends TestCase
             ->where('course_id', $course->id)
             ->count();
         $this->assertSame(1, $count);
+    }
+
+    public function test_invoice_email_failure_does_not_fail_enrollment_confirmation(): void
+    {
+        [$user, $profile, $course] = $this->seedCourse(100_000, 200);
+
+        $token = $this->tokenFor($user);
+        $orderCode = $this->createEnrollmentOrder($token, $course);
+
+        config(['queue.default' => 'sync']);
+        Mail::shouldReceive('html')->andReturnNull();
+        Mail::shouldReceive('to')->andThrow(new \RuntimeException('SMTP down'));
+
+        try {
+            $confirmed = $this->app->make(CourseOrderService::class)
+                ->confirmByOrderCode($orderCode, 'test_txn_id', null);
+
+            $this->assertTrue($confirmed->isPaid());
+            $this->assertDatabaseHas('course_enrollments', [
+                'profile_id' => $profile->id,
+                'course_id' => $course->id,
+            ]);
+            $this->assertDatabaseHas('course_enrollment_orders', [
+                'order_code' => $orderCode,
+                'status' => 'paid',
+            ]);
+        } finally {
+            $this->restoreMailFacade();
+        }
     }
 
     public function test_enrollment_rejects_full_course(): void
@@ -489,5 +528,11 @@ class CourseEnrollmentTest extends TestCase
         $response->assertOk();
 
         return (string) $response->json('data.access_token');
+    }
+
+    private function restoreMailFacade(): void
+    {
+        $this->app->forgetInstance('mail.manager');
+        Facade::clearResolvedInstance('mail.manager');
     }
 }

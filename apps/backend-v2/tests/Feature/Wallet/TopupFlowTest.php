@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Wallet;
 
+use App\Jobs\SendPaymentInvoiceEmail;
 use App\Models\Profile;
 use App\Models\User;
 use App\Models\WalletTopupOrder;
@@ -12,7 +13,10 @@ use App\Services\TopupService;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class TopupFlowTest extends TestCase
@@ -196,6 +200,8 @@ class TopupFlowTest extends TestCase
         ]);
 
         $token = $this->tokenFor($user);
+        Mail::fake();
+        Queue::fake();
 
         $create = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson('/api/v1/wallet/topup', $this->topupPayload($package->id));
@@ -209,6 +215,44 @@ class TopupFlowTest extends TestCase
         $balance = $this->app->make(WalletService::class)->getBalance($profile);
         // 100 onboarding + 500 topup = 600
         $this->assertSame(600, $balance);
+        Queue::assertPushed(SendPaymentInvoiceEmail::class, function (SendPaymentInvoiceEmail $job) use ($orderCode): bool {
+            $order = WalletTopupOrder::query()->where('order_code', $orderCode)->firstOrFail();
+
+            return $job->orderType === SendPaymentInvoiceEmail::TYPE_TOPUP
+                && $job->orderId === $order->id;
+        });
+    }
+
+    public function test_invoice_email_failure_does_not_fail_topup_confirmation(): void
+    {
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+        $package = WalletTopupPackage::factory()->create([
+            'coins_base' => 500,
+            'bonus_coins' => 0,
+        ]);
+
+        $token = $this->tokenFor($user);
+        $orderCode = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/wallet/topup', $this->topupPayload($package->id))
+            ->json('data.order_code');
+
+        config(['queue.default' => 'sync']);
+        Mail::shouldReceive('to')->andThrow(new \RuntimeException('SMTP down'));
+
+        try {
+            $confirmed = $this->app->make(TopupService::class)
+                ->confirmByOrderCode($orderCode, 'test_txn_id', null);
+
+            $this->assertSame('paid', $confirmed->status->value);
+            $this->assertSame(600, $this->app->make(WalletService::class)->getBalance($profile));
+            $this->assertDatabaseHas('wallet_topup_orders', [
+                'order_code' => $orderCode,
+                'status' => 'paid',
+            ]);
+        } finally {
+            $this->restoreMailFacade();
+        }
     }
 
     public function test_order_status_is_visible_after_switching_profile_in_same_account(): void
@@ -218,10 +262,12 @@ class TopupFlowTest extends TestCase
         $profileB = Profile::factory()->forAccount($user)->create();
         $package = WalletTopupPackage::factory()->create(['coins_base' => 500]);
 
-        $login = $this->postJson('/api/v1/auth/login', [
-            'email' => $user->email,
-            'password' => 'password',
-        ]);
+        $login = $this
+            ->withServerVariables(['REMOTE_ADDR' => '127.0.2.'.random_int(1, 250)])
+            ->postJson('/api/v1/auth/login', [
+                'email' => $user->email,
+                'password' => 'password',
+            ]);
         $tokenA = $login->json('data.access_token');
         $refreshToken = $login->json('data.refresh_token');
 
@@ -315,9 +361,17 @@ class TopupFlowTest extends TestCase
 
     private function tokenFor(User $user): string
     {
-        return $this->postJson('/api/v1/auth/login', [
-            'email' => $user->email,
-            'password' => 'password',
-        ])->json('data.access_token');
+        return $this
+            ->withServerVariables(['REMOTE_ADDR' => '127.0.2.'.random_int(1, 250)])
+            ->postJson('/api/v1/auth/login', [
+                'email' => $user->email,
+                'password' => 'password',
+            ])->json('data.access_token');
+    }
+
+    private function restoreMailFacade(): void
+    {
+        $this->app->forgetInstance('mail.manager');
+        Facade::clearResolvedInstance('mail.manager');
     }
 }
