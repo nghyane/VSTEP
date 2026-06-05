@@ -155,7 +155,7 @@ export default function PracticeHubScreen() {
   return (
     <ScrollView
       style={[styles.root, { backgroundColor: c.background }]}
-      contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.xl }]}
+      contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.lg }]}
       showsVerticalScrollIndicator={false}
     >
       <Animated.View style={animStyle(0)}>
@@ -193,8 +193,6 @@ export default function PracticeHubScreen() {
           <Text style={[styles.mascotText, { color: c.primaryDark }]}>Chạm vào từng thẻ để luyện ngay. Học đều nền tảng và 4 kỹ năng sẽ hiệu quả hơn học dồn.</Text>
         </View>
       </View>
-
-      <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
   );
 }
@@ -321,7 +319,7 @@ function SkillCard({ item, onPress }: { item: PracticeItem; onPress: () => void 
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"], gap: spacing.xl },
+  scroll: { paddingHorizontal: spacing.xl, gap: spacing.xl },
   title: { fontSize: fontSize["3xl"], fontFamily: fontFamily.extraBold, letterSpacing: -0.4 },
   subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs, lineHeight: 20 },
   goalCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.md, gap: spacing.sm },

@@ -38,6 +38,9 @@ export function ConversationTurnView({
 }: Props) {
   const c = useThemeColors();
   const isUser = turn.role === "user";
+  const displayText = turn.feedback?.profanity?.found
+    ? censorProfanityText(turn.text, turn.feedback.profanity.words)
+    : turn.text;
 
   return (
     <View style={[s.wrap, isUser ? s.right : s.left]}>
@@ -70,7 +73,7 @@ export function ConversationTurnView({
                 style={[s.bubbleText, { color: c.foreground }]}
                 selectable
               >
-                {turn.text}
+                {displayText}
               </Text>
               {!isUser ? (
                 <HapticTouchable
@@ -92,7 +95,7 @@ export function ConversationTurnView({
           </View>
 
           <TurnActions
-            text={turn.text}
+            text={displayText}
             ipa={turn.ipa}
             alignRight={isUser}
           />
@@ -334,3 +337,13 @@ const s = StyleSheet.create({
   },
   chipText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
 });
+
+function censorProfanityText(text: string, words: string[]): string {
+  const profanityWords = new Set(words.map((word) => word.toLowerCase()));
+  return text.replace(/\b[\w']+\b/g, (word) => (profanityWords.has(word.toLowerCase()) ? censorWord(word) : word));
+}
+
+function censorWord(word: string): string {
+  if (word.length <= 2) return "*".repeat(word.length);
+  return `${word[0]}${"*".repeat(word.length - 2)}${word[word.length - 1]}`;
+}
