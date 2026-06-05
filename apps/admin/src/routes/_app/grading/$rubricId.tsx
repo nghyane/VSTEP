@@ -236,8 +236,8 @@ function OverviewTab({
 			<Alert
 				showIcon
 				type="info"
-				message="Admin console cho chính sách chấm điểm vận hành thật"
-				description="Trang này giải thích rubric đang active, điều kiện được chấm, giới hạn điểm và cách hệ thống tính điểm cuối. Các key kỹ thuật được giữ trong backend; UI hiển thị bằng tiếng Việt để dễ vận hành và demo."
+				message="Tổng quan chính sách chấm điểm"
+				description="Kiểm tra version đang áp dụng, điều kiện loại bài, giới hạn điểm và cách hệ thống tính điểm cuối."
 			/>
 			<PolicySummaryCards rubric={rubric} />
 			<ScoringFormulaCard rubric={rubric} />
@@ -259,7 +259,7 @@ function PolicySummaryCards({ rubric }: { rubric: GradingRubric }) {
 	return (
 		<Flex gap={12} wrap="wrap">
 			{gates && (
-				<Card size="small" title="Không chấm điểm khi" style={{ flex: 1, minWidth: 260 }}>
+				<Card size="small" title="Bài bị loại khỏi chấm điểm khi" style={{ flex: 1, minWidth: 260 }}>
 					<Typography.Text>Task 1 dưới {gates.severe_minimum_words_task1} từ</Typography.Text>
 					<br />
 					<Typography.Text>Task 2 dưới {gates.severe_minimum_words_task2} từ</Typography.Text>
@@ -276,7 +276,7 @@ function PolicySummaryCards({ rubric }: { rubric: GradingRubric }) {
 				</Card>
 			)}
 			{rules && (
-				<Card size="small" title="Yêu cầu số từ chuẩn" style={{ flex: 1, minWidth: 200 }}>
+				<Card size="small" title="Mốc số từ chuẩn" style={{ flex: 1, minWidth: 200 }}>
 					<Typography.Text>Task 1: {rules.official_minimum_task1} từ</Typography.Text>
 					<br />
 					<Typography.Text>Task 2: {rules.official_minimum_task2} từ</Typography.Text>
@@ -285,7 +285,7 @@ function PolicySummaryCards({ rubric }: { rubric: GradingRubric }) {
 			<Card size="small" title="Tiêu chí & trọng số" style={{ flex: 1, minWidth: 180 }}>
 				<Typography.Text>{rubric.criteria.length} tiêu chí</Typography.Text>
 				<br />
-				<Typography.Text type="secondary">Tổng trọng số: {totalWeight}%</Typography.Text>
+				<Typography.Text type="secondary">Tổng trọng số hiện tại: {totalWeight}%</Typography.Text>
 			</Card>
 		</Flex>
 	)
@@ -298,9 +298,9 @@ function ScoringFormulaCard({ rubric }: { rubric: GradingRubric }) {
 				<Descriptions.Item label="Công thức">{formulaLabel(rubric.scoring_formula)}</Descriptions.Item>
 				<Descriptions.Item label="Thang điểm">Mỗi tiêu chí được chấm từ 0 đến 10.</Descriptions.Item>
 				<Descriptions.Item label="Trọng số">
-					Điểm tiêu chí được nhân với trọng số, sau đó cộng lại để ra điểm tổng.
+					Tiêu chí có trọng số cao sẽ ảnh hưởng nhiều hơn đến điểm cuối.
 				</Descriptions.Item>
-				<Descriptions.Item label="Làm tròn">Điểm cuối làm tròn về mốc 0.5 gần nhất.</Descriptions.Item>
+				<Descriptions.Item label="Làm tròn">Điểm cuối được làm tròn về mốc 0.5 gần nhất.</Descriptions.Item>
 			</Descriptions>
 		</Card>
 	)
@@ -340,8 +340,8 @@ function VersionActionCard({
 			<Flex align="center" justify="space-between" wrap="wrap" gap={12}>
 				<Typography.Text type="secondary">
 					{rubric.lifecycle.status === "active"
-						? "Version active không sửa trực tiếp để bảo toàn kết quả đã chấm."
-						: "Version này dùng để truy vết kết quả lịch sử."}
+						? "Version đang active được khóa để kết quả chấm cũ không thay đổi. Muốn chỉnh, hãy tạo bản nháp mới."
+						: "Version này được giữ để truy vết kết quả đã chấm trước đây."}
 				</Typography.Text>
 				<Button
 					type="primary"
@@ -416,11 +416,7 @@ function ScoringFlowTab({ rubric }: { rubric: GradingRubric }) {
 
 	return (
 		<Flex vertical gap={16}>
-			<Alert
-				showIcon
-				type="info"
-				message="Luồng này giúp admin vận hành hiểu vì sao hệ thống ra điểm, không chỉ nhìn bảng cấu hình."
-			/>
+			<Alert showIcon type="info" message="Quy trình xử lý từ lúc nộp bài đến lúc ra điểm cuối." />
 			<Flex vertical gap={12}>
 				{flow.map((item) => (
 					<FlowStepCard key={item.index} item={item} />
@@ -459,8 +455,8 @@ function CriteriaMatrixTab({ rubric }: { rubric: GradingRubric }) {
 			<Alert
 				showIcon
 				type="success"
-				message="Đọc theo từng tiêu chí, không đọc ngang cả rubric."
-				description="Mỗi tiêu chí có 5 mốc tham chiếu: 10 xuất sắc, 8 tốt, 6 đạt cơ bản, 4 yếu, 0 không chấm. Điểm lẻ như 7.0 nằm giữa mốc 6 và 8."
+				message="Các mốc điểm là chuẩn tham chiếu theo từng tiêu chí."
+				description="Admin đọc từng tiêu chí riêng. Điểm 7.0 nghĩa là mức bài nằm giữa Đạt cơ bản (6) và Tốt (8)."
 			/>
 			{rubric.criteria.map((criterion) => (
 				<CriterionBandCard key={criterion.key} criterion={criterion} />
@@ -481,7 +477,7 @@ function CriterionBandCard({ criterion }: { criterion: Criterion }) {
 				rowKey="key"
 				columns={[
 					{ title: "Mức điểm", dataIndex: "level", width: 170 },
-					{ title: "Ý nghĩa khi chấm", dataIndex: "description" },
+					{ title: "Diễn giải", dataIndex: "description" },
 				]}
 			/>
 		</Card>
@@ -498,8 +494,8 @@ function PolicyControlTab({ rubric }: { rubric: GradingRubric }) {
 			<Alert
 				showIcon
 				type="warning"
-				message="Điều kiện loại bài là không chấm; giới hạn điểm là vẫn chấm nhưng bị hạ trần."
-				description="Tách rõ hai khái niệm này giúp admin dự đoán tác động trước khi kích hoạt một version rubric mới."
+				message="Điều kiện loại bài và giới hạn điểm là hai bước khác nhau."
+				description="Không đạt điều kiện thì dừng chấm. Đạt điều kiện nhưng bài quá ngắn thì vẫn chấm, nhưng điểm tối đa bị giới hạn."
 			/>
 			<Flex gap={12} wrap="wrap" align="stretch">
 				<Card size="small" title="Điều kiện hệ thống" style={{ flex: 1, minWidth: 280 }}>
@@ -524,7 +520,7 @@ function PolicyControlTab({ rubric }: { rubric: GradingRubric }) {
 						<Typography.Text type="secondary">Rubric này không có điều kiện số từ.</Typography.Text>
 					)}
 				</Card>
-				<Card size="small" title="Chuẩn số từ" style={{ flex: 1, minWidth: 240 }}>
+				<Card size="small" title="Mốc số từ khuyến nghị" style={{ flex: 1, minWidth: 240 }}>
 					{rules ? (
 						<Space direction="vertical">
 							<Typography.Text>Task 1: {rules.official_minimum_task1} từ</Typography.Text>
@@ -540,9 +536,9 @@ function PolicyControlTab({ rubric }: { rubric: GradingRubric }) {
 			</Flex>
 			{rules && (
 				<Flex gap={12} wrap="wrap">
-					<CapRulesCard title="Giới hạn toàn bộ điểm" rules={rules.short_response_caps} />
+					<CapRulesCard title="Giới hạn điểm toàn bài" rules={rules.short_response_caps} />
 					<CapRulesCard
-						title="Giới hạn riêng Hoàn thành yêu cầu đề"
+						title="Giới hạn điểm Hoàn thành yêu cầu đề"
 						rules={rules.task_fulfillment_word_caps}
 					/>
 				</Flex>
@@ -963,23 +959,16 @@ function criterionLabel(criterion: Criterion): string {
 }
 
 function criterionLabelByKey(rubric: GradingRubric, key: string): string {
-	return criterionLabel(
-		rubric.criteria.find((criterion) => criterion.key === key) ?? {
-			key,
-			name: key,
-			max_score: 10,
-			weight: 0,
-			band_descriptors: {},
-		},
-	)
+	const criterion = rubric.criteria.find((item) => item.key === key)
+
+	return criterion ? criterionLabel(criterion) : key
 }
 
-function descriptorText(descriptors: Criterion["band_descriptors"], band: string): string {
-	if (Array.isArray(descriptors)) {
-		return descriptors[Number(band)] ?? "-"
-	}
-
-	return descriptors[band] ?? "-"
+function descriptorText(
+	descriptors: Criterion["band_descriptors"],
+	band: keyof Criterion["band_descriptors"],
+): string {
+	return descriptors[band]
 }
 
 function criterionBandRows(descriptors: Criterion["band_descriptors"]) {

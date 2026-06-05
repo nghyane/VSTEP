@@ -23,7 +23,7 @@ import { formatDate, formatVnd, getInitials } from "@/lib/utils";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
 const PENDING_COURSE_ORDER_KEY = "course.pendingEnrollmentOrder";
-const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/khoa-hoc";
+const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/wallet";
 const COURSE_COMMITMENTS = [
   "Tỉ lệ đạt trên 98% với học viên học đúng lộ trình.",
   "Miễn phí học lại nếu chưa đạt mục tiêu sau khóa.",
@@ -151,7 +151,8 @@ export default function CourseDetailScreen() {
         courseId,
         commitmentSignature: signatureSvg,
         paymentProvider: "payos",
-        returnUrl: createCourseReturnUrl(courseId),
+        returnUrl: createCourseReturnUrl(),
+        cancelUrl: createCourseReturnUrl(),
       });
       if (!order.paymentUrl) {
         Alert.alert("Chưa tạo được thanh toán", "Cổng thanh toán chưa trả về đường dẫn thanh toán. Vui lòng thử lại.");
@@ -498,10 +499,10 @@ function diffDays(iso: string): number {
   return Math.ceil((end.getTime() - start.getTime()) / 86_400_000);
 }
 
-function createCourseReturnUrl(courseId: string): string {
+function createCourseReturnUrl(): string {
   const configured = process.env.EXPO_PUBLIC_PAYOS_RETURN_URL?.trim();
   if (configured) return configured;
-  return `${DEFAULT_PAYOS_RETURN_URL}/${courseId}`;
+  return DEFAULT_PAYOS_RETURN_URL;
 }
 
 function isPendingCourseOrder(value: unknown): value is PendingCourseOrder {

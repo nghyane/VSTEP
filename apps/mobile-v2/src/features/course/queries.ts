@@ -51,11 +51,13 @@ export function useCreateEnrollmentOrder() {
       commitmentSignature: string;
       paymentProvider?: PaymentProvider;
       returnUrl?: string;
+      cancelUrl?: string;
     }) =>
       api.post<EnrollmentOrder>(`/api/v1/courses/${input.courseId}/enrollment-orders`, {
         paymentProvider: input.paymentProvider ?? "payos",
         commitmentSignature: input.commitmentSignature,
         returnUrl: input.returnUrl ?? null,
+        cancelUrl: input.cancelUrl ?? input.returnUrl ?? null,
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["courses"] });
