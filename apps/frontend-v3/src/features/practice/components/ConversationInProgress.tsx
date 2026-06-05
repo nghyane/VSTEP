@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { HTTPError } from "ky"
 import { useEffect, useRef, useState } from "react"
-import { COIN_SPEND_FX_MS, CoinSpendFly } from "#/components/CoinSpendFly"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { appConfigQuery } from "#/features/config/queries"
 import { endConversation, submitConversationTurn } from "#/features/practice/actions"
@@ -12,13 +11,12 @@ import { ConversationSuggestions } from "#/features/practice/components/Conversa
 import { ConversationTurnView } from "#/features/practice/components/ConversationTurnView"
 import { invalidateProgressQueries } from "#/features/practice/invalidate-progress"
 import type { ConversationSessionDetail, ConversationTurn } from "#/features/practice/types"
-import { extractFirstName, getAvatarUrl } from "#/lib/avatar"
+import { getAvatarUrl } from "#/lib/avatar"
 import { useToast } from "#/lib/toast"
 import { tokens } from "#/lib/tokens"
 import {
 	pickBoundaryEnglishVoice,
 	pickEnglishVoice,
-	shortVoiceName,
 	speak,
 	speechRecognitionNetworkMessage,
 	stopSpeaking,
@@ -43,11 +41,10 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	const [mic, setMic] = useState<MicState>("idle")
 	const [elapsed, setElapsed] = useState(0)
 	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickBoundaryEnglishVoice())
-	const aiName = voice ? extractFirstName(shortVoiceName(voice.name)) : scenario.character_name
+	const aiName = scenario.character_name
 	const [sessionState, setSessionState] = useState<SessionState>("active")
 	const [showReview, setShowReview] = useState(false)
-	const [spendFxKey, setSpendFxKey] = useState(0)
-	const [spendAnimating, setSpendAnimating] = useState(false)
+	const [autoEndAfterSpeaking, setAutoEndAfterSpeaking] = useState(false)
 	const queryClient = useQueryClient()
 	const [emptyWarning, setEmptyWarning] = useState(false)
 	const [speakingTurnId, setSpeakingTurnId] = useState<string | null>(null)
@@ -60,6 +57,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	const submittedRef = useRef(false)
 	const stoppedRef = useRef(false)
 	const autoRestartRef = useRef(0)
+	const endRequestedRef = useRef(false)
 
 	useEffect(() => {
 		if (voice) return
@@ -122,6 +120,8 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	}
 
 	const handleEnd = () => {
+		if (endRequestedRef.current) return
+		endRequestedRef.current = true
 		stopSpeaking()
 		endConversation(sessionId).then(() => {
 			setSessionState("completed")
@@ -130,7 +130,6 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	}
 
 	const handleReview = () => {
-		if (spendAnimating) return
 		const revealReview = () => {
 			setShowReview(true)
 			window.setTimeout(() => {
@@ -139,16 +138,6 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 					?.scrollIntoView({ behavior: "smooth", block: "start" })
 			}, 0)
 		}
-		if (feedbackCost > 0) {
-			setSpendAnimating(true)
-			setSpendFxKey((key) => key + 1)
-			window.setTimeout(() => {
-				setSpendAnimating(false)
-				revealReview()
-			}, COIN_SPEND_FX_MS)
-			return
-		}
-
 		revealReview()
 	}
 
@@ -156,11 +145,13 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 		mutationFn: (args: { text: string; confidence: number }) =>
 			submitConversationTurn(sessionId, args.text, args.confidence),
 		onSuccess: (res) => {
+			const shouldEnd = res.data.session.should_end
 			setTurns((prev) => {
 				const withoutPending = prev.filter((t) => t.id !== "pending-user")
 				return [...withoutPending, res.data.user_turn, res.data.ai_turn]
 			})
 			setMic("speaking")
+			setAutoEndAfterSpeaking(shouldEnd)
 			const aiTurnId = res.data.ai_turn.id
 			setSpeakingTurnId(aiTurnId)
 			setSpeakingCharIndex(-1)
@@ -175,10 +166,14 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 							setMic("idle")
 							setSpeakingTurnId(null)
 							setSpeakingCharIndex(-1)
+							setAutoEndAfterSpeaking(false)
+							if (shouldEnd) handleEnd()
 						},
 					})
 				} else {
 					setMic("idle")
+					setAutoEndAfterSpeaking(false)
+					if (shouldEnd) handleEnd()
 				}
 			}, 500)
 		},
@@ -222,6 +217,10 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 			setMic("idle")
 			setSpeakingTurnId(null)
 			setSpeakingCharIndex(-1)
+			if (autoEndAfterSpeaking) {
+				setAutoEndAfterSpeaking(false)
+				handleEnd()
+			}
 			return
 		}
 		if (mic === "listening") {
@@ -357,6 +356,8 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	}
 
 	const confirmExit = () => {
+		if (endRequestedRef.current) return
+		endRequestedRef.current = true
 		stopSpeaking()
 		endConversation(sessionId).then(onEnd)
 	}
@@ -364,14 +365,13 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	// Auto-end session on browser tab close via fetch keepalive.
 	// SPA navigation (unmount) only cleans up local resources — backend
 	// auto-ends any stale active session when user starts a new one.
-	const endedRef = useRef(false)
 	useEffect(() => {
 		const sid = sessionId
 		const apiUrl = import.meta.env.VITE_API_URL ?? ""
 
 		const handleBeforeUnload = () => {
-			if (endedRef.current) return
-			endedRef.current = true
+			if (endRequestedRef.current) return
+			endRequestedRef.current = true
 			const token = tokens.getAccess()
 			fetch(`${apiUrl}/practice/speaking/conversations/${sid}/end`, {
 				method: "POST",
@@ -459,13 +459,9 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 												)}
 											</p>
 											<div className="relative mt-4 inline-flex">
-												{spendFxKey > 0 && feedbackCost > 0 && (
-													<CoinSpendFly key={spendFxKey} cost={feedbackCost} />
-												)}
 												<button
 													type="button"
 													onClick={handleReview}
-													disabled={spendAnimating}
 													className="btn px-6 text-primary-foreground"
 													style={
 														{

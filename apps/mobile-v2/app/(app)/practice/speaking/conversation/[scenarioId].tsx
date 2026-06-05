@@ -38,19 +38,22 @@ export default function SpeakingConversationScreen() {
 
   const [speakingTurnId, setSpeakingTurnId] = useState<string | null>(null);
 
-  // Auto-end active session when navigating away (mirror FE v3 confirmExit).
+  // Auto-end active session only when the screen is actually unmounted.
+  // Do not depend on conv/session objects here: mic/STT state updates re-render this
+  // screen, and effect cleanup would otherwise end the session immediately.
   const cleanupRef = useRef(false);
+  const latestConvRef = useRef(conv);
+  latestConvRef.current = conv;
+
   useEffect(() => {
     return () => {
-      if (!cleanupRef.current && conv.session && !conv.summary) {
+      const latest = latestConvRef.current;
+      if (!cleanupRef.current && latest.session && !latest.summary) {
         cleanupRef.current = true;
-        conv.endSession();
+        latest.endSession();
       }
     };
-    // conv.session/summary/endSession are the stable values we need;
-    // adding `conv` itself would re-trigger cleanup on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conv.session, conv.summary, conv.endSession]);
+  }, []);
 
   const speechToText = useSpeechToText({
     maxSeconds: MAX_RECORD_SECONDS,

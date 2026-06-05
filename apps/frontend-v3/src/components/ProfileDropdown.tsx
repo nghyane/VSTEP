@@ -276,14 +276,6 @@ export function ProfileDropdown({ unread, initial }: Props) {
 								>
 									Chỉnh sửa hồ sơ
 								</MenuItem>
-								<MenuItem
-									onClick={() => {
-										setOpen(false)
-										navigate({ to: "/luyen-tap/ket-qua" })
-									}}
-								>
-									Kết quả AI chấm
-								</MenuItem>
 								<div className="my-1 h-px bg-border" />
 								<MenuItem
 									iconNode={<Icon name="logout" size="xs" />}

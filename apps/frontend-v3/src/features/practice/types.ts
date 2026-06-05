@@ -262,6 +262,7 @@ export interface ConversationScenario {
 	character_voice: string
 	description: string
 	estimated_minutes: number
+	expected_turns?: number
 }
 
 export interface ConversationVocabCheck {

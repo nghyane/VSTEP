@@ -1,4 +1,5 @@
 import { useForm } from "@tanstack/react-form"
+import { createPortal } from "react-dom"
 import { inputClass } from "#/features/auth/styles"
 import { cn } from "#/lib/utils"
 import type { Profile } from "#/types/auth"
@@ -26,7 +27,9 @@ export function EditProfileForm({ profile, onSubmit, onCancel }: Props) {
 		},
 	})
 
-	return (
+	if (typeof document === "undefined") return null
+
+	return createPortal(
 		<div
 			role="presentation"
 			onClick={onCancel}
@@ -53,14 +56,6 @@ export function EditProfileForm({ profile, onSubmit, onCancel }: Props) {
 
 				{/* Hero */}
 				<div className="bg-gradient-to-b from-primary-tint to-transparent px-6 pt-8 pb-6 text-center">
-					<div className="relative inline-block mb-3">
-						<div className="size-20 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-display text-4xl shadow-lg">
-							{profile.nickname.charAt(0).toUpperCase()}
-						</div>
-						<span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[11px] font-extrabold text-white bg-primary px-2.5 py-0.5 rounded-full shadow-sm">
-							{profile.target_level}
-						</span>
-					</div>
 					<h3 className="font-extrabold text-xl text-foreground">Chỉnh sửa hồ sơ</h3>
 					<p className="text-xs text-subtle mt-1">Cập nhật thông tin lộ trình của bạn</p>
 				</div>
@@ -128,7 +123,8 @@ export function EditProfileForm({ profile, onSubmit, onCancel }: Props) {
 					</div>
 				</div>
 			</form>
-		</div>
+		</div>,
+		document.body,
 	)
 }
 

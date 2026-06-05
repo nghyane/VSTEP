@@ -128,7 +128,12 @@ export function WritingPromptForm({ initial, onSubmit, onCancel, submitting }: P
 						</FormField>
 					</Col>
 					<Col span={6}>
-						<FormField label="Thời lượng (phút)" htmlFor="minutes" required error={errors.estimated_minutes}>
+						<FormField
+							label="~ Thời lượng ước tính (phút)"
+							htmlFor="minutes"
+							required
+							error={errors.estimated_minutes}
+						>
 							<Input
 								id="minutes"
 								type="number"

@@ -13,6 +13,7 @@ function progressText(skill: LearningPathSkill | undefined, fallbackTotal: numbe
 export function FoundationSection() {
 	const { data } = useQuery(learningPathQuery)
 	const hasPathData = data !== undefined
+	const targetLevel = data?.data.target_level ?? "B1"
 	const pathSkills = data?.data.skills ?? []
 	const vocabulary = pathSkills.find((skill) => skill.skill === "vocabulary")
 	const grammar = pathSkills.find((skill) => skill.skill === "grammar")
@@ -31,7 +32,11 @@ export function FoundationSection() {
 						title="Từ vựng"
 						text={progressText(vocabulary, 120, `từ ${vocabulary?.level ?? "B1"}`)}
 					/>
-					<ProgressPill title="Ngữ pháp" text={progressText(grammar, 10, "chủ điểm")} />
+					<ProgressPill
+						title="Ngữ pháp"
+						text={progressText(grammar, 10, "chủ điểm")}
+						detail={`Mục tiêu ${targetLevel}`}
+					/>
 				</div>
 			)}
 
@@ -41,7 +46,7 @@ export function FoundationSection() {
 						<SkillIcon name="vocabulary" size="md" className="shrink-0" />
 						<div className="flex-1 min-w-0">
 							<h4 className="font-bold text-lg text-foreground">Từ vựng</h4>
-							<p className="text-sm text-subtle mt-0.5">Flashcard SRS · 30 chủ đề theo level</p>
+							<p className="text-sm text-subtle mt-0.5">Flashcard SRS theo chủ đề và level</p>
 						</div>
 					</div>
 				</Link>
@@ -51,7 +56,7 @@ export function FoundationSection() {
 						<SkillIcon name="grammar" size="md" className="shrink-0" />
 						<div className="flex-1 min-w-0">
 							<h4 className="font-bold text-lg text-foreground">Ngữ pháp</h4>
-							<p className="text-sm text-subtle mt-0.5">38 điểm ngữ pháp · 3 cấp độ</p>
+							<p className="text-sm text-subtle mt-0.5">Điểm ngữ pháp theo cấp độ và kỹ năng</p>
 						</div>
 					</div>
 				</Link>
@@ -60,10 +65,11 @@ export function FoundationSection() {
 	)
 }
 
-function ProgressPill({ title, text }: { title: string; text: string }) {
+function ProgressPill({ title, text, detail }: { title: string; text: string; detail?: string }) {
 	return (
 		<span className="rounded-full border-2 border-border bg-surface px-3 py-1.5 text-xs font-bold text-subtle tabular-nums">
 			<span className="font-extrabold text-foreground">{title}</span> · {text}
+			{detail ? <span className="normal-case tabular-nums"> · {detail}</span> : null}
 		</span>
 	)
 }

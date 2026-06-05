@@ -1,7 +1,7 @@
 // WritingReviewSheet — inline AI grading review using BottomSheet.
 // Mirrors apps/frontend-v3/src/features/practice/components/WritingReviewPopup.tsx
 // - Polls `useWritingGradingResult` every 5s (handled by the hook itself).
-// - Pending state: 3 bouncing dots + "AI đang chấm bài..." subtitle.
+// - Pending state: 3 bouncing dots + "Hệ thống đang chấm bài..." subtitle.
 // - Result state: overall band (large) + rubric bars + strengths + improvements
 //   + rewrites + nút "Xem chi tiết đầy đủ" để navigate sang grading screen.
 import { useEffect, useRef } from "react";
@@ -28,20 +28,20 @@ const RUBRIC_LABELS: Record<string, string> = {
 
 interface Props {
   visible: boolean;
-  submissionId: string;
+  attemptId: string;
   onClose: () => void;
 }
 
-export function WritingReviewSheet({ visible, submissionId, onClose }: Props) {
+export function WritingReviewSheet({ visible, attemptId, onClose }: Props) {
   const c = useThemeColors();
   const router = useRouter();
-  const { data, isLoading, isError, refetch, isFetching } = useWritingGradingResult(submissionId);
+  const { data, isLoading, isError, refetch, isFetching } = useWritingGradingResult(attemptId);
   const ready = data?.overallBand != null;
   const accent = c.skillWriting;
 
   function handleViewDetail() {
     onClose();
-    router.push(`/(app)/grading/writing/${submissionId}` as never);
+    router.push(`/(app)/grading/writing/${attemptId}` as never);
   }
 
   return (
@@ -171,7 +171,7 @@ function PendingDots({ accent }: { accent: string }) {
           />
         ))}
       </View>
-      <Text style={[s.pendingTitle, { color: c.mutedForeground }]}>AI đang chấm bài...</Text>
+      <Text style={[s.pendingTitle, { color: c.mutedForeground }]}>Hệ thống đang chấm bài...</Text>
       <Text style={[s.pendingSub, { color: c.subtle }]}>Thường mất 10–30 giây</Text>
     </View>
   );

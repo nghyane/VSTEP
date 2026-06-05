@@ -1,13 +1,10 @@
 // SpiderChart — SVG radar chart for 4 VSTEP skills
 import { useEffect, useRef } from "react";
-import { Animated, Dimensions, StyleSheet } from "react-native";
+import { Animated, StyleSheet, useWindowDimensions } from "react-native";
 import Svg, { Polygon, Circle, Line, Text as SvgText, G } from "react-native-svg";
 import { useThemeColors } from "@/theme";
 import type { Skill } from "@/types/api";
 
-const SCREEN_W = Dimensions.get("window").width;
-const CHART_SIZE = Math.min(SCREEN_W - 64, 300);
-const CENTER = CHART_SIZE / 2;
 const MAX_SCORE = 10;
 const LEVELS = [2, 4, 6, 8, 10];
 const LABEL_OFFSET = 22;
@@ -27,20 +24,18 @@ const SKILL_COLORS: Record<Skill, string> = {
 };
 
 const AXIS_COUNT = SKILLS_META.length;
-const RADIUS = CENTER - LABEL_OFFSET - 8;
-
 function angleFor(i: number) {
   return (i * (2 * Math.PI)) / AXIS_COUNT - Math.PI / 2;
 }
 
-function pointAt(i: number, value: number): [number, number] {
-  const r = (value / MAX_SCORE) * RADIUS;
+function pointAt(i: number, value: number, center: number, radius: number): [number, number] {
+  const r = (value / MAX_SCORE) * radius;
   const a = angleFor(i);
-  return [CENTER + r * Math.cos(a), CENTER + r * Math.sin(a)];
+  return [center + r * Math.cos(a), center + r * Math.sin(a)];
 }
 
-function polygonPoints(value: number): string {
-  return SKILLS_META.map((_, i) => pointAt(i, value).join(",")).join(" ");
+function polygonPoints(value: number, center: number, radius: number): string {
+  return SKILLS_META.map((_, i) => pointAt(i, value, center, radius).join(",")).join(" ");
 }
 
 interface SpiderChartProps {
@@ -51,8 +46,12 @@ interface SpiderChartProps {
 
 export function SpiderChart({ skills, targetBand, hasData = true }: SpiderChartProps) {
   const c = useThemeColors();
+  const { width } = useWindowDimensions();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.85)).current;
+  const chartSize = Math.min(width >= 768 ? width * 0.42 : width - 64, width >= 1024 ? 360 : 320);
+  const center = chartSize / 2;
+  const radius = center - LABEL_OFFSET - 8;
 
   useEffect(() => {
     Animated.parallel([
@@ -62,18 +61,18 @@ export function SpiderChart({ skills, targetBand, hasData = true }: SpiderChartP
   }, [fadeAnim, scaleAnim]);
 
   const dataPoints = SKILLS_META.map((s, i) =>
-    pointAt(i, skills[s.key]?.current ?? 0).join(","),
+    pointAt(i, skills[s.key]?.current ?? 0, center, radius).join(","),
   ).join(" ");
 
   return (
     <Animated.View
       style={[styles.wrapper, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}
     >
-      <Svg width={CHART_SIZE} height={CHART_SIZE}>
+      <Svg width={chartSize} height={chartSize}>
         {LEVELS.map((lvl) => (
           <Polygon
             key={`grid-${lvl}`}
-            points={polygonPoints(lvl)}
+            points={polygonPoints(lvl, center, radius)}
             fill="none"
             stroke={c.border}
             strokeWidth={lvl === MAX_SCORE ? 1.2 : 0.7}
@@ -82,12 +81,12 @@ export function SpiderChart({ skills, targetBand, hasData = true }: SpiderChartP
         ))}
 
         {SKILLS_META.map((_, i) => {
-          const [x, y] = pointAt(i, MAX_SCORE);
+          const [x, y] = pointAt(i, MAX_SCORE, center, radius);
           return (
             <Line
               key={`axis-${i}`}
-              x1={CENTER}
-              y1={CENTER}
+              x1={center}
+              y1={center}
               x2={x}
               y2={y}
               stroke={c.border}
@@ -98,7 +97,7 @@ export function SpiderChart({ skills, targetBand, hasData = true }: SpiderChartP
 
         {targetBand !== undefined ? (
           <Polygon
-            points={polygonPoints(targetBand)}
+            points={polygonPoints(targetBand, center, radius)}
             fill="none"
             stroke={c.destructive}
             strokeWidth={1.4}
@@ -121,7 +120,7 @@ export function SpiderChart({ skills, targetBand, hasData = true }: SpiderChartP
           const val = skills[s.key]?.current ?? 0;
           if (!hasData || val <= 0) return null;
 
-          const [cx, cy] = pointAt(i, val);
+          const [cx, cy] = pointAt(i, val, center, radius);
           const skillColor = SKILL_COLORS[s.key];
           const a = angleFor(i);
 
@@ -146,8 +145,8 @@ export function SpiderChart({ skills, targetBand, hasData = true }: SpiderChartP
 
         {SKILLS_META.map((s, i) => {
           const a = angleFor(i);
-          const lx = CENTER + (RADIUS + LABEL_OFFSET) * Math.cos(a);
-          const ly = CENTER + (RADIUS + LABEL_OFFSET) * Math.sin(a);
+          const lx = center + (radius + LABEL_OFFSET) * Math.cos(a);
+          const ly = center + (radius + LABEL_OFFSET) * Math.sin(a);
 
           return (
             <SvgText

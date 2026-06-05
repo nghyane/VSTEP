@@ -6,8 +6,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { GameIcon, type GameIconName } from "@/components/GameIcon";
 import { Mascot } from "@/components/Mascot";
-import { RecommendationSection } from "@/features/practice/RecommendationSection";
-import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { useLearningPath } from "@/features/practice/use-learning-path";
+import { getTargetBand } from "@/lib/vstep";
+import { useThemeColors, useResponsiveLayout, spacing, radius, fontSize, fontFamily } from "@/theme";
+import type { LearningPathSkill, Skill } from "@/types/api";
 
 type PracticeRoute =
   | "/(app)/vocabulary"
@@ -15,8 +17,7 @@ type PracticeRoute =
   | "/(app)/practice/listening"
   | "/(app)/practice/reading"
   | "/(app)/practice/writing"
-  | "/(app)/practice/speaking"
-  | "/(app)/practice/results";
+  | "/(app)/practice/speaking";
 
 interface PracticeItem {
   key: string;
@@ -29,11 +30,39 @@ interface PracticeItem {
   route: PracticeRoute;
 }
 
+const EXAM_SKILL_LABELS: Record<Skill, string> = {
+  listening: "Listening",
+  reading: "Reading",
+  writing: "Writing",
+  speaking: "Speaking",
+};
+
+const SKILL_ORDER: Skill[] = ["listening", "reading", "writing", "speaking"];
+
+function isExamSkill(skill: LearningPathSkill): skill is LearningPathSkill & { skill: Skill } {
+  return SKILL_ORDER.includes(skill.skill as Skill);
+}
+
+function scoredExamSkills(skills: LearningPathSkill[]): (LearningPathSkill & { skill: Skill; band: number })[] {
+  return skills
+    .filter((skill): skill is LearningPathSkill & { skill: Skill; band: number } => isExamSkill(skill) && skill.band !== null)
+    .sort((a, b) => a.band - b.band);
+}
+
+function priorityLabel(skill: LearningPathSkill & { band: number }, targetLevel: string, index: number): string {
+  const requiredBand = getTargetBand(targetLevel);
+  if (skill.band >= requiredBand) return "Duy trì";
+  if (index === 0) return "Ưu tiên";
+  return "Cải thiện";
+}
+
 export default function PracticeHubScreen() {
   const c = useThemeColors();
+  const layout = useResponsiveLayout();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const fadeAnims = useRef(Array.from({ length: 5 }, () => new Animated.Value(0))).current;
+  const { data: learningPath } = useLearningPath();
+  const fadeAnims = useRef(Array.from({ length: 4 }, () => new Animated.Value(0))).current;
 
   const foundationItems: PracticeItem[] = [
     {
@@ -81,7 +110,7 @@ export default function PracticeHubScreen() {
       key: "writing",
       title: "Viết",
       subtitle: "Writing",
-      meta: "Thư + luận · AI chấm",
+      meta: "Thư + luận · hệ thống chấm",
       icon: "writing",
       color: c.skillWriting,
       tint: c.primaryTint,
@@ -127,60 +156,128 @@ export default function PracticeHubScreen() {
   return (
     <ScrollView
       style={[styles.root, { backgroundColor: c.background }]}
-      contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.xl }]}
+      contentContainerStyle={[
+        styles.scroll,
+        {
+          paddingTop: insets.top + spacing.xl,
+          paddingBottom: insets.bottom + spacing.lg,
+          paddingLeft: layout.isTabletLandscape ? layout.contentInsetStart : layout.horizontalPadding,
+          paddingRight: layout.horizontalPadding,
+          alignItems: "center",
+        },
+      ]}
       showsVerticalScrollIndicator={false}
     >
-      <Animated.View style={animStyle(0)}>
+      <Animated.View style={[styles.sectionShell, { maxWidth: layout.contentMaxWidth }, animStyle(0)]}>
         <Text style={[styles.title, { color: c.foreground }]}>Luyện tập</Text>
         <Text style={[styles.subtitle, { color: c.mutedForeground }]}>Chọn mục luyện để vào học ngay.</Text>
       </Animated.View>
 
-      <Animated.View style={animStyle(1)}>
-        <RecommendationSection />
-      </Animated.View>
+      {learningPath ? (
+        <Animated.View style={[styles.sectionShell, { maxWidth: layout.contentMaxWidth }, animStyle(1)]}>
+          <PracticeGoalSummary path={learningPath} />
+        </Animated.View>
+      ) : null}
 
-      <Animated.View style={[styles.section, animStyle(2)]}>
+      <Animated.View style={[styles.sectionShell, styles.section, { maxWidth: layout.contentMaxWidth }, animStyle(2)]}>
         <SectionHeader title="Nền tảng" subtitle="Từ vựng và ngữ pháp — gốc rễ mọi kỹ năng" />
-        <View style={styles.foundationList}>
+        <View style={[styles.foundationList, layout.isTablet ? styles.foundationListWide : null]}>
           {foundationItems.map((item) => (
-            <FoundationCard key={item.key} item={item} onPress={() => router.push(item.route as never)} />
+            <FoundationCard key={item.key} item={item} onPress={() => router.push(item.route as never)} wide={layout.isTablet} />
           ))}
         </View>
       </Animated.View>
 
-      <Animated.View style={[styles.section, animStyle(3)]}>
+      <Animated.View style={[styles.sectionShell, styles.section, { maxWidth: layout.contentMaxWidth }, animStyle(3)]}>
         <SectionHeader title="Kỹ năng" subtitle="Luyện 4 kỹ năng VSTEP · bật/tắt hỗ trợ tùy nhu cầu" />
         <View style={styles.skillGrid}>
           {skillItems.map((item) => (
-            <SkillCard key={item.key} item={item} onPress={() => router.push(item.route as never)} />
+            <SkillCard key={item.key} item={item} onPress={() => router.push(item.route as never)} columns={layout.isLargeTablet ? 4 : layout.isTablet ? 3 : 2} />
           ))}
         </View>
       </Animated.View>
 
-      <Animated.View style={animStyle(4)}>
-        <HapticTouchable scalePress activeOpacity={0.9} onPress={() => router.push("/(app)/practice/results" as never)}>
-          <View style={[styles.resultsCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.mutedForeground }]}>
-            <View style={[styles.resultsIcon, { backgroundColor: c.primaryTint }]}>
-              <GameIcon name="writing" size={34} />
-            </View>
-            <View style={styles.cardBody}>
-              <Text style={[styles.resultsTitle, { color: c.foreground }]}>Kết quả AI chấm</Text>
-              <Text style={[styles.resultsSub, { color: c.mutedForeground }]}>Xem lại các bài Viết đã được AI chấm điểm chi tiết.</Text>
-            </View>
-            <Text style={[styles.chevron, { color: c.subtle }]}>›</Text>
-          </View>
-        </HapticTouchable>
-      </Animated.View>
-
-      <View style={styles.mascotRow}>
+      <View style={[styles.sectionShell, styles.mascotRow, { maxWidth: layout.contentMaxWidth }, layout.isTablet ? styles.mascotRowWide : null]}>
         <Mascot name="hero" size={72} animation="none" />
         <View style={[styles.mascotBubble, { backgroundColor: c.primaryTint, borderColor: c.borderFocus }]}>
           <Text style={[styles.mascotText, { color: c.primaryDark }]}>Chạm vào từng thẻ để luyện ngay. Học đều nền tảng và 4 kỹ năng sẽ hiệu quả hơn học dồn.</Text>
         </View>
       </View>
-
-      <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
+  );
+}
+
+function PracticeGoalSummary({ path }: { path: { currentLevel: string; targetLevel: string; daysRemaining: number | null; skills: LearningPathSkill[] } }) {
+  const c = useThemeColors();
+  const requiredBand = getTargetBand(path.targetLevel);
+  const scoredSkills = scoredExamSkills(path.skills);
+  const prioritySkill = scoredSkills.find((skill) => skill.band < requiredBand);
+  const currentAction = scoredSkills.length === 0
+    ? "Làm thi thử để hệ thống phân tích kỹ năng."
+    : prioritySkill
+      ? `Ưu tiên hiện tại: ${EXAM_SKILL_LABELS[prioritySkill.skill]} ${prioritySkill.band.toFixed(1)}, cần ≥ ${requiredBand.toFixed(1)}`
+      : "Các kỹ năng đã đạt mục tiêu. Tiếp tục duy trì.";
+
+  return (
+    <View style={[styles.goalCard, { backgroundColor: c.card, borderColor: c.border }]}>
+      <View style={styles.goalTopRow}>
+        <View style={styles.goalMain}>
+          <Text style={[styles.goalEyebrow, { color: c.subtle }]}>Mục tiêu hiện tại</Text>
+          <Text style={[styles.goalTitle, { color: c.foreground }]}>{path.targetLevel} ≥ {requiredBand.toFixed(1)} điểm</Text>
+        </View>
+        <View style={[styles.goalMiniPill, { backgroundColor: c.muted }]}>
+          <Text style={[styles.goalMiniText, { color: c.mutedForeground }]}>{path.currentLevel}</Text>
+        </View>
+        {path.daysRemaining !== null ? (
+          <View style={[styles.goalMiniPill, { backgroundColor: c.muted }]}>
+            <Text style={[styles.goalMiniText, { color: c.mutedForeground }]}>{path.daysRemaining} ngày</Text>
+          </View>
+        ) : null}
+      </View>
+      <View style={[styles.goalActionStrip, { backgroundColor: c.surfaceTint }]}>
+        <Text style={[styles.goalActionText, { color: c.foreground }]}>{currentAction}</Text>
+      </View>
+      <SkillScorePills skills={path.skills} targetLevel={path.targetLevel} compact />
+    </View>
+  );
+}
+
+function SkillScorePills({ skills, targetLevel, compact = false }: { skills: LearningPathSkill[]; targetLevel: string; compact?: boolean }) {
+  const c = useThemeColors();
+  const scoredSkills = scoredExamSkills(skills);
+  if (scoredSkills.length === 0) {
+    return (
+      <View style={[styles.noScorePill, { backgroundColor: compact ? c.card : c.surface }]}>
+        <Text style={[styles.noScoreText, { color: c.subtle }]}>Làm thi thử để có điểm phân tích kỹ năng</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={compact ? styles.scoreCompactWrap : styles.scorePillsWrap}>
+      {!compact ? <Text style={[styles.suggestLabel, { color: c.mutedForeground }]}>Gợi ý</Text> : null}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scorePillList}>
+        {scoredSkills.map((skill, index) => (
+          <ScorePill key={skill.skill} skill={skill} targetLevel={targetLevel} index={index} />
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
+function ScorePill({ skill, targetLevel, index }: { skill: LearningPathSkill & { skill: Skill; band: number }; targetLevel: string; index: number }) {
+  const c = useThemeColors();
+  const requiredBand = getTargetBand(targetLevel);
+  const dotColor = skill.band >= requiredBand ? c.info : index === 0 ? c.destructive : c.warning;
+
+  return (
+    <View style={[styles.scorePill, { backgroundColor: c.surface, borderColor: c.border }]}>
+      <View style={[styles.scoreDot, { backgroundColor: dotColor }]} />
+      <Text style={[styles.scorePillText, { color: c.subtle }]}>
+        <Text style={{ color: c.foreground, fontFamily: fontFamily.extraBold }}>{EXAM_SKILL_LABELS[skill.skill]}</Text>
+        {` ${skill.band.toFixed(1)} / ≥${requiredBand.toFixed(1)} · ${priorityLabel(skill, targetLevel, index)}`}
+      </Text>
+    </View>
   );
 }
 
@@ -194,10 +291,10 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle: string })
   );
 }
 
-function FoundationCard({ item, onPress }: { item: PracticeItem; onPress: () => void }) {
+function FoundationCard({ item, onPress, wide }: { item: PracticeItem; onPress: () => void; wide: boolean }) {
   const c = useThemeColors();
   return (
-    <HapticTouchable scalePress activeOpacity={0.9} onPress={onPress}>
+    <HapticTouchable scalePress activeOpacity={0.9} onPress={onPress} style={wide ? styles.foundationCellWide : null}>
       <View style={[styles.foundationCard, { backgroundColor: c.card, borderColor: item.color + "40", borderBottomColor: item.color }]}>
         <View style={[styles.foundationIcon, { backgroundColor: item.tint }]}>
           <GameIcon name={item.icon} size={46} />
@@ -212,10 +309,11 @@ function FoundationCard({ item, onPress }: { item: PracticeItem; onPress: () => 
   );
 }
 
-function SkillCard({ item, onPress }: { item: PracticeItem; onPress: () => void }) {
+function SkillCard({ item, onPress, columns }: { item: PracticeItem; onPress: () => void; columns: number }) {
   const c = useThemeColors();
+  const width = columns === 4 ? "23.5%" : columns === 3 ? "31.8%" : "48.5%";
   return (
-    <View style={styles.skillCardWrapper}>
+    <View style={[styles.skillCardWrapper, { width }]}>
       <HapticTouchable scalePress activeOpacity={0.9} onPress={onPress}>
         <View style={[styles.skillCard, { backgroundColor: c.card, borderColor: item.color + "40", borderBottomColor: item.color }]}>
           <View style={[styles.skillIcon, { backgroundColor: item.tint }]}>
@@ -223,7 +321,7 @@ function SkillCard({ item, onPress }: { item: PracticeItem; onPress: () => void 
           </View>
           <Text style={[styles.skillTitle, { color: c.foreground }]}>{item.title}</Text>
           <Text style={[styles.skillSubtitle, { color: item.color }]}>{item.subtitle}</Text>
-          {item.meta ? <Text style={[styles.skillMeta, { color: c.mutedForeground }]}>{item.meta}</Text> : null}
+          {item.meta ? <Text style={[styles.skillMeta, { color: c.mutedForeground }]} numberOfLines={2}>{item.meta}</Text> : null}
         </View>
       </HapticTouchable>
     </View>
@@ -232,14 +330,35 @@ function SkillCard({ item, onPress }: { item: PracticeItem; onPress: () => void 
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"], gap: spacing.xl },
+  scroll: { gap: spacing.xl },
+  sectionShell: { width: "100%" },
   title: { fontSize: fontSize["3xl"], fontFamily: fontFamily.extraBold, letterSpacing: -0.4 },
   subtitle: { fontSize: fontSize.sm, marginTop: spacing.xs, lineHeight: 20 },
+  goalCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.md, gap: spacing.sm },
+  goalTopRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  goalMain: { flex: 1, minWidth: 0 },
+  goalEyebrow: { fontSize: 10, fontFamily: fontFamily.extraBold, textTransform: "uppercase", letterSpacing: 0.8 },
+  goalTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, marginTop: 1 },
+  goalMiniPill: { borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  goalMiniText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  goalActionStrip: { borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  goalActionText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, lineHeight: 18 },
   section: { gap: spacing.md },
   sectionHeader: { gap: 2 },
   sectionTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
   sectionSubtitle: { fontSize: fontSize.sm, lineHeight: 20 },
+  scorePillsWrap: { gap: spacing.sm },
+  scoreCompactWrap: { marginHorizontal: -spacing.md },
+  suggestLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold, textTransform: "uppercase", letterSpacing: 1 },
+  scorePillList: { gap: spacing.sm, paddingHorizontal: spacing.md },
+  scorePill: { flexDirection: "row", alignItems: "center", gap: spacing.xs, borderWidth: 2, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs },
+  scoreDot: { width: 8, height: 8, borderRadius: 4 },
+  scorePillText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  noScorePill: { alignSelf: "flex-start", borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.xs },
+  noScoreText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   foundationList: { gap: spacing.md },
+  foundationListWide: { flexDirection: "row", flexWrap: "wrap" },
+  foundationCellWide: { width: "48.5%" },
   foundationCard: {
     borderWidth: 2,
     borderBottomWidth: 4,
@@ -263,7 +382,7 @@ const styles = StyleSheet.create({
   skillGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: spacing.sm },
   skillCardWrapper: { width: "48.5%" },
   skillCard: {
-    height: 176,
+    height: 190,
     borderWidth: 2,
     borderBottomWidth: 4,
     borderRadius: radius.xl,
@@ -280,25 +399,8 @@ const styles = StyleSheet.create({
   skillTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
   skillSubtitle: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, marginTop: 2 },
   skillMeta: { fontSize: fontSize.xs, lineHeight: 17, marginTop: spacing.xs },
-  resultsCard: {
-    borderWidth: 2,
-    borderBottomWidth: 4,
-    borderRadius: radius.xl,
-    padding: spacing.base,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  resultsIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  resultsTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
-  resultsSub: { fontSize: fontSize.xs, marginTop: 2, lineHeight: 18 },
   mascotRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.sm },
+  mascotRowWide: { alignItems: "flex-start" },
   mascotBubble: { flex: 1, borderWidth: 1.5, borderRadius: radius.xl, padding: spacing.md },
   mascotText: { fontSize: fontSize.sm, lineHeight: 20, fontFamily: fontFamily.semiBold },
 });

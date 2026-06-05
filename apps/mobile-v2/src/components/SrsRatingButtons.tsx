@@ -37,14 +37,10 @@ export function SrsRatingButtons({ disabled, onRate }: Props) {
           key={item.label}
           onPress={() => onRate(item.rating)}
           disabled={disabled}
-          style={({ pressed }) => [
+          style={[
             s.btn,
             {
               backgroundColor: c[item.bg],
-              borderColor: c[item.fg] + "40",
-              borderBottomColor: c[item.fg],
-              transform: [{ translateY: pressed ? 2 : 0 }],
-              borderBottomWidth: pressed ? 2 : 4,
               opacity: disabled ? 0.5 : 1,
             },
           ]}
@@ -60,10 +56,8 @@ const s = StyleSheet.create({
   row: { flexDirection: "row", gap: spacing.xs, marginTop: spacing.base },
   btn: {
     flex: 1,
-    paddingVertical: spacing.base,
+    paddingVertical: spacing.md,
     borderRadius: radius.button,
-    borderWidth: 2,
-    borderBottomWidth: 4,
   },
-  label: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold, textAlign: "center" },
+  label: { fontSize: fontSize.sm, fontFamily: fontFamily.bold, textAlign: "center" },
 });

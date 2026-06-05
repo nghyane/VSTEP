@@ -61,6 +61,14 @@ export function QuestionList({
 	visibleQuestionIndex,
 	revealAnswers,
 }: Props) {
+	if (questions.length === 0) {
+		return (
+			<div className="rounded-(--radius-card) border-2 border-border bg-surface p-5 text-center">
+				<p className="text-sm font-bold text-muted">Bài luyện này chưa có câu hỏi.</p>
+			</div>
+		)
+	}
+
 	const resultMap = result ? new Map(result.items.map((i) => [i.question_id, i])) : null
 	const visibleQuestions =
 		result || revealAnswers || visibleQuestionIndex === undefined
@@ -95,7 +103,7 @@ export function QuestionList({
 								const s = optionStyles(selected, oi, item, accentColor)
 								return (
 									<button
-										key={opt}
+										key={`${q.id}-${oi}`}
 										type="button"
 										disabled={!!result}
 										onClick={() => onSelect(q.id, oi)}

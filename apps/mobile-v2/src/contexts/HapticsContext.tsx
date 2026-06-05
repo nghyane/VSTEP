@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
-import * as Haptics from "expo-haptics";
 
 interface HapticsCtx {
   enabled: boolean;
@@ -8,19 +7,17 @@ interface HapticsCtx {
 }
 
 const HapticsContext = createContext<HapticsCtx>({
-  enabled: true,
+  enabled: false,
   setEnabled: () => undefined,
   trigger: () => undefined,
 });
 
 export function HapticsProvider({ children }: { children: ReactNode }) {
-  const [enabled, setEnabled] = useState(true);
+  const [enabled, setEnabled] = useState(false);
 
   const trigger = useCallback(() => {
-    if (enabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
-    }
-  }, [enabled]);
+    return undefined;
+  }, []);
 
   return (
     <HapticsContext.Provider value={{ enabled, setEnabled, trigger }}>

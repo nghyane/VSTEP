@@ -22,7 +22,7 @@ import { CoinButton } from "@/features/coin/CoinButton";
 import { useAppConfig, useExamSessions, useExams, type Exam } from "@/hooks/use-exams";
 import { useAbandonExamSession, useActiveExamSession, type ExamSessionData } from "@/hooks/use-exam-session";
 import { MascotEmpty } from "@/components/MascotStates";
-import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { useThemeColors, useSkillColor, useResponsiveLayout, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Skill } from "@/types/api";
 
 const SKILLS: { key: Skill; label: string }[] = [
@@ -43,6 +43,7 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
 
 export default function ExamsScreen() {
   const c = useThemeColors();
+  const layout = useResponsiveLayout();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data, isLoading, isError } = useExams();
@@ -73,12 +74,21 @@ export default function ExamsScreen() {
   return (
     <ScrollView
       style={[styles.root, { backgroundColor: c.background }]}
-      contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.xl }]}
+      contentContainerStyle={[
+        styles.scroll,
+        {
+          paddingTop: insets.top + spacing.xl,
+          paddingBottom: insets.bottom + spacing.lg,
+          paddingLeft: layout.isTabletLandscape ? layout.contentInsetStart : layout.horizontalPadding,
+          paddingRight: layout.horizontalPadding,
+          alignItems: "center",
+        },
+      ]}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
-      <Animated.View style={{ opacity: fadeAnim }}>
-        <View style={styles.headerRow}>
+      <Animated.View style={[styles.sectionShell, { maxWidth: layout.contentMaxWidth, opacity: fadeAnim }]}>
+        <View style={[styles.headerRow, layout.isTablet ? styles.headerRowWide : null]}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.title, { color: c.foreground }]}>Thi thử</Text>
             <Text style={[styles.subtitle, { color: c.mutedForeground }]}>Chọn một đề thi, xem chi tiết rồi bắt đầu phiên thi hoàn chỉnh.</Text>
@@ -161,7 +171,7 @@ export default function ExamsScreen() {
         />
       ) : null}
 
-      <View style={styles.list}>
+      <View style={[styles.sectionShell, styles.list, { maxWidth: layout.contentMaxWidth }]}>
         {showSubmittedSessions ? (
           (submittedSessions.data ?? []).map((session) => (
             <SubmittedSessionCard key={session.id} session={session} />
@@ -176,8 +186,6 @@ export default function ExamsScreen() {
             />
         ))}
       </View>
-
-      <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
   );
 }
@@ -356,8 +364,10 @@ function SkillChip({ skill, label }: { skill: Skill; label: string }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"] },
+  scroll: { gap: spacing.base },
+  sectionShell: { width: "100%" },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: spacing.base },
+  headerRowWide: { alignItems: "center" },
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   subtitle: { fontSize: fontSize.xs, marginTop: spacing.xs, lineHeight: 18 },
   searchWrap: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 2, borderRadius: radius.xl, paddingHorizontal: spacing.base, paddingVertical: spacing.sm, marginBottom: spacing.xl },

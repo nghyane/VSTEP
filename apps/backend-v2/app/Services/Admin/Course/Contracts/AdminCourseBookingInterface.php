@@ -9,12 +9,10 @@ use App\Models\TeacherBooking;
 use App\Models\TeacherSlot;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 
 interface AdminCourseBookingInterface
 {
-    /** @return Collection<int,TeacherSlot> */
-    public function listSlots(Course $course, ?CarbonImmutable $start = null, ?CarbonImmutable $end = null): Collection;
+    public function listSlots(Course $course, ?CarbonImmutable $start = null, ?CarbonImmutable $end = null): Builder;
 
     public function createSlot(Course $course, array $data): TeacherSlot;
 

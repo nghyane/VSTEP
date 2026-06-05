@@ -5,12 +5,7 @@ import { learningPathQuery } from "#/features/practice/queries"
 import type { LearningPathSkill } from "#/features/practice/types"
 import type { SkillKey } from "#/lib/skills"
 import { skills } from "#/lib/skills"
-
-function targetBand(targetLevel: string): number {
-	if (targetLevel === "C1") return 8.5
-	if (targetLevel === "B2") return 6.0
-	return 4.0
-}
+import { getTargetBand } from "#/lib/vstep"
 
 function isLowerBand(a: LearningPathSkill, b: LearningPathSkill): number {
 	return (a.band ?? 0) - (b.band ?? 0)
@@ -18,7 +13,7 @@ function isLowerBand(a: LearningPathSkill, b: LearningPathSkill): number {
 
 function priorityLabel(skill: LearningPathSkill, targetLevel: string, index: number): string {
 	const band = skill.band ?? 0
-	const requiredBand = targetBand(targetLevel)
+	const requiredBand = getTargetBand(targetLevel)
 	if (band >= requiredBand) return "Duy trì"
 	if (index === 0) return "Ưu tiên"
 	return "Cải thiện"
@@ -73,7 +68,7 @@ export function SkillsSection() {
 
 function dotColor(skill: LearningPathSkill, targetLevel: string, index: number): string {
 	const band = skill.band ?? 0
-	const requiredBand = targetBand(targetLevel)
+	const requiredBand = getTargetBand(targetLevel)
 	if (band >= requiredBand) return "bg-info"
 	if (index === 0) return "bg-destructive"
 	return "bg-warning"
@@ -94,7 +89,7 @@ function ScorePill({
 			<span className="font-extrabold text-foreground">
 				{skills.find((item) => item.key === skill.skill)?.en}
 			</span>
-			{skill.band?.toFixed(1)}/{targetBand(targetLevel).toFixed(1)} ·{" "}
+			{skill.band?.toFixed(1)} / ≥{getTargetBand(targetLevel).toFixed(1)} ·{" "}
 			{priorityLabel(skill, targetLevel, index)}
 		</span>
 	)

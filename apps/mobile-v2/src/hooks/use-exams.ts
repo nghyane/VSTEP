@@ -8,6 +8,9 @@ export interface AppConfig {
   profile: {
     maxProfilesPerAccount: number;
   };
+  support?: {
+    zaloPhone?: string | null;
+  };
   pricing: {
     exam: {
       fullTestCostCoins: number;

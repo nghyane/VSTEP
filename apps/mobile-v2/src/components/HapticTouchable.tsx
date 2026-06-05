@@ -43,7 +43,7 @@ export function HapticTouchable({ onPress, haptic = true, scalePress = false, ch
   );
 
   if (scalePress) {
-    return <Animated.View style={[{ transform: [{ scale }] }, style]}>{content}</Animated.View>;
+    return <Animated.View style={{ transform: [{ scale }] }}>{content}</Animated.View>;
   }
 
   return content;

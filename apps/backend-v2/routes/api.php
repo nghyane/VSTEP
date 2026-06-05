@@ -79,6 +79,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
         Route::get('/wallet/topup-packages', [WalletController::class, 'topupPackages']);
         Route::post('/wallet/topup', [WalletController::class, 'createTopup']);
+        Route::post('/wallet/topup/payment-return', [WalletController::class, 'handleTopupPaymentReturn']);
         Route::get('/wallet/topup/{order}/status', [WalletController::class, 'orderStatus']);
         Route::post('/wallet/promo-redeem', [WalletController::class, 'redeemPromo']);
 
@@ -185,6 +186,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/courses/{course}', [CourseController::class, 'show']);
         Route::post('/courses/{course}/enrollment-orders', [CourseController::class, 'createEnrollmentOrder']);
         Route::get('/courses/enrollment-orders', [CourseController::class, 'enrollmentOrders']);
+        Route::post('/courses/enrollment-orders/{order}/cancel', [CourseController::class, 'cancelEnrollmentOrder'])->whereUuid('order');
         Route::get('/courses/{course}/bookings', [CourseController::class, 'bookings']);
         Route::post('/courses/{course}/bookings', [CourseController::class, 'bookSlot']);
 
@@ -203,6 +205,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/action-items', [Admin\DashboardController::class, 'actionItems']);
         Route::get('/content-status', [Admin\DashboardController::class, 'contentStatus']);
         Route::get('/recent-activity', [Admin\DashboardController::class, 'recentActivity']);
+        Route::get('/feedback', [Admin\FeedbackController::class, 'index']);
 
         // Audio upload (presigned PUT to R2) — staff only.
         Route::post('/audio/presign-upload', [Admin\AudioUploadController::class, 'presignUpload']);
@@ -247,6 +250,13 @@ Route::prefix('v1')->group(function () {
             Route::get('/streak-distribution', [Admin\AnalyticsController::class, 'streakDistribution']);
             Route::get('/promo-stats', [Admin\AnalyticsController::class, 'promoStats']);
             Route::get('/top-content', [Admin\AnalyticsController::class, 'topContent']);
+        });
+
+        Route::middleware('role:admin')->prefix('finance')->group(function () {
+            Route::get('/summary', [Admin\FinanceController::class, 'summary']);
+            Route::get('/orders', [Admin\FinanceController::class, 'orders']);
+            Route::get('/orders/{type}/{id}', [Admin\FinanceController::class, 'show'])->whereIn('type', ['topup', 'course'])->whereUuid('id');
+            Route::get('/top-products', [Admin\FinanceController::class, 'topProducts']);
         });
 
         // Exam management

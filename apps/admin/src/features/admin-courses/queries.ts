@@ -211,10 +211,13 @@ export function useSetEnrollmentCommitment(courseId: string) {
 
 // ─── Teacher slots ───────────────────────────────────────
 
-export const slotsQuery = (courseId: string) =>
+export const slotsQuery = (courseId: string, page: number) =>
 	queryOptions({
-		queryKey: ["admin", "courses", "slots", courseId],
-		queryFn: () => api.get(`admin/courses/${courseId}/slots`).json<ApiResponse<AdminTeacherSlot[]>>(),
+		queryKey: ["admin", "courses", "slots", courseId, page],
+		queryFn: () =>
+			api
+				.get(`admin/courses/${courseId}/slots?page=${page}&per_page=10`)
+				.json<PaginatedResponse<AdminTeacherSlot>>(),
 		staleTime: 15_000,
 		// Tab "Lịch 1-1" mount/unmount khi chuyển tab — luôn refetch khi mount lại
 		// để đảm bảo data đồng bộ sau khi update course hoặc tạo slot từ tab khác.
@@ -264,7 +267,11 @@ export function useDeleteSlot(courseId: string) {
 
 // ─── Teacher bookings (admin) ────────────────────────────
 
-export const bookingsQuery = (courseId: string, page: number, filters?: { status?: string; search?: string; sort?: string; direction?: string }) =>
+export const bookingsQuery = (
+	courseId: string,
+	page: number,
+	filters?: { status?: string; search?: string; sort?: string; direction?: string },
+) =>
 	queryOptions({
 		queryKey: ["admin", "courses", "bookings", courseId, page, filters],
 		queryFn: () => {
@@ -273,7 +280,9 @@ export const bookingsQuery = (courseId: string, page: number, filters?: { status
 			if (filters?.search) params.set("search", filters.search)
 			if (filters?.sort) params.set("sort", filters.sort)
 			if (filters?.direction) params.set("direction", filters.direction)
-			return api.get(`admin/courses/${courseId}/bookings?${params}`).json<PaginatedResponse<AdminTeacherBooking>>()
+			return api
+				.get(`admin/courses/${courseId}/bookings?${params}`)
+				.json<PaginatedResponse<AdminTeacherBooking>>()
 		},
 		staleTime: 15_000,
 	})

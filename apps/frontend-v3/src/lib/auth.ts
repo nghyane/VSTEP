@@ -84,6 +84,7 @@ const PROFILE_SCOPED_QUERY_PREFIXES = new Set([
 	"booking",
 	"conversation-review",
 	"courses",
+	"exams",
 	"exam-sessions",
 	"grammar",
 	"learning-path",

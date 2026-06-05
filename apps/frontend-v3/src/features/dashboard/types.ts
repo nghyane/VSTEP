@@ -22,6 +22,7 @@ export interface ScoreSpider {
 	writing: number | null
 	speaking: number | null
 	sample_size: number
+	skill_sample_sizes?: Record<SkillKey, number>
 }
 
 export interface ScoreTimelinePoint {
@@ -37,6 +38,13 @@ export interface ScoreGrowth {
 	latest: number | null
 	change: number | null
 	trend: string
+}
+
+export interface ScoreQuality {
+	status: "normal" | "single_outlier" | "consecutive_low"
+	has_outlier: boolean
+	consecutive_low: boolean
+	outlier_skills: SkillKey[]
 }
 
 export interface OverviewHeatmap {
@@ -56,6 +64,7 @@ export interface OverviewData {
 	scores: {
 		spider: ScoreSpider | null
 		timeline: ScoreTimelinePoint[]
+		quality?: ScoreQuality
 		growth: Record<SkillKey, ScoreGrowth>
 	}
 	stats: OverviewStats

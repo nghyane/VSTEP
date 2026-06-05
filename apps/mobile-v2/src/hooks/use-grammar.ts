@@ -10,11 +10,20 @@ export interface GrammarPoint {
   name: string;
   vietnameseName: string | null;
   summary: string | null;
+  learningObjective?: string | null;
+  successCriteria?: string | null;
+  prerequisiteSlugs?: string[];
+  cefrDescriptor?: string | null;
+  vstepUseCase?: string | null;
+  assessedBy?: string[];
+  isCheckpoint?: boolean;
   category: string | null;
   displayOrder: number;
   levels: string[];
   tasks: string[];
   functions: string[];
+  exerciseCount?: number;
+  distinctCorrect?: number;
 }
 
 export interface GrammarStructure {
@@ -96,6 +105,8 @@ function normalizeGrammarPoint(point: GrammarPoint): GrammarPoint {
     levels: asArray(point.levels),
     tasks: asArray(point.tasks),
     functions: asArray(point.functions),
+    prerequisiteSlugs: asArray(point.prerequisiteSlugs),
+    assessedBy: asArray(point.assessedBy),
   };
 }
 

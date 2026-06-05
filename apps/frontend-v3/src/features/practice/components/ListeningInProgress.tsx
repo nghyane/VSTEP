@@ -6,6 +6,7 @@ import { PracticeMcqResultPanel } from "#/features/practice/components/PracticeM
 import { QuestionList } from "#/features/practice/components/QuestionList"
 import { Subtitle } from "#/features/practice/components/Subtitle"
 import { TTSAudioBar } from "#/features/practice/components/TTSAudioBar"
+import { TTSVoicePicker } from "#/features/practice/components/TTSVoicePicker"
 import type { ExerciseDetail } from "#/features/practice/types"
 import { useListeningSession } from "#/features/practice/use-listening-session"
 import { useTTSPlayer } from "#/features/practice/use-tts-player"
@@ -28,8 +29,10 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 	const hasTTS = !hasAudio && !!exercise.transcript
 	const tts = useTTSPlayer(hasTTS ? exercise.transcript : null)
 	const hasSub = !!exercise.transcript || exercise.word_timestamps.length > 0
-	const canFinish = questions.every((question) => session.answers[question.id] !== undefined)
-	const handleNext = () => setCurrentQuestionIndex((index) => (index + 1) % questions.length)
+	const canFinish =
+		questions.length > 0 && questions.every((question) => session.answers[question.id] !== undefined)
+	const handleNext = () =>
+		setCurrentQuestionIndex((index) => (questions.length > 0 ? (index + 1) % questions.length : 0))
 	const handleFinish = () => {
 		setFinishRequested(true)
 		session.submit()
@@ -40,9 +43,21 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 			onClick={() => setShowSub((v) => !v)}
 			className="btn btn-secondary min-h-10 w-40 px-4 py-2 text-sm text-muted"
 		>
-			{showSub ? "Ẩn transcript" : "Hiện transcript"}
+			{showSub ? "Ẩn lời thoại" : "Hiện lời thoại"}
 		</button>
 	) : null
+	const topBarContent = (
+		<div className="flex items-center gap-3">
+			{transcriptToggle}
+			{hasTTS ? (
+				<TTSVoicePicker
+					voice={tts.voice}
+					onVoiceChange={tts.setVoice}
+					accentClassName="border-skill-listening text-skill-listening"
+				/>
+			) : null}
+		</div>
+	)
 
 	useEffect(() => {
 		if (finishRequested && session.result) setShowCompletion(true)
@@ -77,7 +92,7 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 			finishLabel="Finish"
 			onQuestionJump={setCurrentQuestionIndex}
 			resultTopBarContent={transcriptToggle}
-			topBarContent={transcriptToggle}
+			topBarContent={topBarContent}
 			rightSidebar={
 				session.result ? <PracticeMcqResultPanel result={session.result} config={resultConfig} /> : undefined
 			}

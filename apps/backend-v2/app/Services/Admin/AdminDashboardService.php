@@ -82,14 +82,14 @@ final class AdminDashboardService
             ];
         }
 
-        $missingAudio = ExamVersionListeningSection::query()
+        $examListeningSectionsMissingAudio = ExamVersionListeningSection::query()
             ->whereNull('audio_url')
             ->orWhere('audio_url', '')
             ->count();
-        if ($missingAudio > 0) {
+        if ($examListeningSectionsMissingAudio > 0) {
             $alerts[] = [
                 'type' => 'warning',
-                'message' => "{$missingAudio} phần nghe chưa có audio",
+                'message' => "{$examListeningSectionsMissingAudio} đoạn nghe trong đề thi chưa có file audio",
                 'action' => '/exams',
             ];
         }

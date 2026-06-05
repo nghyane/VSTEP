@@ -13,7 +13,7 @@ import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { MascotEmpty } from "@/components/MascotStates";
-import { useGrammarPointDetail } from "@/hooks/use-grammar";
+import { useGrammarPointDetail, type GrammarPoint, type GrammarPointDetail } from "@/hooks/use-grammar";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 export default function GrammarDetailScreen() {
@@ -47,52 +47,8 @@ export default function GrammarDetailScreen() {
 
       {detail && (
         <>
-          {/* Header */}
-          <DepthCard style={s.headerCard}>
-            <View style={s.headerTop}>
-              <View style={{ flex: 1 }}>
-                <Text style={[s.pointName, { color: c.foreground }]}>{detail.point.name}</Text>
-                {detail.point.vietnameseName && (
-                  <Text style={[s.pointVi, { color: c.mutedForeground }]}>{detail.point.vietnameseName}</Text>
-                )}
-                {detail.point.summary && (
-                  <Text style={[s.pointSummary, { color: c.subtle }]}>{detail.point.summary}</Text>
-                )}
-              </View>
-              {detail.mastery && (
-                <View style={s.masteryBadge}>
-                  <View style={[s.levelBadge, { backgroundColor: c.primaryTint }]}>
-                    <Text style={[s.levelBadgeText, { color: c.primary }]}>{detail.mastery.computedLevel}</Text>
-                  </View>
-                  <Text style={[s.masteryMeta, { color: c.subtle }]}>
-                    {detail.mastery.accuracyPercent}% · {detail.mastery.attempts} lần
-                  </Text>
-                </View>
-              )}
-            </View>
-            <View style={s.pillRow}>
-              {detail.point.levels.map((lv) => (
-                <View key={lv} style={[s.pill, { backgroundColor: c.primaryTint }]}>
-                  <Text style={[s.pillText, { color: c.primary }]}>{lv}</Text>
-                </View>
-              ))}
-              {detail.point.functions.map((f) => (
-                <View key={f} style={[s.pill, { backgroundColor: c.muted }]}>
-                  <Text style={[s.pillText, { color: c.mutedForeground }]}>{f}</Text>
-                </View>
-              ))}
-            </View>
-          </DepthCard>
-
-          {/* CTA luyện tập */}
-          {detail.exercises.length > 0 && (
-            <DepthButton
-              fullWidth
-              onPress={() => router.push(`/(app)/practice/grammar/${pointId}/exercise` as any)}
-            >
-              {`Luyện tập · ${detail.exercises.length} câu`}
-            </DepthButton>
-          )}
+          <PointHeader detail={detail} />
+          <LearningDesign point={detail.point} />
 
           {/* Cấu trúc */}
           {detail.structures.length > 0 && (
@@ -144,7 +100,10 @@ export default function GrammarDetailScreen() {
             <View>
               <Text style={[s.sectionTitle, { color: c.foreground }]}>VSTEP Tips</Text>
               {detail.vstepTips.map((t) => (
-                <DepthCard key={t.id} style={{ marginBottom: spacing.sm, backgroundColor: c.infoTint, borderColor: c.info + "40", borderBottomColor: c.info }}>
+                <DepthCard
+                  key={t.id}
+                  style={{ marginBottom: spacing.sm, backgroundColor: c.infoTint, borderColor: c.info + "40", borderBottomColor: c.info }}
+                >
                   <Text style={[s.tipTask, { color: c.info }]}>{t.task}</Text>
                   <Text style={[s.tipText, { color: c.foreground }]}>{t.tip}</Text>
                   {t.example && (
@@ -152,6 +111,14 @@ export default function GrammarDetailScreen() {
                   )}
                 </DepthCard>
               ))}
+            </View>
+          )}
+
+          {detail.exercises.length > 0 && (
+            <View style={s.ctaWrap}>
+              <DepthButton onPress={() => router.push(`/(app)/practice/grammar/${pointId}/exercise` as never)}>
+                {`Luyện tập · ${detail.exercises.length} câu`}
+              </DepthButton>
             </View>
           )}
         </>
@@ -162,6 +129,88 @@ export default function GrammarDetailScreen() {
   );
 }
 
+function PointHeader({ detail }: { detail: GrammarPointDetail }) {
+  const c = useThemeColors();
+  const { point } = detail;
+
+  return (
+    <DepthCard style={s.headerCard}>
+      <View style={s.headerTitleRow}>
+        <Text style={[s.pointName, { color: c.foreground }]}>{point.name}</Text>
+        {point.isCheckpoint ? (
+          <View style={[s.checkpointBadge, { backgroundColor: c.warningTint }]}>
+            <Text style={[s.checkpointText, { color: c.warning }]}>Checkpoint</Text>
+          </View>
+        ) : null}
+      </View>
+      {point.vietnameseName ? <Text style={[s.pointVi, { color: c.mutedForeground }]}>{point.vietnameseName}</Text> : null}
+      {point.summary ? <Text style={[s.pointSummary, { color: c.subtle }]}>{point.summary}</Text> : null}
+    </DepthCard>
+  );
+}
+
+function LearningDesign({ point }: { point: GrammarPoint }) {
+  const c = useThemeColors();
+  const hasContent =
+    point.learningObjective ||
+    point.successCriteria ||
+    point.cefrDescriptor ||
+    point.vstepUseCase ||
+    (point.prerequisiteSlugs?.length ?? 0) > 0;
+
+  if (!hasContent) return null;
+
+  return (
+    <DepthCard style={s.learningCard}>
+      <Text style={[s.learningTitle, { color: c.foreground }]}>Bạn sẽ học gì?</Text>
+      {point.learningObjective ? (
+        <InfoBlock label="Mục tiêu" text={point.learningObjective} />
+      ) : null}
+      {point.successCriteria ? (
+        <InfoBlock label="Khi nào được xem là đạt?" text={point.successCriteria} />
+      ) : null}
+      {(point.prerequisiteSlugs?.length ?? 0) > 0 ? (
+        <View>
+          <Text style={[s.infoLabel, { color: c.subtle }]}>Nên học trước</Text>
+          <View style={s.prereqRow}>
+            {point.prerequisiteSlugs?.map((slug) => (
+              <View key={slug} style={[s.prereqPill, { backgroundColor: c.background }]}>
+                <Text style={[s.prereqText, { color: c.mutedForeground }]}>{slug}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : null}
+      {(point.cefrDescriptor || point.vstepUseCase) ? (
+        <View style={s.infoGrid}>
+          {point.cefrDescriptor ? <InfoTile label="Liên hệ CEFR" text={point.cefrDescriptor} /> : null}
+          {point.vstepUseCase ? <InfoTile label="Ứng dụng VSTEP" text={point.vstepUseCase} /> : null}
+        </View>
+      ) : null}
+    </DepthCard>
+  );
+}
+
+function InfoBlock({ label, text }: { label: string; text: string }) {
+  const c = useThemeColors();
+  return (
+    <View>
+      <Text style={[s.infoLabel, { color: c.subtle }]}>{label}</Text>
+      <Text style={[s.infoText, { color: c.foreground }]}>{text}</Text>
+    </View>
+  );
+}
+
+function InfoTile({ label, text }: { label: string; text: string }) {
+  const c = useThemeColors();
+  return (
+    <View style={[s.infoTile, { backgroundColor: c.background }]}>
+      <Text style={[s.infoTileLabel, { color: c.subtle }]}>{label}</Text>
+      <Text style={[s.infoTileText, { color: c.mutedForeground }]}>{text}</Text>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: spacing.xl, gap: spacing.lg, paddingBottom: spacing["3xl"] },
@@ -169,18 +218,24 @@ const s = StyleSheet.create({
   backText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
   center: { paddingVertical: spacing["2xl"], alignItems: "center" },
   // Header card
-  headerCard: { gap: spacing.sm },
-  headerTop: { flexDirection: "row", alignItems: "flex-start" },
+  headerCard: { gap: spacing.xs, padding: spacing.lg },
+  headerTitleRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   pointName: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
   pointVi: { fontSize: fontSize.sm, marginTop: 2 },
   pointSummary: { fontSize: fontSize.sm, marginTop: spacing.sm, lineHeight: 20 },
-  masteryBadge: { alignItems: "flex-end", marginLeft: spacing.md },
-  levelBadge: { paddingHorizontal: spacing.sm, paddingVertical: 3, borderRadius: radius.full },
-  levelBadgeText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
-  masteryMeta: { fontSize: 10, marginTop: 4 },
-  pillRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
-  pill: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
-  pillText: { fontSize: 11, fontFamily: fontFamily.bold },
+  checkpointBadge: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.full },
+  checkpointText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  learningCard: { gap: spacing.md, padding: spacing.lg },
+  learningTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.bold },
+  infoLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, textTransform: "uppercase" },
+  infoText: { fontSize: fontSize.sm, lineHeight: 20, marginTop: 4 },
+  prereqRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginTop: spacing.xs },
+  prereqPill: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.full },
+  prereqText: { fontSize: fontSize.xs },
+  infoGrid: { gap: spacing.sm },
+  infoTile: { borderRadius: radius.lg, padding: spacing.md },
+  infoTileLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
+  infoTileText: { fontSize: fontSize.sm, lineHeight: 20, marginTop: 4 },
   // Sections
   sectionTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold, marginBottom: spacing.sm },
   itemCard: { marginBottom: spacing.sm },
@@ -194,4 +249,5 @@ const s = StyleSheet.create({
   tipTask: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, marginBottom: 2 },
   tipText: { fontSize: fontSize.sm },
   tipExample: { fontSize: fontSize.xs, marginTop: 4, fontStyle: "italic" },
+  ctaWrap: { alignItems: "center" },
 });

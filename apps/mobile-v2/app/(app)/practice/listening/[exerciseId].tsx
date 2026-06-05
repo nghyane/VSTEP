@@ -306,7 +306,12 @@ function InProgressScreen({ detail, sessionId, onBack, insets, c }: any) {
 
         {/* Result — mirrors FE v3 ListeningInProgress celebration card */}
         {session.result && (
-          <McqResultCard result={session.result} accentColor={COLOR} onBack={onBack} />
+          <McqResultCard
+            result={session.result}
+            accentColor={COLOR}
+            onBack={onBack}
+            feedback={{ contentType: "practice_listening_exercise", contentId: exercise.id }}
+          />
         )}
 
         {/* Questions — McqQuestionCard mirrors FE v3 QuestionList */}

@@ -3,9 +3,11 @@ import {
 	CalendarOutlined,
 	CheckSquareOutlined,
 	DatabaseOutlined,
+	DollarOutlined,
 	EditOutlined,
 	GiftOutlined,
 	HomeOutlined,
+	MessageOutlined,
 	ProfileOutlined,
 	ReadOutlined,
 	ScheduleOutlined,
@@ -112,6 +114,7 @@ function buildStaffItems(isAdmin: boolean): ItemType[] {
 			label: "Quản lý",
 			children: [
 				{ key: "/courses", icon: <DatabaseOutlined />, label: <Link to={t("/courses")}>Khóa học</Link> },
+				{ key: "/feedback", icon: <MessageOutlined />, label: <Link to={t("/feedback")}>Phản hồi</Link> },
 				{
 					key: "/leave-requests",
 					icon: <SolutionOutlined />,
@@ -126,6 +129,11 @@ function buildStaffItems(isAdmin: boolean): ItemType[] {
 			type: "group",
 			label: "Quản trị",
 			children: [
+				{
+					key: "/finance",
+					icon: <DollarOutlined />,
+					label: <Link to={t("/finance")}>Đơn hàng & dòng tiền</Link>,
+				},
 				{
 					key: "/grading",
 					icon: <CheckSquareOutlined />,
@@ -162,6 +170,8 @@ const STAFF_KEYS = [
 	"/practice/speaking-drills",
 	"/practice/speaking-scenarios",
 	"/courses",
+	"/feedback",
+	"/finance",
 	"/leave-requests",
 	"/grading",
 	"/topup-packages",

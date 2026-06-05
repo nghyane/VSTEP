@@ -23,7 +23,6 @@ export function ListeningForm({ initial, onSubmit, onCancel, submitting }: Props
 		title: initial?.title ?? "",
 		description: initial?.description ?? "",
 		part: initial?.part ?? 1,
-		audio_url: initial?.audio_url ?? "",
 		transcript: initial?.transcript ?? "",
 		vietnamese_transcript: initial?.vietnamese_transcript ?? "",
 		word_timestamps: initial?.word_timestamps ?? [],
@@ -102,7 +101,12 @@ export function ListeningForm({ initial, onSubmit, onCancel, submitting }: Props
 						</FormField>
 					</Col>
 					<Col span={8}>
-						<FormField label="Thời lượng (phút)" htmlFor="minutes" required error={errors.estimated_minutes}>
+						<FormField
+							label="~ Thời lượng ước tính (phút)"
+							htmlFor="minutes"
+							required
+							error={errors.estimated_minutes}
+						>
 							<Input
 								id="minutes"
 								type="number"
@@ -124,20 +128,12 @@ export function ListeningForm({ initial, onSubmit, onCancel, submitting }: Props
 				</Row>
 
 				<FormField
-					label="Audio URL"
-					htmlFor="audio_url"
-					error={errors.audio_url}
-					helper="R2 key hoặc URL public."
+					label="Kịch bản nghe tiếng Anh"
+					htmlFor="transcript"
+					required
+					error={errors.transcript}
+					helper="Nội dung này được dùng để tạo giọng đọc TTS cho học viên."
 				>
-					<Input
-						id="audio_url"
-						value={state.audio_url ?? ""}
-						onChange={(e) => set("audio_url", e.target.value)}
-						placeholder="r2/listening/part1-conv1.mp3"
-					/>
-				</FormField>
-
-				<FormField label="Transcript (EN)" htmlFor="transcript" required error={errors.transcript}>
 					<Textarea
 						id="transcript"
 						value={state.transcript}
@@ -147,7 +143,12 @@ export function ListeningForm({ initial, onSubmit, onCancel, submitting }: Props
 					/>
 				</FormField>
 
-				<FormField label="Transcript Việt" htmlFor="vn_transcript" error={errors.vietnamese_transcript}>
+				<FormField
+					label="Bản dịch tiếng Việt"
+					htmlFor="vn_transcript"
+					error={errors.vietnamese_transcript}
+					helper="Chỉ dùng để tham khảo nội bộ, không dùng để phát âm/TTS."
+				>
 					<Textarea
 						id="vn_transcript"
 						value={state.vietnamese_transcript ?? ""}

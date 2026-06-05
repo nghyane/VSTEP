@@ -17,7 +17,6 @@ import { useMutation } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
@@ -33,7 +32,7 @@ import {
   type WritingSampleMarker,
 } from "@/hooks/use-practice";
 import { getApiErrorMessage } from "@/lib/api";
-import { translateText } from "@/lib/translate";
+import { translateText, translateTextStrict } from "@/lib/translate";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 const COLOR = "#58CC02";
@@ -41,15 +40,6 @@ const COLOR_DARK = "#478700";
 
 function countWords(text: string) {
   return text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
-}
-
-async function translateSampleSegment(text: string): Promise<string> {
-  if (text.trim().length === 0) return text;
-  const leading = text.match(/^\s*/)?.[0] ?? "";
-  const trailing = text.match(/\s*$/)?.[0] ?? "";
-  const core = text.trim();
-  const translated = await translateText(core, "en", "vi").catch(() => core);
-  return `${leading}${translated.trim()}${trailing}`;
 }
 
 export default function WritingExerciseScreen() {
@@ -93,7 +83,7 @@ export default function WritingExerciseScreen() {
           <Text style={[s.previewMeta, { color: c.subtle }]}>
             {detail.minWords}–{detail.maxWords} từ{detail.estimatedMinutes ? ` · ${detail.estimatedMinutes} phút` : ""}
           </Text>
-          <Text style={[s.previewNote, { color: c.mutedForeground }]}>AI sẽ chấm bài sau khi bạn nộp</Text>
+          <Text style={[s.previewNote, { color: c.mutedForeground }]}>Hệ thống sẽ chấm bài sau khi bạn nộp</Text>
           <DepthButton
             onPress={() => startMutation.mutate()}
             disabled={startMutation.isPending}
@@ -133,13 +123,13 @@ interface EditorScreenProps {
 function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProps) {
   const [text, setText] = useState("");
   const [selection, setSelection] = useState({ start: 0, end: 0 });
-  const [submitted, setSubmitted] = useState<{ submissionId: string; wordCount: number } | null>(null);
+  const [submitted, setSubmitted] = useState<{ attemptId: string; wordCount: number } | null>(null);
   const [showReview, setShowReview] = useState(false);
   const [showSample, setShowSample] = useState(false);
   const [promptTr, setPromptTr] = useState<string | null>(null);
   const [promptTrLoading, setPromptTrLoading] = useState(false);
   const [promptTrError, setPromptTrError] = useState(false);
-  const [sampleTrSegments, setSampleTrSegments] = useState<SampleSegment[] | null>(null);
+  const [sampleTr, setSampleTr] = useState<string | null>(null);
   const [sampleTrLoading, setSampleTrLoading] = useState(false);
   const [sampleTrError, setSampleTrError] = useState(false);
   const inputRef = useRef<TextInput>(null);
@@ -151,7 +141,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
   const submitMutation = useMutation({
     mutationFn: () => submitWritingSession(sessionId, text),
     onSuccess: (res) => {
-      setSubmitted({ submissionId: res.submissionId, wordCount: res.wordCount });
+      setSubmitted({ attemptId: res.attemptId, wordCount: res.wordCount });
       setShowReview(true);
     },
   });
@@ -194,28 +184,16 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
   }
 
   function toggleSampleTr() {
-    if (sampleTrSegments) {
-      setSampleTrSegments(null);
+    if (sampleTr) {
+      setSampleTr(null);
       setSampleTrError(false);
       return;
     }
     if (sampleTrLoading) return;
     setSampleTrLoading(true);
     setSampleTrError(false);
-    const segments = buildSampleSegments(detail.sampleAnswer!, detail.sampleMarkers);
-    Promise.all(
-      segments.map((segment) =>
-        translateSampleSegment(segment.text),
-      ),
-    )
-      .then((translated) => {
-        setSampleTrSegments(
-          segments.map((segment, index) => ({
-            ...segment,
-            text: translated[index] ?? segment.text,
-          })),
-        );
-      })
+    translateTextStrict(detail.sampleAnswer!, "en", "vi")
+      .then((res) => setSampleTr(res))
       .catch(() => {
         setSampleTrError(true);
       })
@@ -252,7 +230,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
             <Ionicons name="checkmark-circle" size={48} color={COLOR} />
             <Text style={[s.resultTitle, { color: c.foreground }]}>Đã nộp bài!</Text>
             <Text style={[s.resultSub, { color: c.mutedForeground }]}>
-              {submitted.wordCount} từ · AI đang chấm bài
+              {submitted.wordCount} từ · hệ thống đang chấm bài
             </Text>
             <DepthButton
               onPress={() => setShowReview(true)}
@@ -404,7 +382,6 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
             fullWidth
             disabled={submitMutation.isPending}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               submitMutation.mutate();
             }}
             style={{ backgroundColor: COLOR, borderColor: COLOR }}
@@ -424,7 +401,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
           visible={showSample}
           answer={detail.sampleAnswer}
           markers={detail.sampleMarkers}
-          translationSegments={sampleTrSegments}
+          translation={sampleTr}
           translationLoading={sampleTrLoading}
           translationError={sampleTrError}
           onToggleTranslation={toggleSampleTr}
@@ -437,7 +414,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
       {submitted ? (
         <WritingReviewSheet
           visible={showReview}
-          submissionId={submitted.submissionId}
+          attemptId={submitted.attemptId}
           onClose={() => setShowReview(false)}
         />
       ) : null}
@@ -454,7 +431,7 @@ function WritingSampleModal({
   visible,
   answer,
   markers,
-  translationSegments,
+  translation,
   translationLoading,
   translationError,
   onToggleTranslation,
@@ -464,7 +441,7 @@ function WritingSampleModal({
   visible: boolean;
   answer: string;
   markers: WritingSampleMarker[];
-  translationSegments: SampleSegment[] | null;
+  translation: string | null;
   translationLoading: boolean;
   translationError: boolean;
   onToggleTranslation: () => void;
@@ -473,8 +450,7 @@ function WritingSampleModal({
 }) {
   const [activeSegment, setActiveSegment] = useState<SampleSegment | null>(null);
   const segments = useMemo(() => buildSampleSegments(answer, markers), [answer, markers]);
-  const displaySegments = translationSegments ?? segments;
-  const isTranslated = translationSegments !== null;
+  const isTranslated = translation !== null;
   const handleClose = () => {
     setActiveSegment(null);
     onClose();
@@ -519,7 +495,7 @@ function WritingSampleModal({
               <Text style={[s.transText, { color: c.destructive }]}>Không thể dịch. Thử lại sau.</Text>
             ) : null}
             <Text style={[s.sampleText, { color: c.foreground }]}>
-              {displaySegments.map((segment, index) => {
+              {segments.map((segment, index) => {
                 if (!segment.marker) return <Text key={index}>{segment.text}</Text>;
                 return (
                   <Text
@@ -538,6 +514,12 @@ function WritingSampleModal({
                 );
               })}
             </Text>
+            {translation ? (
+              <View style={[s.transBlock, { borderLeftColor: COLOR + "60" }]}>
+                <Text style={[s.transLabel, { color: COLOR }]}>Dịch</Text>
+                <Text style={[s.transText, { color: c.mutedForeground }]}>{translation}</Text>
+              </View>
+            ) : null}
           </DepthCard>
         </ScrollView>
 

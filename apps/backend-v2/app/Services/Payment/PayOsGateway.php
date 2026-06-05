@@ -123,6 +123,44 @@ final class PayOsGateway implements PaymentGateway
     }
 
     /**
+     * @return array{id: string, orderCode: int, status: string, raw: array<string, mixed>}
+     */
+    public function getPaymentLinkStatus(string $paymentLinkId): array
+    {
+        $response = Http::withHeaders([
+            'x-client-id' => $this->clientId,
+            'x-api-key' => $this->apiKey,
+            'Content-Type' => 'application/json',
+        ])->get($this->apiUrl.'/v2/payment-requests/'.$paymentLinkId);
+
+        if ($response->failed()) {
+            Log::error('PayOS get payment link failed', [
+                'payment_link_id' => $paymentLinkId,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            throw new \RuntimeException('PayOS get payment link failed: '.$response->body());
+        }
+
+        $data = $response->json('data');
+        if (! is_array($data)) {
+            Log::error('PayOS get payment link: missing data in response', [
+                'payment_link_id' => $paymentLinkId,
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+            throw new \RuntimeException('PayOS get payment link failed: invalid response structure');
+        }
+
+        return [
+            'id' => (string) ($data['id'] ?? $paymentLinkId),
+            'orderCode' => (int) ($data['orderCode'] ?? 0),
+            'status' => (string) ($data['status'] ?? ''),
+            'raw' => $data,
+        ];
+    }
+
+    /**
      * Sign for creating payment link.
      * data = "amount={amount}&cancelUrl={cancelUrl}&description={description}&orderCode={orderCode}&returnUrl={returnUrl}"
      * Alphabetically sorted keys.

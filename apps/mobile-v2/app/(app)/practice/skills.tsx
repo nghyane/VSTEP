@@ -18,7 +18,7 @@ const SKILLS: {
 }[] = [
   { key: "listening", label: "Nghe", sub: "Listening", meta: "3 phần · MCQ · chấm ngay" },
   { key: "reading", label: "Đọc", sub: "Reading", meta: "4 đoạn · MCQ · chấm ngay" },
-  { key: "writing", label: "Viết", sub: "Writing", meta: "2 task · AI chấm" },
+  { key: "writing", label: "Viết", sub: "Writing", meta: "2 task · hệ thống chấm" },
   { key: "speaking", label: "Nói", sub: "Speaking", meta: "3 phần · ghi âm + AI" },
 ];
 
@@ -34,8 +34,8 @@ const PARTS: Record<Skill, { label: string; meta: string; badge: string }[]> = {
     { badge: "P3", label: "Đọc hiểu dài",    meta: "MCQ · chấm ngay" },
   ],
   writing: [
-    { badge: "T1", label: "Viết thư / email", meta: "AI chấm sau khi nộp" },
-    { badge: "T2", label: "Viết luận",        meta: "AI chấm sau khi nộp" },
+    { badge: "T1", label: "Viết thư / email", meta: "Hệ thống chấm sau khi nộp" },
+    { badge: "T2", label: "Viết luận",        meta: "Hệ thống chấm sau khi nộp" },
   ],
   speaking: [
     { badge: "A2", label: "Câu hỏi cơ bản",         meta: "Ghi âm + tải audio" },
@@ -67,7 +67,7 @@ export default function PracticeSkillsScreen() {
         <View style={s.titleBlock}>
           <Text style={[s.title, { color: c.foreground }]}>Luyện 4 kỹ năng</Text>
           <Text style={[s.sub, { color: c.mutedForeground }]}>
-            Nghe / Đọc chấm ngay · Viết / Nói AI chấm sau
+            Nghe / Đọc chấm ngay · Viết / Nói hệ thống chấm sau
           </Text>
         </View>
 

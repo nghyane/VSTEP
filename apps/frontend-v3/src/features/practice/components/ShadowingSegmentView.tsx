@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { HTTPError } from "ky"
 import { useState } from "react"
-import { COIN_SPEND_FX_MS, CoinSpendFly } from "#/components/CoinSpendFly"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { appConfigQuery } from "#/features/config/queries"
 import { getPronunciationReview, type PronunciationReview } from "#/features/practice/actions"
@@ -89,11 +88,13 @@ function ReviewPanel({
 	review,
 	isError,
 	isServiceDown,
+	errorMessage,
 	onRetry,
 }: {
 	review: PronunciationReview | null
 	isError: boolean
 	isServiceDown: boolean
+	errorMessage: string
 	onRetry: () => void
 }) {
 	return (
@@ -105,7 +106,7 @@ function ReviewPanel({
 			{isError ? (
 				<div className="rounded-(--radius-card) border-2 border-b-4 border-destructive/30 bg-destructive/5 p-4">
 					<p className="text-sm text-destructive mb-3">
-						{isServiceDown ? "AI tạm thời không phản hồi. Vui lòng thử lại sau." : "Không thể tải nhận xét."}
+						{isServiceDown ? "AI tạm thời không phản hồi. Vui lòng thử lại sau." : errorMessage}
 					</p>
 					<button type="button" onClick={onRetry} className="btn btn-secondary px-6">
 						Thử lại
@@ -155,8 +156,6 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 	const { data: configData } = useQuery(appConfigQuery)
 	const [showIpa, setShowIpa] = useState(false)
 	const [showReview, setShowReview] = useState(false)
-	const [spendFxKey, setSpendFxKey] = useState(0)
-	const [spendAnimating, setSpendAnimating] = useState(false)
 	const accuracyPercent = attempt?.accuracyPercent ?? null
 	const profanity = attempt?.profanity
 	const hasProfanity = profanity?.found ?? false
@@ -170,10 +169,18 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 		queryFn: () => getPronunciationReview(segment.text, attempt?.transcript ?? "", segment.id),
 		enabled: false,
 	})
+	const reviewErrorMessage =
+		reviewQuery.error instanceof HTTPError
+			? reviewQuery.error.message || `Lỗi server (${reviewQuery.error.response.status}). Vui lòng thử lại.`
+			: reviewQuery.error instanceof Error
+				? reviewQuery.error.message
+				: "Không thể tải nhận xét."
 
 	const fetchReview = async () => {
 		const result = await reviewQuery.refetch()
-		if (result.data) queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] })
+		if (result.data) {
+			queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] })
+		}
 	}
 	const reviewButtonLabel = hasProfanity
 		? "Hãy nói lại bằng ngôn ngữ phù hợp"
@@ -184,7 +191,7 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 				: "Nhờ AI nhận xét phát âm"
 
 	const handleReview = () => {
-		if (spendAnimating || reviewQuery.isFetching || hasProfanity) return
+		if (reviewQuery.isFetching || hasProfanity) return
 		const revealReview = () => {
 			setShowReview(true)
 			window.setTimeout(() => {
@@ -201,16 +208,6 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 			revealReview()
 			fetchReview()
 		}
-		if (feedbackCost > 0) {
-			setSpendAnimating(true)
-			setSpendFxKey((key) => key + 1)
-			window.setTimeout(() => {
-				setSpendAnimating(false)
-				requestReview()
-			}, COIN_SPEND_FX_MS)
-			return
-		}
-
 		requestReview()
 	}
 
@@ -310,11 +307,10 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 					<ShadowingWordChips words={attempt.wordResults} />
 
 					<div className="relative">
-						{spendFxKey > 0 && feedbackCost > 0 && <CoinSpendFly key={spendFxKey} cost={feedbackCost} />}
 						<button
 							type="button"
 							onClick={handleReview}
-							disabled={spendAnimating || reviewQuery.isFetching || hasProfanity}
+							disabled={reviewQuery.isFetching || hasProfanity}
 							className="w-full flex items-center justify-center gap-2 py-3 rounded-(--radius-button) border-2 border-b-4 border-skill-speaking/30 bg-skill-speaking/10 text-skill-speaking font-bold text-sm transition hover:bg-skill-speaking/20 active:translate-y-[1px] active:border-b-2 disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							<Icon name="lightning" size="xs" />
@@ -335,6 +331,7 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 					review={reviewQuery.data?.data ?? null}
 					isError={reviewQuery.isError}
 					isServiceDown={reviewQuery.error instanceof HTTPError && reviewQuery.error.response.status === 503}
+					errorMessage={reviewErrorMessage}
 					onRetry={fetchReview}
 				/>
 			)}

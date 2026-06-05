@@ -81,7 +81,7 @@ function HistoryCard({ item }: { item: WritingHistoryItem }) {
       style={s.cardWrapper}
       onPress={() =>
         router.push(
-          `/(app)/grading/writing/${item.id}` as any,
+          `/(app)/grading/writing/${item.attemptId}` as never,
         )
       }
     >

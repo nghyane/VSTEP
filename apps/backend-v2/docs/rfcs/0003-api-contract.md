@@ -124,8 +124,10 @@ List gói nạp active.
 ### `POST /api/v1/wallet/topup` — jwt
 Tạo topup order status pending.
 
-Request: `{ package_id, payment_provider? }`
+Request: `{ package_id, payment_provider?, return_url, cancel_url }`
 Response: `{ data: { id, amount_vnd, coins_to_credit, status, provider_ref, ... } }`
+
+`return_url` và `cancel_url` là URL client muốn PayOS chuyển về sau thanh toán/hủy. Client bắt buộc gửi cả hai URL; backend chỉ forward vào payment gateway. Trạng thái thanh toán thật chỉ được cập nhật từ gateway callback đã verify signature.
 
 ### `POST /api/v1/wallet/topup/{orderId}/confirm` — jwt
 Mock confirm payment. Idempotent. Real gateway sẽ dùng callback riêng (phase 2).
@@ -313,10 +315,13 @@ List published courses, có flags `enrolled`, `commitment_status`.
 ### `GET /api/v1/courses/{id}` — jwt
 Detail + schedule + enrollment status + commitment status.
 
-### `POST /api/v1/courses/{id}/enroll` — jwt
-Mua course bằng VND (payment external). Tạo enrollment + cấp bonus xu.
+### `POST /api/v1/courses/{id}/enrollment-orders` — jwt
+Tạo order mua course bằng VND (payment external). Enrollment + bonus xu chỉ được tạo sau callback/confirm thanh toán hợp lệ.
 
-Response: `{ enrollment_id, bonus_received }` hoặc 409 (full/already enrolled).
+Request: `{ payment_provider, commitment_signature, return_url, cancel_url }`
+Response: `{ data: { id, amount_vnd, status, payment_url, ... } }` hoặc 409/422.
+
+`return_url` và `cancel_url` là URL client muốn PayOS chuyển về sau thanh toán/hủy. Client bắt buộc gửi cả hai URL; backend chỉ forward vào payment gateway. Trạng thái thanh toán thật chỉ được cập nhật từ gateway callback đã verify signature.
 
 ### `GET /api/v1/courses/{id}/my-slots` — jwt
 Slots available cho profile này (sau khi enrolled + commitment met).

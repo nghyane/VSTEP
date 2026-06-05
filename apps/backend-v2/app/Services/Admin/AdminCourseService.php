@@ -19,7 +19,6 @@ use App\Services\NotificationService;
 use App\Services\WalletService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -87,6 +86,10 @@ final class AdminCourseService
             $data['booking_coin_cost'] = 50;
         }
 
+        if ($data['is_published']) {
+            $this->assertNoPublishedCourseWithTitle((string) $data['title']);
+        }
+
         return Course::create($data);
     }
 
@@ -95,6 +98,11 @@ final class AdminCourseService
      */
     public function update(Course $course, array $data): Course
     {
+        $willBePublished = (bool) ($data['is_published'] ?? $course->is_published);
+        if ($willBePublished) {
+            $this->assertNoPublishedCourseWithTitle((string) ($data['title'] ?? $course->title), $course);
+        }
+
         $course->fill($data)->save();
 
         return $course->fresh(['teacher']);
@@ -121,9 +129,30 @@ final class AdminCourseService
 
     public function setPublished(Course $course, bool $value): Course
     {
+        if ($value) {
+            $this->assertNoPublishedCourseWithTitle($course->title, $course);
+        }
+
         $course->update(['is_published' => $value]);
 
         return $course->fresh(['teacher']);
+    }
+
+    private function assertNoPublishedCourseWithTitle(string $title, ?Course $except = null): void
+    {
+        $query = Course::query()
+            ->where('is_published', true)
+            ->where('title', $title);
+
+        if ($except !== null) {
+            $query->whereKeyNot($except->id);
+        }
+
+        if ($query->exists()) {
+            throw ValidationException::withMessages([
+                'title' => ['Không thể mở ghi danh khi đã có khóa học đang published cùng tiêu đề.'],
+            ]);
+        }
     }
 
     // ─── Delegates to AdminCourseScheduleService ──
@@ -169,8 +198,7 @@ final class AdminCourseService
 
     // ─── Delegates to AdminCourseBookingService ──
 
-    /** @return Collection<int,TeacherSlot> */
-    public function listSlots(Course $course, ?CarbonImmutable $start = null, ?CarbonImmutable $end = null): Collection
+    public function listSlots(Course $course, ?CarbonImmutable $start = null, ?CarbonImmutable $end = null): Builder
     {
         return $this->booking->listSlots($course, $start, $end);
     }

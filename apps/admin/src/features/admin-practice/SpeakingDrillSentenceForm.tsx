@@ -21,9 +21,6 @@ export function SpeakingDrillSentenceForm({ initial, onSubmit, onCancel, submitt
 	const [text, setText] = useState(initial?.text ?? "")
 	const [ipa, setIpa] = useState(initial?.ipa ?? "")
 	const [translation, setTranslation] = useState(initial?.translation ?? "")
-	const [wordCount, setWordCount] = useState(initial?.word_count ?? 0)
-	const [audioStart, setAudioStart] = useState<number | "">(initial?.audio_start ?? "")
-	const [audioEnd, setAudioEnd] = useState<number | "">(initial?.audio_end ?? "")
 	const [displayOrder, setDisplayOrder] = useState(initial?.display_order ?? 0)
 	const [errors, setErrors] = useState<Record<string, string[]>>({})
 	const [generic, setGeneric] = useState<string | null>(null)
@@ -37,9 +34,6 @@ export function SpeakingDrillSentenceForm({ initial, onSubmit, onCancel, submitt
 				text,
 				ipa: ipa || null,
 				translation: translation || null,
-				word_count: wordCount,
-				audio_start: audioStart === "" ? null : audioStart,
-				audio_end: audioEnd === "" ? null : audioEnd,
 				display_order: displayOrder,
 			})
 		} catch (err) {
@@ -56,7 +50,13 @@ export function SpeakingDrillSentenceForm({ initial, onSubmit, onCancel, submitt
 	return (
 		<form onSubmit={handle}>
 			<Flex vertical gap={16}>
-				<FormField label="Câu (EN)" htmlFor="text" required error={errors.text}>
+				<FormField
+					label="Câu luyện phát âm tiếng Anh"
+					htmlFor="text"
+					required
+					error={errors.text}
+					helper="Nội dung này được phát bằng TTS để học viên nghe và nhại theo."
+				>
 					<Textarea
 						id="text"
 						value={text}
@@ -66,14 +66,14 @@ export function SpeakingDrillSentenceForm({ initial, onSubmit, onCancel, submitt
 					/>
 				</FormField>
 				<FormField label="Phiên âm IPA" htmlFor="ipa" error={errors.ipa}>
-					<Input
-						id="ipa"
-						value={ipa}
-						onChange={(e) => setIpa(e.target.value)}
-						placeholder="/həˈloʊ wɝːld/"
-					/>
+					<Input id="ipa" value={ipa} onChange={(e) => setIpa(e.target.value)} placeholder="/həˈloʊ wɝːld/" />
 				</FormField>
-				<FormField label="Dịch (VI)" htmlFor="translation" error={errors.translation}>
+				<FormField
+					label="Bản dịch tiếng Việt"
+					htmlFor="translation"
+					error={errors.translation}
+					helper="Chỉ dùng để tham khảo, không dùng để phát âm/TTS."
+				>
 					<Textarea
 						id="translation"
 						value={translation ?? ""}
@@ -81,39 +81,6 @@ export function SpeakingDrillSentenceForm({ initial, onSubmit, onCancel, submitt
 						rows={2}
 					/>
 				</FormField>
-				<Flex gap={16}>
-					<FormField label="Số từ" htmlFor="word_count" style={{ flex: 1 }}>
-						<Input
-							id="word_count"
-							type="number"
-							min={0}
-							value={wordCount}
-							onChange={(e) => setWordCount(Number(e.target.value))}
-						/>
-					</FormField>
-					<FormField label="Audio start (s)" htmlFor="audio_start" style={{ flex: 1 }}>
-						<Input
-							id="audio_start"
-							type="number"
-							step={0.001}
-							min={0}
-							value={audioStart}
-							onChange={(e) => setAudioStart(e.target.value === "" ? "" : Number(e.target.value))}
-							placeholder="0.000"
-						/>
-					</FormField>
-					<FormField label="Audio end (s)" htmlFor="audio_end" style={{ flex: 1 }}>
-						<Input
-							id="audio_end"
-							type="number"
-							step={0.001}
-							min={0}
-							value={audioEnd}
-							onChange={(e) => setAudioEnd(e.target.value === "" ? "" : Number(e.target.value))}
-							placeholder="0.000"
-						/>
-					</FormField>
-				</Flex>
 				<FormField label="Thứ tự" htmlFor="display_order">
 					<Input
 						id="display_order"

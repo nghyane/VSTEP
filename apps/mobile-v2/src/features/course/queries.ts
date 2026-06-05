@@ -7,6 +7,7 @@ import type {
   CourseDetail,
   CourseListResponse,
   EnrollmentOrder,
+  PaymentProvider,
 } from "@/features/course/types";
 import type { WalletBalance } from "@/features/wallet/types";
 
@@ -45,8 +46,17 @@ export function useCreateEnrollmentOrder() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (courseId: string) =>
-      api.post<EnrollmentOrder>(`/api/v1/courses/${courseId}/enrollment-orders`),
+    mutationFn: (input: {
+      courseId: string;
+      commitmentSignature: string;
+      paymentProvider?: PaymentProvider;
+      returnUrl?: string;
+    }) =>
+      api.post<EnrollmentOrder>(`/api/v1/courses/${input.courseId}/enrollment-orders`, {
+        paymentProvider: input.paymentProvider ?? "payos",
+        commitmentSignature: input.commitmentSignature,
+        returnUrl: input.returnUrl ?? null,
+      }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["courses"] });
       void qc.invalidateQueries({ queryKey: ["courses", "enrollment-orders"] });
@@ -54,17 +64,21 @@ export function useCreateEnrollmentOrder() {
   });
 }
 
-export function useConfirmEnrollmentOrder() {
+export function useCancelEnrollmentOrder() {
   const qc = useQueryClient();
 
   return useMutation({
     mutationFn: (orderId: string) =>
-      api.post<EnrollmentOrder>(`/api/v1/courses/enrollment-orders/${orderId}/confirm`),
+      api.post<EnrollmentOrder>(`/api/v1/courses/enrollment-orders/${orderId}/cancel`),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["courses"] });
       void qc.invalidateQueries({ queryKey: ["courses", "enrollment-orders"] });
     },
   });
+}
+
+export async function fetchEnrollmentOrders() {
+  return api.get<EnrollmentOrder[]>("/api/v1/courses/enrollment-orders");
 }
 
 export function useBookSlot() {
