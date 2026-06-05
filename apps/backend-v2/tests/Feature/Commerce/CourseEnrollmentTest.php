@@ -52,22 +52,15 @@ class CourseEnrollmentTest extends TestCase
 
         $token = $this->tokenFor($user);
         $response = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
-                'payment_provider' => 'payos',
-                'commitment_signature' => $this->signatureSvg(),
-            ]);
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload());
 
         $response->assertCreated();
         $response->assertJsonPath('data.status', 'pending');
         $response->assertJsonPath('data.amount_vnd', 100_000);
     }
 
-    public function test_enrollment_payment_redirect_accepts_allowed_client_urls(): void
+    public function test_enrollment_payment_redirect_forwards_client_urls(): void
     {
-        config([
-            'app.frontend_url' => 'https://vstepgo.com',
-            'app.payment_redirect_origins' => ['https://app.vstepgo.com'],
-        ]);
         $capturedPayload = null;
         Http::fake(function (Request $request) use (&$capturedPayload) {
             $capturedPayload = $request->data();
@@ -84,24 +77,18 @@ class CourseEnrollmentTest extends TestCase
         $token = $this->tokenFor($user);
 
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
-                'payment_provider' => 'payos',
-                'commitment_signature' => $this->signatureSvg(),
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload([
                 'return_url' => "https://app.vstepgo.com/khoa-hoc/{$course->id}",
                 'cancel_url' => "https://app.vstepgo.com/khoa-hoc/{$course->id}?from=payos",
-            ])
+            ]))
             ->assertCreated();
 
         $this->assertSame("https://app.vstepgo.com/khoa-hoc/{$course->id}", $capturedPayload['returnUrl']);
         $this->assertSame("https://app.vstepgo.com/khoa-hoc/{$course->id}?from=payos", $capturedPayload['cancelUrl']);
     }
 
-    public function test_enrollment_payment_redirect_rejects_untrusted_client_urls(): void
+    public function test_enrollment_payment_redirect_urls_are_required(): void
     {
-        config([
-            'app.frontend_url' => 'https://vstepgo.com',
-            'app.payment_redirect_origins' => ['https://vstepgo.com'],
-        ]);
         Http::fake();
 
         [$user, $profile, $course] = $this->seedCourse(100_000, 200);
@@ -111,11 +98,9 @@ class CourseEnrollmentTest extends TestCase
             ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
                 'payment_provider' => 'payos',
                 'commitment_signature' => $this->signatureSvg(),
-                'return_url' => "http://localhost:5175/khoa-hoc/{$course->id}",
-                'cancel_url' => "http://localhost:5175/khoa-hoc/{$course->id}",
             ])
             ->assertUnprocessable()
-            ->assertJsonPath('errors.return_url.0', 'URL chuyển hướng thanh toán không được phép.');
+            ->assertJsonValidationErrors(['return_url', 'cancel_url']);
 
         Http::assertNothingSent();
     }
@@ -179,10 +164,7 @@ class CourseEnrollmentTest extends TestCase
 
         $token = $this->tokenFor($user);
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
-                'payment_provider' => 'payos',
-                'commitment_signature' => $this->signatureSvg(),
-            ])
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload())
             ->assertStatus(422);
     }
 
@@ -192,17 +174,11 @@ class CourseEnrollmentTest extends TestCase
 
         $token = $this->tokenFor($user);
         $first = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
-                'payment_provider' => 'payos',
-                'commitment_signature' => $this->signatureSvg(),
-            ])
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload())
             ->assertCreated();
 
         $second = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
-                'payment_provider' => 'payos',
-                'commitment_signature' => $this->signatureSvg(),
-            ])
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload())
             ->assertCreated();
 
         $this->assertDatabaseHas('course_enrollment_orders', [
@@ -222,10 +198,7 @@ class CourseEnrollmentTest extends TestCase
 
         $token = $this->tokenFor($user);
         $orderId = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
-                'payment_provider' => 'payos',
-                'commitment_signature' => $this->signatureSvg(),
-            ])
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload())
             ->assertCreated()
             ->json('data.id');
 
@@ -246,7 +219,7 @@ class CourseEnrollmentTest extends TestCase
         [$user, $profile, $course] = $this->seedCourse(100_000, 200);
 
         $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos'])
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload(['commitment_signature' => null]))
             ->assertStatus(422)
             ->assertJsonValidationErrors(['commitment_signature']);
     }
@@ -256,10 +229,9 @@ class CourseEnrollmentTest extends TestCase
         [$user, $profile, $course] = $this->seedCourse(100_000, 200);
 
         $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
-                'payment_provider' => 'payos',
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload([
                 'commitment_signature' => 'not-svg',
-            ])
+            ]))
             ->assertStatus(422)
             ->assertJsonValidationErrors(['commitment_signature']);
     }
@@ -477,11 +449,19 @@ class CourseEnrollmentTest extends TestCase
     private function createEnrollmentOrder(string $token, Course $course): int
     {
         return $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
-                'payment_provider' => 'payos',
-                'commitment_signature' => $this->signatureSvg(),
-            ])
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload())
             ->json('data.order_code');
+    }
+
+    /** @param  array<string, mixed>  $overrides */
+    private function enrollmentPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'payment_provider' => 'payos',
+            'commitment_signature' => $this->signatureSvg(),
+            'return_url' => 'https://vstepgo.test/wallet',
+            'cancel_url' => 'https://vstepgo.test/wallet',
+        ], $overrides);
     }
 
     private function signatureSvg(): string

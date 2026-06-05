@@ -43,10 +43,7 @@ class TopupFlowTest extends TestCase
         $token = $this->loginLearner();
 
         $response = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson('/api/v1/wallet/topup', [
-                'package_id' => $package->id,
-                'payment_provider' => 'payos',
-            ]);
+            ->postJson('/api/v1/wallet/topup', $this->topupPayload($package->id));
 
         $response->assertCreated();
         $response->assertJsonPath('data.status', 'pending');
@@ -54,12 +51,8 @@ class TopupFlowTest extends TestCase
         $response->assertJsonPath('data.coins_to_credit', 2_200);
     }
 
-    public function test_topup_payment_redirect_accepts_allowed_client_urls(): void
+    public function test_topup_payment_redirect_forwards_client_urls(): void
     {
-        config([
-            'app.frontend_url' => 'https://vstepgo.com',
-            'app.payment_redirect_origins' => ['https://app.vstepgo.com'],
-        ]);
         $capturedPayload = null;
         Http::fake(function (Request $request) use (&$capturedPayload) {
             $capturedPayload = $request->data();
@@ -76,24 +69,18 @@ class TopupFlowTest extends TestCase
         $token = $this->loginLearner();
 
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson('/api/v1/wallet/topup', [
-                'package_id' => $package->id,
-                'payment_provider' => 'payos',
+            ->postJson('/api/v1/wallet/topup', $this->topupPayload($package->id, [
                 'return_url' => 'https://app.vstepgo.com/dashboard?from=payos',
                 'cancel_url' => 'https://app.vstepgo.com/dashboard?cancel=1',
-            ])
+            ]))
             ->assertCreated();
 
         $this->assertSame('https://app.vstepgo.com/dashboard?from=payos', $capturedPayload['returnUrl']);
         $this->assertSame('https://app.vstepgo.com/dashboard?cancel=1', $capturedPayload['cancelUrl']);
     }
 
-    public function test_topup_payment_redirect_rejects_untrusted_client_urls(): void
+    public function test_topup_payment_redirect_urls_are_required(): void
     {
-        config([
-            'app.frontend_url' => 'https://vstepgo.com',
-            'app.payment_redirect_origins' => ['https://vstepgo.com'],
-        ]);
         Http::fake();
 
         $package = WalletTopupPackage::factory()->create();
@@ -103,11 +90,9 @@ class TopupFlowTest extends TestCase
             ->postJson('/api/v1/wallet/topup', [
                 'package_id' => $package->id,
                 'payment_provider' => 'payos',
-                'return_url' => 'http://localhost:5175/dashboard',
-                'cancel_url' => 'http://localhost:5175/dashboard',
             ])
             ->assertUnprocessable()
-            ->assertJsonPath('errors.return_url.0', 'URL chuyển hướng thanh toán không được phép.');
+            ->assertJsonValidationErrors(['return_url', 'cancel_url']);
 
         Http::assertNothingSent();
     }
@@ -124,10 +109,7 @@ class TopupFlowTest extends TestCase
         $token = $this->tokenFor($user);
 
         $create = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson('/api/v1/wallet/topup', [
-                'package_id' => $package->id,
-                'payment_provider' => 'payos',
-            ]);
+            ->postJson('/api/v1/wallet/topup', $this->topupPayload($package->id));
         $orderCode = $create->json('data.order_code');
         $this->assertNotNull($orderCode);
 
@@ -148,10 +130,7 @@ class TopupFlowTest extends TestCase
 
         $token = $this->tokenFor($user);
         $orderCode = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson('/api/v1/wallet/topup', [
-                'package_id' => $package->id,
-                'payment_provider' => 'payos',
-            ])
+            ->postJson('/api/v1/wallet/topup', $this->topupPayload($package->id))
             ->json('data.order_code');
 
         $topup = $this->app->make(TopupService::class);
@@ -176,10 +155,7 @@ class TopupFlowTest extends TestCase
 
         $tokenA = $this->tokenFor($userA);
         $orderCode = $this->withHeader('Authorization', "Bearer {$tokenA}")
-            ->postJson('/api/v1/wallet/topup', [
-                'package_id' => $package->id,
-                'payment_provider' => 'payos',
-            ])
+            ->postJson('/api/v1/wallet/topup', $this->topupPayload($package->id))
             ->json('data.order_code');
 
         $this->assertNotNull($orderCode);
@@ -198,6 +174,17 @@ class TopupFlowTest extends TestCase
         Profile::factory()->initial()->forAccount($user)->create();
 
         return $this->tokenFor($user);
+    }
+
+    /** @param  array<string, mixed>  $overrides */
+    private function topupPayload(string $packageId, array $overrides = []): array
+    {
+        return array_merge([
+            'package_id' => $packageId,
+            'payment_provider' => 'payos',
+            'return_url' => 'https://vstepgo.test/wallet',
+            'cancel_url' => 'https://vstepgo.test/wallet',
+        ], $overrides);
     }
 
     private function tokenFor(User $user): string

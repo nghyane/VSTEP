@@ -12,7 +12,6 @@ use App\Models\CourseEnrollmentOrder;
 use App\Models\Profile;
 use App\Services\Payment\OrderNotFoundAfterValidation;
 use App\Services\Payment\PaymentGatewayRegistry;
-use App\Services\Payment\PaymentRedirectUrlResolver;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -31,7 +30,6 @@ final class CourseOrderService
     public function __construct(
         private readonly CourseService $courseService,
         private readonly PaymentGatewayRegistry $gateways,
-        private readonly PaymentRedirectUrlResolver $redirectUrls,
     ) {}
 
     /**
@@ -42,8 +40,8 @@ final class CourseOrderService
         Course $course,
         PaymentProvider $provider,
         string $commitmentSignature,
-        ?string $returnUrl = null,
-        ?string $cancelUrl = null,
+        string $returnUrl,
+        string $cancelUrl,
     ): CourseEnrollmentOrder {
         if (! $course->is_published) {
             throw ValidationException::withMessages(['course' => ['Khóa học đang đóng ghi danh.']]);
@@ -96,10 +94,7 @@ final class CourseOrderService
                     'expires_at' => now()->addMinutes($expiryMinutes),
                 ]);
 
-                $paymentFrontendUrl = (string) config('app.payment_frontend_url');
-                $paymentReturnUrl = $this->redirectUrls->trustedUrl('return_url', $returnUrl, "{$paymentFrontendUrl}/khoa-hoc/{$course->id}");
-                $paymentCancelUrl = $this->redirectUrls->trustedUrl('cancel_url', $cancelUrl, "{$paymentFrontendUrl}/khoa-hoc/{$course->id}?cancel_order={$order->id}");
-                $response = $gateway->createPayment($order, $paymentReturnUrl, $paymentCancelUrl);
+                $response = $gateway->createPayment($order, $returnUrl, $cancelUrl);
 
                 $order->update([
                     'payment_url' => $response->paymentUrl,

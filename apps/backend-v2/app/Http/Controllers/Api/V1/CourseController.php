@@ -66,8 +66,8 @@ final class CourseController extends Controller
             $course,
             PaymentProvider::from($validated['payment_provider']),
             $validated['commitment_signature'],
-            $validated['return_url'] ?? null,
-            $validated['cancel_url'] ?? null,
+            $validated['return_url'],
+            $validated['cancel_url'],
         );
 
         return response()->json(['data' => EnrollmentOrderResource::make($order)], 201);
