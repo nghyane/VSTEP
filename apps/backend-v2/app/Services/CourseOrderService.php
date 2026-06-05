@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentProvider;
+use App\Jobs\SendPaymentInvoiceEmail;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseEnrollmentOrder;
@@ -174,6 +175,8 @@ final class CourseOrderService
                     'callback_received_at' => now(),
                 ]);
 
+                $this->sendInvoiceAfterCommit($locked);
+
                 return $locked;
             }
 
@@ -194,7 +197,23 @@ final class CourseOrderService
                 'callback_received_at' => now(),
             ]);
 
+            $this->sendInvoiceAfterCommit($locked);
+
             return $locked;
+        });
+    }
+
+    private function sendInvoiceAfterCommit(CourseEnrollmentOrder $order): void
+    {
+        DB::afterCommit(function () use ($order): void {
+            try {
+                SendPaymentInvoiceEmail::dispatch(SendPaymentInvoiceEmail::TYPE_COURSE_ENROLLMENT, $order->id);
+            } catch (\Throwable $e) {
+                Log::error('Failed to dispatch course enrollment invoice email', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         });
     }
 

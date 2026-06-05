@@ -2,11 +2,9 @@ import { useCallback, useMemo, useState } from "react"
 import { ScrollArea } from "#/components/ScrollArea"
 import { ExamRoomProgressTabs, ExamRoomQuestionNav } from "#/features/exam/components/ExamRoomChrome"
 import { ExamRoomFooter, type ExamRoomFooterAction } from "#/features/exam/components/ExamRoomFooter"
-import { HighlightablePassage, PassageSpeechControl } from "#/features/exam/components/HighlightablePassage"
+import { HighlightablePassage } from "#/features/exam/components/HighlightablePassage"
 import { MCQQuestion } from "#/features/exam/components/MCQQuestion"
 import type { ExamVersionReadingPassage } from "#/features/exam/types"
-import { TTSVoicePicker } from "#/features/practice/components/TTSVoicePicker"
-import { pickBoundaryEnglishVoice, stopSpeaking } from "#/lib/utils"
 
 interface Props {
 	passages: ExamVersionReadingPassage[]
@@ -19,8 +17,6 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 	const sorted = useMemo(() => [...passages].sort((a, b) => a.display_order - b.display_order), [passages])
 
 	const [activeIdx, setActiveIdx] = useState(0)
-	const [activeCharIndex, setActiveCharIndex] = useState<number | null>(null)
-	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickBoundaryEnglishVoice())
 
 	const activePassage = sorted[activeIdx]
 
@@ -38,11 +34,6 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 	}, [sorted.length])
 	const handleTab = useCallback((index: number) => {
 		setActiveIdx(index)
-	}, [])
-	const handleVoiceChange = useCallback((nextVoice: SpeechSynthesisVoice) => {
-		stopSpeaking()
-		setActiveCharIndex(null)
-		setVoice(nextVoice)
 	}, [])
 
 	const handleJump = useCallback((itemIndex: number) => {
@@ -72,39 +63,21 @@ export function ReadingPanel({ passages, mcqAnswers, onAnswer, footer }: Props) 
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
-			<div className="flex shrink-0 justify-end border-b border-border bg-surface px-5 py-3">
-				<TTSVoicePicker
-					voice={voice}
-					onVoiceChange={handleVoiceChange}
-					accentClassName="border-skill-reading text-skill-reading"
-				/>
-			</div>
 			{/* Split layout: passage left | questions right */}
 			<div className="flex flex-1 overflow-hidden">
 				{/* Passage */}
 				<ScrollArea className="w-1/2 border-r border-border">
 					<div className="space-y-4 bg-background px-7 py-6">
-						<div className="flex items-center justify-between gap-3">
-							<div className="flex items-center gap-2">
-								<span className="rounded-full border-2 border-b-4 border-skill-reading/30 bg-skill-reading/10 px-3 py-1 text-xs font-extrabold text-skill-reading">
-									Phần {activePassage.part}
-								</span>
-								<span className="text-xs text-muted">{activePassage.duration_minutes} phút</span>
-							</div>
-							<PassageSpeechControl
-								key={activePassage.id}
-								text={activePassage.passage}
-								onActiveCharChange={setActiveCharIndex}
-								voice={voice}
-								onVoiceChange={handleVoiceChange}
-								showVoicePicker={false}
-							/>
+						<div className="flex items-center gap-2">
+							<span className="rounded-full border-2 border-b-4 border-skill-reading/30 bg-skill-reading/10 px-3 py-1 text-xs font-extrabold text-skill-reading">
+								Phần {activePassage.part}
+							</span>
+							<span className="text-xs text-muted">{activePassage.duration_minutes} phút</span>
 						</div>
 						<h2 className="text-base font-bold text-foreground">{activePassage.title}</h2>
 						<HighlightablePassage
 							text={activePassage.passage}
 							passageId={activePassage.id}
-							activeCharIndex={activeCharIndex}
 							className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90"
 						/>
 					</div>

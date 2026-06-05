@@ -23,6 +23,7 @@ use App\Models\TeacherSlot;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 final class CourseService
@@ -184,12 +185,20 @@ final class CourseService
             );
 
             if ($notification !== null) {
-                $this->emailService->sendCourseEnrolled(
-                    $profile,
-                    $title,
-                    $body,
-                    $locked->id,
-                );
+                try {
+                    $this->emailService->sendCourseEnrolled(
+                        $profile,
+                        $title,
+                        $body,
+                        $locked->id,
+                    );
+                } catch (\Throwable $e) {
+                    Log::error('Failed to send course enrollment notification email', [
+                        'course_id' => $locked->id,
+                        'profile_id' => $profile->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
             }
         });
 

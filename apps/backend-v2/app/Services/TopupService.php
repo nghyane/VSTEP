@@ -9,12 +9,13 @@ use App\Enums\IconKey;
 use App\Enums\NotificationType;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentProvider;
+use App\Jobs\SendPaymentInvoiceEmail;
 use App\Models\Profile;
 use App\Models\WalletTopupOrder;
 use App\Models\WalletTopupPackage;
 use App\Services\Payment\OrderNotFoundAfterValidation;
-use App\Services\Payment\PayOsGateway;
 use App\Services\Payment\PaymentGatewayRegistry;
+use App\Services\Payment\PayOsGateway;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -32,7 +33,6 @@ final class TopupService
     public function __construct(
         private readonly WalletService $walletService,
         private readonly NotificationService $notificationService,
-        private readonly NotificationEmailService $emailService,
         private readonly PaymentGatewayRegistry $gateways,
     ) {}
 
@@ -178,16 +178,14 @@ final class TopupService
                 );
 
                 if ($notification !== null) {
-                    $this->emailService->sendToProfile(
-                        $profile,
-                        'Nạp xu VSTEP thành công',
-                        [
-                            "Bạn đã nhận {$order->coins_to_credit} xu vào ví VSTEP.",
-                            "Mã đơn: {$order->order_code}.",
-                        ],
-                        'Xem ví của bạn',
-                        '/dashboard',
-                    );
+                    try {
+                        SendPaymentInvoiceEmail::dispatch(SendPaymentInvoiceEmail::TYPE_TOPUP, $order->id);
+                    } catch (\Throwable $e) {
+                        Log::error('Failed to dispatch topup invoice email', [
+                            'order_id' => $order->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
                 }
             });
 
