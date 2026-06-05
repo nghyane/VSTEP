@@ -194,12 +194,15 @@ Pause count            Speech analyzer       Fluency penalty
 Pronunciation signals  Speech service        Pronunciation score
 
 Writing/Speaking score = fixed formula(input metrics) + caps / penalties
+
+Example: adequate length, few errors, on-topic → formula → 7.5 (illustrative only)
 ```
 
 **Visual**
 
 - Bảng chỉ số bắt buộc.
 - Highlight: `AI/external tools only extract input metrics`.
+- Thêm dòng ví dụ kết quả bên dưới bảng.
 
 **Do not show**
 
@@ -272,16 +275,14 @@ Writing/Speaking score = fixed formula(input metrics) + caps / penalties
 
 **On slide**
 
-- 4-skill learning loop.
-- Fixed-formula Writing/Speaking score.
-- Gamification / coins / streak.
-- Recommendation.
-- SRS/Anki `See detail`.
-- Admin-managed content.
+- Writing/Speaking assessment + feedback (most mock test sites only score Listening/Reading).
+- Fixed-formula score (not AI-decided).
+- Closed learning loop (submit → feedback → gaps → recommendations), not just a test bank.
+- Supporting features: gamification/coins, learning path, SRS/Anki `See detail`, admin-managed content.
 
 **Visual**
 
-- 5–6 cards; keep text short.
+- Top 3 cards for differentiation; supporting features as smaller items below.
 
 ### Slide 19 — Achievements
 
