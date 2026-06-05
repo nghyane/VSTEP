@@ -1,24 +1,14 @@
 # 01. Main deck — blueprint bảo vệ
 
-File này dùng để cả team nắm nhanh: **deck đi theo flow nào, mỗi slide làm nhiệm vụ gì, nói bao lâu, điểm nào bắt buộc không được sai**.
+File này dùng để cả team nắm nhanh flow bảo vệ, nhiệm vụ từng slide và phần nào cần nói/lướt/demo.
 
 ## Hướng đã chốt
 
-- Deck dùng **26 slide** vì có thêm `Outline` và `Team`.
-- Mỗi slide chỉ làm một nhiệm vụ. Không trộn problem, technical, demo vào cùng một slide.
-- Slide là phần dẫn dắt; trọng tâm bảo vệ là **demo sản phẩm thật**.
-- Công thức điểm Writing/Speaking phải nói rõ: AI/công cụ chỉ lấy chỉ số đầu vào; backend tính bằng công thức định lượng cố định. Công thức này áp dụng cho cả practice và mock test trong hệ thống.
-- Slide 18–21 chỉ giới thiệu nhanh kịch bản demo. Sau Slide 21 mới chuyển sang demo thật.
-- Anki/Spaced Repetition chỉ nói ngắn; nếu hội đồng hỏi sâu mới mở “See detail”.
-
-## Flow tổng
-
-```text
-Title -> Outline -> Team -> Context -> Problems -> Actors
--> Main Features by Actors -> System Architecture -> Technology
--> Writing/Speaking Score Formula -> Demo Workflow 1/2/3
--> Different -> Achievements -> Limitation -> Conclusion -> Thank You
-```
+- Deck chính dùng **22 slide**: có `Outline` và `Team`, nhưng không tách quá nhiều slide kỹ thuật.
+- Bám flow thầy: `Context -> Problems -> Actors -> Main Features by Actors -> System Architecture -> Technology -> Demo Workflow 1/2/3 -> Different -> Achievements -> Limitation -> Conclusion -> Thank You`.
+- Phần công thức là nội dung bắt buộc, nhưng chỉ để **1 slide** sau Technology.
+- Không đưa Writing/Speaking formula chi tiết hoặc abnormal handling thành nhiều slide chính. Những phần đó để Q&A/backup.
+- Slide 14–17 chỉ preview demo workflow. Sau Slide 17 chuyển sang demo sản phẩm thật.
 
 ## Câu bắt buộc về AI/scoring
 
@@ -31,16 +21,16 @@ Hệ thống không hỏi AI “bài này mấy điểm”. AI/công cụ ngoài
 ## Timeline 10 phút
 
 - **Slide 1–6 — Mở đầu, context, problem:** 1 phút 30 giây.
-- **Slide 7–10 — Actors và features:** 1 phút 20 giây.
-- **Slide 11–17 — Architecture, technology, scoring formula:** 2 phút 20 giây.
-- **Slide 18–21 — Demo workflow preview:** 45 giây đến 1 phút.
+- **Slide 7–10 — Actors và features:** 1 phút 30 giây.
+- **Slide 11–13 — Architecture, technology, assessment formula:** 2 phút.
+- **Slide 14–17 — Demo workflow preview:** 45 giây đến 1 phút.
 - **Demo sản phẩm thật:** ưu tiên thời gian còn lại.
-- **Slide 22–26 — Different, achievements, limitation, conclusion:** lướt nhanh 1 phút 30 giây.
+- **Slide 18–22 — Different, achievements, limitation, conclusion:** lướt nhanh 1 phút 30 giây.
 
 ## Câu xin phép lướt nhanh
 
 ```text
-Do thời gian trình bày có giới hạn và nhóm muốn dành nhiều thời gian cho demo sản phẩm, nhóm em xin phép trình bày ngắn gọn phần slide. Nhóm sẽ tập trung vào luồng học chính, công thức tính điểm Writing/Speaking và demo ba workflow chính.
+Do thời gian trình bày có giới hạn và nhóm muốn dành nhiều thời gian cho demo sản phẩm, nhóm em xin phép trình bày ngắn gọn phần slide. Nhóm sẽ tập trung vào vấn đề chính, công thức tính điểm Writing/Speaking và demo ba workflow.
 ```
 
 ## Slide-by-slide brief
@@ -62,10 +52,10 @@ Do thời gian trình bày có giới hạn và nhóm muốn dành nhiều thờ
 - Thành viên và vai trò chính.
 - Gợi ý chia role: backend/API, web/admin, mobile, QA/docs.
 
-**Slide 4 — VSTEP Context**
+**Slide 4 — VSTEP Context + Exam Format**
 
 - VSTEP phổ biến: đầu vào cao học, đầu ra đại học/cao đẳng, chứng chỉ năng lực tiếng Anh.
-- Cấu trúc 4 kỹ năng và scoring nói thật nhanh trong một slide.
+- Cấu trúc 4 kỹ năng và cách tính điểm nói thật nhanh trong một slide.
 
 **Slide 5 — Problems**
 
@@ -106,7 +96,7 @@ Do thời gian trình bày có giới hạn và nhóm muốn dành nhiều thờ
 **Slide 11 — System Architecture**
 
 - Client → Laravel API → PostgreSQL/Redis/storage → external AI/speech.
-- Backend là trung tâm điều phối và tính điểm Writing/Speaking trong hệ thống.
+- Backend là trung tâm điều phối, lưu kết quả và tính điểm Writing/Speaking.
 - Speaking có audio pipeline: record → storage → queue job → speech signals → backend formula.
 
 **Slide 12 — Technology**
@@ -118,82 +108,63 @@ Do thời gian trình bày có giới hạn và nhóm muốn dành nhiều thờ
 - Speech/audio: Web Speech API hoặc Azure Speech.
 - Storage/deployment: S3-compatible/R2, Docker, GitHub Actions.
 
-**Slide 13 — Deployment & Quality**
-
-- Docker, CI/CD, Redis queue.
-- Test doubles/cô lập external services khi kiểm thử.
-
-**Slide 14 — Writing/Speaking Score Formula**
+**Slide 13 — Writing/Speaking Assessment Formula**
 
 - Bắt buộc có bảng chỉ số ngắn: `Input metric / Extracted by / Used for`.
 - Bắt buộc có dòng: `Writing/Speaking score = fixed formula(input metrics) + caps / penalties`.
-- Nói rõ AI/công cụ chỉ lấy tham số đầu vào; backend tính điểm.
-
-**Slide 15 — Writing Practice Evaluation**
-
-- Ví dụ chỉ số: word count, spelling, relevance, organization, grammar, vocabulary.
-- Mục tiêu: feedback luyện tập, không thay thế giám khảo.
-
-**Slide 16 — Speaking Practice Evaluation**
-
-- Audio/transcript → speech signals → backend formula → feedback.
-- Không nói Web Speech/Azure Speech chấm điểm; chỉ hỗ trợ lấy tín hiệu.
-
-**Slide 17 — Abnormal Answer Handling**
-
-- Too short/off-topic/copy/spam/non-English.
-- Áp dụng cap/penalty để tránh bài không hợp lệ vẫn đạt điểm cao.
+- Nói rõ AI/công cụ chỉ lấy chỉ số đầu vào; backend tính điểm.
+- Nhắc một câu: chi tiết Writing/Speaking formula và guardrails để ở Q&A.
 
 ### Phase 4 — Demo workflow preview
 
-**Slide 18 — Demo Overview**
+**Slide 14 — Demo Overview**
 
 - Nêu ba workflow sẽ demo.
 - Chưa demo ngay trên slide.
 
-**Slide 19 — Demo Workflow 1: Learner Practice**
+**Slide 15 — Demo Workflow 1: Learner Practice**
 
 - Login → practice hub → skill → answer → feedback.
 
-**Slide 20 — Demo Workflow 2: Mock Test & Result**
+**Slide 16 — Demo Workflow 2: Mock Test & Result**
 
 - Exam → submit → processing → điểm thành phần/skill gaps.
 
-**Slide 21 — Demo Workflow 3: Admin Management**
+**Slide 17 — Demo Workflow 3: Admin Management**
 
 - Content/exam/criteria/user/course/booking.
 - Sau slide này chuyển sang demo sản phẩm thật.
 
 ### Phase 5 — Tổng kết
 
-**Slide 22 — Different Points**
+**Slide 18 — Different Points**
 
 - Learning loop 4 kỹ năng.
 - Điểm Writing/Speaking tính bằng công thức cố định.
 - Feedback theo tiêu chí, gamification/tích điểm, recommendation, SRS/Anki.
 - Admin-managed content.
 
-**Slide 23 — Achievements**
+**Slide 19 — Achievements**
 
 - Backend, web, mobile, admin.
 - Assessment support module.
 - Tests/docs/source.
 
-**Slide 24 — Limitations**
+**Slide 20 — Limitations**
 
 - Điểm Writing/Speaking chỉ dùng để tham khảo trong practice/mock test.
 - Cần dataset lớn do giám khảo chấm để kiểm chứng/calibrate.
 - Audio/speech signal có rủi ro chất lượng.
 
-**Slide 25 — Conclusion**
+**Slide 21 — Conclusion**
 
 - Tổng kết hệ thống và future work.
 
-**Slide 26 — Thank You**
+**Slide 22 — Thank You**
 
 - Cảm ơn và Q&A.
 
-## Bảng bắt buộc cho Slide 14
+## Bảng bắt buộc cho Slide 13
 
 ```text
 Input metric           Extracted by          Used for
@@ -206,14 +177,14 @@ Pronunciation signals  Speech service        Pronunciation score
 Writing/Speaking score = fixed formula(input metrics) + caps / penalties
 ```
 
-## Câu chuyển từ Slide 21 sang demo sản phẩm
+## Câu chuyển từ Slide 17 sang demo sản phẩm
 
 ```text
 Ba slide vừa rồi là kịch bản demo để hội đồng nắm trước luồng thao tác. Sau đây nhóm em xin chuyển sang demo trực tiếp trên sản phẩm, bắt đầu từ luồng learner luyện tập, sau đó là mock test/result và cuối cùng là phần admin quản lý nội dung.
 ```
 
-## Hạn chế nên nói ở Slide 24
+## Hạn chế nên nói ở Slide 20
 
 ```text
-Hạn chế hiện tại là phần đánh giá Writing và Speaking mới phục vụ mục tiêu luyện tập và tham khảo, chưa thay thế giám khảo chính thức. Ngoài ra, hệ thống cần thêm bộ dữ liệu lớn hơn do giám khảo chấm để kiểm chứng và hiệu chỉnh độ chính xác.
+Hạn chế hiện tại là phần đánh giá Writing và Speaking mới phục vụ mục tiêu luyện tập và thi thử tham khảo, chưa thay thế giám khảo chính thức. Ngoài ra, hệ thống cần thêm bộ dữ liệu lớn hơn do giám khảo chấm để kiểm chứng và hiệu chỉnh độ chính xác.
 ```
