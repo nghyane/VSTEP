@@ -55,7 +55,8 @@ Do thời gian trình bày có giới hạn và nhóm muốn dành nhiều thờ
 **Slide 4 — VSTEP Context + Exam Format**
 
 - VSTEP phổ biến: đầu vào cao học, đầu ra đại học/cao đẳng, chứng chỉ năng lực tiếng Anh.
-- Cấu trúc 4 kỹ năng và cách tính điểm nói thật nhanh trong một slide.
+- 4 kỹ năng; Writing/Speaking cần đánh giá theo tiêu chí.
+- Chỉ nói 2 ý trên; công thức tính điểm để slide 13.
 
 **Slide 5 — Problems**
 
@@ -112,6 +113,7 @@ Do thời gian trình bày có giới hạn và nhóm muốn dành nhiều thờ
 
 - Bắt buộc có bảng chỉ số ngắn: `Input metric / Extracted by / Used for`.
 - Bắt buộc có dòng: `Writing/Speaking score = fixed formula(input metrics) + caps / penalties`.
+- Cho ví dụ ngắn: bài đủ dài, ít lỗi, bám đề → công thức → kết quả ví dụ (không claim chính thức).
 - Nói rõ AI/công cụ chỉ lấy chỉ số đầu vào; backend tính điểm.
 - Nhắc một câu: chi tiết Writing/Speaking formula và guardrails để ở Q&A.
 
@@ -139,10 +141,10 @@ Do thời gian trình bày có giới hạn và nhóm muốn dành nhiều thờ
 
 **Slide 18 — Different Points**
 
-- Learning loop 4 kỹ năng.
-- Điểm Writing/Speaking tính bằng công thức cố định.
-- Feedback theo tiêu chí, gamification/tích điểm, recommendation, SRS/Anki.
-- Admin-managed content.
+- Đánh giá + feedback cho Writing/Speaking, trong khi các mock test web thường chỉ chấm Listening/Reading.
+- Điểm Writing/Speaking tính bằng công thức định lượng cố định, không phải AI tự cho điểm.
+- Tạo vòng học khép kín (làm bài → feedback → gợi ý → luyện tiếp), không chỉ là kho đề.
+- Các điểm hỗ trợ: gamification/tích điểm, lộ trình học, SRS/Anki, admin-managed content.
 
 **Slide 19 — Achievements**
 

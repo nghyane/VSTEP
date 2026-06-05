@@ -24,7 +24,7 @@ Trong quá trình phát triển, nhóm chia công việc theo các mảng chính
 
 VSTEP là chứng chỉ tiếng Anh được dùng khá phổ biến, ví dụ đầu vào cao học, đầu ra đại học/cao đẳng hoặc yêu cầu chứng chỉ năng lực tiếng Anh.
 
-Bài thi gồm 4 kỹ năng: Listening, Reading, Writing và Speaking. Listening/Reading có đáp án khách quan; Writing/Speaking cần đánh giá theo nhiều tiêu chí. Phần này nhóm nói nhanh để chuyển sang vấn đề chính.
+Bài thi gồm 4 kỹ năng: Listening, Reading, Writing và Speaking. Listening/Reading có đáp án khách quan; Writing/Speaking cần đánh giá theo nhiều tiêu chí. Slide này chỉ nói 2 ý chính trên; chi tiết công thức tính điểm sẽ nói ở slide công thức sau phần kiến trúc và công nghệ.
 
 ## Slide 5 — Problems
 
@@ -92,6 +92,8 @@ Backend đưa các chỉ số đó vào công thức định lượng cố đị
 
 Câu chốt: **Writing/Speaking score = fixed formula(input metrics) + caps / penalties**.
 
+Ví dụ ngắn trên slide: bài viết đủ độ dài, ít lỗi chính tả, bám đề → các chỉ số đưa vào công thức → kết quả 7.5. Ví dụ này chỉ để minh họa pipeline, không phải điểm chính thức.
+
 Nếu hội đồng hỏi sâu về từng tiêu chí Writing/Speaking hoặc bài bất thường, nhóm trả lời ở phần Q&A.
 
 ## Slide 14 — Demo Overview
@@ -120,9 +122,9 @@ Ba slide vừa rồi là kịch bản demo. Sau đây nhóm em xin chuyển sang
 
 ## Slide 18 — Different Points
 
-Điểm khác biệt là hệ thống tạo vòng học hoàn chỉnh hơn: luyện tập, nhận feedback, xem điểm yếu, nhận gợi ý và tiếp tục học.
+Điểm khác biệt so với giải pháp luyện đề thông thường là hệ thống của nhóm có ba điểm chính.
 
-Ngoài ra có game hóa/tích điểm, lộ trình học, ôn từ vựng theo chu kỳ và admin quản lý nội dung. Phần Anki/Spaced Repetition chỉ nói ngắn; nếu hội đồng hỏi sâu thì trả lời ở Q&A.
+Thứ nhất, có cơ chế đánh giá và feedback cho Writing/Speaking, trong khi các website mock test thường chỉ chấm Listening/Reading. Thứ hai, điểm được tính bằng công thức định lượng cố định từ các chỉ số đầu vào, không phải AI tự cho điểm. Thứ ba, hệ thống tạo thành vòng học khép kín: làm bài, nhận feedback, xem điểm yếu, nhận gợi ý và luyện tiếp; các website khác thường chỉ là kho đề.
 
 ## Slide 19 — Achievements
 
