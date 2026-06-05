@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router"
 
-type PaymentStatus = "success" | "failed"
+type PaymentReturnState = "confirming" | "cancelled"
 
 export const Route = createFileRoute("/wallet")({
 	validateSearch: (
@@ -23,31 +23,34 @@ export const Route = createFileRoute("/wallet")({
 
 function PaymentReturnPage() {
 	const search = Route.useSearch()
-	const result = getPaymentStatus(search)
-	const isSuccess = result === "success"
+	const state = getPaymentReturnState(search)
+	const isConfirming = state === "confirming"
 
 	return (
 		<main className="flex min-h-screen items-center justify-center bg-surface px-4 py-10">
 			<section className="card w-full max-w-lg p-8 text-center md:p-10">
 				<div
 					className={`mx-auto flex size-20 items-center justify-center rounded-full text-4xl font-extrabold ${
-						isSuccess ? "bg-primary-tint text-primary" : "bg-destructive/10 text-destructive"
+						isConfirming ? "bg-primary-tint text-primary" : "bg-destructive/10 text-destructive"
 					}`}
 				>
-					{isSuccess ? "✓" : "!"}
+					{isConfirming ? "…" : "!"}
 				</div>
 
 				<h1 className="mt-6 text-2xl font-extrabold text-foreground">
-					{isSuccess ? "Thanh toán thành công" : "Thanh toán chưa hoàn tất"}
+					{isConfirming ? "Đang xác nhận thanh toán" : "Thanh toán chưa hoàn tất"}
 				</h1>
 				<p className="mt-3 text-sm leading-relaxed text-muted">
-					{isSuccess
-						? "Hệ thống đang xác nhận giao dịch. Nếu số dư hoặc đăng ký khóa học chưa cập nhật ngay, vui lòng chờ vài giây rồi tải lại."
+					{isConfirming
+						? "Kết quả cuối cùng sẽ được backend cập nhật qua callback bảo mật từ PayOS. Nếu giao dịch thành công, số dư hoặc đăng ký khóa học sẽ tự cập nhật sau vài giây."
 						: "Giao dịch đã bị hủy hoặc chưa được PayOS xác nhận thành công. Dữ liệu thanh toán sẽ được backend xử lý qua callback bảo mật."}
 				</p>
 
 				<dl className="mt-6 space-y-2 rounded-(--radius-card) border-2 border-border bg-background p-4 text-left text-xs">
-					<InfoRow label="Trạng thái" value={search.status ?? (isSuccess ? "SUCCESS" : "FAILED")} />
+					<InfoRow
+						label="Trạng thái trả về"
+						value={search.status ?? (isConfirming ? "PENDING_CALLBACK" : "CANCELLED")}
+					/>
 					<InfoRow label="Mã đơn" value={search.orderCode} />
 					<InfoRow label="Mã giao dịch" value={search.id} />
 				</dl>
@@ -74,10 +77,8 @@ function InfoRow({ label, value }: { label: string; value: string | undefined })
 	)
 }
 
-function getPaymentStatus(search: { code?: string; cancel?: boolean; status?: string }): PaymentStatus {
+function getPaymentReturnState(search: { cancel?: boolean; status?: string }): PaymentReturnState {
 	const status = search.status?.toUpperCase()
-	if (search.cancel || status === "CANCELLED" || status === "FAILED") return "failed"
-	if (search.code === "00" && (status === undefined || status === "PAID" || status === "SUCCESS"))
-		return "success"
-	return "failed"
+	if (search.cancel || status === "CANCELLED" || status === "FAILED") return "cancelled"
+	return "confirming"
 }

@@ -20,8 +20,8 @@ final class CreateEnrollmentOrderRequest extends FormRequest
     {
         return [
             'payment_provider' => ['required', 'string', 'in:'.implode(',', PaymentProvider::values())],
-            'return_url' => ['nullable', 'url'],
-            'cancel_url' => ['nullable', 'url'],
+            'return_url' => ['required', 'url'],
+            'cancel_url' => ['required', 'url'],
             'commitment_signature' => ['required', 'string', 'starts_with:<svg', 'max:'.self::MAX_SIGNATURE_LENGTH],
         ];
     }
