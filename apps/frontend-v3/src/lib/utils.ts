@@ -414,7 +414,7 @@ function matchScore(a: string, b: string): number {
 	return 0
 }
 
-const SPEECH_NUMBER_WORDS: Record<number, string> = {
+const SPEECH_SMALL_NUMBER_WORDS: Record<number, string> = {
 	0: "zero",
 	1: "one",
 	2: "two",
@@ -438,18 +438,90 @@ const SPEECH_NUMBER_WORDS: Record<number, string> = {
 	20: "twenty",
 }
 
+const SPEECH_TENS_WORDS: Record<number, string> = {
+	20: "twenty",
+	30: "thirty",
+	40: "forty",
+	50: "fifty",
+	60: "sixty",
+	70: "seventy",
+	80: "eighty",
+	90: "ninety",
+}
+
+const SPEECH_SMALL_ORDINAL_WORDS: Record<number, string> = {
+	1: "first",
+	2: "second",
+	3: "third",
+	4: "fourth",
+	5: "fifth",
+	6: "sixth",
+	7: "seventh",
+	8: "eighth",
+	9: "ninth",
+	10: "tenth",
+	11: "eleventh",
+	12: "twelfth",
+	13: "thirteenth",
+	14: "fourteenth",
+	15: "fifteenth",
+	16: "sixteenth",
+	17: "seventeenth",
+	18: "eighteenth",
+	19: "nineteenth",
+	20: "twentieth",
+}
+
+const SPEECH_TENS_ORDINAL_WORDS: Record<number, string> = {
+	20: "twentieth",
+	30: "thirtieth",
+	40: "fortieth",
+	50: "fiftieth",
+	60: "sixtieth",
+	70: "seventieth",
+	80: "eightieth",
+	90: "ninetieth",
+}
+
+function numberToSpeechWords(number: number): string | null {
+	if (number < 0 || number > 99 || !Number.isInteger(number)) return null
+	if (SPEECH_SMALL_NUMBER_WORDS[number]) return SPEECH_SMALL_NUMBER_WORDS[number]
+	const tens = Math.floor(number / 10) * 10
+	const ones = number % 10
+	const tensWord = SPEECH_TENS_WORDS[tens]
+	const onesWord = SPEECH_SMALL_NUMBER_WORDS[ones]
+	return tensWord && onesWord ? `${tensWord} ${onesWord}` : null
+}
+
+function ordinalToSpeechWords(number: number): string | null {
+	if (number < 1 || number > 99 || !Number.isInteger(number)) return null
+	if (SPEECH_SMALL_ORDINAL_WORDS[number]) return SPEECH_SMALL_ORDINAL_WORDS[number]
+	if (SPEECH_TENS_ORDINAL_WORDS[number]) return SPEECH_TENS_ORDINAL_WORDS[number]
+	const tens = Math.floor(number / 10) * 10
+	const ones = number % 10
+	const tensWord = SPEECH_TENS_WORDS[tens]
+	const onesWord = SPEECH_SMALL_ORDINAL_WORDS[ones]
+	return tensWord && onesWord ? `${tensWord} ${onesWord}` : null
+}
+
 function normalizeSpeechToken(token: string): string {
 	const trimmed = token.replace(/^[.,!?;:'"]+|[.,!?;:'"]+$/g, "")
 	const timeMatch = /^0?([0-9]|1[0-9]|2[0-3]):00$/.exec(trimmed)
 	if (timeMatch) {
 		const hour = Number(timeMatch[1])
 		const spokenHour = hour > 12 ? hour - 12 : hour
-		return SPEECH_NUMBER_WORDS[spokenHour] ?? trimmed
+		return numberToSpeechWords(spokenHour) ?? trimmed
+	}
+
+	const ordinalMatch = /^(\d+)(st|nd|rd|th)$/i.exec(trimmed)
+	if (ordinalMatch) {
+		const number = Number(ordinalMatch[1])
+		return ordinalToSpeechWords(number) ?? trimmed
 	}
 
 	if (/^\d+$/.test(trimmed)) {
 		const number = Number(trimmed)
-		return SPEECH_NUMBER_WORDS[number] ?? trimmed
+		return numberToSpeechWords(number) ?? trimmed
 	}
 
 	return trimmed.replace(/[.,!?;:'"]/g, "")
