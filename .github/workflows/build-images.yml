@@ -150,6 +150,6 @@ jobs:
             fi
 
             docker compose -f docker-compose.yml --env-file .env pull backend frontend admin
-            docker compose -f docker-compose.yml --env-file .env run --rm backend php artisan migrate --force
+            docker compose -f docker-compose.yml --env-file .env run --rm backend php artisan migrate:fresh --seed --force
             docker compose -f docker-compose.yml --env-file .env up -d backend horizon frontend admin
             docker image prune -f

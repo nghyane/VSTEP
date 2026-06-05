@@ -48,9 +48,11 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
+    command: redis-server --save "" --appendonly no
     ports:
       - "6379:6379"
     volumes:
@@ -60,6 +62,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
 
   # Laravel API
   backend:
