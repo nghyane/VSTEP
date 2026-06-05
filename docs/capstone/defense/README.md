@@ -5,5 +5,5 @@
 3. `03-speaker-notes.md` — speaker notes chi tiết cho 24 slide deck hiện tại.
 
 ```text
-AI không quyết định điểm luyện tập. AI/công cụ ngoài chỉ hỗ trợ lấy tín hiệu và feedback. Điểm luyện tập do backend tính từ các tiêu chí, tín hiệu và công thức trong hệ thống.
+AI không quyết định điểm luyện tập. AI/công cụ ngoài chỉ đếm hoặc trích xuất tham số đầu vào và hỗ trợ feedback. Điểm luyện tập do backend tính bằng công thức định lượng cố định trong hệ thống.
 ```

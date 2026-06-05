@@ -1,6 +1,17 @@
 # 02. Scoring Q&A
 
-File này chỉ dùng khi hội đồng hỏi sâu. Không đưa hết vào main deck.
+File này dùng khi hội đồng hỏi sâu. Trên main deck chỉ nên đưa bảng chỉ số/công thức ngắn để chứng minh backend tính điểm bằng công thức định lượng, không đưa toàn bộ công thức dài.
+
+## Cách trình bày trên slide chính
+
+```text
+Answer / Audio
+  -> extracted parameters: word count, spelling errors, transcript, pause count, pronunciation signals, relevance
+  -> backend formula: weighted criteria + caps/penalties
+  -> practice score + feedback
+```
+
+AI/công cụ ngoài chỉ lấy tham số và hỗ trợ feedback. Điểm luyện tập do backend tính bằng công thức cố định.
 
 ## Công thức tổng
 

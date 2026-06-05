@@ -2,31 +2,33 @@
 
 Ghi chú này bám theo flow defense mới: **Context → Problems → Actors → Main Features by Actors → System Architecture → Technology → Demo Workflow 1/2/3 → Different → Achievements → Limitation → Conclusion → Thank You**.
 
+Chiến thuật trình bày theo chỉ đạo của thầy: slide nói gọn, tránh giải thích dông dài, dành nhiều thời gian cho demo. Phần công thức phải nói rõ AI không tự chấm điểm; AI/công cụ chỉ lấy tham số đầu vào, backend tính điểm luyện tập bằng công thức định lượng.
+
 ## Slide 1 — An Adaptive VSTEP Preparation System
 
 Kính chào hội đồng. Nhóm em xin trình bày đề tài **An Adaptive VSTEP Preparation System** — hệ thống hỗ trợ luyện thi VSTEP.
 
 Trọng tâm của hệ thống là hỗ trợ người học luyện 4 kỹ năng, nhận phản hồi sau bài luyện tập, theo dõi tiến độ và nhận gợi ý nội dung học tiếp theo.
 
-Do thời gian trình bày có giới hạn, nhóm em xin tập trung vào bối cảnh vấn đề, nhóm người dùng, tính năng chính, kiến trúc hệ thống, công nghệ, demo ba workflow chính và cuối cùng là điểm khác biệt, kết quả đạt được, hạn chế và hướng phát triển.
+Do thời gian trình bày có giới hạn, nhóm em xin phép lướt nhanh phần bối cảnh, công nghệ và thuật toán hỗ trợ để dành trọng tâm cho công thức tính điểm luyện tập và demo sản phẩm.
 
 ## Slide 2 — VSTEP Context
 
-VSTEP là kỳ thi đánh giá năng lực tiếng Anh được sử dụng trong học tập, chứng chỉ và một số yêu cầu nghề nghiệp tại Việt Nam.
+VSTEP là kỳ thi đánh giá năng lực tiếng Anh được sử dụng khá phổ biến tại Việt Nam, ví dụ như yêu cầu đầu vào cao học, đầu ra ở nhiều trường đại học/cao đẳng hoặc yêu cầu chứng chỉ năng lực tiếng Anh.
 
-Bài thi đánh giá 4 kỹ năng gồm Listening, Reading, Writing và Speaking. Vì vậy, người học không chỉ cần luyện đề, mà còn cần biết mình đang yếu ở kỹ năng nào và nên luyện phần nào tiếp theo.
+Bài thi đánh giá 4 kỹ năng gồm Listening, Reading, Writing và Speaking. Phần cấu trúc đề và cách tính điểm nhóm xin nói nhanh ở mức tổng quan: Listening/Reading có đáp án khách quan, còn Writing/Speaking cần đánh giá theo nhiều tiêu chí. Vì vậy, người học không chỉ cần luyện đề, mà còn cần biết mình yếu ở kỹ năng nào và nên luyện phần nào tiếp theo.
 
 ## Slide 3 — Problems
 
-Từ bối cảnh đó, nhóm nhận thấy ba vấn đề chính.
+Từ bối cảnh đó, nhóm nhận thấy vấn đề chính không phải là thiếu tài liệu luyện thi.
 
-Thứ nhất, người học khó tự xác định điểm yếu cụ thể. Thứ hai, nhiều nền tảng luyện thi chấm tốt Listening và Reading nhưng Writing và Speaking thường thiếu phản hồi chi tiết. Thứ ba, việc luyện tập còn rời rạc, chưa tạo thành vòng học liên tục từ làm bài, xem kết quả, nhận feedback đến luyện tiếp.
+Hiện nay có rất nhiều trung tâm, group Facebook, file Word, ghi chú và tài liệu chia sẻ đề luyện. Tuy nhiên, các tài liệu đó chủ yếu là công cụ luyện đề rời rạc. Người học vẫn khó biết mình yếu ở đâu, Writing/Speaking thường thiếu phản hồi chi tiết, và việc luyện tập chưa tạo thành một vòng học liên tục từ làm bài, xem kết quả, nhận feedback đến luyện tiếp.
 
 ## Slide 4 — Problem Analysis
 
-Các giải pháp hiện tại đều có ưu điểm riêng. Trung tâm luyện thi có giáo viên hỗ trợ nhưng khó cá nhân hóa liên tục cho từng người học. Website mock test có đề luyện nhưng thường thiếu đánh giá chi tiết cho Writing và Speaking. App tiếng Anh tổng quát dễ dùng nhưng không nhất thiết bám sát format VSTEP.
+Các giải pháp hiện tại đều có ưu điểm riêng. Trung tâm luyện thi có giáo viên hỗ trợ nhưng khó cá nhân hóa liên tục cho từng người học. Các group hoặc kho tài liệu giúp người học có nhiều đề luyện, nhưng vẫn chủ yếu là file và ghi chú. Website mock test có đề luyện nhưng thường thiếu đánh giá chi tiết cho Writing và Speaking. App tiếng Anh tổng quát dễ dùng nhưng không nhất thiết bám sát format VSTEP.
 
-Vì vậy, khoảng trống nhóm tập trung xử lý là một hệ thống luyện tập bám VSTEP, có phản hồi và theo dõi tiến độ rõ ràng hơn.
+Vì vậy, khoảng trống nhóm tập trung xử lý là biến việc luyện đề thành một giải pháp học tập hoàn chỉnh hơn: có phản hồi, có game hóa/tích điểm, có lộ trình học, có gợi ý thích nghi theo điểm yếu và có theo dõi tiến độ rõ ràng.
 
 ## Slide 5 — Actors
 
@@ -54,49 +56,51 @@ Với mobile learner, ứng dụng mobile đóng vai trò companion app, hỗ tr
 
 ## Slide 9 — System Architecture
 
-Về kiến trúc, người dùng truy cập qua web app, mobile app hoặc admin panel. Các client này gọi đến Laravel API.
+Ở slide này, nhóm trình bày kiến trúc tổng thể của hệ thống. Người dùng truy cập qua web app, mobile app hoặc admin panel. Các client này gọi đến Laravel API.
 
-Backend API xử lý nghiệp vụ chính, quản lý bài luyện tập, kết quả, recommendation và phần đánh giá bài luyện tập. PostgreSQL lưu dữ liệu chính như user, content, attempts và results. Redis queue hỗ trợ các tác vụ nền, đặc biệt là các tác vụ có thể mất thời gian như xử lý Writing hoặc Speaking. Storage dùng cho file hoặc audio.
+Backend xử lý nghiệp vụ chính và kết nối với PostgreSQL để lưu dữ liệu, Redis queue để xử lý tác vụ nền và storage để lưu file hoặc audio.
 
-Các dịch vụ AI/speech bên ngoài chỉ hỗ trợ lấy tín hiệu, không quyết định điểm cuối.
+Các dịch vụ AI hoặc speech bên ngoài chỉ đóng vai trò hỗ trợ lấy tín hiệu. Phần đánh giá bài luyện tập sẽ được trình bày riêng ở các slide sau.
 
 ## Slide 10 — Technology
 
-Về công nghệ, backend sử dụng Laravel, cơ sở dữ liệu là PostgreSQL, Redis dùng cho queue và cache. Phía web và admin sử dụng React. Mobile sử dụng Expo hoặc React Native.
+Slide này tóm tắt công nghệ chính của hệ thống. Backend sử dụng Laravel, cơ sở dữ liệu là PostgreSQL, Redis dùng cho queue và cache. Phía web và admin sử dụng React, còn mobile sử dụng Expo hoặc React Native.
 
-Hệ thống cũng hỗ trợ Docker và GitHub Actions để phục vụ triển khai và tự động hóa quy trình build/test.
+Nhóm chọn các công nghệ này vì phù hợp với mô hình web/mobile, có hệ sinh thái ổn định và hỗ trợ triển khai thực tế.
 
 ## Slide 11 — Technology — Deployment & Quality
 
-Về triển khai và chất lượng, hệ thống hỗ trợ Docker deployment và CI/CD qua GitHub Actions. Redis queue giúp xử lý các tác vụ nền thay vì bắt người dùng chờ trực tiếp.
+Về triển khai và chất lượng, hệ thống hỗ trợ Docker để đóng gói môi trường và GitHub Actions để tự động hóa build/test. Redis queue giúp xử lý các tác vụ nền, đặc biệt là những tác vụ có thể mất thời gian.
 
-Trong kiểm thử, các external services như AI hoặc speech service được cô lập bằng test doubles khi cần, để nhóm kiểm tra logic chính của hệ thống mà không phụ thuộc hoàn toàn vào dịch vụ bên ngoài.
+Trong kiểm thử, các dịch vụ ngoài như AI hoặc speech service được cô lập khi cần, giúp nhóm kiểm tra logic chính mà không phụ thuộc hoàn toàn vào dịch vụ bên ngoài.
 
 ## Slide 12 — Practice Evaluation Principle
 
-Đây là nguyên tắc quan trọng nhất khi nói về phần đánh giá.
+Đây là slide quan trọng nhất khi nói về phần đánh giá bài luyện tập, vì hội đồng có thể hỏi rất kỹ phần này.
 
-Hệ thống không hỏi AI rằng “bài này được mấy điểm”. AI hoặc công cụ ngoài chỉ hỗ trợ lấy tín hiệu, ví dụ transcript, lỗi ngữ pháp, tín hiệu từ vựng hoặc tín hiệu phát âm.
+Nhóm không để AI tự bốc ra điểm số. AI hoặc công cụ lập trình chỉ đóng vai trò lấy tham số đầu vào, ví dụ số từ, số lỗi chính tả, transcript, tốc độ nói, số lần ngập ngừng, tín hiệu phát âm hoặc mức độ bám đề.
 
-Điểm luyện tập do backend tính dựa trên tiêu chí, tín hiệu, công thức, giới hạn điểm và điểm trừ trong hệ thống. Vì vậy, kết quả Writing và Speaking được dùng như điểm luyện tập hoặc điểm tham khảo cho mock test, không phải điểm chính thức thay thế giám khảo.
+Sau đó backend dùng công thức định lượng cố định để tính điểm luyện tập. Có thể hiểu quy trình là: bài làm hoặc audio → trích xuất chỉ số → đưa vào công thức → ra điểm luyện tập → AI chỉ hỗ trợ tạo feedback tổng quan ở bước sau. Vì vậy, kết quả Writing và Speaking là điểm luyện tập hoặc tham khảo, không thay thế giám khảo chính thức.
+
+Nếu trình bày trên slide, nên thể hiện dạng bảng ngắn: **Parameter / Source / Formula role / Output**, không đưa toàn bộ công thức dài lên slide chính.
 
 ## Slide 13 — Writing Practice Evaluation
 
-Với Writing, hệ thống đánh giá bài luyện tập theo bốn nhóm tiêu chí: mức độ đáp ứng đề, tổ chức bài, ngữ pháp và từ vựng.
+Với Writing, hệ thống hỗ trợ đánh giá bài luyện tập theo các chỉ số định lượng và tiêu chí như số từ, lỗi chính tả, mức độ bám đề, tổ chức bài, ngữ pháp và từ vựng.
 
-Ví dụ, hệ thống xét bài có bám đề không, có phát triển ý không, cách chia đoạn và liên kết ý như thế nào, lỗi ngữ pháp ra sao và từ vựng có phù hợp không. Sau đó backend tổng hợp các tiêu chí này để đưa ra điểm luyện tập và feedback.
+Ví dụ, công cụ có thể lấy các tham số như word count, spelling errors, topic relevance, organization signals, grammar evidence và vocabulary evidence. Backend không lấy điểm trực tiếp từ AI, mà đưa các tham số này vào công thức để ra điểm luyện tập. Mục tiêu là giúp learner biết bài viết đang yếu ở đâu để luyện tiếp.
 
 ## Slide 14 — Speaking Practice Evaluation
 
-Với Speaking, hệ thống đánh giá theo các nhóm tiêu chí như ngữ pháp, từ vựng, độ trôi chảy, phát triển ý và phát âm.
+Với Speaking, hệ thống hỗ trợ phân tích bài nói dựa trên transcript và một số tín hiệu audio.
 
-Transcript hỗ trợ phân tích nội dung, ngữ pháp và từ vựng. Audio metrics hỗ trợ đánh giá tốc độ nói, ngập ngừng và phát âm. Điểm Speaking vì vậy là kết quả tổng hợp từ nhiều tín hiệu, không phải do một dịch vụ bên ngoài tự quyết định.
+Transcript giúp xem nội dung, ngữ pháp và từ vựng. Audio metrics hỗ trợ lấy các tham số như tốc độ nói, số lần ngập ngừng, độ chính xác phát âm và mức độ đầy đủ của audio. Các tham số này được backend tổng hợp bằng công thức để ra điểm luyện tập, không phải điểm chấm chính thức.
 
 ## Slide 15 — Abnormal Answer Handling
 
-Hệ thống có cơ chế xử lý bài bất thường.
+Slide này trình bày cơ chế xử lý các bài bất thường.
 
-Nếu bài quá ngắn, lạc đề, copy lại đề, spam nội dung hoặc không dùng tiếng Anh, hệ thống sẽ giới hạn điểm hoặc áp dụng điểm trừ. Mục tiêu là tránh trường hợp bài không hợp lệ nhưng vẫn được điểm cao chỉ vì một vài tín hiệu riêng lẻ tốt.
+Nếu bài quá ngắn, lạc đề, copy lại đề, spam hoặc không dùng tiếng Anh, hệ thống sẽ giới hạn điểm hoặc áp dụng điểm trừ. Mục tiêu là tránh trường hợp bài không hợp lệ nhưng vẫn đạt điểm cao do một vài tín hiệu riêng lẻ tốt.
 
 ## Slide 16 — Demo Overview
 
@@ -128,6 +132,8 @@ Phần admin giúp hệ thống có khả năng vận hành lâu dài, vì nội
 
 Người học có thể luyện tập, làm thi thử, xem feedback theo tiêu chí, nhận gợi ý dựa trên skill gap và ôn từ vựng theo chu kỳ. Ngoài ra, hệ thống có phần admin để quản lý nội dung và tiêu chí đánh giá, giúp việc vận hành rõ ràng hơn.
 
+Riêng phần Spaced Repetition/Anki, nhóm chỉ nói ngắn gọn là hệ thống có áp dụng cơ chế ôn tập theo chu kỳ. Đây là thuật toán quen thuộc nên nhóm không giải thích dài trên slide chính; nếu hội đồng hỏi sâu, nhóm sẽ mở phần “See detail” hoặc trình bày ở Q&A.
+
 ## Slide 21 — Achievements
 
 Kết quả thực hiện của nhóm gồm hệ thống backend, giao diện web cho người học, ứng dụng mobile, trang quản trị, module hỗ trợ đánh giá bài luyện tập, tài liệu kiểm thử, tài liệu cài đặt và hướng dẫn sử dụng, báo cáo cuối cùng và mã nguồn.
@@ -155,7 +161,7 @@ Nhóm em sẵn sàng trả lời các câu hỏi của hội đồng.
 ## Câu cần nhớ khi bị hỏi về AI hoặc điểm Writing/Speaking
 
 ```text
-Hệ thống không hỏi AI “bài này mấy điểm”. AI/công cụ ngoài chỉ hỗ trợ lấy tín hiệu và feedback. Điểm luyện tập do backend tính từ các tiêu chí, tín hiệu và công thức trong hệ thống. Điểm Writing/Speaking là điểm luyện tập/tham khảo, không thay thế giám khảo chính thức.
+Hệ thống không hỏi AI “bài này mấy điểm”. AI/công cụ ngoài chỉ đếm hoặc trích xuất tham số đầu vào và hỗ trợ feedback. Điểm luyện tập do backend tính bằng công thức định lượng cố định trong hệ thống. Điểm Writing/Speaking là điểm luyện tập/tham khảo, không thay thế giám khảo chính thức.
 ```
 
 ## Câu chuyển nếu cần lướt nhanh
