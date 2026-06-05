@@ -1,6 +1,6 @@
 # 03. Speaker notes cho slide bảo vệ
 
-Ghi chú này bám theo flow defense mới: **Context → Problems → Actors → Main Features by Actors → System Architecture → Technology → Demo Workflow 1/2/3 → Different → Achievements → Limitation → Conclusion → Thank You**.
+Ghi chú này bám theo flow defense mới: **Context → Problems → Actors → Main Features by Actors → System Architecture → Technology → Workflow Overview 1/2 → Differentiation → Achievements → Limitations → Conclusion → Thank You**.
 
 ## Slide 1 — An Adaptive VSTEP Preparation System
 
@@ -8,7 +8,7 @@ Kính chào hội đồng. Nhóm em xin trình bày đề tài **An Adaptive VST
 
 Trọng tâm của hệ thống là hỗ trợ người học luyện 4 kỹ năng, nhận phản hồi sau bài luyện tập, theo dõi tiến độ và nhận gợi ý nội dung học tiếp theo.
 
-Do thời gian trình bày có giới hạn, nhóm em xin tập trung vào bối cảnh vấn đề, nhóm người dùng, tính năng chính, kiến trúc hệ thống, công nghệ, demo ba workflow chính và cuối cùng là điểm khác biệt, kết quả đạt được, hạn chế và hướng phát triển.
+Do thời gian trình bày có giới hạn, nhóm em xin tập trung vào bối cảnh vấn đề, nhóm người dùng, tính năng chính, kiến trúc hệ thống, công nghệ, hai workflow vận hành chính và cuối cùng là điểm khác biệt, kết quả đạt được, hạn chế và hướng phát triển.
 
 ## Slide 2 — VSTEP Context
 
@@ -98,55 +98,59 @@ Hệ thống có cơ chế xử lý bài bất thường.
 
 Nếu bài quá ngắn, lạc đề, copy lại đề, spam nội dung hoặc không dùng tiếng Anh, hệ thống sẽ giới hạn điểm hoặc áp dụng điểm trừ. Mục tiêu là tránh trường hợp bài không hợp lệ nhưng vẫn được điểm cao chỉ vì một vài tín hiệu riêng lẻ tốt.
 
-## Slide 16 — Demo Overview
+## Slide 25 — Workflow Overview — Learner & Teacher
 
-Phần demo của nhóm gồm ba workflow chính.
+Ở phần workflow, nhóm em không tách thành nhiều màn hình nhỏ, mà gom theo actor để hội đồng thấy được hệ thống vận hành end-to-end như thế nào.
 
-Workflow thứ nhất là learner practice, cho thấy người học luyện tập và nhận feedback. Workflow thứ hai là mock test và result, cho thấy người học làm bài thi thử và xem kết quả. Workflow thứ ba là admin management, cho thấy hệ thống có thể quản lý nội dung, đề và dữ liệu vận hành.
+Slide này mô tả hai nhóm liên quan trực tiếp đến quá trình học: learner và teacher.
 
-## Slide 17 — Demo Workflow 1 — Learner Practice
+Với learner, hệ thống có ba nhánh chính. Nhánh thứ nhất là practice: người học chọn kỹ năng, luyện Grammar, Vocabulary hoặc 4 kỹ năng, sau đó hệ thống ghi nhận assessment và trả feedback. Đây là vòng luyện tập ngắn, mục tiêu là giúp người học biết mình đang yếu ở đâu.
 
-Ở workflow đầu tiên, learner đăng nhập, mở practice hub, chọn kỹ năng muốn luyện, hoàn thành bài tập và submit.
+Nhánh thứ hai là mock exam: người học chọn đề, hệ thống kiểm tra coin, nếu thiếu thì cho nạp thêm, sau đó người học làm bài, nộp bài và xem kết quả. Listening và Reading có thể có kết quả gần như tức thì; Writing và Speaking cần xử lý/chấm sau vì có phần tự luận hoặc audio.
 
-Sau khi submit, hệ thống trả feedback để người học biết mình cần cải thiện phần nào. Workflow này thể hiện mục tiêu chính của hệ thống là hỗ trợ luyện tập có định hướng.
+Nhánh thứ ba là courses: người học chọn khóa học, enroll và thanh toán, sau đó có thể đặt lịch học 1-1, xác nhận lịch và xem booking details. Nếu người học đã enroll rồi thì hệ thống bỏ qua bước thanh toán để tránh tạo đơn trùng.
 
-## Slide 18 — Demo Workflow 2 — Mock Test & Result
+Phía dưới là teacher workflow. Teacher đăng nhập, vào dashboard và quản lý các task liên quan đến vận hành khóa học như schedule, booking, leave request và grading Writing/Speaking. Như vậy slide này cho thấy learner không chỉ tự luyện, mà còn có thể đi tiếp sang luồng khóa học có teacher hỗ trợ.
 
-Ở workflow thứ hai, learner bắt đầu một bài mock test, hoàn thành các kỹ năng và submit bài.
+Câu chốt slide này: workflow learner là core learning flow, còn teacher workflow là lớp hỗ trợ để hệ thống vận hành được trong bối cảnh có khóa học và lịch học thật.
 
-Sau đó hệ thống xử lý kết quả, hiển thị score breakdown, feedback và skill gaps. Phần này giúp người học không chỉ xem điểm tổng, mà còn biết kỹ năng hoặc tiêu chí nào cần cải thiện.
+## Slide 26 — Workflow Overview — Staffs & Admin
 
-## Slide 19 — Demo Workflow 3 — Admin Management
+Slide tiếp theo mô tả nhóm vận hành hệ thống: staff và admin.
 
-Ở workflow thứ ba, admin đăng nhập vào trang quản trị để quản lý nội dung, đề luyện hoặc đề thi thử, xem các tiêu chí đánh giá và quản lý user, course hoặc booking.
+Với staff, sau khi đăng nhập và vào dashboard, staff chọn module nghiệp vụ cần quản lý. Các module chính gồm content, exams, practice, courses và leave. Staff chịu trách nhiệm cập nhật nội dung, đề, bài luyện tập, khóa học và các yêu cầu vận hành hằng ngày. Sau khi chỉnh sửa, hệ thống lưu lại và publish hoặc update dữ liệu để learner có thể sử dụng.
 
-Phần admin giúp hệ thống có khả năng vận hành lâu dài, vì nội dung và dữ liệu có thể được cập nhật qua giao diện quản trị thay vì chỉnh trực tiếp trong code.
+Với admin, workflow bắt đầu tương tự từ login và dashboard, nhưng phạm vi quản lý rộng hơn. Admin chọn module quản trị như users, rubrics, top-up, promo và settings. Đây là các phần ảnh hưởng đến hệ thống và business rule: tài khoản người dùng, tiêu chí đánh giá, gói nạp xu, mã khuyến mãi và cấu hình hệ thống.
 
-## Slide 20 — Different Points
+Điểm cần nhấn mạnh là nhóm tách staff và admin để phân quyền theo trách nhiệm. Staff tập trung vào content and operations, còn admin quản lý system and business. Cách tách này giúp hệ thống dễ vận hành hơn và tránh việc mọi người đều có quyền thay đổi cấu hình quan trọng.
+
+Câu chốt slide này: hai workflow phía sau bảo đảm rằng nội dung, đề thi, rubric, thanh toán và cấu hình không phải chỉnh trực tiếp trong code, mà có thể được quản lý qua giao diện theo quyền phù hợp.
+
+## Slide 27 — Differentiation
 
 Điểm khác biệt của hệ thống là tạo thành một vòng học tương đối đầy đủ cho 4 kỹ năng.
 
 Người học có thể luyện tập, làm thi thử, xem feedback theo tiêu chí, nhận gợi ý dựa trên skill gap và ôn từ vựng theo chu kỳ. Ngoài ra, hệ thống có phần admin để quản lý nội dung và tiêu chí đánh giá, giúp việc vận hành rõ ràng hơn.
 
-## Slide 21 — Achievements
+## Slide 28 — Achievements
 
 Kết quả thực hiện của nhóm gồm hệ thống backend, giao diện web cho người học, ứng dụng mobile, trang quản trị, module hỗ trợ đánh giá bài luyện tập, tài liệu kiểm thử, tài liệu cài đặt và hướng dẫn sử dụng, báo cáo cuối cùng và mã nguồn.
 
 Các thành phần này thể hiện nhóm không chỉ xây dựng giao diện, mà còn triển khai backend, quản trị, kiểm thử và tài liệu đi kèm.
 
-## Slide 22 — Limitations
+## Slide 29 — Limitations
 
 Hạn chế hiện tại là phần đánh giá Writing và Speaking mới phục vụ mục tiêu luyện tập và tham khảo, chưa thay thế giám khảo chính thức.
 
 Ngoài ra, hệ thống cần thêm bộ dữ liệu lớn hơn do giám khảo chấm để kiểm chứng và hiệu chỉnh độ chính xác. Một số hướng như adaptive difficulty động hoặc cá nhân hóa sâu hơn vẫn nằm trong phạm vi phát triển tương lai. Chất lượng tín hiệu từ dịch vụ AI/speech bên ngoài cũng có thể ảnh hưởng đến kết quả phân tích.
 
-## Slide 23 — Conclusion
+## Slide 30 — Conclusion
 
 Tóm lại, nhóm đã xây dựng hệ thống hỗ trợ luyện thi VSTEP với các chức năng chính: luyện 4 kỹ năng, thi thử, feedback, đánh giá bài luyện tập theo tiêu chí, learning path và progress tracking.
 
 Trong tương lai, hệ thống có thể mở rộng theo hướng điều chỉnh độ khó linh hoạt, kiểm chứng trên bộ dữ liệu lớn hơn có điểm từ giám khảo chính thức và cá nhân hóa sâu hơn cho từng người học.
 
-## Slide 24 — Thank You
+## Slide 31 — Thank You
 
 Nhóm em xin cảm ơn hội đồng đã lắng nghe.
 

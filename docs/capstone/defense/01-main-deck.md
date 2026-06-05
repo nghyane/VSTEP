@@ -3,7 +3,7 @@
 ## Flow theo yêu cầu defense
 
 ```text
-Context -> Problems -> Actors -> Main Features by Actors -> System Architecture -> Technology -> Demo Workflow 1/2/3 -> Different -> Achievements -> Limitation -> Conclusion -> Thank You
+Context -> Problems -> Actors -> Main Features by Actors -> System Architecture -> Technology -> Workflow Overview 1/2 -> Differentiation -> Achievements -> Limitations -> Conclusion -> Thank You
 ```
 
 ## Nguyên tắc nói xuyên suốt
@@ -19,7 +19,7 @@ Writing/Speaking score là điểm luyện tập/tham khảo, không thay thế 
 - Slide 1–4: Context + Problems — 1 phút 20 giây.
 - Slide 5–8: Actors + Main Features by Actors — 1 phút 40 giây.
 - Slide 9–15: Architecture + Technology + evaluation principle — 2 phút 20 giây.
-- Slide 16–19: Demo Workflow 1/2/3 — 2 phút 30 giây.
+- Slide 25–26: Workflow Overview 1/2 — 2 phút 30 giây.
 - Slide 20–24: Different + Achievements + Limitation + Conclusion + Thank You — 2 phút 10 giây.
 
 ## Câu xin phép lướt nhanh
@@ -45,15 +45,13 @@ Do thời gian trình bày có giới hạn, nhóm em xin tập trung vào core 
 13. **Writing Practice Evaluation** — tiêu chí: đáp ứng đề, tổ chức bài, ngữ pháp, từ vựng.
 14. **Speaking Practice Evaluation** — tiêu chí: ngữ pháp, từ vựng, độ trôi chảy, phát triển ý, phát âm.
 15. **Abnormal Answer Handling** — bài quá ngắn/lạc đề/copy/spam/non-English bị giới hạn điểm.
-16. **Demo Overview** — demo 3 workflow: learner practice, mock test/result, admin management.
-17. **Demo Workflow 1 — Learner Practice** — login → practice hub → chọn kỹ năng → làm bài → feedback.
-18. **Demo Workflow 2 — Mock Test & Result** — mock test 4 kỹ năng → submit → processing → result/skill gaps.
-19. **Demo Workflow 3 — Admin Management** — admin quản lý nội dung, đề, tiêu chí, user/course.
-20. **Different Points** — vòng học 4 kỹ năng, feedback theo tiêu chí, recommendation, SRS, admin-managed content.
-21. **Achievements** — backend, web, mobile, admin, module hỗ trợ đánh giá, tài liệu, mã nguồn.
-22. **Limitations** — điểm Writing/Speaking là tham khảo; cần dữ liệu giám khảo; adaptive difficulty là future work.
-23. **Conclusion** — tổng kết đóng góp và hướng phát triển.
-24. **Thank You** — cảm ơn hội đồng và chuyển sang Q&A.
+25. **Workflow Overview — Learner & Teacher** — learner practice/mock exam/course; teacher schedule, booking, leave request, grading.
+26. **Workflow Overview — Staffs & Admin** — staff quản lý content/exam/practice/course/leave; admin quản lý users/rubrics/top-up/promo/settings.
+27. **Differentiation** — vòng học 4 kỹ năng, feedback theo tiêu chí, recommendation, SRS, admin-managed content.
+28. **Achievements** — backend, web, mobile, admin, module hỗ trợ đánh giá, tài liệu, mã nguồn.
+29. **Limitations** — điểm Writing/Speaking là tham khảo; cần dữ liệu giám khảo; adaptive difficulty là future work.
+30. **Conclusion** — tổng kết đóng góp và hướng phát triển.
+31. **Thank You** — cảm ơn hội đồng và chuyển sang Q&A.
 
 ## Hạn chế nên nói ở Slide 22
 
