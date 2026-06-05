@@ -101,6 +101,19 @@ final class WalletController extends Controller
         ]);
     }
 
+    public function handleTopupPaymentReturn(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'id' => ['required', 'string'],
+        ]);
+
+        $order = $this->topupService->cancelFromPaymentReturn($request->profile(), $validated['id']);
+
+        return response()->json([
+            'data' => new WalletTopupOrderResource($order),
+        ]);
+    }
+
     public function redeemPromo(PromoRedeemRequest $request): JsonResponse
     {
         $profile = $request->profile();

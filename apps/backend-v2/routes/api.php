@@ -79,6 +79,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
         Route::get('/wallet/topup-packages', [WalletController::class, 'topupPackages']);
         Route::post('/wallet/topup', [WalletController::class, 'createTopup']);
+        Route::post('/wallet/topup/payment-return', [WalletController::class, 'handleTopupPaymentReturn']);
         Route::get('/wallet/topup/{order}/status', [WalletController::class, 'orderStatus']);
         Route::post('/wallet/promo-redeem', [WalletController::class, 'redeemPromo']);
 

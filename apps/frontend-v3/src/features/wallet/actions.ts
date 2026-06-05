@@ -20,6 +20,15 @@ export async function getOrderStatus(orderId: string): Promise<TopupOrder> {
 	return res.data
 }
 
+export async function reportTopupPaymentReturn(paymentLinkId: string): Promise<TopupOrder> {
+	const res = await api
+		.post("wallet/topup/payment-return", {
+			json: { id: paymentLinkId },
+		})
+		.json<ApiResponse<TopupOrder>>()
+	return res.data
+}
+
 export async function redeemPromoCode(code: string): Promise<PromoRedeemResult> {
 	const res = await api.post("wallet/promo-redeem", { json: { code } }).json<ApiResponse<PromoRedeemResult>>()
 	return res.data

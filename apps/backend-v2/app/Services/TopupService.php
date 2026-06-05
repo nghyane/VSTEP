@@ -13,6 +13,7 @@ use App\Models\Profile;
 use App\Models\WalletTopupOrder;
 use App\Models\WalletTopupPackage;
 use App\Services\Payment\OrderNotFoundAfterValidation;
+use App\Services\Payment\PayOsGateway;
 use App\Services\Payment\PaymentGatewayRegistry;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -183,6 +184,48 @@ final class TopupService
             });
 
             return $order;
+        });
+    }
+
+    public function cancelFromPaymentReturn(Profile $profile, string $paymentLinkId): WalletTopupOrder
+    {
+        $gateway = $this->gateways->get(PaymentProvider::PayOs);
+        if (! $gateway instanceof PayOsGateway) {
+            throw new \RuntimeException('PayOS gateway is not configured.');
+        }
+
+        $status = $gateway->getPaymentLinkStatus($paymentLinkId);
+
+        return DB::transaction(function () use ($profile, $paymentLinkId, $status): WalletTopupOrder {
+            $order = WalletTopupOrder::query()
+                ->where(function ($query) use ($paymentLinkId, $status): void {
+                    $query->where('gateway_transaction_id', $paymentLinkId)
+                        ->orWhere('provider_ref', $paymentLinkId);
+
+                    if ($status['orderCode'] > 0) {
+                        $query->orWhere('order_code', $status['orderCode']);
+                    }
+                })
+                ->lockForUpdate()
+                ->first();
+
+            if (! $order) {
+                throw ValidationException::withMessages(['order' => ['Không tìm thấy đơn thanh toán.']]);
+            }
+
+            if ($order->profile_id !== $profile->id) {
+                throw ValidationException::withMessages(['order' => ['Đơn hàng không thuộc hồ sơ hiện tại.']]);
+            }
+
+            if (strtoupper($status['status']) === 'CANCELLED' && $order->status === OrderStatus::Pending) {
+                $order->update([
+                    'status' => OrderStatus::Cancelled,
+                    'gateway_response' => $status['raw'],
+                    'callback_received_at' => now(),
+                ]);
+            }
+
+            return $order->refresh();
         });
     }
 

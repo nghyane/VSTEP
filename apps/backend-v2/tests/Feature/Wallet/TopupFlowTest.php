@@ -19,6 +19,20 @@ class TopupFlowTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Http::fake([
+            'api-merchant.payos.vn/v2/payment-requests' => Http::response([
+                'data' => [
+                    'checkoutUrl' => 'https://pay.payos.test/checkout',
+                    'paymentLinkId' => 'payos_link_test',
+                ],
+            ]),
+        ]);
+    }
+
     public function test_list_topup_packages(): void
     {
         WalletTopupPackage::factory()->create(['label' => 'Gói A', 'display_order' => 1]);
@@ -49,6 +63,81 @@ class TopupFlowTest extends TestCase
         $response->assertJsonPath('data.status', 'pending');
         $response->assertJsonPath('data.amount_vnd', 200_000);
         $response->assertJsonPath('data.coins_to_credit', 2_200);
+        $this->assertGreaterThan(9, now()->diffInMinutes(WalletTopupOrder::query()->firstOrFail()->expires_at));
+        $this->assertLessThanOrEqual(10, now()->diffInMinutes(WalletTopupOrder::query()->firstOrFail()->expires_at));
+    }
+
+    public function test_verified_cancel_return_marks_topup_order_cancelled(): void
+    {
+        Http::fake(function (Request $request) {
+            if ($request->method() === 'POST') {
+                return Http::response([
+                    'data' => [
+                        'checkoutUrl' => 'https://pay.payos.test/checkout',
+                        'paymentLinkId' => 'payos_link_test',
+                    ],
+                ]);
+            }
+
+            return Http::response([
+                'data' => [
+                    'id' => 'payos_link_test',
+                    'orderCode' => WalletTopupOrder::query()->firstOrFail()->order_code,
+                    'status' => 'CANCELLED',
+                ],
+            ]);
+        });
+
+        $package = WalletTopupPackage::factory()->create();
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/wallet/topup', $this->topupPayload($package->id))
+            ->assertCreated();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/wallet/topup/payment-return', ['id' => 'payos_link_test'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled');
+
+        $this->assertDatabaseHas('wallet_topup_orders', [
+            'gateway_transaction_id' => 'payos_link_test',
+            'status' => 'cancelled',
+        ]);
+    }
+
+    public function test_payment_return_does_not_cancel_when_payos_is_still_pending(): void
+    {
+        Http::fake(function (Request $request) {
+            if ($request->method() === 'POST') {
+                return Http::response([
+                    'data' => [
+                        'checkoutUrl' => 'https://pay.payos.test/checkout',
+                        'paymentLinkId' => 'payos_link_test',
+                    ],
+                ]);
+            }
+
+            return Http::response([
+                'data' => [
+                    'id' => 'payos_link_test',
+                    'orderCode' => WalletTopupOrder::query()->firstOrFail()->order_code,
+                    'status' => 'PENDING',
+                ],
+            ]);
+        });
+
+        $package = WalletTopupPackage::factory()->create();
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/wallet/topup', $this->topupPayload($package->id))
+            ->assertCreated();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/wallet/topup/payment-return', ['id' => 'payos_link_test'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'pending');
     }
 
     public function test_topup_payment_redirect_forwards_client_urls(): void
