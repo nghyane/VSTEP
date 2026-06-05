@@ -23,6 +23,7 @@ use App\Services\Admin\Course\AdminCourseBookingService;
 use App\Services\CourseOrderService;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -59,6 +60,64 @@ class CourseEnrollmentTest extends TestCase
         $response->assertCreated();
         $response->assertJsonPath('data.status', 'pending');
         $response->assertJsonPath('data.amount_vnd', 100_000);
+    }
+
+    public function test_enrollment_payment_redirect_accepts_allowed_client_urls(): void
+    {
+        config([
+            'app.frontend_url' => 'https://vstepgo.com',
+            'app.payment_redirect_origins' => ['https://app.vstepgo.com'],
+        ]);
+        $capturedPayload = null;
+        Http::fake(function (Request $request) use (&$capturedPayload) {
+            $capturedPayload = $request->data();
+
+            return Http::response([
+                'data' => [
+                    'checkoutUrl' => 'https://pay.payos.test/checkout',
+                    'paymentLinkId' => 'payos_link_test',
+                ],
+            ]);
+        });
+
+        [$user, $profile, $course] = $this->seedCourse(100_000, 200);
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
+                'payment_provider' => 'payos',
+                'commitment_signature' => $this->signatureSvg(),
+                'return_url' => "https://app.vstepgo.com/khoa-hoc/{$course->id}",
+                'cancel_url' => "https://app.vstepgo.com/khoa-hoc/{$course->id}?from=payos",
+            ])
+            ->assertCreated();
+
+        $this->assertSame("https://app.vstepgo.com/khoa-hoc/{$course->id}", $capturedPayload['returnUrl']);
+        $this->assertSame("https://app.vstepgo.com/khoa-hoc/{$course->id}?from=payos", $capturedPayload['cancelUrl']);
+    }
+
+    public function test_enrollment_payment_redirect_rejects_untrusted_client_urls(): void
+    {
+        config([
+            'app.frontend_url' => 'https://vstepgo.com',
+            'app.payment_redirect_origins' => ['https://vstepgo.com'],
+        ]);
+        Http::fake();
+
+        [$user, $profile, $course] = $this->seedCourse(100_000, 200);
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
+                'payment_provider' => 'payos',
+                'commitment_signature' => $this->signatureSvg(),
+                'return_url' => "http://localhost:5175/khoa-hoc/{$course->id}",
+                'cancel_url' => "http://localhost:5175/khoa-hoc/{$course->id}",
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.return_url.0', 'URL chuyển hướng thanh toán không được phép.');
+
+        Http::assertNothingSent();
     }
 
     public function test_enrollment_confirm_creates_enrollment_and_credits_bonus(): void

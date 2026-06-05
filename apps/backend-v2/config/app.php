@@ -65,7 +65,22 @@ return [
     |
     */
 
-    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5175'),
+    'frontend_url' => env('FRONTEND_URL', 'https://vstepgo.com'),
+
+    'payment_frontend_url' => 'https://vstepgo.com',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payment Redirect Origins
+    |--------------------------------------------------------------------------
+    |
+    | Client apps may provide return/cancel URLs for payment gateways. Only
+    | URLs whose origin is listed here are accepted. Missing client URLs use
+    | payment_frontend_url defaults; untrusted client URLs fail validation visibly.
+    |
+    */
+
+    'payment_redirect_origins' => ['https://vstepgo.com'],
 
     /*
     |--------------------------------------------------------------------------

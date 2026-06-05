@@ -78,8 +78,9 @@ final class WalletController extends Controller
         $package = WalletTopupPackage::query()->findOrFail($request->validated('package_id'));
         $provider = PaymentProvider::from($request->validated('payment_provider'));
         $returnUrl = $request->validated('return_url');
+        $cancelUrl = $request->validated('cancel_url');
 
-        [$order, $paymentUrl] = $this->topupService->createOrder($profile, $package, $provider, $returnUrl);
+        [$order, $paymentUrl] = $this->topupService->createOrder($profile, $package, $provider, $returnUrl, $cancelUrl);
 
         return response()->json([
             'data' => new WalletTopupOrderResource($order),
