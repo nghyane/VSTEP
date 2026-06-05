@@ -152,7 +152,7 @@ const s = StyleSheet.create({
   cardWrapper: { flex: 1 },
   cardTouchable: { flex: 1 },
   card: {
-    flex: 1,
+    height: 184,
     borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg,
     padding: spacing.base, gap: spacing.xs,
     shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
@@ -165,6 +165,6 @@ const s = StyleSheet.create({
   scoreText: { fontSize: 10, fontFamily: fontFamily.bold },
   cardTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.bold, lineHeight: 20 },
   cardDesc: { fontSize: fontSize.xs, lineHeight: 16 },
-  cardMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
+  cardMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: "auto" },
   cardMetaText: { fontSize: fontSize.xs },
 });

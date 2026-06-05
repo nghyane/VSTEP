@@ -20,7 +20,7 @@ export default function AppLayout() {
       <Stack.Screen name="session/[id]" options={{ gestureEnabled: false }} />
       <Stack.Screen name="exam-result/[id]" />
       <Stack.Screen name="skill/[name]" options={{ headerShown: true, title: "Chi tiết kỹ năng" }} />
-      <Stack.Screen name="grading/writing/[submissionId]" options={{ headerShown: false }} />
+      <Stack.Screen name="grading/writing/[attemptId]" options={{ headerShown: false }} />
       <Stack.Screen name="grading/speaking/[submissionId]" options={{ headerShown: false }} />
       <Stack.Screen name="practice/grammar/[pointId]/exercise" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="practice/listening/index" />

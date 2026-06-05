@@ -17,8 +17,7 @@ type PracticeRoute =
   | "/(app)/practice/listening"
   | "/(app)/practice/reading"
   | "/(app)/practice/writing"
-  | "/(app)/practice/speaking"
-  | "/(app)/practice/results";
+  | "/(app)/practice/speaking";
 
 interface PracticeItem {
   key: string;
@@ -62,7 +61,7 @@ export default function PracticeHubScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: learningPath } = useLearningPath();
-  const fadeAnims = useRef(Array.from({ length: 5 }, () => new Animated.Value(0))).current;
+  const fadeAnims = useRef(Array.from({ length: 4 }, () => new Animated.Value(0))).current;
 
   const foundationItems: PracticeItem[] = [
     {
@@ -110,7 +109,7 @@ export default function PracticeHubScreen() {
       key: "writing",
       title: "Viết",
       subtitle: "Writing",
-      meta: "Thư + luận · AI chấm",
+      meta: "Thư + luận · hệ thống chấm",
       icon: "writing",
       color: c.skillWriting,
       tint: c.primaryTint,
@@ -186,21 +185,6 @@ export default function PracticeHubScreen() {
             <SkillCard key={item.key} item={item} onPress={() => router.push(item.route as never)} />
           ))}
         </View>
-      </Animated.View>
-
-      <Animated.View style={animStyle(4)}>
-        <HapticTouchable scalePress activeOpacity={0.9} onPress={() => router.push("/(app)/practice/results" as never)}>
-          <View style={[styles.resultsCard, { backgroundColor: c.card, borderColor: c.border, borderBottomColor: c.mutedForeground }]}>
-            <View style={[styles.resultsIcon, { backgroundColor: c.primaryTint }]}>
-              <GameIcon name="writing" size={34} />
-            </View>
-            <View style={styles.cardBody}>
-              <Text style={[styles.resultsTitle, { color: c.foreground }]}>Kết quả AI chấm</Text>
-              <Text style={[styles.resultsSub, { color: c.mutedForeground }]}>Xem lại các bài Viết đã được AI chấm điểm chi tiết.</Text>
-            </View>
-            <Text style={[styles.chevron, { color: c.subtle }]}>›</Text>
-          </View>
-        </HapticTouchable>
       </Animated.View>
 
       <View style={styles.mascotRow}>
@@ -328,7 +312,7 @@ function SkillCard({ item, onPress }: { item: PracticeItem; onPress: () => void 
           </View>
           <Text style={[styles.skillTitle, { color: c.foreground }]}>{item.title}</Text>
           <Text style={[styles.skillSubtitle, { color: item.color }]}>{item.subtitle}</Text>
-          {item.meta ? <Text style={[styles.skillMeta, { color: c.mutedForeground }]}>{item.meta}</Text> : null}
+          {item.meta ? <Text style={[styles.skillMeta, { color: c.mutedForeground }]} numberOfLines={2}>{item.meta}</Text> : null}
         </View>
       </HapticTouchable>
     </View>
@@ -386,7 +370,7 @@ const styles = StyleSheet.create({
   skillGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: spacing.sm },
   skillCardWrapper: { width: "48.5%" },
   skillCard: {
-    height: 176,
+    height: 190,
     borderWidth: 2,
     borderBottomWidth: 4,
     borderRadius: radius.xl,
@@ -403,24 +387,6 @@ const styles = StyleSheet.create({
   skillTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
   skillSubtitle: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, marginTop: 2 },
   skillMeta: { fontSize: fontSize.xs, lineHeight: 17, marginTop: spacing.xs },
-  resultsCard: {
-    borderWidth: 2,
-    borderBottomWidth: 4,
-    borderRadius: radius.xl,
-    padding: spacing.base,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  resultsIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.lg,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  resultsTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
-  resultsSub: { fontSize: fontSize.xs, marginTop: 2, lineHeight: 18 },
   mascotRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.sm },
   mascotBubble: { flex: 1, borderWidth: 1.5, borderRadius: radius.xl, padding: spacing.md },
   mascotText: { fontSize: fontSize.sm, lineHeight: 20, fontFamily: fontFamily.semiBold },

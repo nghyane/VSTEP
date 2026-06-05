@@ -163,7 +163,7 @@ export default function OnboardingScreen() {
                 VSTEP đánh giá 4 kỹ năng: Nghe, Đọc, Viết, Nói
               </Text>
               <Text style={[s.welcomeItem, { color: c.foreground }]}>
-                AI chấm điểm chi tiết, phản hồi từng câu
+                Hệ thống chấm điểm chi tiết, phản hồi từng câu
               </Text>
               <Text style={[s.welcomeItem, { color: c.foreground }]}>
                 Lộ trình luyện tập cá nhân hóa theo trình độ
