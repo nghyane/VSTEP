@@ -55,7 +55,11 @@ export function VersionSelector({ examId, versions, selectedId }: Props) {
 				modal.error({
 					title: "Chưa thể kích hoạt phiên bản",
 					content: (
-						<Flex vertical gap={4} style={{ marginTop: 8 }}>
+						<Flex
+							vertical
+							gap={4}
+							style={{ marginTop: 8, maxHeight: "calc(100vh - 240px)", overflowY: "auto", paddingRight: 8 }}
+						>
 							<Typography.Text type="secondary">
 								Đề thi chưa đủ nội dung theo cấu trúc VSTEP. Vui lòng bổ sung các mục còn thiếu:
 							</Typography.Text>
@@ -83,9 +87,19 @@ export function VersionSelector({ examId, versions, selectedId }: Props) {
 				modal.error({
 					title: "Chưa thể kích hoạt phiên bản",
 					content: (
-						<ul style={{ margin: "8px 0", paddingLeft: 20 }}>
+						<ul
+							style={{
+								margin: "8px 0",
+								maxHeight: "calc(100vh - 240px)",
+								overflowY: "auto",
+								paddingLeft: 20,
+								paddingRight: 8,
+							}}
+						>
 							{e.errors.exam_version.map((msg, i) => (
-								<li key={i} style={{ marginBottom: 4 }}>{msg}</li>
+								<li key={i} style={{ marginBottom: 4 }}>
+									{msg}
+								</li>
 							))}
 						</ul>
 					),
