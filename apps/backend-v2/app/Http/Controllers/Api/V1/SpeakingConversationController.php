@@ -74,7 +74,7 @@ final class SpeakingConversationController extends Controller
             'session' => [
                 'user_turn_count' => $session->user_turn_count,
                 'expected_turns' => $session->scenario->expected_turns,
-                'should_end' => $session->user_turn_count >= $session->scenario->expected_turns,
+                'should_end' => false,
             ],
         ]]);
     }

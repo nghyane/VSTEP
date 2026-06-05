@@ -4,6 +4,7 @@ import type {
 	ExerciseFeedback,
 	ExerciseFeedbackPayload,
 	PracticeSession,
+	SpeechTranscription,
 	SubmitResult,
 	WritingRealtimeDiagnostics,
 	WritingSubmission,
@@ -88,6 +89,14 @@ export async function endConversation(sessionId: string) {
 			grammar_ok_pct: number
 		}>
 	>()
+}
+
+export async function transcribePracticeAudio(audio: Blob, language = "en-US") {
+	const body = new FormData()
+	body.append("audio", audio, `speech.${audio.type.includes("mp4") ? "m4a" : "webm"}`)
+	body.append("language", language)
+
+	return api.post("audio/transcribe", { body }).json<ApiResponse<SpeechTranscription>>()
 }
 
 export interface ConversationReview {

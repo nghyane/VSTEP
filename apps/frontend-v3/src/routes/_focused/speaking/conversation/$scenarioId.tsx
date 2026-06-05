@@ -38,7 +38,7 @@ function ConversationPage() {
 		const isServiceDown = status === 503
 
 		const message = isServiceDown
-			? "AI tạm thời không phản hồi. Vui lòng thử lại sau."
+			? "AI đang bận, bạn thử lại nhé."
 			: "Không thể bắt đầu cuộc hội thoại. Vui lòng thử lại."
 
 		return (

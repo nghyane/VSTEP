@@ -102,7 +102,7 @@ class ConversationPracticeTest extends TestCase
             ->assertStatus(409);
     }
 
-    public function test_start_session_resumes_recent_active_session(): void
+    public function test_start_session_ends_active_session_and_creates_new(): void
     {
         ['token' => $token] = $this->actingAsLearner();
         $scenario = $this->createScenario();
@@ -113,21 +113,22 @@ class ConversationPracticeTest extends TestCase
             ->assertStatus(201);
         $firstSessionId = $first->json('data.session_id');
 
-        // Second call within < 30 min → resumes same session.
+        // Second call always ends the active session and creates a new one.
         $second = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson('/api/v1/practice/speaking/conversations', ['scenario_id' => $scenario->id])
             ->assertStatus(201);
+        $secondSessionId = $second->json('data.session_id');
 
-        // Same session returned — not a new one.
-        $this->assertSame($firstSessionId, $second->json('data.session_id'));
-        $this->assertTrue($second->json('data.resumed'), 'Should flag resumed=true');
+        $this->assertNotEquals($firstSessionId, $secondSessionId);
+        $this->assertFalse($second->json('data.resumed'));
 
-        // Old session is still active (not ended).
+        // Old session is ended.
         $session = PracticeSpeakingConversationSession::find($firstSessionId);
-        $this->assertSame('active', $session->status->value);
+        $this->assertSame('ended', $session->status->value);
+        $this->assertNotNull($session->ended_at);
     }
 
-    public function test_stale_session_auto_ends_and_creates_new(): void
+    public function test_old_active_session_auto_ends_and_creates_new(): void
     {
         ['token' => $token] = $this->actingAsLearner();
         $scenario = $this->createScenario();
@@ -138,12 +139,12 @@ class ConversationPracticeTest extends TestCase
             ->assertStatus(201);
         $firstSessionId = $first->json('data.session_id');
 
-        // Simulate stale session by setting started_at to 31 min ago.
+        // Even a recent active session is ended when starting again.
         PracticeSpeakingConversationSession::query()
             ->whereKey($firstSessionId)
-            ->update(['started_at' => now()->subMinutes(31)]);
+            ->update(['started_at' => now()->subMinutes(5)]);
 
-        // Second call on stale session → auto-ends old, creates new.
+        // Second call on active session → auto-ends old, creates new.
         $second = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson('/api/v1/practice/speaking/conversations', ['scenario_id' => $scenario->id])
             ->assertStatus(201);

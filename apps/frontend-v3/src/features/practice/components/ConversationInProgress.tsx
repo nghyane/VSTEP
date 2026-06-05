@@ -11,17 +11,11 @@ import { ConversationSuggestions } from "#/features/practice/components/Conversa
 import { ConversationTurnView } from "#/features/practice/components/ConversationTurnView"
 import { invalidateProgressQueries } from "#/features/practice/invalidate-progress"
 import type { ConversationSessionDetail, ConversationTurn } from "#/features/practice/types"
+import { useSpeechTranscriber } from "#/features/practice/use-speech-transcriber"
 import { getAvatarUrl } from "#/lib/avatar"
 import { useToast } from "#/lib/toast"
 import { tokens } from "#/lib/tokens"
-import {
-	pickBoundaryEnglishVoice,
-	pickEnglishVoice,
-	speak,
-	speechRecognitionNetworkMessage,
-	stopSpeaking,
-	warmupTTS,
-} from "#/lib/utils"
+import { pickBoundaryEnglishVoice, pickEnglishVoice, speak, stopSpeaking, warmupTTS } from "#/lib/utils"
 
 interface Props {
 	session: ConversationSessionDetail
@@ -39,24 +33,23 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	const [sessionId] = useState(session.session_id)
 	const [turns, setTurns] = useState<ConversationTurn[]>(session.turns)
 	const [mic, setMic] = useState<MicState>("idle")
-	const [elapsed, setElapsed] = useState(0)
 	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickBoundaryEnglishVoice())
 	const aiName = scenario.character_name
 	const [sessionState, setSessionState] = useState<SessionState>("active")
 	const [showReview, setShowReview] = useState(false)
-	const [autoEndAfterSpeaking, setAutoEndAfterSpeaking] = useState(false)
 	const queryClient = useQueryClient()
 	const [emptyWarning, setEmptyWarning] = useState(false)
 	const [speakingTurnId, setSpeakingTurnId] = useState<string | null>(null)
 	const [speakingCharIndex, setSpeakingCharIndex] = useState(-1)
 	const feedbackCost = configData?.data.pricing.practice.feedback_cost_coins ?? 0
+	const {
+		elapsedSeconds: elapsed,
+		start: startSpeechTranscription,
+		stop: stopSpeechTranscription,
+		abort: abortSpeechTranscription,
+	} = useSpeechTranscriber(MAX_SECONDS)
 	const scrollRef = useRef<HTMLDivElement>(null)
-	const recognitionRef = useRef<{ stop: () => void } | null>(null)
-	const timerRef = useRef<number | null>(null)
-	const transcriptRef = useRef("")
 	const submittedRef = useRef(false)
-	const stoppedRef = useRef(false)
-	const autoRestartRef = useRef(0)
 	const endRequestedRef = useRef(false)
 
 	useEffect(() => {
@@ -106,7 +99,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 		}
 	})
 
-	const doSubmit = (text: string) => {
+	const doSubmit = (text: string, confidence = 0.9) => {
 		if (submittedRef.current) return
 		submittedRef.current = true
 		// Warm up TTS while waiting for API response
@@ -116,12 +109,13 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 			{ id: "pending-user", role: "user", text, ipa: null, feedback: null, suggested_words: [] },
 		])
 		setMic("thinking")
-		turnMutation.mutate({ text, confidence: 0.9 })
+		turnMutation.mutate({ text, confidence })
 	}
 
 	const handleEnd = () => {
 		if (endRequestedRef.current) return
 		endRequestedRef.current = true
+		abortSpeechTranscription()
 		stopSpeaking()
 		endConversation(sessionId).then(() => {
 			setSessionState("completed")
@@ -145,13 +139,11 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 		mutationFn: (args: { text: string; confidence: number }) =>
 			submitConversationTurn(sessionId, args.text, args.confidence),
 		onSuccess: (res) => {
-			const shouldEnd = res.data.session.should_end
 			setTurns((prev) => {
 				const withoutPending = prev.filter((t) => t.id !== "pending-user")
 				return [...withoutPending, res.data.user_turn, res.data.ai_turn]
 			})
 			setMic("speaking")
-			setAutoEndAfterSpeaking(shouldEnd)
 			const aiTurnId = res.data.ai_turn.id
 			setSpeakingTurnId(aiTurnId)
 			setSpeakingCharIndex(-1)
@@ -166,14 +158,10 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 							setMic("idle")
 							setSpeakingTurnId(null)
 							setSpeakingCharIndex(-1)
-							setAutoEndAfterSpeaking(false)
-							if (shouldEnd) handleEnd()
 						},
 					})
 				} else {
 					setMic("idle")
-					setAutoEndAfterSpeaking(false)
-					if (shouldEnd) handleEnd()
 				}
 			}, 500)
 		},
@@ -186,7 +174,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 				const msg = error.message
 
 				if (error.response.status === 503) {
-					useToast.getState().add(msg || "AI tạm thời không phản hồi. Vui lòng thử lại sau.")
+					useToast.getState().add("AI đang bận, bạn thử gửi lại nhé.")
 					return
 				}
 
@@ -204,146 +192,47 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 		},
 	})
 
-	const cleanup = () => {
-		if (timerRef.current) {
-			clearInterval(timerRef.current)
-			timerRef.current = null
-		}
-	}
-
 	const handleMic = () => {
 		if (mic === "speaking") {
 			stopSpeaking()
 			setMic("idle")
 			setSpeakingTurnId(null)
 			setSpeakingCharIndex(-1)
-			if (autoEndAfterSpeaking) {
-				setAutoEndAfterSpeaking(false)
-				handleEnd()
-			}
 			return
 		}
 		if (mic === "listening") {
-			stoppedRef.current = true
-			cleanup()
-			recognitionRef.current?.stop()
+			stopSpeechTranscription()
 			return
 		}
 		if (mic !== "idle") return
 
 		stopSpeaking()
 		setEmptyWarning(false)
-
-		const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-		if (!SR) {
-			useToast.getState().add("Trình duyệt này không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome.")
-			return
-		}
-
-		const recognition = new SR()
-		recognition.lang = "en-US"
-		recognition.continuous = true
-		recognition.interimResults = true
-		recognition.maxAlternatives = 1
-		recognitionRef.current = recognition
-		transcriptRef.current = ""
 		submittedRef.current = false
-		stoppedRef.current = false
-		autoRestartRef.current = 0
-		setElapsed(0)
 
-		recognition.onresult = (e: Event) => {
-			const evt = e as unknown as { results: ArrayLike<{ 0: { transcript: string } }> }
-			let full = ""
-			for (let i = 0; i < evt.results.length; i++) {
-				full += evt.results[i][0].transcript
-			}
-			transcriptRef.current = full
-		}
-
-		recognition.onerror = (e: Event) => {
-			const err = e as unknown as { error: string; message?: string }
-			if (
-				err.error === "not-allowed" ||
-				err.error === "service-not-allowed" ||
-				err.error === "audio-capture"
-			) {
-				stoppedRef.current = true
-				recognition.abort()
-				setMic("idle")
-				cleanup()
-				useToast.getState().add("Không thể truy cập microphone. Kiểm tra cài đặt trình duyệt.")
-				return
-			}
-			if (err.error === "network") {
-				stoppedRef.current = true
-				recognition.abort()
-				setMic("idle")
-				cleanup()
-				useToast.getState().add(speechRecognitionNetworkMessage(navigator.userAgent, navigator.onLine))
-				return
-			}
-			// "no-speech" / "aborted": recoverable, onend will auto-restart (capped)
-		}
-
-		recognition.onend = () => {
-			if (!stoppedRef.current && !submittedRef.current) {
-				// Auto-restart only if we have less than 3 consecutive restarts
-				// (browsers may auto-stop recognition on silence, especially Edge/Mac).
-				autoRestartRef.current += 1
-				if (autoRestartRef.current <= 3) {
-					try {
-						recognition.start()
-						return
-					} catch {
-						cleanup()
-						setMic("idle")
-						return
-					}
-				}
-			}
-			cleanup()
-			const text = transcriptRef.current.trim()
-			if (text && !submittedRef.current) {
+		void startSpeechTranscription({
+			language: "en-US",
+			onStart: () => setMic("listening"),
+			onResult: ({ transcript, confidence }) => {
 				setEmptyWarning(false)
-				doSubmit(text)
-			} else if (!submittedRef.current) {
+				doSubmit(transcript, confidence)
+			},
+			onEmpty: () => {
+				if (submittedRef.current) return
 				setMic("idle")
 				setEmptyWarning(true)
 				setTimeout(() => setEmptyWarning(false), 3000)
-			}
-		}
-
-		try {
-			recognition.start()
-			setMic("listening")
-			const startTime = Date.now()
-			timerRef.current = window.setInterval(() => {
-				const sec = Math.floor((Date.now() - startTime) / 1000)
-				setElapsed(sec)
-				if (sec >= MAX_SECONDS) {
-					stoppedRef.current = true
-					cleanup()
-					recognitionRef.current?.stop()
-					const text = transcriptRef.current.trim()
-					if (text && !submittedRef.current) {
-						doSubmit(text)
-					} else {
-						setMic("idle")
-					}
-				}
-			}, 200)
-		} catch {
-			setMic("idle")
-		}
+			},
+			onError: (message) => {
+				setMic("idle")
+				useToast.getState().add(message)
+			},
+		})
 	}
 
 	useEffect(() => {
-		return () => {
-			if (timerRef.current) clearInterval(timerRef.current)
-			recognitionRef.current?.stop()
-		}
-	}, [])
+		return () => abortSpeechTranscription()
+	}, [abortSpeechTranscription])
 
 	const [showConfirmExit, setShowConfirmExit] = useState(false)
 
@@ -358,6 +247,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	const confirmExit = () => {
 		if (endRequestedRef.current) return
 		endRequestedRef.current = true
+		abortSpeechTranscription()
 		stopSpeaking()
 		endConversation(sessionId).then(onEnd)
 	}

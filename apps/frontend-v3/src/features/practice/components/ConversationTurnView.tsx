@@ -183,7 +183,7 @@ export function ConversationTurnView({ turn, aiName, isSpeaking, highlightCharIn
 			</div>
 			{turn.feedback && (
 				<div className="w-full mt-2">
-					<ConversationFeedback feedback={turn.feedback} />
+					<ConversationFeedback feedback={turn.feedback} userText={displayText} />
 				</div>
 			)}
 		</div>
