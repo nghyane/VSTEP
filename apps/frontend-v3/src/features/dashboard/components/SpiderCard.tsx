@@ -42,8 +42,12 @@ export function SpiderCard() {
 	const { chart, targetBand, minTests, totalTests } = data
 	const values = skills.map((s) => chart?.[s.key] ?? 0)
 	const hasData = chart !== null && values.some((v) => v > 0)
+	const skillSampleSizes = chart?.skill_sample_sizes
+	const sampleRange = skillSampleSizes
+		? `${Math.min(...Object.values(skillSampleSizes))}-${Math.max(...Object.values(skillSampleSizes))}`
+		: chart?.sample_size
 	const subtitle = hasData
-		? `Trung bình từ ${chart.sample_size} bài thi gần nhất`
+		? `Trung bình gần đây · ${sampleRange} lượt theo từng kỹ năng`
 		: `Cần thêm ${Math.max(0, minTests - totalTests)} bài thi để hiện biểu đồ`
 
 	return (

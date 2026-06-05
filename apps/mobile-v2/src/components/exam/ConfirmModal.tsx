@@ -82,7 +82,7 @@ export function ResultScreen({
         <View style={[s.resultBar, { backgroundColor: c.muted }]}>
           <View style={[s.resultFill, { backgroundColor: c.primary, width: `${pct}%` }]} />
         </View>
-        <Text style={[s.resultAiNote, { color: c.subtle }]}>Writing và Speaking đang được AI chấm điểm</Text>
+        <Text style={[s.resultAiNote, { color: c.subtle }]}>Writing và Speaking đang được hệ thống chấm điểm</Text>
       </View>
       <DepthButton fullWidth onPress={onGoToResult} style={{ marginTop: spacing.xl }}>Xem chi tiết kết quả</DepthButton>
       <DepthButton variant="secondary" fullWidth onPress={onGoToExams} style={{ marginTop: spacing.sm }}>Về danh sách đề thi</DepthButton>

@@ -2,32 +2,20 @@ import { useQuery } from "@tanstack/react-query"
 import { SkillChip } from "#/components/SkillChip"
 import { OnboardingRow } from "#/features/dashboard/components/OnboardingRow"
 import { overviewQuery } from "#/features/dashboard/queries"
-import type { ScoreSpider, ScoreTimelinePoint } from "#/features/dashboard/types"
+import type { ScoreSpider } from "#/features/dashboard/types"
 import { type Skill, skills } from "#/lib/skills"
 import { round } from "#/lib/utils"
 import { getTargetBand } from "#/lib/vstep"
 
 interface SkillStat {
 	current: number | null
-	delta: number | null
 }
 
-function computeSkillStats(
-	timeline: ScoreTimelinePoint[],
-	spider: ScoreSpider | null,
-): Record<string, SkillStat> {
+function computeSkillStats(spider: ScoreSpider | null): Record<string, SkillStat> {
 	const result: Record<string, SkillStat> = {}
 	for (const s of skills) {
-		const history = timeline
-			.slice()
-			.reverse()
-			.map((point) => point[s.key])
-			.filter((v): v is number => v !== null && v !== undefined)
-		const current = history[0] ?? spider?.[s.key] ?? null
-		const prev = history[1] ?? null
 		result[s.key] = {
-			current,
-			delta: current !== null && prev !== null ? round(current - prev) : null,
+			current: spider?.[s.key] ?? null,
 		}
 	}
 	return result
@@ -40,20 +28,13 @@ function gapLabel(current: number | null, targetBand: number): { text: string; t
 	return { text: `Cần thêm ${Math.abs(gap).toFixed(1)} band`, tone: "text-warning" }
 }
 
-function deltaBadge(delta: number | null) {
-	if (delta === null || delta === 0) return null
-	if (delta > 0) return { text: `▲ +${delta.toFixed(1)} vs bài trước` }
-	return { text: `▼ ${Math.abs(delta).toFixed(1)} vs bài trước` }
-}
-
 function SkillCard({ skill, stat, targetBand }: { skill: Skill; stat: SkillStat; targetBand: number }) {
 	const gap = gapLabel(stat.current, targetBand)
-	const badge = deltaBadge(stat.delta)
 	return (
 		<div className="card p-4 flex flex-col gap-2">
 			<div className="flex items-center justify-between gap-2">
 				<SkillChip skill={skill.key} size="md" />
-				{badge && <span className="text-[11px] font-bold text-subtle">{badge.text}</span>}
+				<span className="text-[11px] font-bold text-subtle">Trung bình gần đây</span>
 			</div>
 			<p className="font-extrabold text-2xl text-foreground">
 				{stat.current !== null ? stat.current.toFixed(1) : "—"}
@@ -74,7 +55,7 @@ export function StatsRow() {
 	if (stats.total_tests === 0) return <OnboardingRow />
 
 	const targetBand = getTargetBand(profile.target_level)
-	const skillStats = computeSkillStats(scores.timeline, scores.spider)
+	const skillStats = computeSkillStats(scores.spider)
 
 	return (
 		<section className="grid grid-cols-2 lg:grid-cols-4 gap-4">

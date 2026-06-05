@@ -119,7 +119,6 @@ export function ScoreTrend() {
       <Pressable style={styles.chartTapArea} onPress={() => setZoomOpen(true)}>
         <ScoreTrendChart
           tests={tests}
-          targetLevel={targetLevel}
           targetBand={targetBand}
           activeIdx={activeIdx}
           onSelect={(index) => setActiveIdx(activeIdx === index ? null : index)}
@@ -144,7 +143,6 @@ export function ScoreTrend() {
       <ScoreTrendZoomModal
         visible={zoomOpen}
         tests={tests}
-        targetLevel={targetLevel}
         targetBand={targetBand}
         activeIdx={activeIdx}
         onSelect={(index) => setActiveIdx(activeIdx === index ? null : index)}
@@ -178,7 +176,6 @@ function ScoreLegend({ colors }: { colors: ThemeColors }) {
 
 function ScoreTrendChart({
   tests,
-  targetLevel,
   targetBand,
   activeIdx,
   onSelect,
@@ -187,7 +184,6 @@ function ScoreTrendChart({
   height,
 }: {
   tests: ScoredSession[];
-  targetLevel: string;
   targetBand: number;
   activeIdx: number | null;
   onSelect: (index: number) => void;
@@ -270,10 +266,6 @@ function ScoreTrendChart({
         strokeWidth={1.6}
         strokeDasharray="6 6"
       />
-      <SvgText x={RIGHT} y={bandToY(targetBand) - 6} textAnchor="end" fontSize="10" fontWeight="800" fill={colors.destructive}>
-        {targetLevel} = {targetBand}
-      </SvgText>
-
       <Polyline
         points={avgPoints}
         fill="none"
@@ -286,12 +278,15 @@ function ScoreTrendChart({
         const avg = computeAvg(test.scores);
         const x = centers[index];
         const y = bandToY(avg);
+        const isActive = activeIdx === index;
         return (
           <G key={`avg-${test.id}`}>
             <Circle cx={x} cy={y} r={5} fill={colors.card} stroke={colors.primaryDark} strokeWidth={3} />
-            <SvgText x={x} y={y + 20} textAnchor="middle" fontSize="11" fontWeight="800" fill={colors.mutedForeground}>
-              {avg.toFixed(1)}
-            </SvgText>
+            {isActive ? (
+              <SvgText x={x} y={y + 20} textAnchor="middle" fontSize="11" fontWeight="800" fill={colors.mutedForeground}>
+                {avg.toFixed(1)}
+              </SvgText>
+            ) : null}
           </G>
         );
       })}
@@ -302,7 +297,6 @@ function ScoreTrendChart({
 function ScoreTrendZoomModal({
   visible,
   tests,
-  targetLevel,
   targetBand,
   activeIdx,
   onSelect,
@@ -311,7 +305,6 @@ function ScoreTrendZoomModal({
 }: {
   visible: boolean;
   tests: ScoredSession[];
-  targetLevel: string;
   targetBand: number;
   activeIdx: number | null;
   onSelect: (index: number) => void;
@@ -342,7 +335,6 @@ function ScoreTrendZoomModal({
             <View style={styles.zoomChartCanvas}>
               <ScoreTrendChart
                 tests={tests}
-                targetLevel={targetLevel}
                 targetBand={targetBand}
                 activeIdx={activeIdx}
                 onSelect={onSelect}
