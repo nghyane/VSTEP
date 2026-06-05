@@ -1,12 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query"
 import { useEffect, useRef, useState } from "react"
 import { EnrollFailurePopup } from "#/features/course/components/EnrollFailurePopup"
-import { EnrollSuccessPopup } from "#/features/course/components/EnrollSuccessPopup"
 import { clearPendingEnrollmentOrder, readPendingEnrollmentOrder } from "#/features/course/enroll-pending"
 import { courseDetailQuery } from "#/features/course/queries"
 import { TOPUP_RETURN_SIGNAL_KEY } from "#/features/wallet/topup-pending"
 
-type EnrollResult = { kind: "success"; courseTitle: string; bonusCoins: number } | { kind: "failure" }
 type PaymentReturnSignal = { status: string | null; at: number }
 
 /**
@@ -17,7 +15,7 @@ type PaymentReturnSignal = { status: string | null; at: number }
  */
 export function EnrollReturnWatcher() {
 	const queryClient = useQueryClient()
-	const [result, setResult] = useState<EnrollResult | null>(null)
+	const [failureOpen, setFailureOpen] = useState(false)
 	const checkingRef = useRef(false)
 	const retryTimerRef = useRef<number | null>(null)
 
@@ -28,14 +26,9 @@ export function EnrollReturnWatcher() {
 			retryTimerRef.current = null
 		}
 
-		function showSuccess(pending: NonNullable<ReturnType<typeof readPendingEnrollmentOrder>>) {
+		function clearPaidEnrollment(pending: NonNullable<ReturnType<typeof readPendingEnrollmentOrder>>) {
 			clearRetryTimer()
 			clearPendingEnrollmentOrder(pending.orderId)
-			setResult({
-				kind: "success",
-				courseTitle: pending.courseTitle,
-				bonusCoins: pending.bonusCoins,
-			})
 			void queryClient.invalidateQueries({ queryKey: ["courses"] })
 			void queryClient.invalidateQueries({ queryKey: ["courses", pending.courseId] })
 		}
@@ -84,14 +77,14 @@ export function EnrollReturnWatcher() {
 			checkingRef.current = true
 			try {
 				if (await isCourseEnrolled(pending.courseId)) {
-					showSuccess(pending)
+					clearPaidEnrollment(pending)
 					return
 				}
 
 				if (status && ["FAILED", "CANCELLED", "EXPIRED"].includes(status)) {
 					clearRetryTimer()
 					clearPendingEnrollmentOrder(pending.orderId)
-					setResult({ kind: "failure" })
+					setFailureOpen(true)
 					return
 				}
 
@@ -124,18 +117,5 @@ export function EnrollReturnWatcher() {
 		}
 	}, [queryClient])
 
-	if (result === null) return null
-
-	if (result.kind === "success") {
-		return (
-			<EnrollSuccessPopup
-				open
-				courseTitle={result.courseTitle}
-				bonusCoins={result.bonusCoins}
-				onClose={() => setResult(null)}
-			/>
-		)
-	}
-
-	return <EnrollFailurePopup open onClose={() => setResult(null)} />
+	return <EnrollFailurePopup open={failureOpen} onClose={() => setFailureOpen(false)} />
 }
