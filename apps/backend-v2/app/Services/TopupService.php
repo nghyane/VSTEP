@@ -11,6 +11,7 @@ use App\Enums\OrderStatus;
 use App\Enums\PaymentProvider;
 use App\Jobs\SendPaymentInvoiceEmail;
 use App\Models\Profile;
+use App\Models\User;
 use App\Models\WalletTopupOrder;
 use App\Models\WalletTopupPackage;
 use App\Services\Payment\OrderNotFoundAfterValidation;
@@ -193,7 +194,7 @@ final class TopupService
         });
     }
 
-    public function cancelFromPaymentReturn(Profile $profile, string $paymentLinkId): WalletTopupOrder
+    public function cancelFromPaymentReturn(User $account, string $paymentLinkId): WalletTopupOrder
     {
         $gateway = $this->gateways->get(PaymentProvider::PayOs);
         if (! $gateway instanceof PayOsGateway) {
@@ -202,7 +203,7 @@ final class TopupService
 
         $status = $gateway->getPaymentLinkStatus($paymentLinkId);
 
-        return DB::transaction(function () use ($profile, $paymentLinkId, $status): WalletTopupOrder {
+        return DB::transaction(function () use ($account, $paymentLinkId, $status): WalletTopupOrder {
             $order = WalletTopupOrder::query()
                 ->where(function ($query) use ($paymentLinkId, $status): void {
                     $query->where('gateway_transaction_id', $paymentLinkId)
@@ -219,8 +220,8 @@ final class TopupService
                 throw ValidationException::withMessages(['order' => ['Không tìm thấy đơn thanh toán.']]);
             }
 
-            if ($order->profile_id !== $profile->id) {
-                throw ValidationException::withMessages(['order' => ['Đơn hàng không thuộc hồ sơ hiện tại.']]);
+            if ($order->account_id !== $account->id) {
+                throw ValidationException::withMessages(['order' => ['Đơn hàng không thuộc tài khoản hiện tại.']]);
             }
 
             if (strtoupper($status['status']) === 'CANCELLED' && $order->status === OrderStatus::Pending) {

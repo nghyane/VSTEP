@@ -110,6 +110,45 @@ class TopupFlowTest extends TestCase
         ]);
     }
 
+    public function test_verified_cancel_return_allows_same_account_after_profile_switch(): void
+    {
+        Http::fake(function (Request $request) {
+            if ($request->method() === 'POST') {
+                return Http::response([
+                    'data' => [
+                        'checkoutUrl' => 'https://pay.payos.test/checkout',
+                        'paymentLinkId' => 'payos_link_test',
+                    ],
+                ]);
+            }
+
+            return Http::response([
+                'data' => [
+                    'id' => 'payos_link_test',
+                    'orderCode' => WalletTopupOrder::query()->firstOrFail()->order_code,
+                    'status' => 'CANCELLED',
+                ],
+            ]);
+        });
+
+        $user = User::factory()->create();
+        $profileA = Profile::factory()->initial()->forAccount($user)->create();
+        $profileB = Profile::factory()->forAccount($user)->create();
+        $user->update(['active_profile_id' => $profileA->id]);
+        $package = WalletTopupPackage::factory()->create();
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->postJson('/api/v1/wallet/topup', $this->topupPayload($package->id))
+            ->assertCreated();
+
+        $user->update(['active_profile_id' => $profileB->id]);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->postJson('/api/v1/wallet/topup/payment-return', ['id' => 'payos_link_test'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled');
+    }
+
     public function test_payment_return_does_not_cancel_when_payos_is_still_pending(): void
     {
         Http::fake(function (Request $request) {

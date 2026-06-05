@@ -21,6 +21,7 @@ const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/wallet";
 interface PendingTopupOrder {
   id: string;
   coins: number;
+  orderCode?: number | null;
   providerRef?: string | null;
 }
 
@@ -65,8 +66,11 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
     setChecking(true);
     try {
       let order = await api.get<TopupOrder>(`/api/v1/wallet/topup/${orderToCheck.id}/status`);
-      if (order.status === "pending" && orderToCheck.providerRef) {
-        order = await reportTopupPaymentReturn(orderToCheck.providerRef).catch(() => order);
+      if (order.status === "pending") {
+        for (const paymentReturnId of getPaymentReturnIds(orderToCheck, order)) {
+          order = await reportTopupPaymentReturn(paymentReturnId).catch(() => order);
+          if (order.status !== "pending") break;
+        }
       }
       if (order.status === "paid") {
         const balance = await api.get<WalletBalance>("/api/v1/wallet/balance");
@@ -144,6 +148,7 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
       const nextPendingOrder = {
         id: order.id,
         coins: order.coinsToCredit || selected.totalCoins,
+        orderCode: order.orderCode,
         providerRef: order.providerRef,
       };
       await savePendingTopupOrder(nextPendingOrder);
@@ -230,6 +235,13 @@ function createTopupReturnUrl(): string {
 
 function reportTopupPaymentReturn(paymentLinkId: string): Promise<TopupOrder> {
   return api.post<TopupOrder>("/api/v1/wallet/topup/payment-return", { id: paymentLinkId });
+}
+
+function getPaymentReturnIds(pendingOrder: PendingTopupOrder, order: TopupOrder): string[] {
+  const ids = [order.orderCode, pendingOrder.orderCode, order.providerRef, pendingOrder.providerRef]
+    .filter((id): id is number | string => typeof id === "number" || (typeof id === "string" && id.length > 0))
+    .map(String);
+  return [...new Set(ids)];
 }
 
 function isPendingTopupOrder(value: unknown): value is PendingTopupOrder {
