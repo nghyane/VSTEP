@@ -80,7 +80,7 @@ Slide này chỉ liệt kê công nghệ theo vai trò.
 
 Backend dùng Laravel/PHP. Database dùng PostgreSQL. Queue dùng Redis/Horizon. Web và admin dùng React. Mobile dùng Expo/React Native. Storage dùng S3-compatible/R2. Triển khai dùng Docker và GitHub Actions.
 
-Riêng phần Speaking có Web Speech API hoặc Azure Speech để hỗ trợ transcript và tín hiệu phát âm. Các công nghệ này hỗ trợ lấy tín hiệu, không chấm điểm thay backend.
+Riêng phần Speaking có Web Speech API hoặc Azure Speech để hỗ trợ transcript và tín hiệu phát âm. Các công nghệ này đóng vai trò lấy tín hiệu đầu vào cho hệ thống.
 
 ## Slide 13 — Writing/Speaking Assessment Formula
 

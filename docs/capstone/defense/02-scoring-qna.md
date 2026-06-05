@@ -147,7 +147,7 @@ Probe cho thấy tín hiệu ngữ pháp/từ vựng hoạt động đủ ổn c
 
 ### Q1. AI có chấm điểm cuối không?
 
-Không. AI/công cụ ngoài chỉ lấy tín hiệu hoặc tạo feedback. Điểm luyện tập do backend tính từ tiêu chí, tín hiệu và công thức trong hệ thống.
+Không. AI/công cụ ngoài chỉ lấy tín hiệu hoặc tạo feedback. Điểm Writing/Speaking trong practice/mock test do backend tính từ chỉ số đầu vào và công thức trong hệ thống.
 
 ### Q2. 20%/25% có phải thuật toán không?
 
@@ -155,7 +155,7 @@ Không. Đó là trọng số tổng hợp cuối. Bên trong mỗi tiêu chí c
 
 ### Q2b. Grammar/Vocabulary đã ổn chưa?
 
-Đủ ổn cho luyện tập: probe pass. Nhưng chưa phải official scoring vì grammar/vocab vẫn phụ thuộc tín hiệu trích xuất và cần dữ liệu giám khảo chính thức để calibrate lớn hơn.
+Đủ ổn cho luyện tập: probe pass. Nhưng chưa phải điểm chính thức vì grammar/vocab vẫn phụ thuộc tín hiệu trích xuất và cần dữ liệu giám khảo chính thức để calibrate lớn hơn.
 
 ### Q2c. Vì sao điểm có thể lệch?
 
@@ -179,8 +179,8 @@ Không. Điểm Writing/Speaking là điểm tham khảo cho luyện tập/thi t
 
 ## Code evidence nếu bị hỏi
 
-- `WritingScoringFormula.php`
-- `SpeakingScoringFormula.php`
-- `WritingAssessmentStrategy.php`
-- `SpeakingAssessmentStrategy.php`
-- `ExamScoringService.php`
+- `WritingScoringFormula.php` — định nghĩa công thức tính điểm Writing từ các chỉ số đầu vào.
+- `SpeakingScoringFormula.php` — định nghĩa công thức tính điểm Speaking từ transcript và audio metrics.
+- `WritingAssessmentStrategy.php` — quy trình đánh giá Writing: lấy evidence → scoring → feedback.
+- `SpeakingAssessmentStrategy.php` — quy trình đánh giá Speaking: transcript + audio → scoring → feedback.
+- `ExamScoringService.php` — tổng hợp điểm 4 kỹ năng (Listening, Reading, Writing, Speaking) cho mock test.
