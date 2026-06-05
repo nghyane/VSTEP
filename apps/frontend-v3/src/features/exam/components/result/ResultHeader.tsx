@@ -8,14 +8,15 @@ export function ResultHeader({ result }: { readonly result: SessionResultsData }
 	const tone = statusTone(result.summary.score_status)
 
 	return (
-		<header className="shrink-0 border-b border-border bg-surface/95 px-3 py-2.5 sm:px-5">
+		<header className="shrink-0 border-b border-border bg-surface/95 px-3 py-3 sm:px-5">
 			<div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
-				<div className="flex min-w-0 flex-1 items-center gap-2.5">
+				<div className="flex min-w-0 flex-1 items-center gap-3">
 					<BackLink result={result} />
 					<div className="min-w-0">
-						<p className="truncate text-sm font-extrabold text-foreground sm:text-base">
+						<p className="text-[11px] font-black uppercase tracking-[0.18em] text-muted">Kết quả thi thử</p>
+						<h1 className="mt-0.5 truncate text-base font-black text-foreground sm:text-lg">
 							{result.exam?.title ?? "Đề thi thử không xác định"}
-						</p>
+						</h1>
 						<p className="text-xs font-bold text-muted">{modeLabel(result)}</p>
 					</div>
 				</div>

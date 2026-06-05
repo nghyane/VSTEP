@@ -53,7 +53,7 @@ export function WritingReviewPanel({ result }: { readonly result: SessionResults
 			onSelect={setActiveId}
 			tone="writing"
 		>
-			<ScrollArea className="min-h-0">
+			<ScrollArea className="h-full min-h-0">
 				<WritingDetail task={active} feedback={feedback} />
 			</ScrollArea>
 		</ProductiveLayout>

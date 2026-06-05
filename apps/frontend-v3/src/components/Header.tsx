@@ -7,8 +7,15 @@ import { StreakIcon } from "#/components/StreakIcon"
 import { streakQuery } from "#/features/dashboard/queries"
 import { StreakDialog } from "#/features/dashboard/StreakDialog"
 import { unreadCountQuery } from "#/features/notifications/queries"
+import { getOrderStatus } from "#/features/wallet/actions"
+import { PromoRedeemSuccessPopup } from "#/features/wallet/PromoRedeemSuccessPopup"
 import { walletBalanceQuery } from "#/features/wallet/queries"
 import { TopUpDialog } from "#/features/wallet/TopUpDialog"
+import {
+	clearPendingTopupOrder,
+	readPendingTopupOrder,
+	TOPUP_RETURN_SIGNAL_KEY,
+} from "#/features/wallet/topup-pending"
 import { useSession } from "#/lib/auth"
 import { useCoinGain } from "#/lib/coin-gain"
 import { cn, formatNumber } from "#/lib/utils"
@@ -34,6 +41,8 @@ export function Header({ title, backTo }: Props) {
 	const previousUnreadRef = useRef<number | null>(null)
 	const initial = profile.nickname.charAt(0).toUpperCase()
 	const [topupOpen, setTopupOpen] = useState(false)
+	const [topupSuccess, setTopupSuccess] = useState<{ coins: number; balance: number } | null>(null)
+	const checkingTopupRef = useRef(false)
 	const [streakOpen, setStreakOpen] = useState(false)
 
 	const pulse = useCoinGain((s) => s.pulse)
@@ -124,6 +133,61 @@ export function Header({ title, backTo }: Props) {
 		setCoinClickKey((k) => k + 1)
 		setTopupOpen(true)
 	}
+	function handleTopupSuccessClose() {
+		const coins = topupSuccess?.coins ?? 0
+		setTopupSuccess(null)
+		if (coins > 0) {
+			setTimeout(() => useCoinGain.getState().trigger(coins), 220)
+		}
+	}
+	useEffect(() => {
+		async function checkPendingTopup() {
+			if (checkingTopupRef.current) return
+			const pending = readPendingTopupOrder()
+			if (!pending) return
+
+			checkingTopupRef.current = true
+			try {
+				const order = await getOrderStatus(pending.orderId)
+				if (order.status === "paid") {
+					clearPendingTopupOrder(pending.orderId)
+					const wallet = await queryClient.fetchQuery(walletBalanceQuery)
+					setTopupSuccess({
+						coins: order.coins_to_credit || pending.coins,
+						balance: wallet.data.balance,
+					})
+					void queryClient.invalidateQueries({ queryKey: walletBalanceQuery.queryKey })
+					return
+				}
+
+				if (["failed", "cancelled", "expired"].includes(order.status)) {
+					clearPendingTopupOrder(pending.orderId)
+				}
+			} catch {
+				// Keep the pending order so the next focus/return signal can retry.
+			} finally {
+				checkingTopupRef.current = false
+			}
+		}
+
+		const onFocus = () => void checkPendingTopup()
+		const onVisibilityChange = () => {
+			if (document.visibilityState === "visible") void checkPendingTopup()
+		}
+		const onStorage = (event: StorageEvent) => {
+			if (event.key === TOPUP_RETURN_SIGNAL_KEY) void checkPendingTopup()
+		}
+
+		void checkPendingTopup()
+		window.addEventListener("focus", onFocus)
+		document.addEventListener("visibilitychange", onVisibilityChange)
+		window.addEventListener("storage", onStorage)
+		return () => {
+			window.removeEventListener("focus", onFocus)
+			document.removeEventListener("visibilitychange", onVisibilityChange)
+			window.removeEventListener("storage", onStorage)
+		}
+	}, [queryClient])
 	useEffect(() => {
 		if (coinClickKey === 0) return
 		const t = setTimeout(() => setCoinClickKey(0), 1000)
@@ -227,6 +291,13 @@ export function Header({ title, backTo }: Props) {
 				<ProfileDropdown unread={unread} initial={initial} />
 			</div>
 			<TopUpDialog open={topupOpen} onClose={() => setTopupOpen(false)} />
+			<PromoRedeemSuccessPopup
+				open={topupSuccess !== null}
+				coinsAdded={topupSuccess?.coins ?? 0}
+				newBalance={topupSuccess?.balance ?? 0}
+				eyebrow="Nạp xu thành công"
+				onClose={handleTopupSuccessClose}
+			/>
 			{streakReward && <StreakRewardFly key={streakReward.key} reward={streakReward} />}
 			{streakInfo && (
 				<StreakDialog open={streakOpen} onClose={() => setStreakOpen(false)} streak={streakInfo} />

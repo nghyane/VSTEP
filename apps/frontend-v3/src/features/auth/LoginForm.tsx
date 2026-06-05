@@ -1,16 +1,45 @@
 import { useForm } from "@tanstack/react-form"
 import { Link, useNavigate } from "@tanstack/react-router"
+import { HTTPError } from "ky"
 import { useState } from "react"
+import { resendEmailVerification } from "#/features/auth/actions"
 import { GoogleButton } from "#/features/auth/GoogleButton"
 import { PasswordInput } from "#/features/auth/PasswordInput"
 import { inputClass } from "#/features/auth/styles"
 import { useAuth } from "#/lib/auth"
+
+function authErrorMessage(error: unknown, fallback: string) {
+	if (error instanceof HTTPError) {
+		const body = error.data as { message?: string; errors?: { email?: string[] } } | undefined
+		return body?.errors?.email?.[0] ?? body?.message ?? fallback
+	}
+	return fallback
+}
 
 export function LoginForm({ verified = false }: { verified?: boolean } = {}) {
 	const login = useAuth((s) => s.login)
 	const loginWithGoogle = useAuth((s) => s.loginWithGoogle)
 	const navigate = useNavigate()
 	const [googleLoading, setGoogleLoading] = useState(false)
+	const [verificationEmail, setVerificationEmail] = useState<string | null>(null)
+	const [resendingVerification, setResendingVerification] = useState(false)
+	const [resendMessage, setResendMessage] = useState<string | null>(null)
+	const [resendError, setResendError] = useState<string | null>(null)
+
+	async function handleResendVerification() {
+		if (!verificationEmail) return
+		setResendingVerification(true)
+		setResendMessage(null)
+		setResendError(null)
+		try {
+			await resendEmailVerification(verificationEmail)
+			setResendMessage("Đã gửi lại email xác thực. Vui lòng kiểm tra hộp thư.")
+		} catch (error) {
+			setResendError(authErrorMessage(error, "Không gửi lại được email xác thực."))
+		} finally {
+			setResendingVerification(false)
+		}
+	}
 
 	async function handleGoogleToken(idToken: string) {
 		setGoogleLoading(true)
@@ -27,7 +56,14 @@ export function LoginForm({ verified = false }: { verified?: boolean } = {}) {
 	const form = useForm({
 		defaultValues: { email: "", password: "" },
 		onSubmit: async ({ value }) => {
+			setVerificationEmail(null)
+			setResendMessage(null)
+			setResendError(null)
 			const result = await login(value.email, value.password)
+			if (result?.emailVerificationRequired) {
+				setVerificationEmail(result.email ?? value.email)
+				return
+			}
 			if (result?.needsOnboarding) {
 				void navigate({ to: "/", search: { auth: "register", onboarding: true } })
 			}
@@ -56,6 +92,24 @@ export function LoginForm({ verified = false }: { verified?: boolean } = {}) {
 				<div className="flex-1 h-px bg-border" />
 			</div>
 
+			{verificationEmail && (
+				<div className="mb-4 rounded-(--radius-card) border-2 border-warning/30 bg-warning/10 p-4 text-center">
+					<p className="text-sm font-bold text-warning">
+						Email này đã đăng ký nhưng chưa xác thực. Vui lòng mở link trong email hoặc gửi lại link mới.
+					</p>
+					{resendMessage && <p className="mt-2 text-sm font-bold text-success">{resendMessage}</p>}
+					{resendError && <p className="mt-2 text-sm font-bold text-destructive">{resendError}</p>}
+					<button
+						type="button"
+						disabled={resendingVerification}
+						onClick={handleResendVerification}
+						className="btn btn-secondary mt-3 h-11 w-full text-sm disabled:opacity-50"
+					>
+						{resendingVerification ? "Đang gửi..." : "Gửi lại email xác thực"}
+					</button>
+				</div>
+			)}
+
 			<form
 				onSubmit={(e) => {
 					e.preventDefault()
@@ -76,7 +130,10 @@ export function LoginForm({ verified = false }: { verified?: boolean } = {}) {
 								required
 								autoComplete="email"
 								value={field.state.value}
-								onChange={(e) => field.handleChange(e.target.value)}
+								onChange={(e) => {
+									field.handleChange(e.target.value)
+									setVerificationEmail(null)
+								}}
 								className={inputClass}
 							/>
 						)}

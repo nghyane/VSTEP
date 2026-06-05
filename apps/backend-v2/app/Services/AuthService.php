@@ -94,7 +94,7 @@ final class AuthService
         ];
     }
 
-    public function sendPasswordResetLink(string $email): void
+    public function sendPasswordResetLink(string $email): bool
     {
         $user = User::query()->where('email', $email)->first();
         if ($user !== null && $user->password === null) {
@@ -105,8 +105,12 @@ final class AuthService
 
         $status = Password::sendResetLink(['email' => $email]);
 
-        if ($status === Password::RESET_LINK_SENT || $status === Password::INVALID_USER) {
-            return;
+        if ($status === Password::RESET_LINK_SENT) {
+            return true;
+        }
+
+        if ($status === Password::INVALID_USER) {
+            return false;
         }
 
         if ($status === Password::RESET_THROTTLED) {

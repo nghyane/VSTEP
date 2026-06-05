@@ -97,9 +97,9 @@ final class AuthController extends Controller
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
-        $this->authService->sendPasswordResetLink($request->validated('email'));
+        $sent = $this->authService->sendPasswordResetLink($request->validated('email'));
 
-        return response()->json(['data' => ['success' => true]]);
+        return response()->json(['data' => ['success' => $sent]]);
     }
 
     public function resetPassword(ResetPasswordRequest $request): JsonResponse

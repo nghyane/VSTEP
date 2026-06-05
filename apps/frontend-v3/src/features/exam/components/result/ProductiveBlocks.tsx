@@ -37,20 +37,29 @@ export function ProductiveLayout({
 	readonly children: ReactNode
 }) {
 	return (
-		<div className="grid h-full min-h-0 bg-surface lg:grid-cols-[230px_minmax(0,1fr)]">
-			<aside className="border-b border-border bg-background/60 p-3 lg:border-r lg:border-b-0">
-				<p className="px-1 text-xs font-extrabold text-muted">{title}</p>
-				<div className="mt-2 flex gap-2 overflow-x-auto pb-1 scrollbar-none lg:block lg:space-y-2 lg:overflow-visible lg:pb-0">
+		<div className="flex h-full min-h-0 flex-col bg-surface">
+			<header className="shrink-0 border-b border-border bg-background/60 p-3">
+				<div className="flex flex-wrap items-center justify-between gap-3 px-1">
+					<div>
+						<p className="text-xs font-black uppercase tracking-[0.16em] text-muted">Chi tiết</p>
+						<p className="mt-1 text-base font-extrabold text-foreground">{title}</p>
+					</div>
+					<p className="rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-black text-muted">
+						{items.length} phần
+					</p>
+				</div>
+
+				<div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
 					{items.map((item) => (
 						<button
 							key={item.id}
 							type="button"
 							onClick={() => onSelect(item.id)}
 							className={cn(
-								"flex min-w-[9rem] items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left transition-colors lg:w-full",
+								"flex min-w-[10rem] items-center justify-between gap-2 rounded-xl border px-3 py-2 text-left transition-colors",
 								item.id === activeId
 									? "border-primary bg-surface text-foreground shadow-sm"
-									: "border-border bg-surface/70 text-muted hover:text-foreground",
+									: "border-border bg-surface/70 text-muted hover:border-primary/45 hover:text-foreground",
 							)}
 						>
 							<span className="truncate text-sm font-extrabold">{item.label}</span>
@@ -60,8 +69,8 @@ export function ProductiveLayout({
 						</button>
 					))}
 				</div>
-			</aside>
-			{children}
+			</header>
+			<div className="min-h-0 flex-1">{children}</div>
 		</div>
 	)
 }

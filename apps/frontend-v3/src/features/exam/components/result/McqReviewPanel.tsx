@@ -51,44 +51,46 @@ export function McqReviewPanel({ groups }: Props) {
 					</p>
 				</div>
 
-				<div className="mt-3 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-					{groups.map((group) => (
-						<button
-							type="button"
-							key={group.id}
-							onClick={() => {
-								setActiveId(group.id)
-								setFilter("all")
-							}}
-							className={cn(
-								"shrink-0 rounded-lg border px-3 py-1.5 text-xs font-extrabold transition-all",
-								activeGroup.id === group.id
-									? "border-primary bg-primary-tint text-primary-dark shadow-sm"
-									: "border-border bg-background text-muted hover:text-foreground",
-							)}
-						>
-							{group.label}
-							<span className="ml-1.5 opacity-80">
-								({group.correct}/{group.total})
-							</span>
-						</button>
-					))}
-				</div>
+				<div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+					<div className="flex min-w-0 gap-2 overflow-x-auto pb-1 scrollbar-none">
+						{groups.map((group) => (
+							<button
+								type="button"
+								key={group.id}
+								onClick={() => {
+									setActiveId(group.id)
+									setFilter("all")
+								}}
+								className={cn(
+									"shrink-0 rounded-lg border px-3 py-1.5 text-xs font-extrabold transition-all",
+									activeGroup.id === group.id
+										? "border-primary bg-primary-tint text-primary-dark shadow-sm"
+										: "border-border bg-background text-muted hover:text-foreground",
+								)}
+							>
+								{group.label}
+								<span className="ml-1.5 opacity-80">
+									({group.correct}/{group.total})
+								</span>
+							</button>
+						))}
+					</div>
 
-				<div className="mt-2 flex flex-wrap gap-1.5">
-					{FILTERS.map((item) => {
-						const count =
-							item.id === "all" ? activeGroup.total : item.id === "wrong" ? wrongCount : unansweredCount
-						return (
-							<FilterChip
-								key={item.id}
-								label={item.label}
-								count={count}
-								active={filter === item.id}
-								onClick={() => setFilter(item.id)}
-							/>
-						)
-					})}
+					<div className="flex shrink-0 flex-wrap justify-end gap-2 pb-1">
+						{FILTERS.map((item) => {
+							const count =
+								item.id === "all" ? activeGroup.total : item.id === "wrong" ? wrongCount : unansweredCount
+							return (
+								<FilterChip
+									key={item.id}
+									label={item.label}
+									count={count}
+									active={filter === item.id}
+									onClick={() => setFilter(item.id)}
+								/>
+							)
+						})}
+					</div>
 				</div>
 			</header>
 
@@ -142,7 +144,7 @@ function FilterChip({
 			type="button"
 			onClick={onClick}
 			className={cn(
-				"rounded-lg border px-2.5 py-1 text-[11px] font-extrabold",
+				"rounded-lg border px-3 py-1.5 text-xs font-extrabold",
 				active
 					? "border-primary bg-primary/10 text-primary"
 					: "border-border bg-background text-muted hover:text-foreground",

@@ -23,15 +23,16 @@ export default function ForgotPasswordScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [result, setResult] = useState<"sent" | "missing" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit() {
     setSubmitting(true);
     setError(null);
+    setResult(null);
     try {
-      await requestPasswordResetApi(email.trim());
-      setSent(true);
+      const response = await requestPasswordResetApi(email.trim());
+      setResult(response.success ? "sent" : "missing");
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -51,12 +52,21 @@ export default function ForgotPasswordScreen() {
         <Text style={[s.sub, { color: c.subtle }]}>Nhập email để nhận liên kết đặt lại mật khẩu.</Text>
 
         <View style={[s.card, { backgroundColor: c.surface, borderColor: c.border, borderBottomColor: c.border }]}>
-          {sent ? (
+          {result ? (
             <>
-              <View style={[s.successBox, { backgroundColor: c.primaryTint }]}>
-                <Text style={[s.successText, { color: c.primary }]}>Nếu email tồn tại, hệ thống đã gửi liên kết đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.</Text>
+              <View style={[s.successBox, { backgroundColor: result === "sent" ? c.primaryTint : c.destructiveTint }]}>
+                <Text style={[s.successText, { color: result === "sent" ? c.primary : c.destructive }]}>
+                  {result === "sent"
+                    ? "Hệ thống đã gửi liên kết đặt lại mật khẩu. Vui lòng kiểm tra hộp thư."
+                    : "Email này chưa tồn tại trong hệ thống. Vui lòng kiểm tra lại hoặc đăng ký tài khoản mới."}
+                </Text>
               </View>
-              <DepthButton fullWidth onPress={() => router.replace("/(auth)/login")}>Quay lại đăng nhập</DepthButton>
+              <DepthButton
+                fullWidth
+                onPress={() => (result === "sent" ? router.replace("/(auth)/login") : setResult(null))}
+              >
+                {result === "sent" ? "Quay lại đăng nhập" : "Nhập lại email"}
+              </DepthButton>
             </>
           ) : (
             <>

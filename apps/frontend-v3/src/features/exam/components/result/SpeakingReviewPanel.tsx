@@ -55,7 +55,7 @@ export function SpeakingReviewPanel({ result }: { readonly result: SessionResult
 			onSelect={setActiveId}
 			tone="speaking"
 		>
-			<ScrollArea className="min-h-0">
+			<ScrollArea className="h-full min-h-0">
 				<SpeakingDetail part={active} feedback={feedback} />
 			</ScrollArea>
 		</ProductiveLayout>

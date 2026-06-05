@@ -7,6 +7,7 @@ interface Props {
 	open: boolean
 	coinsAdded: number
 	newBalance: number
+	eyebrow?: string
 	onClose: () => void
 }
 
@@ -29,7 +30,13 @@ const COIN_ANGLES = [0, 60, 120, 180, 240, 300]
 const BURST_DIST = "170px"
 const COIN_DIST = "120px"
 
-export function PromoRedeemSuccessPopup({ open, coinsAdded, newBalance, onClose }: Props) {
+export function PromoRedeemSuccessPopup({
+	open,
+	coinsAdded,
+	newBalance,
+	eyebrow = "Đổi mã thành công",
+	onClose,
+}: Props) {
 	useEffect(() => {
 		if (!open) return
 		const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose()
@@ -44,7 +51,7 @@ export function PromoRedeemSuccessPopup({ open, coinsAdded, newBalance, onClose 
 			className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-[fadeIn_220ms_ease-out]"
 			role="dialog"
 			aria-modal="true"
-			aria-label="Nhận mã quà tặng thành công"
+			aria-label={eyebrow}
 		>
 			<div className="card relative w-full max-w-md overflow-hidden text-center animate-[popIn_400ms_cubic-bezier(0.34,1.56,0.64,1)]">
 				<button
@@ -58,7 +65,7 @@ export function PromoRedeemSuccessPopup({ open, coinsAdded, newBalance, onClose 
 
 				<div className="relative overflow-hidden bg-gradient-to-b from-coin-tint to-transparent px-8 pb-3 pt-12">
 					<p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-primary-dark">
-						Đổi mã thành công
+						{eyebrow}
 					</p>
 					<h2 className="mt-2 text-3xl font-extrabold tracking-tight text-foreground">Chúc mừng bạn!</h2>
 					<p className="mt-2 text-sm text-subtle">Lạc gửi xu cho bạn rồi nè — chiến đề thôi nào!</p>

@@ -15,16 +15,17 @@ function errorMessage(error: unknown) {
 export function ForgotPasswordForm() {
 	const [email, setEmail] = useState("")
 	const [submitting, setSubmitting] = useState(false)
-	const [sent, setSent] = useState(false)
+	const [result, setResult] = useState<"sent" | "missing" | null>(null)
 	const [error, setError] = useState<string | null>(null)
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault()
 		setSubmitting(true)
 		setError(null)
+		setResult(null)
 		try {
-			await requestPasswordReset(email)
-			setSent(true)
+			const response = await requestPasswordReset(email)
+			setResult(response.data.success ? "sent" : "missing")
 		} catch (err) {
 			setError(errorMessage(err))
 		} finally {
@@ -39,14 +40,30 @@ export function ForgotPasswordForm() {
 				<p className="text-sm text-subtle mt-1">Nhập email để nhận liên kết đặt lại mật khẩu.</p>
 			</div>
 
-			{sent ? (
+			{result ? (
 				<div className="space-y-4 text-center">
-					<p className="text-sm font-bold text-primary bg-primary-tint rounded-(--radius-button) py-3 px-4">
-						Nếu email tồn tại, hệ thống đã gửi liên kết đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.
+					<p
+						className={`text-sm font-bold rounded-(--radius-button) py-3 px-4 ${
+							result === "sent" ? "text-primary bg-primary-tint" : "text-destructive bg-destructive/10"
+						}`}
+					>
+						{result === "sent"
+							? "Hệ thống đã gửi liên kết đặt lại mật khẩu. Vui lòng kiểm tra hộp thư."
+							: "Email này chưa tồn tại trong hệ thống. Vui lòng kiểm tra lại hoặc đăng ký tài khoản mới."}
 					</p>
-					<Link to="/" search={{ auth: "login" }} className="btn btn-primary w-full h-12 text-base">
-						Quay lại đăng nhập
-					</Link>
+					{result === "sent" ? (
+						<Link to="/" search={{ auth: "login" }} className="btn btn-primary w-full h-12 text-base">
+							Quay lại đăng nhập
+						</Link>
+					) : (
+						<button
+							type="button"
+							onClick={() => setResult(null)}
+							className="btn btn-primary w-full h-12 text-base"
+						>
+							Nhập lại email
+						</button>
+					)}
 				</div>
 			) : (
 				<form onSubmit={handleSubmit} className="space-y-3">

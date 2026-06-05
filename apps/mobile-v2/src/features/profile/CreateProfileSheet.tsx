@@ -38,6 +38,7 @@ type TargetLevel = (typeof TARGET_LEVELS)[number];
 
 const LEVEL_RANK: Record<EntryLevel, number> = { A1: 0, A2: 1, B1: 2, B2: 3, C1: 4 };
 const MIN_PREP_MONTHS = [1, 3, 6, 12, 18] as const;
+const MAX_TARGET_DEADLINE = new Date(2028, 11, 31);
 
 const TARGET_LEVEL_INFO: Record<TargetLevel, string> = {
   B1: "Giao tiếp cơ bản",
@@ -93,6 +94,16 @@ function isOnOrAfter(date: Date | null, minDate: Date): boolean {
   return date !== null && startOfDay(date).getTime() >= startOfDay(minDate).getTime();
 }
 
+function isOnOrBefore(date: Date | null, maxDate: Date): boolean {
+  return date !== null && startOfDay(date).getTime() <= startOfDay(maxDate).getTime();
+}
+
+function clampDate(date: Date, minDate: Date, maxDate: Date): Date {
+  if (startOfDay(date).getTime() < startOfDay(minDate).getTime()) return minDate;
+  if (startOfDay(date).getTime() > startOfDay(maxDate).getTime()) return maxDate;
+  return date;
+}
+
 // ─── Component ───
 
 export function CreateProfileSheet({ visible, onClose, onCreated }: Props) {
@@ -110,7 +121,7 @@ export function CreateProfileSheet({ visible, onClose, onCreated }: Props) {
   const trimmed = nickname.trim();
   const minDate = computeMinDate(entryLevel, targetLevel);
   const parsedDeadline = parseDateInput(targetDeadline);
-  const dateValid = isOnOrAfter(parsedDeadline, minDate);
+  const dateValid = isOnOrAfter(parsedDeadline, minDate) && isOnOrBefore(parsedDeadline, MAX_TARGET_DEADLINE);
   const isSubmitting = createMutation.isPending || finishing;
   const canSubmit = trimmed.length > 0 && dateValid && !isSubmitting;
 
@@ -176,6 +187,7 @@ export function CreateProfileSheet({ visible, onClose, onCreated }: Props) {
 
   const dateDisplay = toDisplayDate(targetDeadline);
   const dateValue = parseDateInput(targetDeadline) ?? new Date();
+  const pickerDate = clampDate(dateValue, minDate, MAX_TARGET_DEADLINE);
   const prepMonths = minPrepMonths(entryLevel, targetLevel);
 
   return (
@@ -307,15 +319,16 @@ export function CreateProfileSheet({ visible, onClose, onCreated }: Props) {
             </HapticTouchable>
             {showDatePicker && (
               <DateTimePicker
-                value={dateValue > minDate ? dateValue : minDate}
+                value={pickerDate}
                 mode="date"
                 display={Platform.OS === "ios" ? "spinner" : "default"}
                 minimumDate={minDate}
+                maximumDate={MAX_TARGET_DEADLINE}
                 onChange={handleDateChange}
               />
             )}
             <Text style={[s.hint, { color: c.subtle }]}>
-              Tối thiểu {prepMonths} tháng để đạt {entryLevel} → {targetLevel}.
+              Tối thiểu {prepMonths} tháng để đạt {entryLevel} → {targetLevel}. Chọn ngày không quá 31/12/2028.
             </Text>
 
             {errorText ? (

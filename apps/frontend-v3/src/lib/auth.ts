@@ -9,12 +9,14 @@ import type { Profile, User } from "#/types/auth"
 
 function showError(error: unknown) {
 	if (error instanceof HTTPError) {
-		const body = error.data as { message?: string } | undefined
-		useToast.getState().add(body?.message ?? "Đã có lỗi xảy ra.")
+		const body = error.data as { errors?: { email?: string[] }; message?: string } | undefined
+		useToast.getState().add(body?.errors?.email?.[0] ?? body?.message ?? "Đã có lỗi xảy ra.")
 	} else {
 		useToast.getState().add("Đã có lỗi xảy ra.")
 	}
 }
+
+const EMAIL_VERIFICATION_REQUIRED_MESSAGE = "Vui lòng xác thực email trước khi đăng nhập."
 
 interface OnboardingBonus {
 	amount: number
@@ -105,6 +107,8 @@ function isProfileScopedQuery(queryKey: readonly unknown[]): boolean {
 export interface LoginResult {
 	needsOnboarding: boolean
 	suggestedNickname: string | null
+	emailVerificationRequired?: boolean
+	email?: string
 }
 
 type AuthActions = {
@@ -169,6 +173,18 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			useToast.getState().add("Đăng nhập thành công", "success")
 			return { needsOnboarding: false, suggestedNickname: null }
 		} catch (e) {
+			if (e instanceof HTTPError) {
+				const body = e.data as { errors?: { email?: string[] }; message?: string } | undefined
+				const emailError = body?.errors?.email?.[0]
+				if (emailError === EMAIL_VERIFICATION_REQUIRED_MESSAGE) {
+					return {
+						needsOnboarding: false,
+						suggestedNickname: null,
+						emailVerificationRequired: true,
+						email,
+					}
+				}
+			}
 			showError(e)
 			return null
 		}

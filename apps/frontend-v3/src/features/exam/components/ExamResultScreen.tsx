@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { ScrollArea } from "#/components/ScrollArea"
 import { defaultSkill, mcqGroups } from "#/features/exam/components/result/helpers"
 import { McqReviewPanel } from "#/features/exam/components/result/McqReviewPanel"
 import { ResultHeader } from "#/features/exam/components/result/ResultHeader"
@@ -22,10 +23,17 @@ export function ExamResultScreen({ result }: { result: SessionResultsData }) {
 	return (
 		<div className="flex h-dvh min-h-[640px] flex-col bg-background text-foreground">
 			<ResultHeader result={result} />
-			<main className="mx-auto flex w-full min-h-0 max-w-7xl flex-1 flex-col overflow-hidden px-3 py-3 sm:px-5 lg:px-6">
-				<ResultSummaryBanner result={result} />
-				<SkillTabs result={result} activeSkill={activeSkill} onSelect={setActiveSkill} />
-				<section className="mt-3 min-h-0 flex-1 overflow-hidden rounded-lg border border-border bg-surface shadow-sm">
+			<main className="mx-auto grid w-full min-h-0 max-w-7xl flex-1 gap-4 overflow-y-auto px-3 py-4 sm:px-5 lg:grid-cols-[320px_minmax(0,1fr)] lg:overflow-hidden lg:px-6">
+				<aside className="min-h-0 lg:overflow-hidden">
+					<ScrollArea className="min-h-0 lg:h-full" trackClassName="right-0" thumbClassName="bg-border">
+						<div className="flex flex-col gap-3 lg:pr-3">
+							<ResultSummaryBanner result={result} />
+							<SkillTabs result={result} activeSkill={activeSkill} onSelect={setActiveSkill} />
+						</div>
+					</ScrollArea>
+				</aside>
+
+				<section className="min-h-[560px] overflow-hidden rounded-2xl border border-border bg-surface shadow-sm lg:min-h-0">
 					{review}
 				</section>
 			</main>
