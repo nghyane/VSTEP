@@ -25,3 +25,8 @@ export async function cancelEnrollmentOrder(orderId: string): Promise<Enrollment
 		.json<ApiResponse<EnrollmentOrder>>()
 	return res.data
 }
+
+export async function getEnrollmentOrderStatus(orderId: string): Promise<EnrollmentOrder | null> {
+	const res = await api.get("courses/enrollment-orders").json<ApiResponse<EnrollmentOrder[]>>()
+	return res.data.find((order) => order.id === orderId) ?? null
+}
