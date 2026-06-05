@@ -454,42 +454,37 @@ function FlowStepCard({ item }: { item: FlowStepItem }) {
 }
 
 function CriteriaMatrixTab({ rubric }: { rubric: GradingRubric }) {
-	const rows = rubric.criteria.map((criterion) => ({
-		key: criterion.key,
-		criterion: criterionLabel(criterion),
-		weight: `${Math.round(criterion.weight * 100)}%`,
-		band10: descriptorText(criterion.band_descriptors, "10"),
-		band8: descriptorText(criterion.band_descriptors, "8"),
-		band6: descriptorText(criterion.band_descriptors, "6"),
-		band4: descriptorText(criterion.band_descriptors, "4"),
-		band0: descriptorText(criterion.band_descriptors, "0"),
-	}))
-
 	return (
 		<Flex vertical gap={16}>
 			<Alert
 				showIcon
 				type="success"
-				message="Mô tả mức điểm hiển thị bằng tiếng Việt cho admin và demo."
-				description="Backend vẫn giữ key kỹ thuật tiếng Anh để công thức ổn định; UI không cần chia cột Anh/Việt khi sản phẩm chưa hỗ trợ đa ngôn ngữ."
+				message="Đọc theo từng tiêu chí, không đọc ngang cả rubric."
+				description="Mỗi tiêu chí có 5 mốc tham chiếu: 10 xuất sắc, 8 tốt, 6 đạt cơ bản, 4 yếu, 0 không chấm. Điểm lẻ như 7.0 nằm giữa mốc 6 và 8."
 			/>
+			{rubric.criteria.map((criterion) => (
+				<CriterionBandCard key={criterion.key} criterion={criterion} />
+			))}
+		</Flex>
+	)
+}
+
+function CriterionBandCard({ criterion }: { criterion: Criterion }) {
+	const percent = Math.round(criterion.weight * 100)
+
+	return (
+		<Card size="small" title={criterionLabel(criterion)} extra={<Tag color="blue">Trọng số {percent}%</Tag>}>
 			<Table
 				size="small"
 				pagination={false}
-				dataSource={rows}
+				dataSource={criterionBandRows(criterion.band_descriptors)}
 				rowKey="key"
-				scroll={{ x: 1200 }}
 				columns={[
-					{ title: "Tiêu chí", dataIndex: "criterion", width: 180, fixed: "left" },
-					{ title: "Trọng số", dataIndex: "weight", width: 90 },
-					{ title: "10", dataIndex: "band10", width: 220 },
-					{ title: "8", dataIndex: "band8", width: 220 },
-					{ title: "6", dataIndex: "band6", width: 220 },
-					{ title: "4", dataIndex: "band4", width: 220 },
-					{ title: "0", dataIndex: "band0", width: 220 },
+					{ title: "Mức điểm", dataIndex: "level", width: 170 },
+					{ title: "Ý nghĩa khi chấm", dataIndex: "description" },
 				]}
 			/>
-		</Flex>
+		</Card>
 	)
 }
 
@@ -985,6 +980,16 @@ function descriptorText(descriptors: Criterion["band_descriptors"], band: string
 	}
 
 	return descriptors[band] ?? "-"
+}
+
+function criterionBandRows(descriptors: Criterion["band_descriptors"]) {
+	return [
+		{ key: "10", level: "10 — Xuất sắc", description: descriptorText(descriptors, "10") },
+		{ key: "8", level: "8 — Tốt", description: descriptorText(descriptors, "8") },
+		{ key: "6", level: "6 — Đạt cơ bản", description: descriptorText(descriptors, "6") },
+		{ key: "4", level: "4 — Yếu", description: descriptorText(descriptors, "4") },
+		{ key: "0", level: "0 — Không chấm", description: descriptorText(descriptors, "0") },
+	]
 }
 
 function simulationCriterionRows(
