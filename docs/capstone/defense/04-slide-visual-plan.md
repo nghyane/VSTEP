@@ -50,7 +50,7 @@ File này giúp team thiết kế slide nhanh: **mỗi slide nên hiện gì**, 
 
 - 4 card role: Backend/API, Web/Admin, Mobile, QA/Docs.
 
-### Slide 4 — VSTEP Context
+### Slide 4 — VSTEP Context + Exam Format
 
 **On slide**
 
@@ -181,20 +181,7 @@ File này giúp team thiết kế slide nhanh: **mỗi slide nên hiện gì**, 
 
 - 3-column cards: `Layer / Technology / Role`.
 
-### Slide 13 — Deployment & Quality
-
-**On slide**
-
-- Docker.
-- GitHub Actions.
-- Redis queue.
-- Tests / isolated external services.
-
-**Visual**
-
-- 4 cards or pipeline: Build → Test → Deploy → Queue jobs.
-
-### Slide 14 — Writing/Speaking Score Formula
+### Slide 13 — Writing/Speaking Assessment Formula
 
 **On slide**
 
@@ -207,65 +194,24 @@ Pause count            Speech analyzer       Fluency penalty
 Pronunciation signals  Speech service        Pronunciation score
 
 Writing/Speaking score = fixed formula(input metrics) + caps / penalties
+
+Example: adequate length, few errors, on-topic → formula → 7.5 (illustrative only)
 ```
 
 **Visual**
 
 - Bảng chỉ số bắt buộc.
 - Highlight: `AI/external tools only extract input metrics`.
+- Thêm dòng ví dụ kết quả bên dưới bảng.
 
 **Do not show**
 
 - Full Writing/Speaking formula dài.
-
-### Slide 15 — Writing Practice Evaluation
-
-**On slide**
-
-- Word count.
-- Spelling.
-- Relevance.
-- Organization.
-- Grammar/Vocabulary.
-
-**Visual**
-
-- Screenshot option 1: `docs/report6-screenshots/03-learner-practice/04-writing-practice.png`.
-- Screenshot option 2: `docs/report6-screenshots/03-learner-practice/12-WritingTemplate.png`.
-
-### Slide 16 — Speaking Practice Evaluation
-
-**On slide**
-
-- Record audio.
-- Transcript/signals.
-- Backend formula.
-- Feedback.
-
-**Visual**
-
-- Screenshot option 1: `docs/report6-screenshots/03-learner-practice/05-speaking-practice.png`.
-- Screenshot option 2: `docs/report6-screenshots/03-learner-practice/13-shadowing.png`.
-- Screenshot option 3: `docs/report6-screenshots/03-learner-practice/15-shadowingFeedback.png`.
-
-### Slide 17 — Abnormal Answer Handling
-
-**On slide**
-
-- Too short.
-- Off-topic.
-- Copied prompt.
-- Spam / non-English.
-- Cap / penalty.
-
-**Visual**
-
-- Warning/cap diagram.
-- No screenshot needed.
+- Detailed guardrail thresholds.
 
 ## Phase 4 — Demo workflow preview
 
-### Slide 18 — Demo Overview
+### Slide 14 — Demo Overview
 
 **On slide**
 
@@ -277,7 +223,7 @@ Writing/Speaking score = fixed formula(input metrics) + caps / penalties
 
 - 3-column overview.
 
-### Slide 19 — Demo Workflow 1
+### Slide 15 — Demo Workflow 1
 
 **On slide**
 
@@ -292,7 +238,7 @@ Writing/Speaking score = fixed formula(input metrics) + caps / penalties
 - Screenshot: `docs/report6-screenshots/03-learner-practice/01-practice-hub.png`.
 - Optional feedback screenshot: `docs/report6-screenshots/03-learner-practice/15-shadowingFeedback.png`.
 
-### Slide 20 — Demo Workflow 2
+### Slide 16 — Demo Workflow 2
 
 **On slide**
 
@@ -308,7 +254,7 @@ Writing/Speaking score = fixed formula(input metrics) + caps / penalties
 - Screenshot: `docs/report6-screenshots/04-learner-exam/exam-room-flow/15-result.png`.
 - Screenshot: `docs/report6-screenshots/04-learner-exam/exam-room-flow/16-result-detail.png`.
 
-### Slide 21 — Demo Workflow 3
+### Slide 17 — Demo Workflow 3
 
 **On slide**
 
@@ -325,22 +271,20 @@ Writing/Speaking score = fixed formula(input metrics) + caps / penalties
 
 ## Phase 5 — Tổng kết
 
-### Slide 22 — Different Points
+### Slide 18 — Different Points
 
 **On slide**
 
-- 4-skill learning loop.
-- Fixed-formula Writing/Speaking score.
-- Gamification / coins / streak.
-- Recommendation.
-- SRS/Anki `See detail`.
-- Admin-managed content.
+- Writing/Speaking assessment + feedback (most mock test sites only score Listening/Reading).
+- Fixed-formula score (not AI-decided).
+- Closed learning loop (submit → feedback → gaps → recommendations), not just a test bank.
+- Supporting features: gamification/coins, learning path, SRS/Anki `See detail`, admin-managed content.
 
 **Visual**
 
-- 5–6 cards; keep text short.
+- Top 3 cards for differentiation; supporting features as smaller items below.
 
-### Slide 23 — Achievements
+### Slide 19 — Achievements
 
 **On slide**
 
@@ -355,7 +299,7 @@ Writing/Speaking score = fixed formula(input metrics) + caps / penalties
 
 - Grid deliverables with icons.
 
-### Slide 24 — Limitations
+### Slide 20 — Limitations
 
 **On slide**
 
@@ -368,7 +312,7 @@ Writing/Speaking score = fixed formula(input metrics) + caps / penalties
 
 - Split: limitations / future work.
 
-### Slide 25 — Conclusion
+### Slide 21 — Conclusion
 
 **On slide**
 
@@ -381,7 +325,7 @@ Writing/Speaking score = fixed formula(input metrics) + caps / penalties
 
 - 3 takeaway cards.
 
-### Slide 26 — Thank You
+### Slide 22 — Thank You
 
 **On slide**
 
