@@ -6,7 +6,7 @@ Nguyên tắc: mỗi slide chỉ làm **một nhiệm vụ**. Không kéo nội 
 
 Kính chào hội đồng. Nhóm em xin trình bày đề tài hệ thống hỗ trợ luyện thi VSTEP.
 
-Trọng tâm của hệ thống là hỗ trợ người học luyện 4 kỹ năng, nhận phản hồi sau bài luyện tập, theo dõi tiến độ và nhận gợi ý nội dung học tiếp theo.
+Trọng tâm của hệ thống là hỗ trợ người học luyện 4 kỹ năng, nhận phản hồi sau bài luyện tập, theo dõi tiến độ và nhận gợi ý kỹ năng hoặc nội dung nên ưu tiên luyện tiếp theo dựa trên tiến độ và điểm gần đây.
 
 ## Slide 2 — Outline
 
@@ -24,7 +24,7 @@ Trong quá trình phát triển, nhóm chia công việc theo các mảng chính
 
 Slide này dùng để đặt bối cảnh.
 
-VSTEP là chứng chỉ tiếng Anh được dùng khá phổ biến, ví dụ đầu vào cao học, đầu ra đại học/cao đẳng hoặc yêu cầu chứng chỉ năng lực tiếng Anh.
+VSTEP là kỳ thi/chuẩn đánh giá năng lực tiếng Anh được dùng khá phổ biến, ví dụ đầu vào cao học, đầu ra đại học/cao đẳng hoặc yêu cầu chứng chỉ năng lực tiếng Anh.
 
 Bài thi gồm 4 kỹ năng: Listening, Reading, Writing và Speaking. Listening/Reading có đáp án khách quan; Writing/Speaking cần đánh giá theo nhiều tiêu chí. Vì vậy người học cần luyện tập có định hướng cho đủ 4 kỹ năng.
 
@@ -42,13 +42,13 @@ Slide này phân tích khoảng trống từ vấn đề trên.
 
 Các tài liệu hoặc website luyện đề có ích, nhưng thường chỉ dừng ở việc cung cấp đề và đáp án. Chúng chưa tạo thành một quá trình học liên tục.
 
-Khoảng trống nhóm hướng tới là một hệ thống học tập có vòng lặp rõ ràng: làm bài, nhận feedback, xem điểm yếu, nhận gợi ý và luyện tiếp. Các yếu tố như game hóa, tích điểm, lộ trình và gợi ý theo điểm yếu hỗ trợ cho vòng học này.
+Khoảng trống nhóm hướng tới là một hệ thống học tập có vòng lặp rõ ràng: làm bài, nhận feedback, xem điểm yếu, nhận gợi ý và luyện tiếp. Các yếu tố như streak/coin để tạo động lực, lộ trình học và gợi ý ưu tiên theo kỹ năng còn yếu hỗ trợ cho vòng học này.
 
 ## Slide 7 — Actors
 
 Slide này xác định các nhóm người dùng, chưa đi vào chi tiết tính năng.
 
-Learner là người dùng chính. Admin/staff vận hành nội dung và dữ liệu. Teacher hỗ trợ lịch học, booking và các nghiệp vụ lớp học. Mobile learner dùng ứng dụng mobile như một kênh học bổ sung.
+Learner là người dùng chính. Admin/staff vận hành nội dung và dữ liệu. Teacher hỗ trợ lịch học, booking, nghiệp vụ lớp học và chấm/review Writing/Speaking khi learner gửi yêu cầu. Mobile learner dùng ứng dụng mobile như một kênh học bổ sung.
 
 Các dịch vụ AI/speech không phải actor nghiệp vụ chính; chúng là dịch vụ hỗ trợ kỹ thuật ở phía sau.
 
@@ -56,7 +56,7 @@ Các dịch vụ AI/speech không phải actor nghiệp vụ chính; chúng là 
 
 Slide này chỉ nói tính năng cho learner.
 
-Learner có thể luyện tập, làm mock test, xem kết quả, nhận feedback, xem điểm yếu và học tiếp theo gợi ý.
+Learner có thể luyện tập, làm mock test, xem kết quả, nhận feedback cho Writing/Speaking, xem kỹ năng đang thấp hơn mục tiêu và luyện tiếp theo gợi ý.
 
 Ngoài ra có dashboard, progress, streak/coin và ôn từ vựng. Điểm chính là learner có một learning loop, không chỉ làm bài đơn lẻ.
 
@@ -64,7 +64,7 @@ Ngoài ra có dashboard, progress, streak/coin và ôn từ vựng. Điểm chí
 
 Slide này nói tính năng vận hành.
 
-Admin/staff quản lý nội dung học, đề luyện, đề thi thử, tiêu chí đánh giá, user, course và booking.
+Admin/staff quản lý nội dung học, đề luyện, đề thi thử, course và booking; các phần nhạy cảm như user hoặc rubric/tiêu chí đánh giá được phân quyền theo vai trò.
 
 Vai trò của phần admin là giúp hệ thống cập nhật và vận hành được qua giao diện quản trị, thay vì phụ thuộc vào chỉnh sửa thủ công trong code.
 
@@ -72,7 +72,7 @@ Vai trò của phần admin là giúp hệ thống cập nhật và vận hành 
 
 Slide này nói ngắn về hai phần không phải trọng tâm demo chính.
 
-Teacher hỗ trợ lịch dạy, booking và đơn nghỉ. Mobile app là ứng dụng đồng hành để learner theo dõi tiến độ, luyện tập và ôn từ vựng thuận tiện hơn.
+Teacher hỗ trợ lịch dạy, booking, đơn nghỉ và chấm/review bài Writing/Speaking theo yêu cầu từ learner. Mobile app là ứng dụng đồng hành để learner theo dõi tiến độ, luyện tập và ôn từ vựng thuận tiện hơn.
 
 Nhóm sẽ không đi sâu hai phần này trên slide để dành thời gian cho learner web, scoring và admin.
 
