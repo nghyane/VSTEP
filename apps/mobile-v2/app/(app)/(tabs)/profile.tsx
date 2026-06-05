@@ -101,7 +101,7 @@ export default function ProfileScreen() {
       style={[s.root, { backgroundColor: c.background }]}
       contentContainerStyle={[
         s.scroll,
-        { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing["3xl"] },
+        { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.lg },
       ]}
       showsVerticalScrollIndicator={false}
     >

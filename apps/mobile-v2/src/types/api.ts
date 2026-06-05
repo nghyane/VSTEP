@@ -245,6 +245,7 @@ export interface OverviewData {
   scores: {
     spider: ScoreSpider | null;
     timeline: ScoreTimelinePoint[];
+    quality?: ScoreQuality;
     growth: Record<Skill, ScoreGrowth>;
   };
   stats: {
@@ -259,6 +260,7 @@ export interface ScoreSpider {
   writing: number | null;
   speaking: number | null;
   sampleSize: number;
+  skillSampleSizes?: Record<Skill, number>;
 }
 
 export interface ScoreTimelinePoint {
@@ -274,6 +276,13 @@ export interface ScoreGrowth {
   latest: number | null;
   change: number | null;
   trend: string;
+}
+
+export interface ScoreQuality {
+  status: "normal" | "single_outlier" | "consecutive_low";
+  hasOutlier: boolean;
+  consecutiveLow: boolean;
+  outlierSkills: Skill[];
 }
 
 export interface SkillActivityDay {

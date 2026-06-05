@@ -73,7 +73,7 @@ export default function ExamsScreen() {
   return (
     <ScrollView
       style={[styles.root, { backgroundColor: c.background }]}
-      contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.xl }]}
+      contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.xl, paddingBottom: insets.bottom + spacing.lg }]}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
@@ -176,8 +176,6 @@ export default function ExamsScreen() {
             />
         ))}
       </View>
-
-      <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
   );
 }
@@ -356,7 +354,7 @@ function SkillChip({ skill, label }: { skill: Skill; label: string }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"] },
+  scroll: { paddingHorizontal: spacing.xl },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: spacing.base },
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   subtitle: { fontSize: fontSize.xs, marginTop: spacing.xs, lineHeight: 18 },

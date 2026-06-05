@@ -74,8 +74,12 @@ export default function DashboardScreen() {
       }, SKILLS[0])
     : "listening";
   const hasSpiderData = chart !== null && SKILLS.some((skill) => (chart[skill] ?? 0) > 0);
+  const skillSampleSizes = chart?.skillSampleSizes;
+  const sampleRange = skillSampleSizes
+    ? `${Math.min(...Object.values(skillSampleSizes))}-${Math.max(...Object.values(skillSampleSizes))}`
+    : chart?.sampleSize;
   const spiderSubtitle = hasSpiderData && chart
-    ? `Trung bình từ ${chart.sampleSize} bài thi gần nhất`
+    ? `Trung bình gần đây · ${sampleRange} lượt theo từng kỹ năng`
     : `Cần thêm ${Math.max(0, MIN_TESTS_FOR_CHART - (stats?.totalTests ?? 0))} bài thi để hiện biểu đồ`;
 
   function toAnimStyle(index: number) {
@@ -95,7 +99,7 @@ export default function DashboardScreen() {
   return (
     <ScrollView
       style={[styles.root, { backgroundColor: c.background }]}
-      contentContainerStyle={[styles.scroll, { paddingTop: insets.top }]}
+      contentContainerStyle={[styles.scroll, { paddingTop: insets.top, paddingBottom: insets.bottom + spacing.lg }]}
       showsVerticalScrollIndicator={false}
     >
       <Animated.View style={[styles.topBar, toAnimStyle(0)]}>
@@ -197,8 +201,6 @@ export default function DashboardScreen() {
       <Animated.View style={toAnimStyle(5)}>
         <ScoreTrend />
       </Animated.View>
-
-      <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
   );
 }
@@ -243,6 +245,7 @@ function SkillStatCard({ skill, score, targetBand }: { skill: Skill; score: numb
         {score !== null ? score.toFixed(1) : "—"}
         <Text style={{ fontSize: fontSize.xs, color: c.subtle }}> /10</Text>
       </Text>
+      <Text style={{ fontSize: fontSize.xs, fontFamily: fontFamily.bold, color: c.subtle }}>Trung bình gần đây</Text>
       <Text style={{ fontSize: fontSize.xs, fontFamily: fontFamily.bold, color: gapColor }}>{gapText}</Text>
     </View>
   );
@@ -344,7 +347,7 @@ function SpiderLegendItem({ skill, score }: { skill: Skill; score: number | null
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"] },
+  scroll: { paddingHorizontal: spacing.xl },
   topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: spacing.base },
   topBarTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
   topRight: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
