@@ -67,7 +67,7 @@ return [
 
     'frontend_url' => env('FRONTEND_URL', 'https://vstepgo.com'),
 
-    'payment_frontend_url' => 'https://vstepgo.com',
+    'payment_frontend_url' => env('PAYMENT_FRONTEND_URL', env('FRONTEND_URL', 'https://vstepgo.com')),
 
     /*
     |--------------------------------------------------------------------------
@@ -80,7 +80,10 @@ return [
     |
     */
 
-    'payment_redirect_origins' => ['https://vstepgo.com'],
+    'payment_redirect_origins' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', (string) env('PAYMENT_REDIRECT_ORIGINS', env('PAYMENT_FRONTEND_URL', env('FRONTEND_URL', 'https://vstepgo.com'))))
+    ))),
 
     /*
     |--------------------------------------------------------------------------
