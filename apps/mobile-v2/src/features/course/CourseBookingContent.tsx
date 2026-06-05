@@ -11,6 +11,7 @@ import { BookingTeacherCard } from "@/features/course/BookingTeacherCard";
 import { BOOKING_COIN_COST_FALLBACK, useBookingPage, useBookSlot } from "@/features/course/queries";
 import type { BookingSlot } from "@/features/course/types";
 import { useWalletBalance } from "@/features/wallet/queries";
+import { getApiErrorMessage } from "@/lib/api";
 import { formatNumber, formatTime, formatWeekdayDate } from "@/lib/utils";
 import { fontFamily, fontSize, spacing, useThemeColors } from "@/theme";
 
@@ -46,7 +47,10 @@ export function CourseBookingContent({ courseId }: { courseId: string }) {
   function book(slot: BookingSlot) {
     bookSlot.mutate(
       { courseId, slotId: slot.id },
-      { onSuccess: () => Alert.alert("Đặt lịch thành công", "Lịch hẹn đã được xác nhận. Link meeting sẽ hiển thị trong slot đã đặt.") },
+      {
+        onSuccess: () => Alert.alert("Đặt lịch thành công", "Lịch hẹn đã được xác nhận. Link meeting sẽ hiển thị trong slot đã đặt."),
+        onError: (error) => Alert.alert("Không thể đặt lịch", getApiErrorMessage(error)),
+      },
     );
   }
 
@@ -62,6 +66,7 @@ export function CourseBookingContent({ courseId }: { courseId: string }) {
       </View>
       <BookingTeacherCard teacher={data.teacher} myBookingsCount={data.myBookingsCount} />
       <BookingCommitmentGate commitment={data.commitment} />
+      {!locked && <LeadTimeCard hours={data.bookingLeadTimeHours} />}
       {reachedLimit && !locked && <LimitCard count={data.maxBookingsPerStudent} />}
       <DepthCard style={styles.walletCard}>
         <Text style={[styles.walletLabel, { color: c.subtle }]}>Số dư ví</Text>
@@ -70,6 +75,15 @@ export function CourseBookingContent({ courseId }: { courseId: string }) {
       <Text style={[styles.sectionTitle, { color: c.foreground }]}>Lịch trống</Text>
       <BookingSlotList slots={data.slots} locked={locked || reachedLimit || bookSlot.isPending} onSelect={handleSelect} />
     </ScrollView>
+  );
+}
+
+function LeadTimeCard({ hours }: { hours: number }) {
+  const c = useThemeColors();
+  return (
+    <DepthCard variant="skill" skillColor={c.info} style={styles.leadTimeCard}>
+      <Text style={[styles.leadTimeText, { color: c.info }]}>Cần đặt lịch trước ít nhất {hours} giờ so với giờ bắt đầu để giảng viên có thời gian chuẩn bị.</Text>
+    </DepthCard>
   );
 }
 
@@ -87,6 +101,8 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: spacing.xl },
   header: { gap: spacing.md, marginBottom: spacing.base, alignItems: "flex-start" },
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
+  leadTimeCard: { marginBottom: spacing.base },
+  leadTimeText: { fontSize: fontSize.sm, fontFamily: fontFamily.bold, lineHeight: 20 },
   walletCard: { gap: spacing.xs, marginBottom: spacing.base },
   walletLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold, textTransform: "uppercase", letterSpacing: 0.8 },
   walletValue: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },

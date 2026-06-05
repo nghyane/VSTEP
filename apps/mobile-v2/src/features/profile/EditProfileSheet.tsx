@@ -28,6 +28,8 @@ interface Props {
   onClose: () => void;
 }
 
+const MAX_TARGET_DEADLINE = new Date(2028, 11, 31);
+
 function toDateInput(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -59,12 +61,18 @@ function tomorrow(): Date {
   return d;
 }
 
-function laterDate(a: Date, b: Date): Date {
-  return a.getTime() >= b.getTime() ? a : b;
-}
-
 function isOnOrAfter(date: Date | null, minDate: Date): boolean {
   return date !== null && startOfDay(date).getTime() >= startOfDay(minDate).getTime();
+}
+
+function isOnOrBefore(date: Date | null, maxDate: Date): boolean {
+  return date !== null && startOfDay(date).getTime() <= startOfDay(maxDate).getTime();
+}
+
+function clampDate(date: Date, minDate: Date, maxDate: Date): Date {
+  if (startOfDay(date).getTime() < startOfDay(minDate).getTime()) return minDate;
+  if (startOfDay(date).getTime() > startOfDay(maxDate).getTime()) return maxDate;
+  return date;
 }
 
 function daysUntil(deadline: string): number {
@@ -95,13 +103,11 @@ export function EditProfileSheet({ profile, onClose }: Props) {
 
   const trimmed = nickname.trim();
   const dirty = trimmed !== profile.nickname || targetDeadline !== (profile.targetDeadline ?? "");
-  const currentDeadlineDate = profile.targetDeadline ? parseDateInput(profile.targetDeadline) : null;
-  const minEditableDate = currentDeadlineDate
-    ? laterDate(tomorrow(), currentDeadlineDate)
-    : tomorrow();
+  const minEditableDate = tomorrow();
   const deadlineChanged = targetDeadline !== (profile.targetDeadline ?? "");
   const parsedDeadline = parseDateInput(targetDeadline);
-  const dateValid = !deadlineChanged || isOnOrAfter(parsedDeadline, minEditableDate);
+  const dateValid = !deadlineChanged
+    || (isOnOrAfter(parsedDeadline, minEditableDate) && isOnOrBefore(parsedDeadline, MAX_TARGET_DEADLINE));
   const canSubmit = trimmed.length > 0 && dateValid && dirty && !updateMutation.isPending;
 
   function handleClose() {
@@ -136,6 +142,7 @@ export function EditProfileSheet({ profile, onClose }: Props) {
 
   const dateDisplay = toDisplayDate(targetDeadline);
   const dateValue = parseDateInput(targetDeadline) ?? minEditableDate;
+  const pickerDate = clampDate(dateValue, minEditableDate, MAX_TARGET_DEADLINE);
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={handleClose}>
@@ -189,17 +196,18 @@ export function EditProfileSheet({ profile, onClose }: Props) {
             </HapticTouchable>
             {showDatePicker && (
               <DateTimePicker
-                value={dateValue}
+                value={pickerDate}
                 mode="date"
                 display={Platform.OS === "ios" ? "spinner" : "default"}
                 minimumDate={minEditableDate}
+                maximumDate={MAX_TARGET_DEADLINE}
                 onChange={handleDateChange}
               />
             )}
             <Text style={[s.hint, { color: c.subtle }]}>
               {dateValid && targetDeadline && daysUntil(targetDeadline) > 0
                 ? `Còn ${daysUntil(targetDeadline)} ngày để chuẩn bị`
-                : "Chọn ngày thi để tính toán lộ trình"}
+                : "Chọn ngày thi từ ngày mai đến 31/12/2028"}
             </Text>
 
             <View style={[s.lockedBox, { borderColor: c.border }]}>
