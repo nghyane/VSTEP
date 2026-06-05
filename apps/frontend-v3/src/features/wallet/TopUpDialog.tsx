@@ -305,7 +305,8 @@ function BuyButton({ pack }: { pack: EnrichedPackage }) {
 		mutationFn: () => createTopupOrder(pack.id),
 		onSuccess: (order) => {
 			if (order.payment_url) {
-				const paymentWindow = window.open(order.payment_url, "_blank", "noopener,noreferrer")
+				const paymentWindow = window.open(order.payment_url, "_blank")
+				if (paymentWindow) paymentWindow.opener = null
 				if (!paymentWindow) window.location.href = order.payment_url
 			}
 		},
