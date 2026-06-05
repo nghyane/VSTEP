@@ -169,6 +169,11 @@ export function useConversationSession(scenarioId: string): UseConversationSessi
     startMutation.mutate();
   }, [startMutation]);
 
+  const endSession = useCallback(() => {
+    if (!session || endMutation.isPending || summary) return;
+    endMutation.mutate();
+  }, [endMutation, session, summary]);
+
   const startErrorKind = startMutation.isError ? kindFromError(startMutation.error) : null;
   const startErrorMessage = startMutation.isError
     ? messageFromError(
@@ -197,7 +202,7 @@ export function useConversationSession(scenarioId: string): UseConversationSessi
     speakTurn,
     sendText,
     submitVoice,
-    endSession: () => endMutation.mutate(),
+    endSession,
     appendWord,
     retryStart,
   };
