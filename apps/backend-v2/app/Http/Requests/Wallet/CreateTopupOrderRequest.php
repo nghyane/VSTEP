@@ -20,6 +20,7 @@ final class CreateTopupOrderRequest extends FormRequest
             'package_id' => ['required', 'uuid', 'exists:wallet_topup_packages,id'],
             'payment_provider' => ['required', 'string', 'in:'.implode(',', PaymentProvider::values())],
             'return_url' => ['nullable', 'string', 'url'],
+            'cancel_url' => ['nullable', 'string', 'url'],
         ];
     }
 }

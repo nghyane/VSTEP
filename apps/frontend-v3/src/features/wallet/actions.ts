@@ -7,7 +7,8 @@ export async function createTopupOrder(packageId: string, provider = "payos"): P
 			json: {
 				package_id: packageId,
 				payment_provider: provider,
-				return_url: `${window.location.origin}/dashboard`,
+				return_url: `${window.location.origin}/wallet`,
+				cancel_url: `${window.location.origin}/wallet`,
 			},
 		})
 		.json<ApiResponse<TopupOrder>>()

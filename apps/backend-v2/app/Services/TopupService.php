@@ -14,6 +14,7 @@ use App\Models\WalletTopupOrder;
 use App\Models\WalletTopupPackage;
 use App\Services\Payment\OrderNotFoundAfterValidation;
 use App\Services\Payment\PaymentGatewayRegistry;
+use App\Services\Payment\PaymentRedirectUrlResolver;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -33,6 +34,7 @@ final class TopupService
         private readonly NotificationService $notificationService,
         private readonly NotificationEmailService $emailService,
         private readonly PaymentGatewayRegistry $gateways,
+        private readonly PaymentRedirectUrlResolver $redirectUrls,
     ) {}
 
     /**
@@ -45,6 +47,7 @@ final class TopupService
         WalletTopupPackage $package,
         PaymentProvider $provider,
         ?string $returnUrl = null,
+        ?string $cancelUrl = null,
     ): array {
         if (! $package->is_active) {
             throw ValidationException::withMessages([
@@ -55,7 +58,7 @@ final class TopupService
         $gateway = $this->gateways->get($provider);
         $expiryMinutes = (int) config('payment.order_expiry_minutes', 15);
 
-        return DB::transaction(function () use ($profile, $package, $provider, $gateway, $expiryMinutes, $returnUrl) {
+        return DB::transaction(function () use ($profile, $package, $provider, $gateway, $expiryMinutes, $returnUrl, $cancelUrl) {
             // Generate unique integer order_code for PayOS.
             $orderCode = $this->nextOrderCode();
 
@@ -70,8 +73,9 @@ final class TopupService
                 'expires_at' => now()->addMinutes($expiryMinutes),
             ]);
 
-            $returnUrl = $returnUrl ?? config('app.frontend_url')."/wallet/return?order={$order->id}";
-            $cancelUrl = config('app.frontend_url').'/wallet';
+            $paymentFrontendUrl = (string) config('app.payment_frontend_url');
+            $returnUrl = $this->redirectUrls->trustedUrl('return_url', $returnUrl, "{$paymentFrontendUrl}/dashboard");
+            $cancelUrl = $this->redirectUrls->trustedUrl('cancel_url', $cancelUrl, "{$paymentFrontendUrl}/dashboard");
 
             $response = $gateway->createPayment($order, $returnUrl, $cancelUrl);
 

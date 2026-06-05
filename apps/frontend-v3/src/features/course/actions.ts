@@ -11,7 +11,8 @@ export async function createEnrollmentOrder(
 			json: {
 				payment_provider: provider,
 				commitment_signature: commitmentSignature,
-				return_url: `${window.location.origin}/khoa-hoc/${courseId}`,
+				return_url: `${window.location.origin}/wallet`,
+				cancel_url: `${window.location.origin}/wallet`,
 			},
 		})
 		.json<ApiResponse<EnrollmentOrder>>()

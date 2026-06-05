@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root"
+import { Route as WalletRouteImport } from "./routes/wallet"
 import { Route as FocusedRouteImport } from "./routes/_focused"
 import { Route as AppRouteImport } from "./routes/_app"
 import { Route as IndexRouteImport } from "./routes/index"
@@ -48,6 +49,11 @@ import { Route as AppLuyenTapTuVungTopicIdRouteImport } from "./routes/_app/luye
 import { Route as AppLuyenTapNguPhapPointIdRouteImport } from "./routes/_app/luyen-tap/ngu-phap/$pointId"
 import { Route as AppKhoaHocCourseIdDatLich11RouteImport } from "./routes/_app/khoa-hoc/$courseId_.dat-lich-1-1"
 
+const WalletRoute = WalletRouteImport.update({
+  id: "/wallet",
+  path: "/wallet",
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FocusedRoute = FocusedRouteImport.update({
   id: "/_focused",
   getParentRoute: () => rootRouteImport,
@@ -252,6 +258,7 @@ const AppKhoaHocCourseIdDatLich11Route =
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
+  "/wallet": typeof WalletRoute
   "/dashboard": typeof AppDashboardRoute
   "/ho-so": typeof AppHoSoRoute
   "/khoa-hoc": typeof AppKhoaHocRouteWithChildren
@@ -290,6 +297,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute
+  "/wallet": typeof WalletRoute
   "/dashboard": typeof AppDashboardRoute
   "/ho-so": typeof AppHoSoRoute
   "/khoa-hoc/$courseId": typeof AppKhoaHocCourseIdRoute
@@ -325,6 +333,7 @@ export interface FileRoutesById {
   "/": typeof IndexRoute
   "/_app": typeof AppRouteWithChildren
   "/_focused": typeof FocusedRouteWithChildren
+  "/wallet": typeof WalletRoute
   "/_app/dashboard": typeof AppDashboardRoute
   "/_app/ho-so": typeof AppHoSoRoute
   "/_app/khoa-hoc": typeof AppKhoaHocRouteWithChildren
@@ -365,6 +374,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | "/"
+    | "/wallet"
     | "/dashboard"
     | "/ho-so"
     | "/khoa-hoc"
@@ -403,6 +413,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | "/"
+    | "/wallet"
     | "/dashboard"
     | "/ho-so"
     | "/khoa-hoc/$courseId"
@@ -437,6 +448,7 @@ export interface FileRouteTypes {
     | "/"
     | "/_app"
     | "/_focused"
+    | "/wallet"
     | "/_app/dashboard"
     | "/_app/ho-so"
     | "/_app/khoa-hoc"
@@ -478,10 +490,18 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   FocusedRoute: typeof FocusedRouteWithChildren
+  WalletRoute: typeof WalletRoute
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
+    "/wallet": {
+      id: "/wallet"
+      path: "/wallet"
+      fullPath: "/wallet"
+      preLoaderRoute: typeof WalletRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     "/_focused": {
       id: "/_focused"
       path: ""
@@ -903,6 +923,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   FocusedRoute: FocusedRouteWithChildren,
+  WalletRoute: WalletRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

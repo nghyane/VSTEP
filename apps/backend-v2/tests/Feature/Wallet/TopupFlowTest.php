@@ -11,6 +11,8 @@ use App\Models\WalletTopupPackage;
 use App\Services\TopupService;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class TopupFlowTest extends TestCase
@@ -50,6 +52,64 @@ class TopupFlowTest extends TestCase
         $response->assertJsonPath('data.status', 'pending');
         $response->assertJsonPath('data.amount_vnd', 200_000);
         $response->assertJsonPath('data.coins_to_credit', 2_200);
+    }
+
+    public function test_topup_payment_redirect_accepts_allowed_client_urls(): void
+    {
+        config([
+            'app.frontend_url' => 'https://vstepgo.com',
+            'app.payment_redirect_origins' => ['https://app.vstepgo.com'],
+        ]);
+        $capturedPayload = null;
+        Http::fake(function (Request $request) use (&$capturedPayload) {
+            $capturedPayload = $request->data();
+
+            return Http::response([
+                'data' => [
+                    'checkoutUrl' => 'https://pay.payos.test/checkout',
+                    'paymentLinkId' => 'payos_link_test',
+                ],
+            ]);
+        });
+
+        $package = WalletTopupPackage::factory()->create();
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/wallet/topup', [
+                'package_id' => $package->id,
+                'payment_provider' => 'payos',
+                'return_url' => 'https://app.vstepgo.com/dashboard?from=payos',
+                'cancel_url' => 'https://app.vstepgo.com/dashboard?cancel=1',
+            ])
+            ->assertCreated();
+
+        $this->assertSame('https://app.vstepgo.com/dashboard?from=payos', $capturedPayload['returnUrl']);
+        $this->assertSame('https://app.vstepgo.com/dashboard?cancel=1', $capturedPayload['cancelUrl']);
+    }
+
+    public function test_topup_payment_redirect_rejects_untrusted_client_urls(): void
+    {
+        config([
+            'app.frontend_url' => 'https://vstepgo.com',
+            'app.payment_redirect_origins' => ['https://vstepgo.com'],
+        ]);
+        Http::fake();
+
+        $package = WalletTopupPackage::factory()->create();
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/wallet/topup', [
+                'package_id' => $package->id,
+                'payment_provider' => 'payos',
+                'return_url' => 'http://localhost:5175/dashboard',
+                'cancel_url' => 'http://localhost:5175/dashboard',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.return_url.0', 'URL chuyển hướng thanh toán không được phép.');
+
+        Http::assertNothingSent();
     }
 
     public function test_confirm_topup_credits_coins(): void
