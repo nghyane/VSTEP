@@ -21,12 +21,12 @@ const RUBRIC_LABELS: Record<string, string> = {
 };
 
 export default function WritingGradingScreen() {
-  const { submissionId } = useLocalSearchParams<{ submissionId: string }>();
+  const { attemptId } = useLocalSearchParams<{ attemptId: string }>();
   const c = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const accent = c.skillWriting;
-  const { data, isLoading, isError, isFetching, refetch } = useWritingGradingResult(submissionId ?? "");
+  const { data, isLoading, isError, isFetching, refetch } = useWritingGradingResult(attemptId ?? "");
   const resultReady = data?.overallBand != null;
 
   return (
@@ -55,7 +55,7 @@ export default function WritingGradingScreen() {
 
         {!isLoading && !isError && !resultReady ? (
           <GradingPendingState
-            title="AI đang chấm bài"
+            title="Hệ thống đang chấm bài"
             subtitle="Kết quả sẽ tự cập nhật vài giây một lần. Cứ bình tĩnh, máy đang sửa từng câu."
             accentColor={c.warning}
             onBack={() => router.back()}

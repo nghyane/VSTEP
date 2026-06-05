@@ -74,7 +74,7 @@ export interface WritingPrompt {
 }
 
 export interface WritingSubmission {
-  submissionId: string; wordCount: number; submittedAt: string; gradingStatus: string;
+  submissionId: string; attemptId: string; wordCount: number; submittedAt: string; gradingStatus: string;
 }
 
 export interface WritingOutlineSection {
@@ -109,6 +109,7 @@ export interface WritingSampleMarker {
 
 export interface WritingHistoryItem {
   id: string;
+  attemptId: string;
   submittedAt: string;
   wordCount: number;
   prompt: { id: string; slug: string; title: string; part: number } | null;
@@ -306,6 +307,11 @@ interface AssessmentResultPayload {
 
 interface PracticeGradingResultResponse {
   data: AssessmentResultPayload | null;
+}
+
+interface AssessmentViewResponse {
+  status: "pending" | "processing" | "ready" | "failed";
+  result: AssessmentResultPayload | null;
 }
 
 export interface PresignUploadResponse {
@@ -745,17 +751,15 @@ export function useGradingJobStatus(jobId: string) {
 
 // ── Writing grading result ──
 
-export function useWritingGradingResult(submissionId: string) {
+export function useWritingGradingResult(attemptId: string) {
   return useQuery({
-    queryKey: ["practice", "writing", "result", submissionId],
+    queryKey: ["assessment-attempts", attemptId, "view"],
     queryFn: async () => {
-      const response = await api.get<PracticeGradingResultResponse>(
-        `/api/v1/practice/writing/submissions/${submissionId}/result`,
-      );
+      const response = await api.get<AssessmentViewResponse>(`/api/v1/assessment-attempts/${attemptId}/view`);
       return normalizeWritingGradingResult(response);
     },
     refetchInterval: (q) => (q.state.data?.overallBand != null ? false : 5000),
-    enabled: !!submissionId,
+    enabled: !!attemptId,
     retry: false,
   });
 }
@@ -775,8 +779,8 @@ export function useSpeakingGradingResult(submissionId: string) {
   });
 }
 
-function normalizeWritingGradingResult(response: PracticeGradingResultResponse): WritingGradingResult | null {
-  const result = response.data;
+function normalizeWritingGradingResult(response: PracticeGradingResultResponse | AssessmentViewResponse): WritingGradingResult | null {
+  const result = "result" in response ? response.result : response.data;
   if (!result) return null;
 
   const feedback = result.feedback;

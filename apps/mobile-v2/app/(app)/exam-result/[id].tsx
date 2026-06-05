@@ -12,7 +12,7 @@ import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 const GRADING_LABEL: Record<string, string> = {
   pending: "Đang chờ chấm",
-  processing: "AI đang chấm",
+  processing: "Hệ thống đang chấm",
   completed: "Đã chấm xong",
   failed: "Lỗi chấm bài",
 };
@@ -122,6 +122,7 @@ export default function ExamResultScreen() {
           status={gradingStatus.writing}
           data={data.writingFeedback.map((item, idx) => ({
             submissionId: item.submissionId,
+            detailId: item.attemptId,
             overallBand: item.overallBand,
             label: `Task ${idx + 1}`,
           }))}
@@ -136,6 +137,7 @@ export default function ExamResultScreen() {
           status={gradingStatus.speaking}
           data={data.speakingFeedback.map((item, idx) => ({
             submissionId: item.submissionId,
+            detailId: item.submissionId,
             overallBand: item.overallBand,
             label: `Part ${idx + 1}`,
           }))}
@@ -170,7 +172,7 @@ function GradingCard({
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   status: string;
-  data: { submissionId: string; overallBand: number | null; label: string }[];
+  data: { submissionId: string; detailId: string | null; overallBand: number | null; label: string }[];
 }) {
   const c = useThemeColors();
   const router = useRouter();
@@ -186,7 +188,7 @@ function GradingCard({
   const color = skill === "speaking" && status === "completed" ? c.coinDark : statusColor;
   const tint = `${color}20`;
   const labelStatus = GRADING_LABEL[status] ?? status;
-  const completedItems = data.filter((item) => item.overallBand != null);
+  const completedItems = data.filter((item): item is { submissionId: string; detailId: string; overallBand: number; label: string } => item.overallBand != null && !!item.detailId);
   const pendingCount = data.length - completedItems.length;
 
   return (
@@ -206,7 +208,7 @@ function GradingCard({
           {completedItems.map((item) => (
             <HapticTouchable
               key={item.submissionId}
-              onPress={() => router.push(`/(app)/grading/${skill}/${item.submissionId}` as never)}
+              onPress={() => router.push(`/(app)/grading/${skill}/${item.detailId}` as never)}
               style={[s.resultRow, { borderColor: c.border }]}
             >
               <Text style={[s.resultRowLabel, { color: c.foreground }]}>{item.label}</Text>

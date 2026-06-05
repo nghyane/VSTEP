@@ -31,6 +31,7 @@ export interface ExamSessionResults {
   }[] | null;
   writingFeedback: {
     submissionId: string;
+    attemptId: string | null;
     taskId: string;
     wordCount: number;
     text: string;
@@ -48,6 +49,7 @@ export interface ExamSessionResults {
   }[];
   speakingFeedback: {
     submissionId: string;
+    attemptId: string | null;
     partId: string;
     audioUrl: string | null;
     transcript: string | null;

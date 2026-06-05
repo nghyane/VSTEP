@@ -10,8 +10,8 @@ import type { SkillActivityDay } from "@/types/api";
 const WEEKS = 12;
 const DAYS = 7;
 const DAY_LABELS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
-const CELL_SIZE = 12;
-const GAP = 2;
+const CELL_SIZE = 18;
+const GAP = 3;
 
 type HeatmapCell = { level: number; future: boolean };
 
@@ -83,11 +83,9 @@ export function ActivityHeatmap() {
   return (
     <DepthCard style={styles.root}>
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerLeft}>
           <Text style={[styles.title, { color: c.foreground }]}>Hoạt động luyện tập</Text>
-          <Text style={[styles.subtitle, { color: c.subtle }]}>
-            {totalActiveDays} ngày có luyện tập trong {WEEKS} tuần qua
-          </Text>
+          <Text style={[styles.subtitle, { color: c.subtle }]}>{totalActiveDays} ngày có luyện tập trong {WEEKS} tuần qua</Text>
         </View>
         <View style={styles.legend}>
           <Text style={[styles.legendText, { color: c.subtle }]}>Ít</Text>
@@ -117,9 +115,6 @@ export function ActivityHeatmap() {
                     styles.cell,
                     {
                       backgroundColor: cell.future ? "transparent" : levelColor(cell.level, c),
-                      width: CELL_SIZE,
-                      height: CELL_SIZE,
-                      borderRadius: radius.sm,
                     },
                   ]}
                 />
@@ -142,22 +137,31 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginBottom: spacing.sm,
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  headerLeft: {
+    flex: 1,
+    minWidth: 0,
+  },
+  legend: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    flexShrink: 1,
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
   },
   title: {
     fontSize: fontSize.base,
     fontFamily: fontFamily.extraBold,
   },
   subtitle: {
-    fontSize: fontSize.xs,
+    fontSize: fontSize.sm,
     marginTop: 2,
   },
-  legend: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
   legendText: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: fontFamily.semiBold,
   },
   legendCell: {
@@ -168,28 +172,32 @@ const styles = StyleSheet.create({
   gridContainer: {
     flexDirection: "row",
     gap: 4,
+    alignItems: "flex-start",
   },
   dayLabels: {
+    width: CELL_SIZE,
     justifyContent: "space-between",
     paddingTop: 2,
   },
   dayLabel: {
-    fontSize: 9,
+    width: CELL_SIZE,
+    fontSize: fontSize.xs,
     fontFamily: fontFamily.semiBold,
     lineHeight: CELL_SIZE + GAP,
     height: CELL_SIZE,
+    textAlign: "center",
   },
   weeks: {
     flexDirection: "row",
     gap: GAP,
-    flex: 1,
   },
   weekColumn: {
     gap: GAP,
-    flex: 1,
+    width: CELL_SIZE,
   },
   cell: {
     width: CELL_SIZE,
     height: CELL_SIZE,
+    borderRadius: radius.sm,
   },
 });

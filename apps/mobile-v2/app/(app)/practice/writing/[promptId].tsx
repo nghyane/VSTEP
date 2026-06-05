@@ -83,7 +83,7 @@ export default function WritingExerciseScreen() {
           <Text style={[s.previewMeta, { color: c.subtle }]}>
             {detail.minWords}–{detail.maxWords} từ{detail.estimatedMinutes ? ` · ${detail.estimatedMinutes} phút` : ""}
           </Text>
-          <Text style={[s.previewNote, { color: c.mutedForeground }]}>AI sẽ chấm bài sau khi bạn nộp</Text>
+          <Text style={[s.previewNote, { color: c.mutedForeground }]}>Hệ thống sẽ chấm bài sau khi bạn nộp</Text>
           <DepthButton
             onPress={() => startMutation.mutate()}
             disabled={startMutation.isPending}
@@ -123,7 +123,7 @@ interface EditorScreenProps {
 function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProps) {
   const [text, setText] = useState("");
   const [selection, setSelection] = useState({ start: 0, end: 0 });
-  const [submitted, setSubmitted] = useState<{ submissionId: string; wordCount: number } | null>(null);
+  const [submitted, setSubmitted] = useState<{ attemptId: string; wordCount: number } | null>(null);
   const [showReview, setShowReview] = useState(false);
   const [showSample, setShowSample] = useState(false);
   const [promptTr, setPromptTr] = useState<string | null>(null);
@@ -141,7 +141,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
   const submitMutation = useMutation({
     mutationFn: () => submitWritingSession(sessionId, text),
     onSuccess: (res) => {
-      setSubmitted({ submissionId: res.submissionId, wordCount: res.wordCount });
+      setSubmitted({ attemptId: res.attemptId, wordCount: res.wordCount });
       setShowReview(true);
     },
   });
@@ -230,7 +230,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
             <Ionicons name="checkmark-circle" size={48} color={COLOR} />
             <Text style={[s.resultTitle, { color: c.foreground }]}>Đã nộp bài!</Text>
             <Text style={[s.resultSub, { color: c.mutedForeground }]}>
-              {submitted.wordCount} từ · AI đang chấm bài
+              {submitted.wordCount} từ · hệ thống đang chấm bài
             </Text>
             <DepthButton
               onPress={() => setShowReview(true)}
@@ -414,7 +414,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
       {submitted ? (
         <WritingReviewSheet
           visible={showReview}
-          submissionId={submitted.submissionId}
+          attemptId={submitted.attemptId}
           onClose={() => setShowReview(false)}
         />
       ) : null}
