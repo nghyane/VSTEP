@@ -12,7 +12,7 @@ import { saveTokens, clearTokens, getAccessToken, getRefreshToken } from "@/lib/
 import { refreshSession } from "@/lib/api";
 import { HapticsProvider } from "@/contexts/HapticsContext";
 import { WelcomeGiftModal } from "@/features/onboarding/WelcomeGiftModal";
-import { loadStreakData } from "@/features/streak/streak-store";
+import { loadStreakData, resetStreakData } from "@/features/streak/streak-store";
 import type { AuthUser, Profile } from "@/types/api";
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
@@ -81,9 +81,12 @@ export default function RootLayout() {
     async (accessToken: string, refreshToken: string, p: Profile) => {
       if (!user) return;
       await saveTokens(accessToken, refreshToken, user, p);
+      queryClient.clear();
+      resetStreakData();
       setProfile(p);
       setSuggestedNickname(null);
       setStatus("authenticated");
+      void loadStreakData().catch(() => undefined);
     },
     [user],
   );

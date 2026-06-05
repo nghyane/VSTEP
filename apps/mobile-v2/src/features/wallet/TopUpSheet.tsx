@@ -16,11 +16,12 @@ import type { TopupPackage, TopupOrder, WalletBalance } from "@/features/wallet/
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
 
 const PENDING_TOPUP_ORDER_KEY = "wallet.pendingTopupOrder";
-const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/dashboard";
+const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/wallet";
 
 interface PendingTopupOrder {
   id: string;
   coins: number;
+  providerRef?: string | null;
 }
 
 interface Props {
@@ -63,7 +64,10 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
     if (checkingPaymentRef.current) return;
     setChecking(true);
     try {
-      const order = await api.get<TopupOrder>(`/api/v1/wallet/topup/${orderToCheck.id}/status`);
+      let order = await api.get<TopupOrder>(`/api/v1/wallet/topup/${orderToCheck.id}/status`);
+      if (order.status === "pending" && orderToCheck.providerRef) {
+        order = await reportTopupPaymentReturn(orderToCheck.providerRef).catch(() => order);
+      }
       if (order.status === "paid") {
         const balance = await api.get<WalletBalance>("/api/v1/wallet/balance");
         syncWalletBalanceCache(queryClient, balance.balance, balance.lastTransactionAt);
@@ -129,6 +133,7 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
         packageId: selected.id,
         paymentProvider: "payos",
         returnUrl: createTopupReturnUrl(),
+        cancelUrl: createTopupReturnUrl(),
       });
 
       if (!order.paymentUrl) {
@@ -136,7 +141,11 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
         return;
       }
 
-      const nextPendingOrder = { id: order.id, coins: order.coinsToCredit || selected.totalCoins };
+      const nextPendingOrder = {
+        id: order.id,
+        coins: order.coinsToCredit || selected.totalCoins,
+        providerRef: order.providerRef,
+      };
       await savePendingTopupOrder(nextPendingOrder);
       setPendingOrder(nextPendingOrder);
       await Linking.openURL(order.paymentUrl);
@@ -217,6 +226,10 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
 function createTopupReturnUrl(): string {
   const configured = process.env.EXPO_PUBLIC_PAYOS_RETURN_URL?.trim();
   return configured || DEFAULT_PAYOS_RETURN_URL;
+}
+
+function reportTopupPaymentReturn(paymentLinkId: string): Promise<TopupOrder> {
+  return api.post<TopupOrder>("/api/v1/wallet/topup/payment-return", { id: paymentLinkId });
 }
 
 function isPendingTopupOrder(value: unknown): value is PendingTopupOrder {
