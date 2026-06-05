@@ -19,7 +19,7 @@ import { ScoreTrend } from "@/components/dashboard/ScoreTrend";
 import { useAuth } from "@/hooks/use-auth";
 import { useOverview, useStreak } from "@/hooks/use-progress";
 import { getTargetBand } from "@/lib/vstep";
-import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { useThemeColors, useSkillColor, useResponsiveLayout, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { ScoreSpider, Skill } from "@/types/api";
 
 const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
@@ -52,6 +52,7 @@ function useStaggerFade(count: number, baseDelay = 0, step = 80) {
 export default function DashboardScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
+  const layout = useResponsiveLayout();
   const { user, profile } = useAuth();
   const { data: overview } = useOverview();
   const { data: streakData } = useStreak();
@@ -82,6 +83,10 @@ export default function DashboardScreen() {
     ? `Trung bình gần đây · ${sampleRange} lượt theo từng kỹ năng`
     : `Cần thêm ${Math.max(0, MIN_TESTS_FOR_CHART - (stats?.totalTests ?? 0))} bài thi để hiện biểu đồ`;
 
+  const chartStackStyle = layout.isTablet ? [styles.chartStack, styles.chartStackWide] : [styles.chartStack];
+  const chartCardStyle = layout.isTablet ? [styles.chartCard, styles.chartCardWide] : [styles.chartCard];
+  const chartSideStyle = layout.isTablet ? [styles.chartSideCard] : undefined;
+
   function toAnimStyle(index: number) {
     return {
       opacity: sectionAnims[index],
@@ -99,19 +104,30 @@ export default function DashboardScreen() {
   return (
     <ScrollView
       style={[styles.root, { backgroundColor: c.background }]}
-      contentContainerStyle={[styles.scroll, { paddingTop: insets.top, paddingBottom: insets.bottom + spacing.lg }]}
+      contentContainerStyle={[
+        styles.scroll,
+        {
+          paddingTop: insets.top,
+          paddingBottom: insets.bottom + spacing.lg,
+          paddingLeft: layout.isTabletLandscape ? layout.contentInsetStart : layout.horizontalPadding,
+          paddingRight: layout.horizontalPadding,
+          alignItems: "center",
+        },
+      ]}
       showsVerticalScrollIndicator={false}
     >
-      <Animated.View style={[styles.topBar, toAnimStyle(0)]}>
+      <Animated.View style={[styles.sectionShell, { maxWidth: layout.contentMaxWidth }, toAnimStyle(0)]}>
+        <View style={styles.topBar}>
         <Text style={[styles.topBarTitle, { color: c.foreground }]}>Tổng quan</Text>
         <View style={styles.topRight}>
           <StreakButton streak={streakData?.current ?? 0} />
           <CoinButton />
           <NotificationButton />
         </View>
+        </View>
       </Animated.View>
 
-      <Animated.View style={toAnimStyle(1)}>
+      <Animated.View style={[styles.sectionShell, { maxWidth: layout.contentMaxWidth }, toAnimStyle(1)]}>
         <LinearGradient
           colors={[c.primaryLight, c.primary, c.primaryDark]}
           start={{ x: 0, y: 0 }}
@@ -157,7 +173,7 @@ export default function DashboardScreen() {
         </LinearGradient>
       </Animated.View>
 
-      <Animated.View style={toAnimStyle(2)}>
+      <Animated.View style={[styles.sectionShell, { maxWidth: layout.contentMaxWidth }, toAnimStyle(2)]}>
         <NextActionCard
           totalTests={stats?.totalTests ?? 0}
           todayActive={streakData?.todayActive ?? false}
@@ -166,21 +182,25 @@ export default function DashboardScreen() {
         />
       </Animated.View>
 
-      <Animated.View style={[styles.statsGrid, toAnimStyle(3)]}>
+      <Animated.View style={[styles.sectionShell, styles.statsGrid, { maxWidth: layout.contentMaxWidth }, toAnimStyle(3)]}>
         {SKILLS.map((skill) => (
           <SkillStatCard
             key={skill}
             skill={skill}
             score={chart?.[skill] ?? null}
             targetBand={targetBand}
+            wide={layout.isTablet}
           />
         ))}
       </Animated.View>
 
-      <ActivityHeatmap />
+      <View style={[styles.sectionShell, { maxWidth: layout.contentMaxWidth }]}>
+        <ActivityHeatmap />
+      </View>
 
-      <Animated.View style={toAnimStyle(4)}>
-        <DepthCard style={styles.chartCard}>
+      <Animated.View style={[styles.sectionShell, { maxWidth: layout.contentMaxWidth }, toAnimStyle(4)]}>
+        <View style={chartStackStyle}>
+        <DepthCard style={chartCardStyle}>
           <Text style={[styles.chartTitle, { color: c.foreground }]}>Năng lực 4 kỹ năng</Text>
           <Text style={[styles.chartSub, { color: c.subtle }]}>{spiderSubtitle}</Text>
           <SpiderChart
@@ -193,12 +213,15 @@ export default function DashboardScreen() {
             targetBand={targetBand}
             hasData={hasSpiderData}
           />
-          <SpiderLegend chart={chart} />
+          <SpiderLegend chart={chart} wide={layout.isTablet} />
         </DepthCard>
-        <DoughnutCard />
+        <View style={chartSideStyle}>
+          <DoughnutCard />
+        </View>
+        </View>
       </Animated.View>
 
-      <Animated.View style={toAnimStyle(5)}>
+      <Animated.View style={[styles.sectionShell, { maxWidth: layout.contentMaxWidth }, toAnimStyle(5)]}>
         <ScoreTrend />
       </Animated.View>
     </ScrollView>
@@ -228,7 +251,7 @@ function LevelDot({ label, value, variant }: { label: string; value: string; var
   );
 }
 
-function SkillStatCard({ skill, score, targetBand }: { skill: Skill; score: number | null; targetBand: number }) {
+function SkillStatCard({ skill, score, targetBand, wide }: { skill: Skill; score: number | null; targetBand: number; wide: boolean }) {
   const c = useThemeColors();
   const color = useSkillColor(skill);
   const gap = score !== null ? score - targetBand : null;
@@ -236,7 +259,13 @@ function SkillStatCard({ skill, score, targetBand }: { skill: Skill; score: numb
   const gapColor = score === null ? c.mutedForeground : gap !== null && gap >= 0 ? c.success : c.warning;
 
   return (
-    <View style={[styles.statCard, { backgroundColor: c.card, borderColor: color + "30", borderBottomColor: color }]}>
+    <View
+      style={[
+        styles.statCard,
+        wide ? styles.statCardWide : styles.statCardNarrow,
+        { backgroundColor: c.card, borderColor: color + "30", borderBottomColor: color },
+      ]}
+    >
       <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
         <SkillIcon skill={skill} size={20} bare />
         <Text style={[styles.statLabel, { color: c.subtle }]}>{SKILL_META[skill].vi}</Text>
@@ -322,22 +351,22 @@ function NextActionCard({
   );
 }
 
-function SpiderLegend({ chart }: { chart: ScoreSpider | null }) {
+function SpiderLegend({ chart, wide }: { chart: ScoreSpider | null; wide: boolean }) {
   return (
     <View style={styles.spiderLegendGrid}>
       {SKILLS.map((skill) => (
-        <SpiderLegendItem key={skill} skill={skill} score={chart?.[skill] ?? null} />
+        <SpiderLegendItem key={skill} skill={skill} score={chart?.[skill] ?? null} wide={wide} />
       ))}
     </View>
   );
 }
 
-function SpiderLegendItem({ skill, score }: { skill: Skill; score: number | null }) {
+function SpiderLegendItem({ skill, score, wide }: { skill: Skill; score: number | null; wide: boolean }) {
   const c = useThemeColors();
   const color = useSkillColor(skill);
 
   return (
-    <View style={styles.spiderLegendItem}>
+    <View style={[styles.spiderLegendItem, wide ? styles.spiderLegendItemWide : styles.spiderLegendItemNarrow]}>
       <SkillIcon skill={skill} size={18} bare />
       <Text style={[styles.spiderLegendLabel, { color: c.foreground }]}>{SKILL_META[skill].vi}</Text>
       <Text style={[styles.spiderLegendValue, { color: score !== null && score > 0 ? color : c.subtle }]}>{score !== null && score > 0 ? score.toFixed(1) : "—"}</Text>
@@ -347,7 +376,8 @@ function SpiderLegendItem({ skill, score }: { skill: Skill; score: number | null
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: spacing.xl },
+  scroll: {},
+  sectionShell: { width: "100%" },
   topBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: spacing.base },
   topBarTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
   topRight: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
@@ -377,14 +407,22 @@ const styles = StyleSheet.create({
   nextTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   nextSub: { fontSize: fontSize.xs, marginTop: 2, lineHeight: 16 },
   statsGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.lg },
-  statCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.base, width: "48%", gap: 4 },
+  statCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg, padding: spacing.base, gap: 4 },
+  statCardNarrow: { width: "48%" },
+  statCardWide: { width: "23.5%" },
   statLabel: { fontSize: fontSize.xs },
   statValue: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold },
+  chartStack: { gap: spacing.base },
+  chartStackWide: { flexDirection: "row", alignItems: "stretch" },
   chartCard: { marginBottom: spacing.base },
+  chartCardWide: { flex: 1.35, marginBottom: 0 },
+  chartSideCard: { flex: 0.95 },
   chartTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold },
   chartSub: { fontSize: fontSize.sm, marginBottom: spacing.sm },
   spiderLegendGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginTop: spacing.xs },
-  spiderLegendItem: { width: "48%", flexDirection: "row", alignItems: "center", gap: spacing.sm, borderRadius: radius.button, padding: spacing.sm },
+  spiderLegendItem: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderRadius: radius.button, padding: spacing.sm },
+  spiderLegendItemNarrow: { width: "48%" },
+  spiderLegendItemWide: { width: "31.5%" },
   spiderLegendLabel: { flex: 1, fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   spiderLegendValue: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold },
 });
