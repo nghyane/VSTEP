@@ -2,12 +2,14 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-nat
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { DepthButton } from "@/components/DepthButton";
 import { GradingErrorState, GradingLoadingState } from "@/components/GradingStates";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { MascotEmpty } from "@/components/MascotStates";
 import { useExamSessionResults, useGradingStatus } from "@/hooks/use-exam-results";
+import type { WritingGradingResult } from "@/hooks/use-practice";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 const GRADING_LABEL: Record<string, string> = {
@@ -125,6 +127,7 @@ export default function ExamResultScreen() {
             detailId: item.attemptId,
             overallBand: item.overallBand,
             label: `Task ${idx + 1}`,
+            cachedResult: toWritingGradingResult(item),
           }))}
         />
       ) : null}
@@ -152,6 +155,7 @@ export default function ExamResultScreen() {
 }
 
 type McqDetailItem = NonNullable<ReturnType<typeof useExamSessionResults>["data"]>["mcqDetail"] extends (infer T)[] | null ? T : never;
+type WritingFeedbackItem = NonNullable<ReturnType<typeof useExamSessionResults>["data"]>["writingFeedback"][number];
 
 function summarizeMcq(items: McqDetailItem[] | null | undefined, itemRefType: string) {
   const scoped = items?.filter((item) => item.itemRefType === itemRefType) ?? [];
@@ -159,6 +163,43 @@ function summarizeMcq(items: McqDetailItem[] | null | undefined, itemRefType: st
     correct: scoped.filter((item) => item.isCorrect).length,
     total: scoped.length,
   };
+}
+
+function toWritingGradingResult(item: WritingFeedbackItem): WritingGradingResult | null {
+  if (item.overallBand == null) return null;
+  return {
+    rubricScores: item.criterionScores && item.criterionScores.length > 0
+      ? Object.fromEntries(item.criterionScores.map((criterion) => [criterion.key, criterion.score]))
+      : null,
+    overallBand: item.overallBand,
+    strengths: normalizeFeedbackText(item.feedback?.strengths),
+    improvements: normalizeFeedbackImprovements(item.feedback?.improvements ?? item.feedback?.evidenceNotes),
+    rewrites: normalizeFeedbackRewrites(item.feedback?.rewrites),
+    annotations: [],
+    paragraphFeedback: [],
+  };
+}
+
+function normalizeFeedbackText(items: (string | { message?: string; explanation?: string })[] | undefined): string[] {
+  return (items ?? [])
+    .map((item) => typeof item === "string" ? item : item.message ?? item.explanation ?? "")
+    .filter(Boolean);
+}
+
+function normalizeFeedbackImprovements(items: (string | { message?: string; explanation?: string })[] | undefined): { message: string; explanation: string }[] {
+  return (items ?? [])
+    .map((item) => typeof item === "string"
+      ? { message: item, explanation: "" }
+      : { message: item.message ?? item.explanation ?? "", explanation: item.explanation ?? "" })
+    .filter((item) => item.message.length > 0);
+}
+
+function normalizeFeedbackRewrites(items: (string | { original?: string; improved?: string; reason?: string })[] | undefined): { original: string; improved: string; reason: string }[] {
+  return (items ?? [])
+    .map((item) => typeof item === "string"
+      ? { original: item, improved: item, reason: "" }
+      : { original: item.original ?? "", improved: item.improved ?? "", reason: item.reason ?? "" })
+    .filter((item) => item.original.length > 0 || item.improved.length > 0);
 }
 
 function GradingCard({
@@ -172,10 +213,11 @@ function GradingCard({
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
   status: string;
-  data: { submissionId: string | null; detailId: string | null; overallBand: number | null; label: string }[];
+  data: { submissionId: string | null; detailId: string | null; overallBand: number | null; label: string; cachedResult?: WritingGradingResult | null }[];
 }) {
   const c = useThemeColors();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const statusColor = status === "pending"
     ? c.warning
     : status === "processing"
@@ -188,7 +230,7 @@ function GradingCard({
   const color = skill === "speaking" && status === "completed" ? c.coinDark : statusColor;
   const tint = `${color}20`;
   const labelStatus = GRADING_LABEL[status] ?? status;
-  const completedItems = data.filter((item): item is { submissionId: string | null; detailId: string; overallBand: number; label: string } => item.overallBand != null && !!item.detailId);
+  const completedItems = data.filter((item): item is { submissionId: string | null; detailId: string; overallBand: number; label: string; cachedResult?: WritingGradingResult | null } => item.overallBand != null && !!item.detailId);
   const pendingCount = data.length - completedItems.length;
 
   return (
@@ -208,7 +250,12 @@ function GradingCard({
           {completedItems.map((item) => (
             <HapticTouchable
               key={item.submissionId ?? item.detailId}
-              onPress={() => router.push(`/(app)/grading/${skill}/${item.detailId}` as never)}
+              onPress={() => {
+                if (skill === "writing" && item.cachedResult) {
+                  queryClient.setQueryData(["assessment-attempts", item.detailId, "view"], item.cachedResult);
+                }
+                router.push(`/(app)/grading/${skill}/${item.detailId}` as never);
+              }}
               style={[s.resultRow, { borderColor: c.border }]}
             >
               <Text style={[s.resultRowLabel, { color: c.foreground }]}>{item.label}</Text>
