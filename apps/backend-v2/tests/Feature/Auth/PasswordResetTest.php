@@ -27,13 +27,13 @@ class PasswordResetTest extends TestCase
         Notification::assertSentTo($user, ResetPassword::class);
     }
 
-    public function test_forgot_password_does_not_expose_missing_email(): void
+    public function test_forgot_password_reports_missing_email(): void
     {
         Notification::fake();
 
         $this->postJson('/api/v1/auth/forgot-password', ['email' => 'missing@example.com'])
             ->assertOk()
-            ->assertJsonPath('data.success', true);
+            ->assertJsonPath('data.success', false);
 
         Notification::assertNothingSent();
     }

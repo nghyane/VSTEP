@@ -45,6 +45,15 @@ function CourseDetailPage() {
 		cancelOrder.mutate(cancel_order)
 	}, [cancel_order, cancelOrder])
 
+	useEffect(() => {
+		const refetchCourse = () => {
+			void queryClient.invalidateQueries({ queryKey: ["courses"] })
+			void queryClient.invalidateQueries({ queryKey: ["courses", courseId] })
+		}
+		window.addEventListener("focus", refetchCourse)
+		return () => window.removeEventListener("focus", refetchCourse)
+	}, [courseId, queryClient])
+
 	if (isLoading || !data) {
 		return (
 			<>

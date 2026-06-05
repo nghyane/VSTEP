@@ -110,14 +110,14 @@ Result: Linguistic probe passed.
 
 - Writing lệch chủ yếu do Grammar/Vocabulary/Organization evidence kéo lên/xuống, không phải do AI tự chọn điểm.
 - Speaking lệch khi thiếu audio metrics: transcript-only sample không có Fluency/Pronunciation nên điểm dựa trên các tiêu chí còn lại.
-- Speaking có audio vẫn phụ thuộc speaking rate, pause count, pronunciation sub-signals và content relevance.
+- Speaking có audio vẫn phụ thuộc tốc độ nói, số lần ngập ngừng, tín hiệu phát âm và mức độ bám đề.
 
 ### Probe thấy gì?
 
 ```text
 Writing: 9/9 probes passed, actual band lệch trong khoảng ±0.5 so với expected.
 Speaking: 3/3 probes passed.
-- Part 1 transcript-only: expected 6.0 -> actual 7.0 vì thiếu fluency/pronunciation signals.
+- Part 1 transcript-only: expected 6.0 -> actual 7.0 vì thiếu tín hiệu độ trôi chảy/phát âm.
 - Part 2 audio metrics: expected 7.0 -> actual 7.0.
 - Part 3 audio metrics: expected 7.0 -> actual 7.5 do VocabularyScore cao.
 ```
@@ -125,14 +125,14 @@ Speaking: 3/3 probes passed.
 Cách nói ngắn:
 
 ```text
-Probe cho thấy Grammar/Vocabulary signals hoạt động đủ ổn cho luyện tập, nhưng có lệch do evidence extraction: grammar hơi bảo thủ, vocabulary nhạy với lexical evidence, speaking phụ thuộc audio/transcript. Vì vậy điểm dùng để feedback và định hướng học, không thay thế giám khảo chính thức.
+Probe cho thấy tín hiệu ngữ pháp/từ vựng hoạt động đủ ổn cho luyện tập, nhưng có lệch do cách trích xuất bằng chứng: grammar hơi bảo thủ, vocabulary nhạy với bằng chứng từ vựng, speaking phụ thuộc audio/transcript. Vì vậy điểm dùng để feedback và định hướng học, không thay thế giám khảo chính thức.
 ```
 
 ## Q&A trọng yếu
 
 ### Q1. AI có chấm điểm cuối không?
 
-Không. AI/công cụ ngoài chỉ lấy tín hiệu hoặc tạo feedback. Điểm cuối do backend tính từ rubric, signals và formula.
+Không. AI/công cụ ngoài chỉ lấy tín hiệu hoặc tạo feedback. Điểm luyện tập do backend tính từ tiêu chí, tín hiệu và công thức trong hệ thống.
 
 ### Q2. 20%/25% có phải thuật toán không?
 
@@ -148,11 +148,11 @@ Vì điểm được kéo bởi evidence: grammar-types, lexical evidence, organ
 
 ### Q3. Dịch vụ phát âm có quyết định Speaking score không?
 
-Không. Dịch vụ phát âm chỉ trả sub-signals như accuracy, fluency, prosody, completeness. Backend kết hợp các sub-signals bằng công thức Pronunciation rồi mới đưa vào Speaking score.
+Không. Dịch vụ phát âm chỉ trả các tín hiệu con như độ chính xác, độ trôi chảy, ngữ điệu và mức độ đầy đủ. Backend kết hợp các tín hiệu này bằng công thức Pronunciation rồi mới đưa vào Speaking score.
 
 ### Q4. Công thức có tùy tiện không?
 
-Công thức/threshold nằm trong rubric parameters và có version. Admin có thể tạo draft, simulate, activate. Nhóm không claim đây là điểm chính thức VSTEP.
+Công thức và ngưỡng điểm nằm trong bộ tiêu chí có version. Admin có thể tạo draft, simulate và activate. Nhóm không claim đây là điểm chính thức VSTEP.
 
 ### Q5. Bài lạc đề nhưng tiếng Anh tốt thì sao?
 

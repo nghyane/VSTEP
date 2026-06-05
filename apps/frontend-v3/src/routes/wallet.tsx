@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { reportTopupPaymentReturn } from "#/features/wallet/actions"
+import { signalTopupReturn } from "#/features/wallet/topup-pending"
 
 type PaymentReturnState = "paid" | "confirming" | "cancelled"
 
@@ -31,9 +32,10 @@ function PaymentReturnPage() {
 	const closeTab = () => window.close()
 
 	useEffect(() => {
-		if (!search.id || state !== "cancelled") return
+		if (!search.id) return
+		signalTopupReturn(search.id, search.status)
 		void reportTopupPaymentReturn(search.id).catch(() => undefined)
-	}, [search.id, state])
+	}, [search.id, search.status])
 
 	return (
 		<main className="flex min-h-screen items-center justify-center bg-surface px-4 py-10">

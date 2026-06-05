@@ -68,7 +68,7 @@ export default function OnboardingScreen() {
       friction: 12,
       useNativeDriver: true,
     }).start();
-  }, [step]);
+  }, [progressAnim, slideAnim, step]);
 
   async function next() {
     if (step < STEP_META.length - 1) {
@@ -265,20 +265,22 @@ export default function OnboardingScreen() {
                   >
                     <HapticTouchable onPress={() => setDeadline(key)} scalePress>
                       <View style={s.optionCardInner}>
-                    <Text style={[s.optionLevel, { color: selected ? c.primary : c.foreground }]}>
-                      {label}
-                    </Text>
-                    <Text style={[s.optionDesc, { color: selected ? c.primaryDark : c.mutedForeground }]}>
-                      {desc}
-                    </Text>
-                    {selected && (
-                      <View style={[s.checkBadge, { backgroundColor: c.primary }]}>
-                        <Text style={s.checkMark}>✓</Text>
+                        <Text style={[s.deadlineLevel, { color: selected ? c.primary : c.foreground }]} numberOfLines={1}>
+                          {label}
+                        </Text>
+                        <Text
+                          style={[s.optionDesc, { color: selected ? c.primaryDark : c.mutedForeground }]}
+                        >
+                          {desc}
+                        </Text>
+                        {selected && (
+                          <View style={[s.checkBadge, { backgroundColor: c.primary }]}>
+                            <Text style={s.checkMark}>✓</Text>
+                          </View>
+                        )}
                       </View>
-                    )}
+                    </HapticTouchable>
                   </View>
-                </HapticTouchable>
-              </View>
                 );
               })}
             </View>
@@ -325,6 +327,7 @@ const s = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   optionLevel: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold, width: 36 },
+  deadlineLevel: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold, minWidth: 88, flexShrink: 0 },
   optionDesc: { flex: 1, fontSize: fontSize.sm },
   checkBadge: { width: 24, height: 24, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   checkMark: { color: "#FFF", fontSize: 14, fontFamily: fontFamily.bold },

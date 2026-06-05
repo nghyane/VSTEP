@@ -22,7 +22,7 @@ export interface Criterion {
 	name_vi?: string
 	max_score: number
 	weight: number
-	band_descriptors: string[]
+	band_descriptors: Record<"10" | "8" | "6" | "4" | "0", string>
 }
 
 export interface RubricLifecycle {

@@ -39,11 +39,13 @@ const DEFAULT_MILESTONES: StreakMilestone[] = [
   { days: 30, coins: 700, claimed: false, claimedAt: null },
 ];
 
-let state: StreakState = {
+const DEFAULT_STATE: StreakState = {
   todayProgress: 0,
   dailyGoal: 1,
   milestones: DEFAULT_MILESTONES,
 };
+
+let state: StreakState = DEFAULT_STATE;
 
 const listeners = new Set<() => void>();
 
@@ -57,14 +59,22 @@ function setState(next: StreakState) {
 export async function loadStreakData() {
   try {
     const res = await api.get<StreakResponse>("/api/v1/streak");
-    setState({
-      todayProgress: res.todayActive ? res.dailyGoal : 0,
-      dailyGoal: res.dailyGoal,
-      milestones: res.milestones ?? DEFAULT_MILESTONES,
-    });
+    syncStreakData(res);
   } catch {
     // Keep cached/default streak state when API is unavailable.
   }
+}
+
+export function syncStreakData(res: StreakResponse) {
+  setState({
+    todayProgress: res.todayActive ? res.dailyGoal : 0,
+    dailyGoal: res.dailyGoal,
+    milestones: res.milestones ?? DEFAULT_MILESTONES,
+  });
+}
+
+export function resetStreakData() {
+  setState(DEFAULT_STATE);
 }
 
 export async function claimMilestone(days: number) {

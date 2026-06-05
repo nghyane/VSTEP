@@ -1,222 +1,62 @@
-# 01. Main deck
+# 01. Main deck — outline bảo vệ
 
-Sườn theo thầy:
+## Flow theo yêu cầu defense
 
 ```text
 Context -> Problems -> Actors -> Main Features by Actors -> System Architecture -> Technology -> Demo Workflow 1/2/3 -> Different -> Achievements -> Limitation -> Conclusion -> Thank You
 ```
 
-## Timeline 10 phút
-
-- Slide 1–3: mở đầu + context — 1 phút.
-- Slide 4–8: problems + actors + features — 1 phút 40 giây.
-- Slide 9–12: architecture + technology + scoring formula — 2 phút 20 giây.
-- Slide 13–18: demo workflow — 4 phút.
-- Slide 19–22: different + achievements + limitation + conclusion — 1 phút.
-
-## Câu bắt buộc
+## Nguyên tắc nói xuyên suốt
 
 ```text
-Hệ thống không hỏi AI “bài này mấy điểm”. AI/công cụ ngoài chỉ hỗ trợ lấy tín hiệu và feedback. Điểm cuối do backend tính bằng rubric và công thức trong code.
+Hệ thống không hỏi AI “bài này mấy điểm”. AI/công cụ ngoài chỉ hỗ trợ lấy tín hiệu và feedback. Điểm luyện tập do backend tính từ các tiêu chí, tín hiệu và công thức trong hệ thống.
 ```
 
-## Main deck
+Writing/Speaking score là điểm luyện tập/tham khảo, không thay thế giám khảo VSTEP chính thức.
 
-### Slide 1 — Title
+## Timeline 10 phút theo deck 24 slide
 
-**Slide:** tên đề tài, nhóm, mã đề tài, thành viên.
+- Slide 1–4: Context + Problems — 1 phút 20 giây.
+- Slide 5–8: Actors + Main Features by Actors — 1 phút 40 giây.
+- Slide 9–15: Architecture + Technology + evaluation principle — 2 phút 20 giây.
+- Slide 16–19: Demo Workflow 1/2/3 — 2 phút 30 giây.
+- Slide 20–24: Different + Achievements + Limitation + Conclusion + Thank You — 2 phút 10 giây.
 
-**Nói:** Kính chào hội đồng. Nhóm em trình bày hệ thống luyện thi và thi thử VSTEP, tập trung vào luyện 4 kỹ năng, phản hồi kết quả và theo dõi tiến độ.
-
-### Slide 2 — Context
-
-**Slide:** VSTEP dùng cho học tập/chứng chỉ; người học cần luyện 4 kỹ năng.
-
-**Nói:** VSTEP có nhu cầu thực tế. Vì bài thi gồm 4 kỹ năng, người học cần một hệ thống luyện tập có định hướng.
-
-### Slide 3 — Cấu trúc VSTEP
-
-**Slide:** Listening/Reading có đáp án; Writing/Speaking theo rubric.
-
-**Nói:** Listening/Reading chấm trực tiếp hơn. Writing/Speaking cần tiêu chí nên nhóm thiết kế scoring bằng rubric và formula.
-
-### Slide 4 — Problems
-
-**Slide:** tài liệu phân tán; luyện đề rời rạc; thiếu feedback nhanh; khó biết điểm yếu.
-
-**Nói:** Vấn đề không phải thiếu tài liệu, mà thiếu hệ thống có cấu trúc để biết yếu ở đâu và nên học gì tiếp.
-
-### Slide 5 — Actors
-
-**Slide:** Learner, Admin/Staff, Teacher, Mobile learner.
-
-**Nói:** Learner là trung tâm. Admin vận hành nội dung/rubric. Teacher và mobile hỗ trợ hệ sinh thái học tập, nhưng không phải trọng tâm demo chính.
-
-### Slide 6 — Learner Features
-
-**Slide:** dashboard, luyện 4 kỹ năng, thi thử, kết quả, learning path.
-
-**Nói:** Learner đi theo luồng: dashboard -> luyện tập/thi thử -> xem kết quả -> nhận gợi ý học tiếp.
-
-### Slide 7 — Admin/Staff Features
-
-**Slide:** quản lý nội dung, đề/version, rubric, user/khóa học/booking.
-
-**Nói:** Admin giúp hệ thống vận hành được: quản lý nội dung, version đề và rubric chấm Writing/Speaking.
-
-### Slide 8 — Teacher/Mobile Features
-
-**Slide:** teacher lịch dạy/booking/đơn nghỉ; mobile companion cho learner.
-
-**Nói:** Teacher hỗ trợ lịch dạy và booking; mobile là companion app cho learner. Nhóm giới thiệu ngắn phần này, còn demo chính tập trung vào learner web và admin.
-
-### Slide 9 — System Architecture
-
-**Slide:**
+## Câu xin phép lướt nhanh
 
 ```text
-Web/Admin/Mobile -> Laravel API -> PostgreSQL
-                         |
-                         -> Redis Queue/Horizon
-                         -> Storage
+Do thời gian trình bày có giới hạn, nhóm em xin tập trung vào core learning flow, kiến trúc hệ thống và cơ chế đánh giá bài luyện tập. Một số phần hỗ trợ nhóm em xin phép lướt nhanh và sẽ trình bày kỹ hơn nếu hội đồng có câu hỏi.
 ```
 
-**Callout:** AI/speech/language chỉ là support layer.
+## Outline từng slide
 
-**Nói:** Backend giữ business logic và công thức tính điểm; tác vụ Writing/Speaking chạy qua queue nếu cần.
+1. **Title** — giới thiệu đề tài và trọng tâm: luyện 4 kỹ năng, feedback, gợi ý học tiếp.
+2. **VSTEP Context** — VSTEP đánh giá 4 kỹ năng, người học cần luyện tập có định hướng.
+3. **Problems** — khó biết điểm yếu; Writing/Speaking thiếu phản hồi; luyện tập rời rạc.
+4. **Problem Analysis** — giải pháp hiện có có ưu điểm nhưng chưa tạo vòng học đầy đủ bám VSTEP.
+5. **Actors** — learner, admin/staff, teacher, mobile learner, external AI/speech services.
+6. **Main Features — Learner** — practice/mock test, feedback, skill gaps, recommendation, progress.
+7. **Main Features — Admin/Staff** — quản lý nội dung, đề/version, tiêu chí đánh giá, user/course/booking.
+8. **Main Features — Teacher/Mobile** — teacher hỗ trợ lịch/booking; mobile là companion app cho learner.
+9. **System Architecture** — web/mobile/admin → Laravel API → PostgreSQL/Redis/storage/external services.
+10. **Technology** — Laravel, PostgreSQL, Redis, React, Expo/React Native, Docker/GitHub Actions.
+11. **Technology — Deployment & Quality** — deployment, CI/CD, queue, kiểm thử và cô lập external services.
+12. **Practice Evaluation Principle** — AI không quyết định điểm; backend tính điểm luyện tập.
+13. **Writing Practice Evaluation** — tiêu chí: đáp ứng đề, tổ chức bài, ngữ pháp, từ vựng.
+14. **Speaking Practice Evaluation** — tiêu chí: ngữ pháp, từ vựng, độ trôi chảy, phát triển ý, phát âm.
+15. **Abnormal Answer Handling** — bài quá ngắn/lạc đề/copy/spam/non-English bị giới hạn điểm.
+16. **Demo Overview** — demo 3 workflow: learner practice, mock test/result, admin management.
+17. **Demo Workflow 1 — Learner Practice** — login → practice hub → chọn kỹ năng → làm bài → feedback.
+18. **Demo Workflow 2 — Mock Test & Result** — mock test 4 kỹ năng → submit → processing → result/skill gaps.
+19. **Demo Workflow 3 — Admin Management** — admin quản lý nội dung, đề, tiêu chí, user/course.
+20. **Different Points** — vòng học 4 kỹ năng, feedback theo tiêu chí, recommendation, SRS, admin-managed content.
+21. **Achievements** — backend, web, mobile, admin, module hỗ trợ đánh giá, tài liệu, mã nguồn.
+22. **Limitations** — điểm Writing/Speaking là tham khảo; cần dữ liệu giám khảo; adaptive difficulty là future work.
+23. **Conclusion** — tổng kết đóng góp và hướng phát triển.
+24. **Thank You** — cảm ơn hội đồng và chuyển sang Q&A.
 
-### Slide 10 — Technology + Anki
-
-**Slide:** Laravel, PostgreSQL, Redis, React, Expo/React Native, Anki/FSRS See detail.
-
-**Nói:** Công nghệ chia theo tầng. Anki/FSRS chỉ dùng cho ôn từ vựng, không nói sâu nếu hội đồng chưa hỏi.
-
-### Slide 11 — Writing Formula
-
-**Slide:**
+## Hạn chế nên nói ở Slide 22
 
 ```text
-Text -> signals -> 4 criteria -> task score -> writing band
-
-TaskFulfillmentScore = ContentCoverage + DevelopmentDepth + PositionBonus - OffTopicPenalty
-OrganizationScore    = Paragraphing + LinkingDevices + SentenceVariety
-GrammarScore         = (StructureRange + GrammarAccuracy) / 2 - PunctuationPenalty
-VocabularyScore      = LexicalQuality - SpellingPenalty
-
-TaskScore   = round_to_0.5((TaskFulfillmentScore + OrganizationScore + GrammarScore + VocabularyScore) / 4)
-WritingBand = round_to_0.5((Task1Score + 2 × Task2Score) / 3)
+Hạn chế hiện tại là phần đánh giá Writing và Speaking mới phục vụ mục tiêu luyện tập và tham khảo, chưa thay thế giám khảo chính thức. Ngoài ra, hệ thống cần thêm bộ dữ liệu lớn hơn do giám khảo chấm để kiểm chứng và hiệu chỉnh độ chính xác.
 ```
-
-**Callout:** bài quá ngắn/lạc đề/copy/spam bị giới hạn điểm.
-
-**Chú thích biến:**
-
-- `ContentCoverage`: mức độ đáp ứng yêu cầu đề.
-- `DevelopmentDepth`: mức độ phát triển ý.
-- `StructureRange`: độ đa dạng cấu trúc câu.
-- `GrammarAccuracy`: độ chính xác ngữ pháp.
-- `LexicalQuality`: chất lượng/độ đa dạng từ vựng.
-
-**Nói:** Writing có 4 tiêu chí, mỗi tiêu chí có công thức riêng. Backend tính điểm từng task, sau đó Task 2 có trọng số cao hơn trong Writing band.
-
-### Slide 12 — Speaking Formula
-
-**Slide:**
-
-```text
-Audio -> transcript/signals -> 5 criteria -> speaking score
-
-GrammarScore       = (StructureRange + GrammarAccuracy) / 2
-VocabularyScore    = 3 + DiversityBonus + DifficultyBonus + ReadabilityBonus
-FluencyScore       = 3 + SpeakingRateBonus - PausePenalty
-DiscourseScore     = IdeaDevelopment × ContentRelevance
-PronunciationScore = 0.45×Accuracy + 0.20×Fluency + 0.20×Prosody + 0.15×Completeness - Penalty
-
-SpeakingScore = round_to_0.5((GrammarScore + VocabularyScore + FluencyScore + DiscourseScore + PronunciationScore) / 5)
-```
-
-**Callout:** bài quá ngắn/audio kém/lạc đề bị giới hạn điểm.
-
-**Chú thích biến:**
-
-- `SpeakingRateBonus`: điểm cộng theo tốc độ nói.
-- `PausePenalty`: điểm trừ khi ngập ngừng nhiều.
-- `ContentRelevance`: mức độ bám đề.
-- `Prosody`: ngữ điệu/trọng âm.
-- `Completeness`: mức độ đầy đủ của phần nói được nhận diện.
-
-**Nói:** Speaking bắt đầu từ audio. Hệ thống lấy transcript, tốc độ nói, pause, pronunciation và mức bám đề; backend tính 5 tiêu chí rồi lấy trung bình.
-
-### Slide 13 — Demo Overview
-
-**Slide:** Demo 1 learner dashboard; Demo 2 practice/thi thử/result; Demo 3 admin rubric/content.
-
-**Nói:** Demo theo hành trình learner trước, sau đó admin để chứng minh hệ thống quản trị được nội dung và rubric.
-
-### Slide 14 — Demo 1.1: Dashboard
-
-**Slide:** screenshot dashboard.
-
-**Nói:** Learner xem mục tiêu, tiến độ, streak/heatmap và trạng thái kỹ năng.
-
-### Slide 15 — Demo 1.2: Learning Path
-
-**Slide:** screenshot learning path/progress.
-
-**Nói:** Learning path dựa trên mục tiêu, kết quả thi thử và tiến độ luyện tập; không claim dự đoán điểm chính thức.
-
-### Slide 16 — Demo 2.1: Practice/Thi thử
-
-**Slide:** screenshot practice hub/test room.
-
-**Nói:** Learner chọn kỹ năng hoặc bài thi thử, làm bài và submit. Writing/Speaking đi qua assessment workflow.
-
-### Slide 17 — Demo 2.2: Result/Feedback
-
-**Slide:** screenshot result.
-
-**Nói:** Learner xem điểm theo kỹ năng, tiêu chí và feedback. Writing/Speaking là điểm luyện tập tham khảo.
-
-### Slide 18 — Demo 3: Admin Rubric/Content
-
-**Slide:** screenshot admin rubric/content.
-
-**Nói:** Admin quản lý đề/nội dung/rubric, clone draft, simulate, activate; kết quả cũ giữ version đã dùng.
-
-### Slide 19 — Different
-
-**Slide:** 4 cards: 4 skills, thi thử, scoring formula, learning path.
-
-**Nói:** Khác biệt là hệ thống tạo vòng học hoàn chỉnh, không chỉ cung cấp đề luyện.
-
-### Slide 20 — Achievements
-
-**Slide:** learner web, admin portal, mobile companion, backend API, assessment flow.
-
-**Nói:** Nhóm đã hoàn thành core learning loop từ luyện tập/thi thử đến chấm, feedback và progress.
-
-### Slide 21 — Limitation + Conclusion
-
-**Slide:** limitations bên trái, conclusion bên phải.
-
-```text
-Probe takeaway:
-- Grammar/Vocabulary signals are usable for practice scoring, not official scoring
-- Writing probe passed; score drift mostly comes from conservative grammar/vocab evidence
-- Speaking probe passed; transcript-only answers miss fluency/pronunciation signals
-- Need official examiner dataset before claiming official accuracy
-```
-
-**Nói:** Probe cho thấy Grammar và Vocabulary đủ ổn để dùng cho điểm luyện tập, nhưng chưa phải điểm chính thức. Writing có thể lệch khi hệ thống bắt tín hiệu ngữ pháp/từ vựng hơi bảo thủ. Speaking có thể lệch nếu chỉ có transcript hoặc audio kém vì thiếu tín hiệu fluency/pronunciation. Vì chưa có bộ dữ liệu lớn do giám khảo VSTEP chấm, hệ thống dùng để feedback và định hướng học, không thay thế giám khảo.
-
-### Slide 22 — Thank You
-
-**Slide:** Thank you / Q&A.
-
-**Nói:** Nhóm em xin cảm ơn hội đồng và sẵn sàng trả lời câu hỏi.
-
-## Nếu thiếu giờ
-
-Giữ: Slide 4, 9, 11, 12, 13–18, 21.
-
-Lướt nhanh: Slide 1, 3, 5, 8, 10, 19–20.
