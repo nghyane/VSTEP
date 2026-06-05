@@ -10,6 +10,7 @@ use App\Ai\Wire\ResponsesWire;
 use App\Ai\Wire\WireFormat;
 use App\Ai\Wire\WireRequest;
 use App\Ai\Wire\WireResponse;
+use App\Exceptions\AiServiceUnavailableException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
@@ -99,6 +100,10 @@ final class AiClientManager implements AiClient
         } catch (\Throwable $e) {
             $this->recordFailure();
             $this->logCall($service, $config, microtime(true) - $start, null, $e);
+
+            if ($e instanceof RequestException || $e instanceof ConnectionException) {
+                throw new AiServiceUnavailableException;
+            }
 
             throw $e;
         }

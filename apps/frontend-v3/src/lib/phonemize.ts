@@ -8,6 +8,12 @@ function stripDelimiters(ipa: string): string {
 	return trimmed
 }
 
+function normalizeIpa(value: unknown): string | null {
+	if (typeof value !== "string") return null
+	const ipa = stripDelimiters(value)
+	return ipa.length > 0 ? ipa : null
+}
+
 /**
  * Get IPA phonetic transcription for English text via async dynamic import.
  * Returns admin-provided IPA immediately, falls back to phonemize client-side.
@@ -27,15 +33,17 @@ async function fetchIpa(text: string): Promise<string | null> {
  * Priority: admin-provided IPA → phonemize auto-generated → null.
  * Uses lazy dynamic import so a broken phonemize module won't crash the app.
  */
-export function useIpa(text: string, adminIpa?: string | null): string | null {
+export function useIpa(text: string, adminIpa?: unknown): string | null {
 	const [ipa, setIpa] = useState<string | null>(() => {
-		if (adminIpa && adminIpa.length > 0) return stripDelimiters(adminIpa)
+		const normalized = normalizeIpa(adminIpa)
+		if (normalized) return normalized
 		return null
 	})
 
 	useEffect(() => {
-		if (adminIpa) {
-			setIpa(stripDelimiters(adminIpa))
+		const normalized = normalizeIpa(adminIpa)
+		if (normalized) {
+			setIpa(normalized)
 			return
 		}
 

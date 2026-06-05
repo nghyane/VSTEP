@@ -23,8 +23,6 @@ use Ramsey\Uuid\Uuid;
 
 final class SpeakingConversationService implements ConversationServiceInterface
 {
-    private const STALE_SESSION_MINUTES = 30;
-
     public function __construct(
         private readonly ConversationTurnHandler $turnHandler,
         private readonly ConversationReviewer $reviewer,
@@ -69,16 +67,6 @@ final class SpeakingConversationService implements ConversationServiceInterface
                 ->first();
 
             if ($active !== null) {
-                $ageMinutes = (int) $active->started_at->diffInMinutes(now());
-
-                if ($ageMinutes < self::STALE_SESSION_MINUTES) {
-                    return [
-                        'session' => $active,
-                        'turns' => $active->turns()->get()->all(),
-                        'resumed' => true,
-                    ];
-                }
-
                 $active->update([
                     'status' => ConversationStatus::Ended,
                     'ended_at' => now(),

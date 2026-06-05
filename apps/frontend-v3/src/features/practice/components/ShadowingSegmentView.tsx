@@ -106,7 +106,7 @@ function ReviewPanel({
 			{isError ? (
 				<div className="rounded-(--radius-card) border-2 border-b-4 border-destructive/30 bg-destructive/5 p-4">
 					<p className="text-sm text-destructive mb-3">
-						{isServiceDown ? "AI tạm thời không phản hồi. Vui lòng thử lại sau." : errorMessage}
+						{isServiceDown ? "AI đang bận, bạn thử lại nhé." : errorMessage}
 					</p>
 					<button type="button" onClick={onRetry} className="btn btn-secondary px-6">
 						Thử lại
