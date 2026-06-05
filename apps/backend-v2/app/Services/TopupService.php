@@ -61,6 +61,7 @@ final class TopupService
 
             $order = WalletTopupOrder::create([
                 'order_code' => $orderCode,
+                'account_id' => $profile->account_id,
                 'profile_id' => $profile->id,
                 'package_id' => $package->id,
                 'amount_vnd' => $package->amount_vnd,
@@ -141,8 +142,11 @@ final class TopupService
                 );
             }
 
-            $this->walletService->credit(
-                profile: $order->profile,
+            $profile = $order->profile;
+
+            $this->walletService->creditToAccount(
+                account: $order->account,
+                profile: $profile,
                 amount: $order->coins_to_credit,
                 type: CoinTransactionType::Topup,
                 source: $order,
@@ -160,9 +164,13 @@ final class TopupService
                 'callback_received_at' => now(),
             ]);
 
-            DB::afterCommit(function () use ($order): void {
+            DB::afterCommit(function () use ($order, $profile): void {
+                if ($profile === null) {
+                    return;
+                }
+
                 $notification = $this->notificationService->push(
-                    profile: $order->profile,
+                    profile: $profile,
                     type: NotificationType::TopupCompleted,
                     title: 'Nạp xu thành công',
                     body: "Bạn đã nhận {$order->coins_to_credit} xu.",
@@ -172,7 +180,7 @@ final class TopupService
 
                 if ($notification !== null) {
                     $this->emailService->sendToProfile(
-                        $order->profile,
+                        $profile,
                         'Nạp xu VSTEP thành công',
                         [
                             "Bạn đã nhận {$order->coins_to_credit} xu vào ví VSTEP.",

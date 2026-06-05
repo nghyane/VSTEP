@@ -1,31 +1,42 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { Suspense, useEffect, useMemo, useState } from "react"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
-import { DeviceCheckScreen } from "#/features/exam/components/DeviceCheckScreen"
 import { ExamRoomHeader } from "#/features/exam/components/ExamRoomHeader"
 import { ListeningPanel } from "#/features/exam/components/ListeningPanel"
 import { ReadingPanel } from "#/features/exam/components/ReadingPanel"
 import { SpeakingPanel } from "#/features/exam/components/SpeakingPanel"
 import { SubmittedExamRoom } from "#/features/exam/components/SubmittedExamRoom"
 import { WritingPanel } from "#/features/exam/components/WritingPanel"
-import { examDetailQuery, examDraftQuery, examSessionQuery } from "#/features/exam/queries"
+import { examRoomQuery } from "#/features/exam/queries"
 import type { Exam, ExamDraft, ExamSessionData, ExamVersion, SkillKey } from "#/features/exam/types"
 import { useExamSession, useExamTimer } from "#/features/exam/use-exam-session"
-import { cn } from "#/lib/utils"
-
-// ─── Route definition ─────────────────────────────────────────────────────────
-
-interface Search {
-	examId: string
-}
 
 export const Route = createFileRoute("/_focused/phong-thi/$sessionId")({
-	validateSearch: (search: Record<string, unknown>): Search => ({
-		examId: typeof search.examId === "string" ? search.examId : "",
-	}),
 	component: PhongThiPage,
+	errorComponent: ExamRoomError,
 })
+
+function ExamRoomError({ error }: { error: Error }) {
+	const isMissingSession = error.message === "ExamSession not found."
+
+	return (
+		<div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+			<img src="/mascot/lac-sad.png" alt="" className="size-24 object-contain" />
+			<h1 className="font-extrabold text-2xl text-foreground">
+				{isMissingSession ? "Lượt làm không còn tồn tại" : "Không mở được phòng thi"}
+			</h1>
+			<p className="max-w-md text-sm text-muted">
+				{isMissingSession
+					? "Lượt làm này đã hết hạn hoặc không còn khả dụng. Hãy quay lại đề thi để bắt đầu lượt mới."
+					: error.message}
+			</p>
+			<Link to="/thi-thu" className="btn btn-primary mt-2">
+				Về đề thi
+			</Link>
+		</div>
+	)
+}
 
 // ─── Skill nav constants ──────────────────────────────────────────────────────
 
@@ -36,38 +47,15 @@ const SKILL_LABEL: Record<SkillKey, string> = {
 	speaking: "Nói",
 }
 
-const SKILL_COLOR: Record<SkillKey, string> = {
-	listening: "text-skill-listening",
-	reading: "text-skill-reading",
-	writing: "text-skill-writing",
-	speaking: "text-skill-speaking",
-}
-
 // ─── Inner exam room (data loaded) ───────────────────────────────────────────
 
-function ExamRoom({ sessionId, examId }: { sessionId: string; examId: string }) {
-	const { data: sessionRes } = useSuspenseQuery(examSessionQuery(sessionId))
-	const session = sessionRes.data
+function ExamRoom({ sessionId }: { sessionId: string }) {
+	const { data: roomRes } = useSuspenseQuery(examRoomQuery(sessionId))
+	const { session, exam, version, draft, listening_play_summary: listeningPlaySummary } = roomRes.data
 
 	if (session.status !== "active") {
-		return <SubmittedExamRoom sessionId={sessionId} examId={examId} />
+		return <SubmittedExamRoom sessionId={sessionId} />
 	}
-
-	return <ActiveExamRoomLoader sessionId={sessionId} examId={examId} session={session} />
-}
-
-function ActiveExamRoomLoader({
-	sessionId,
-	examId,
-	session,
-}: {
-	sessionId: string
-	examId: string
-	session: ExamSessionData
-}) {
-	const { data: examRes } = useSuspenseQuery(examDetailQuery(examId))
-	const { data: draftRes } = useSuspenseQuery(examDraftQuery(sessionId))
-	const { version, exam } = examRes.data
 
 	return (
 		<ActiveExamRoom
@@ -75,7 +63,8 @@ function ActiveExamRoomLoader({
 			session={session}
 			exam={exam}
 			version={version}
-			initialDraft={draftRes.data}
+			initialDraft={draft}
+			listeningPlaySummary={listeningPlaySummary}
 		/>
 	)
 }
@@ -86,12 +75,14 @@ function ActiveExamRoom({
 	exam,
 	version,
 	initialDraft,
+	listeningPlaySummary,
 }: {
 	sessionId: string
 	session: ExamSessionData
 	exam: Exam
 	version: ExamVersion
 	initialDraft: ExamDraft | null
+	listeningPlaySummary: Array<{ section_id: string; part: number; played: boolean; played_at: string | null }>
 }) {
 	const navigate = useNavigate()
 	const [confirmExit, setConfirmExit] = useState(false)
@@ -111,7 +102,7 @@ function ActiveExamRoom({
 		answeredMcq,
 		isSubmitting,
 		isTimeExpired,
-		handleStartExam,
+		isAutoSubmitFailed,
 		handleAnswerMcq,
 		handleAnswerWriting,
 		handleMarkSpeakingDone,
@@ -123,6 +114,7 @@ function ActiveExamRoom({
 		handleHideConfirmSubmit,
 		handleSubmit,
 		isSubmitted,
+		autosaveLabel,
 	} = useExamSession({
 		session,
 		listeningItems,
@@ -132,17 +124,6 @@ function ActiveExamRoom({
 		remainingSeconds,
 	})
 
-	const skillDurationMinutes = useMemo<Record<SkillKey, number>>(
-		() => ({
-			listening: version.listening_sections.reduce((sum, s) => sum + s.duration_minutes, 0),
-			reading: version.reading_passages.reduce((sum, p) => sum + p.duration_minutes, 0),
-			writing: version.writing_tasks.reduce((sum, t) => sum + t.duration_minutes, 0),
-			speaking: version.speaking_parts.reduce((sum, p) => sum + p.duration_minutes, 0),
-		}),
-		[version],
-	)
-
-	const totalDurationMinutes = activeSkills.reduce((sum, sk) => sum + skillDurationMinutes[sk], 0)
 	const speakingDone = useMemo(() => new Set(state.speakingAnswers.keys()), [state.speakingAnswers])
 
 	// Cảnh báo khi user cố đóng tab / refresh / bấm back browser trong lúc làm bài.
@@ -191,7 +172,25 @@ function ActiveExamRoom({
 			: undefined
 
 	if (isSubmitted) {
-		return <SubmittedExamRoom sessionId={session.id} examId={exam.id} />
+		return <SubmittedExamRoom sessionId={session.id} />
+	}
+
+	if (isAutoSubmitFailed) {
+		return (
+			<div className="flex h-screen flex-col items-center justify-center gap-5 bg-background px-6 text-center">
+				<img src="/mascot/lac-sad.png" alt="" className="size-24 object-contain" />
+				<div>
+					<h2 className="text-xl font-bold text-foreground">Không nộp bài tự động được</h2>
+					<p className="mt-2 max-w-md text-sm text-muted">
+						Phòng thi đã hết giờ nhưng máy chủ chưa ghi nhận bài nộp. Hãy tải lại phòng thi để kiểm tra trạng
+						thái mới nhất.
+					</p>
+				</div>
+				<button type="button" onClick={() => window.location.reload()} className="btn btn-primary">
+					Tải lại phòng thi
+				</button>
+			</div>
+		)
 	}
 
 	// Hết giờ — hiện overlay thông báo đang nộp bài tự động
@@ -220,25 +219,30 @@ function ActiveExamRoom({
 		)
 	}
 
-	// Device check phase — hiển thị trước khi vào phòng thi
-	if (state.phase === "device-check") {
-		return (
-			<DeviceCheckScreen
-				examTitle={exam.title}
-				activeSkills={activeSkills}
-				skillDurationMinutes={skillDurationMinutes}
-				totalDurationMinutes={totalDurationMinutes}
-				onStart={handleStartExam}
-			/>
-		)
-	}
-
 	const skillProgress = `${state.skillIdx + 1}/${activeSkills.length}`
+	const currentSkillLabel = currentSkill ? SKILL_LABEL[currentSkill] : "Phần thi"
+	const footerStatusText =
+		submitWarning ?? (isLastSkill ? "Sẵn sàng nộp bài" : `Sẵn sàng chốt ${currentSkillLabel}`)
+	const nextLabel = nextSkill ? `Chốt ${currentSkillLabel} và sang ${SKILL_LABEL[nextSkill]}` : "Phần tiếp"
+	const footer = {
+		skillLabel: currentSkillLabel,
+		skillProgress,
+		isLastSkill,
+		isSubmitting,
+		statusText: footerStatusText,
+		nextLabel,
+		onSubmit: handleShowConfirmSubmit,
+		onNext: handleShowConfirmNext,
+	}
 
 	return (
 		<div className="flex h-screen flex-col bg-background">
 			{/* Header */}
 			<ExamRoomHeader
+				examTitle={exam.title}
+				skillLabel={currentSkillLabel}
+				skillProgress={skillProgress}
+				autosaveLabel={autosaveLabel}
 				remainingSeconds={remainingSeconds}
 				answeredMcq={answeredMcq}
 				totalMcq={totalMcq}
@@ -251,16 +255,10 @@ function ActiveExamRoom({
 					<ListeningPanel
 						sections={version.listening_sections}
 						sessionId={sessionId}
+						initialPlaySummary={listeningPlaySummary}
 						mcqAnswers={state.mcqAnswers}
 						onAnswer={handleAnswerMcq}
-						footer={{
-							skillLabel: SKILL_LABEL.listening,
-							skillProgress,
-							isLastSkill,
-							isSubmitting,
-							onSubmit: handleShowConfirmSubmit,
-							onNext: handleShowConfirmNext,
-						}}
+						footer={footer}
 					/>
 				)}
 				{currentSkill === "reading" && (
@@ -268,14 +266,7 @@ function ActiveExamRoom({
 						passages={version.reading_passages}
 						mcqAnswers={state.mcqAnswers}
 						onAnswer={handleAnswerMcq}
-						footer={{
-							skillLabel: SKILL_LABEL.reading,
-							skillProgress,
-							isLastSkill,
-							isSubmitting,
-							onSubmit: handleShowConfirmSubmit,
-							onNext: handleShowConfirmNext,
-						}}
+						footer={footer}
 					/>
 				)}
 				{currentSkill === "writing" && (
@@ -283,14 +274,7 @@ function ActiveExamRoom({
 						tasks={version.writing_tasks}
 						writingAnswers={state.writingAnswers}
 						onAnswer={handleAnswerWriting}
-						footer={{
-							skillLabel: SKILL_LABEL.writing,
-							skillProgress,
-							isLastSkill,
-							isSubmitting,
-							onSubmit: handleShowConfirmSubmit,
-							onNext: handleShowConfirmNext,
-						}}
+						footer={footer}
 					/>
 				)}
 				{currentSkill === "speaking" && (
@@ -299,79 +283,10 @@ function ActiveExamRoom({
 						speakingDone={speakingDone}
 						onMarkDone={handleMarkSpeakingDone}
 						onUnmarkDone={handleUnmarkSpeakingDone}
-						footer={{
-							skillLabel: SKILL_LABEL.speaking,
-							skillProgress,
-							isLastSkill,
-							isSubmitting,
-							onSubmit: handleShowConfirmSubmit,
-							onNext: handleShowConfirmNext,
-						}}
+						footer={footer}
 					/>
 				)}
 			</main>
-
-			{/* Footer — ẩn khi tất cả skill đã nhúng footer riêng */}
-			{currentSkill !== "listening" &&
-				currentSkill !== "reading" &&
-				currentSkill !== "writing" &&
-				currentSkill !== "speaking" && (
-					<footer className="z-40 flex h-14 shrink-0 items-center justify-between border-t border-border bg-card px-5">
-						<div className="w-24" />
-
-						{/* Current skill indicator */}
-						{currentSkill && (
-							<p className={cn("text-sm font-bold", SKILL_COLOR[currentSkill])}>
-								{SKILL_LABEL[currentSkill]}
-								<span className="ml-1 text-xs font-normal text-muted">({skillProgress})</span>
-							</p>
-						)}
-
-						{/* Action button */}
-						{isLastSkill ? (
-							<button
-								type="button"
-								onClick={handleShowConfirmSubmit}
-								disabled={isSubmitting}
-								className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
-							>
-								<svg
-									viewBox="0 0 16 16"
-									className="size-4"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									aria-hidden="true"
-								>
-									<polyline points="2,8 6,12 14,4" />
-								</svg>
-								Nộp bài
-							</button>
-						) : (
-							<button
-								type="button"
-								onClick={handleShowConfirmNext}
-								className="flex items-center gap-2 rounded-xl border-2 border-border px-5 py-2 text-sm font-semibold text-foreground hover:bg-surface transition-colors"
-							>
-								Phần tiếp
-								<svg
-									viewBox="0 0 16 16"
-									className="size-4"
-									fill="none"
-									stroke="currentColor"
-									strokeWidth="2"
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									aria-hidden="true"
-								>
-									<path d="M6 3l5 5-5 5" />
-								</svg>
-							</button>
-						)}
-					</footer>
-				)}
 
 			{/* Submit confirm dialog */}
 			<ConfirmDialog
@@ -395,10 +310,11 @@ function ActiveExamRoom({
 			{/* Next skill confirm dialog */}
 			<ConfirmDialog
 				open={state.confirmNextSkill}
-				title={`Chuyển sang ${nextSkill ? SKILL_LABEL[nextSkill] : "phần tiếp"}?`}
+				title={`Chốt ${currentSkill ? SKILL_LABEL[currentSkill] : "phần hiện tại"}?`}
 				description={
 					<>
-						Sau khi chuyển, bạn sẽ <strong className="text-foreground">không thể quay lại</strong> phần{" "}
+						Sau khi chuyển sang {nextSkill ? SKILL_LABEL[nextSkill] : "phần tiếp theo"}, bạn sẽ{" "}
+						<strong className="text-foreground">không thể quay lại</strong>{" "}
 						{currentSkill ? SKILL_LABEL[currentSkill] : ""} để chỉnh sửa.
 					</>
 				}
@@ -407,7 +323,7 @@ function ActiveExamRoom({
 						? `Còn ${currentSkillPending.count} ${currentSkillPending.unit} chưa làm ở phần ${SKILL_LABEL[currentSkill]}`
 						: undefined
 				}
-				confirmLabel={`Chuyển sang ${nextSkill ? SKILL_LABEL[nextSkill] : "phần tiếp"}`}
+				confirmLabel={nextSkill ? `Chốt và sang ${SKILL_LABEL[nextSkill]}` : "Chuyển phần"}
 				onConfirm={handleConfirmNext}
 				onCancel={handleHideConfirmNext}
 			/>
@@ -415,15 +331,10 @@ function ActiveExamRoom({
 			{/* Exit confirm dialog */}
 			<ConfirmDialog
 				open={confirmExit}
-				title="Thoát phòng thi?"
-				description={
-					<>
-						Tiến trình hiện tại <strong className="text-foreground">sẽ không được lưu</strong>. Bạn sẽ phải
-						bắt đầu lại từ đầu nếu quay lại đề này.
-					</>
-				}
+				title="Rời phòng thi?"
+				description={<>Bài làm được lưu tự động. Bạn có thể quay lại tiếp tục trước khi hết giờ.</>}
 				warning="Đọc kỹ trước khi xác nhận"
-				confirmLabel="Thoát"
+				confirmLabel="Rời phòng"
 				cancelLabel="Ở lại"
 				countdownSeconds={3}
 				destructive
@@ -441,28 +352,16 @@ function ActiveExamRoom({
 
 function PhongThiPage() {
 	const { sessionId } = Route.useParams()
-	const { examId } = Route.useSearch()
-
-	if (!examId) {
-		return (
-			<div className="flex h-screen flex-col items-center justify-center gap-4 text-center">
-				<p className="text-foreground font-semibold">Không tìm thấy thông tin bài thi.</p>
-				<a href="/thi-thu" className="text-sm text-primary hover:underline">
-					Quay lại danh sách đề
-				</a>
-			</div>
-		)
-	}
 
 	return (
 		<Suspense
 			fallback={
 				<div className="flex h-screen items-center justify-center">
-					<p className="text-muted text-sm">Đang tải phòng thi...</p>
+					<p className="text-muted text-sm">Đang tải phòng thi…</p>
 				</div>
 			}
 		>
-			<ExamRoom sessionId={sessionId} examId={examId} />
+			<ExamRoom sessionId={sessionId} />
 		</Suspense>
 	)
 }

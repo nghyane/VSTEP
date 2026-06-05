@@ -18,6 +18,7 @@ final class WalletTopupOrderResource extends JsonResource
         return [
             'id' => $this->resource->id,
             'order_code' => $this->resource->order_code,
+            'account_id' => $this->resource->account_id,
             'profile_id' => $this->resource->profile_id,
             'package_id' => $this->resource->package_id,
             'amount_vnd' => $this->resource->amount_vnd,

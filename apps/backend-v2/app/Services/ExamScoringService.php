@@ -61,8 +61,8 @@ final class ExamScoringService
             'reading' => in_array('reading', $skills, true)
                 ? $this->mcqBandFromCollection($mcqAnswers, 'exam_reading_item', $this->countMcqItems($itemMap, 'exam_reading_item'))
                 : null,
-            'writing' => $this->writingComposite($session),
-            'speaking' => $this->speakingBand($session),
+            'writing' => in_array('writing', $skills, true) ? $this->writingComposite($session) : null,
+            'speaking' => in_array('speaking', $skills, true) ? $this->speakingBand($session) : null,
         ];
     }
 
@@ -119,11 +119,11 @@ final class ExamScoringService
     }
 
     /**
-     * Map VSTEP band to CEFR level.
+     * Map VSTEP bậc 3-5 overall band to the achieved proficiency band.
      *
      * @return string 'C1' | 'B2' | 'B1' | 'Không đạt'
      */
-    public function bandToLevel(?float $band): string
+    public function bandToVstepLevel(?float $band): string
     {
         if ($band === null) {
             return 'Chưa có điểm';
@@ -152,35 +152,80 @@ final class ExamScoringService
      */
     private function writingComposite(ExamSession $session): ?float
     {
+        $tasks = $session->examVersion->writingTasks()->orderBy('part')->get(['id', 'part']);
+        if ($tasks->isEmpty()) {
+            return null;
+        }
+
         $rows = ExamWritingSubmission::query()
             ->with(['task:id,part', 'assessmentAttempt.result'])
             ->where('exam_writing_submissions.session_id', $session->id)
             ->get();
 
-        $task1 = $rows->first(fn (ExamWritingSubmission $submission): bool => $submission->task?->part === 1);
-        $task2 = $rows->first(fn (ExamWritingSubmission $submission): bool => $submission->task?->part === 2);
-
-        $task1Band = $task1?->assessmentAttempt?->result?->overall_band;
-        $task2Band = $task2?->assessmentAttempt?->result?->overall_band;
-
-        if ($task1Band === null || $task2Band === null) {
-            return null;
+        $rowsByTaskId = $rows->keyBy('task_id');
+        $bandsByPart = [];
+        foreach ($tasks as $task) {
+            /** @var ExamWritingSubmission|null $submission */
+            $submission = $rowsByTaskId->get($task->id);
+            $band = $this->writingTaskBand($submission);
+            if ($band === null) {
+                return null;
+            }
+            $bandsByPart[(int) $task->part] = $band;
         }
 
-        $composite = ((float) $task1Band + 2 * (float) $task2Band) / 3;
+        if (array_key_exists(1, $bandsByPart) && array_key_exists(2, $bandsByPart)) {
+            $composite = ($bandsByPart[1] + 2 * $bandsByPart[2]) / 3;
+
+            return round($composite * 2) / 2;
+        }
+
+        $composite = array_sum($bandsByPart) / count($bandsByPart);
 
         return round($composite * 2) / 2;
     }
 
+    private function writingTaskBand(?ExamWritingSubmission $submission): ?float
+    {
+        if ($submission === null || trim($submission->text) === '') {
+            return 0.0;
+        }
+
+        $band = $submission->assessmentAttempt?->result?->overall_band;
+
+        return $band === null ? null : (float) $band;
+    }
+
     private function speakingBand(ExamSession $session): ?float
     {
-        $bands = ExamSpeakingSubmission::query()
+        $parts = $session->examVersion->speakingParts()->orderBy('part')->get(['id', 'part']);
+        if ($parts->isEmpty()) {
+            return null;
+        }
+
+        $submissions = ExamSpeakingSubmission::query()
             ->with('assessmentAttempt.result')
             ->where('session_id', $session->id)
             ->get()
-            ->map(fn (ExamSpeakingSubmission $submission): ?float => $submission->assessmentAttempt?->result?->overall_band)
-            ->filter(fn (?float $band): bool => $band !== null);
+            ->keyBy('part_id');
 
-        return $bands->isNotEmpty() ? round((float) $bands->avg(), 1) : null;
+        $bands = [];
+        foreach ($parts as $part) {
+            /** @var ExamSpeakingSubmission|null $submission */
+            $submission = $submissions->get($part->id);
+            if ($submission === null) {
+                $bands[] = 0.0;
+
+                continue;
+            }
+
+            $band = $submission->assessmentAttempt?->result?->overall_band;
+            if ($band === null) {
+                return null;
+            }
+            $bands[] = (float) $band;
+        }
+
+        return round(array_sum($bands) / count($bands), 1);
     }
 }

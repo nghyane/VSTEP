@@ -76,16 +76,37 @@ export function ExamCard({ exam, coinCost }: Props) {
 					</span>
 				</div>
 
-				<div className="flex items-center gap-3">
+				<div className="flex items-center gap-2">
 					{coinCost !== null && !hasActive && (
 						<span className="inline-flex items-center gap-1" title="Giá một lượt làm">
 							<StaticIcon name="coin" size="sm" />
 							<span className="text-sm font-extrabold text-coin-dark tabular-nums">{coinCost}</span>
 						</span>
 					)}
-					<span className="btn btn-primary pointer-events-none text-sm py-2 px-4">
-						{state.primary_action_label}
-					</span>
+					<Link
+						to="/thi-thu/$examId"
+						params={{ examId: exam.id }}
+						className="btn btn-secondary text-sm py-2 px-3"
+					>
+						Chi tiết
+					</Link>
+					{hasActive ? (
+						<Link
+							to="/phong-thi/$sessionId"
+							params={{ sessionId: state.active_session_id }}
+							className="btn btn-primary text-sm py-2 px-4"
+						>
+							Tiếp tục
+						</Link>
+					) : (
+						<Link
+							to="/thi-thu/$examId"
+							params={{ examId: exam.id }}
+							className="btn btn-primary text-sm py-2 px-4"
+						>
+							{state.primary_action_label}
+						</Link>
+					)}
 				</div>
 			</div>
 		</>
@@ -93,18 +114,5 @@ export function ExamCard({ exam, coinCost }: Props) {
 
 	const cardClass = "card-interactive flex flex-col gap-2.5 p-4"
 
-	return hasActive ? (
-		<Link
-			to="/phong-thi/$sessionId"
-			params={{ sessionId: state.active_session_id }}
-			search={{ examId: exam.id }}
-			className={cardClass}
-		>
-			{body}
-		</Link>
-	) : (
-		<Link to="/thi-thu/$examId" params={{ examId: exam.id }} className={cardClass}>
-			{body}
-		</Link>
-	)
+	return <div className={cardClass}>{body}</div>
 }

@@ -1,25 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { ScrollArea } from "#/components/ScrollArea"
 import { uploadExamSpeakingAudio } from "#/features/exam/actions"
+import { ExamRoomProgressTabs, ExamRoomSkillBadge } from "#/features/exam/components/ExamRoomChrome"
+import { ExamRoomFooter, type ExamRoomFooterAction } from "#/features/exam/components/ExamRoomFooter"
 import type { ExamVersionSpeakingPart } from "#/features/exam/types"
 import { useVoiceRecorder } from "#/features/practice/use-voice-recorder"
 import { cn } from "#/lib/utils"
-
-interface FooterAction {
-	skillLabel: string
-	skillProgress: string
-	isLastSkill: boolean
-	isSubmitting: boolean
-	onSubmit: () => void
-	onNext: () => void
-}
 
 interface Props {
 	parts: ExamVersionSpeakingPart[]
 	speakingDone: Set<string>
 	onMarkDone: (partId: string, audioKey: string, audioUrl: string, durationSeconds: number) => void
 	onUnmarkDone: (partId: string) => void
-	footer: FooterAction
+	footer: ExamRoomFooterAction
 }
 
 const PART_TYPE_LABEL: Record<string, string> = {
@@ -84,12 +77,12 @@ function SocialContent({ content }: { content: Record<string, unknown> }) {
 		<div className="space-y-5">
 			{topics.map((topic) => (
 				<div key={topic.name}>
-					<p className="mb-2.5 text-xs font-extrabold uppercase tracking-wide text-muted">{topic.name}</p>
+					<p className="mb-2.5 text-xs font-bold text-muted">{topic.name}</p>
 					<ul className="space-y-2">
 						{topic.questions.map((q, i) => (
 							<li
 								key={i}
-								className="flex items-start gap-3 rounded-(--radius-card) border-2 border-b-4 border-border bg-surface px-4 py-3 text-sm"
+								className="flex items-start gap-3 rounded-(--radius-card) border border-border bg-surface px-4 py-3 text-sm"
 							>
 								<span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-skill-speaking/15 text-xs font-extrabold text-skill-speaking-dark">
 									{i + 1}
@@ -107,17 +100,17 @@ function SocialContent({ content }: { content: Record<string, unknown> }) {
 function SolutionContent({ content }: { content: Record<string, unknown> }) {
 	return (
 		<div className="space-y-4">
-			<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-4">
-				<p className="mb-1.5 text-xs font-extrabold uppercase tracking-wide text-muted">Tình huống</p>
+			<div className="rounded-(--radius-card) border border-border bg-surface p-4">
+				<p className="mb-1.5 text-xs font-bold text-muted">Tình huống</p>
 				<p className="text-sm leading-relaxed text-foreground">{content.situation as string}</p>
 			</div>
 			<div>
-				<p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-muted">Các phương án</p>
+				<p className="mb-2 text-xs font-bold text-muted">Các phương án</p>
 				<ul className="space-y-2">
 					{(content.solutions as string[]).map((s, i) => (
 						<li
 							key={i}
-							className="flex gap-2 rounded-(--radius-button) border-2 border-border bg-surface px-3 py-2 text-sm"
+							className="flex gap-2 rounded-(--radius-button) border border-border bg-surface px-3 py-2 text-sm"
 						>
 							<span className="shrink-0 font-extrabold text-primary">{String.fromCharCode(65 + i)}.</span>
 							<span className="text-foreground">{s}</span>
@@ -125,8 +118,8 @@ function SolutionContent({ content }: { content: Record<string, unknown> }) {
 					))}
 				</ul>
 			</div>
-			<div className="rounded-(--radius-card) border-2 border-b-4 border-primary/20 bg-primary-tint p-4">
-				<p className="mb-1 text-xs font-extrabold uppercase tracking-wide text-primary">Nhiệm vụ</p>
+			<div className="rounded-(--radius-card) border border-skill-speaking/30 bg-skill-speaking/10 p-4">
+				<p className="mb-1 text-xs font-bold text-skill-speaking-dark">Nhiệm vụ</p>
 				<p className="text-sm leading-relaxed text-foreground">{content.task as string}</p>
 			</div>
 		</div>
@@ -136,22 +129,22 @@ function SolutionContent({ content }: { content: Record<string, unknown> }) {
 function TopicContent({ content }: { content: Record<string, unknown> }) {
 	return (
 		<div className="space-y-4">
-			<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-4">
-				<p className="mb-1.5 text-xs font-extrabold uppercase tracking-wide text-muted">Chủ đề</p>
+			<div className="rounded-(--radius-card) border border-border bg-surface p-4">
+				<p className="mb-1.5 text-xs font-bold text-muted">Chủ đề</p>
 				<p className="text-base font-extrabold text-foreground">{content.topic as string}</p>
 			</div>
-			<div className="rounded-(--radius-card) border-2 border-border bg-surface p-4">
-				<p className="mb-1.5 text-xs font-extrabold uppercase tracking-wide text-muted">Gợi ý</p>
+			<div className="rounded-(--radius-card) border border-border bg-surface p-4">
+				<p className="mb-1.5 text-xs font-bold text-muted">Gợi ý</p>
 				<p className="text-sm leading-relaxed text-foreground">{content.prompt as string}</p>
 			</div>
 			{Array.isArray(content.follow_up_questions) && (
 				<div>
-					<p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-muted">Câu hỏi mở</p>
+					<p className="mb-2 text-xs font-bold text-muted">Câu hỏi mở</p>
 					<ul className="space-y-2">
 						{(content.follow_up_questions as string[]).map((q, i) => (
 							<li
 								key={i}
-								className="flex gap-2 rounded-(--radius-button) border-2 border-border bg-surface px-3 py-2 text-sm"
+								className="flex gap-2 rounded-(--radius-button) border border-border bg-surface px-3 py-2 text-sm"
 							>
 								<span className="shrink-0 font-extrabold text-muted">{i + 1}.</span>
 								<span className="text-foreground">{q}</span>
@@ -169,7 +162,7 @@ function PartContent({ part }: { part: ExamVersionSpeakingPart }) {
 	if (part.type === "solution") return <SolutionContent content={part.content} />
 	if (part.type === "topic") return <TopicContent content={part.content} />
 	return (
-		<div className="rounded-(--radius-card) border-2 border-border bg-surface p-4">
+		<div className="rounded-(--radius-card) border border-border bg-surface p-4">
 			<p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
 				{JSON.stringify(part.content, null, 2)}
 			</p>
@@ -191,6 +184,17 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 	const typeLabel = PART_TYPE_LABEL[part.type] ?? part.type
 	const [isUploading, setIsUploading] = useState(false)
 	const [uploadError, setUploadError] = useState<string | null>(null)
+	const statusLabel = isDone
+		? "Đã xác nhận"
+		: recorder.state === "recording"
+			? "Đang ghi"
+			: recorder.state === "stopped"
+				? "Đã ghi xong"
+				: recorder.state === "requesting"
+					? "Đang xin quyền"
+					: recorder.state === "denied"
+						? "Từ chối quyền"
+						: "Sẵn sàng"
 
 	const handleStop = useCallback(() => {
 		recorder.stop()
@@ -209,7 +213,7 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 			onDone(part.id, audio.audio_key, audio.audio_url, durationSeconds)
 		} catch (error) {
 			setUploadError(
-				error instanceof Error ? error.message : "Không upload được bản ghi âm. Vui lòng thử lại.",
+				error instanceof Error ? error.message : "Không tải lên được bản ghi âm. Vui lòng thử lại.",
 			)
 		} finally {
 			setIsUploading(false)
@@ -226,18 +230,16 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 	const remaining = part.speaking_seconds - elapsedSec
 
 	return (
-		<div className="flex flex-1 overflow-hidden">
+		<div className="flex flex-1 overflow-hidden bg-background">
 			{/* Left: scrollable content */}
 			<ScrollArea className="w-1/2 border-r border-border">
 				<div className="space-y-5 px-7 py-6">
 					{/* Part header */}
 					<div className="flex flex-wrap items-center gap-3">
-						<span className="rounded-full border-2 border-b-4 border-skill-speaking/30 bg-skill-speaking/10 px-3 py-1 text-xs font-extrabold text-skill-speaking">
-							Phần {part.part}
-						</span>
+						<ExamRoomSkillBadge tone="speaking">Phần {part.part}</ExamRoomSkillBadge>
 						<span className="text-sm font-semibold text-foreground">{typeLabel}</span>
 						<span className="ml-auto text-xs text-muted">
-							{part.duration_minutes} phút · {part.speaking_seconds}s ghi âm
+							{part.duration_minutes} phút · {part.speaking_seconds} giây ghi âm
 						</span>
 					</div>
 
@@ -247,12 +249,12 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 			</ScrollArea>
 
 			{/* Right: recording panel */}
-			<div className="flex w-1/2 flex-col bg-background px-7 py-6">
-				<div className="mb-5 flex items-center justify-between">
-					<p className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-widest text-muted">
+			<div className="flex w-1/2 flex-col px-7 py-6">
+				<div className="mb-4 flex items-center justify-between">
+					<p className="flex items-center gap-2 text-sm font-extrabold text-foreground">
 						<svg
 							viewBox="0 0 16 16"
-							className="size-3.5 text-skill-speaking"
+							className="size-4 text-skill-speaking"
 							fill="none"
 							stroke="currentColor"
 							strokeWidth="1.8"
@@ -262,40 +264,30 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 							<path d="M8 1a2.5 2.5 0 00-2.5 2.5v5a2.5 2.5 0 005 0V3.5A2.5 2.5 0 008 1z" />
 							<path d="M3 9a5 5 0 0010 0M8 14v2" />
 						</svg>
-						Bản ghi âm · Phần {part.part}
+						Bản ghi âm
 					</p>
 					<span
 						className={cn(
-							"rounded-full border-2 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide",
+							"rounded-full border px-2.5 py-0.5 text-xs font-bold",
 							isDone
-								? "border-primary/30 bg-primary-tint text-primary"
+								? "border-primary/30 bg-primary-tint text-primary-dark"
 								: recorder.state === "recording"
 									? "border-destructive/40 bg-destructive-tint text-destructive"
 									: recorder.state === "stopped"
-										? "border-primary/30 bg-primary-tint text-primary"
+										? "border-primary/30 bg-primary-tint text-primary-dark"
 										: "border-border bg-surface text-muted",
 						)}
 					>
-						{isDone
-							? "Đã xác nhận"
-							: recorder.state === "recording"
-								? "Đang ghi"
-								: recorder.state === "stopped"
-									? "Đã ghi xong"
-									: recorder.state === "requesting"
-										? "Đang xin quyền"
-										: recorder.state === "denied"
-											? "Từ chối quyền"
-											: "Sẵn sàng"}
+						{statusLabel}
 					</span>
 				</div>
 
-				<div className="flex flex-1 items-start justify-center pt-20">
+				<div className="flex flex-1 items-center justify-center">
 					{isDone ? (
-						<div className="w-full max-w-md space-y-3 rounded-(--radius-card) border-2 border-b-4 border-primary/30 bg-primary-tint p-5">
+						<div className="w-full max-w-md space-y-3 rounded-(--radius-card) border border-primary/30 bg-primary-tint p-5">
 							<div className="flex items-center justify-between gap-3">
 								<div className="flex items-center gap-2.5">
-									<span className="flex size-8 items-center justify-center rounded-full border-2 border-b-4 border-primary/40 bg-primary text-white">
+									<span className="flex size-8 items-center justify-center rounded-full bg-primary text-white">
 										<svg
 											viewBox="0 0 16 16"
 											className="size-4"
@@ -315,7 +307,7 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 								<button
 									type="button"
 									onClick={handleRedo}
-									className="shrink-0 rounded-(--radius-button) border-2 border-b-4 border-primary/30 bg-surface px-3 py-1.5 text-xs font-extrabold text-primary-dark transition-all active:translate-y-[2px] active:border-b-2 hover:border-primary/50"
+									className="btn btn-secondary shrink-0 px-3 py-1.5 text-xs text-primary-dark"
 								>
 									Ghi lại
 								</button>
@@ -327,7 +319,7 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 							)}
 						</div>
 					) : (
-						<div className="w-full max-w-md space-y-5 rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-6">
+						<div className="w-full max-w-md space-y-5 rounded-(--radius-card) border border-border bg-surface p-6">
 							{/* Big timer */}
 							<div className="flex flex-col items-center gap-1.5">
 								<span
@@ -362,9 +354,9 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 								) : (
 									<span className="text-xs font-semibold text-subtle">
 										{recorder.state === "requesting"
-											? "Đang xin quyền microphone…"
+											? "Đang xin quyền micrô…"
 											: recorder.state === "denied"
-												? "Không có quyền microphone"
+												? "Không có quyền micrô"
 												: "Đọc đề bên trái rồi nhấn ghi âm"}
 									</span>
 								)}
@@ -376,7 +368,7 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 									<button
 										type="button"
 										onClick={recorder.start}
-										className="flex items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-skill-speaking-dark bg-skill-speaking px-6 py-2.5 text-sm font-extrabold text-white transition-all active:translate-y-[2px] active:border-b-2 hover:brightness-105"
+										className="btn bg-skill-speaking px-6 py-2.5 text-sm text-foreground [--btn-shadow:var(--color-skill-speaking-dark)]"
 									>
 										<span className="relative flex size-3 items-center justify-center">
 											<span className="absolute inset-0 animate-ping rounded-full bg-white/50" />
@@ -394,7 +386,7 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 									<button
 										type="button"
 										onClick={handleStop}
-										className="flex items-center gap-2 rounded-(--radius-button) border-2 border-b-4 border-destructive/70 bg-destructive px-6 py-2.5 text-sm font-extrabold text-white transition-all active:translate-y-[2px] active:border-b-2 hover:brightness-105"
+										className="btn btn-destructive px-6 py-2.5 text-sm"
 									>
 										<span className="size-2.5 rounded-sm bg-white" />
 										Dừng ghi
@@ -406,7 +398,7 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 											type="button"
 											onClick={recorder.reset}
 											disabled={isUploading}
-											className="rounded-(--radius-button) border-2 border-b-4 border-border bg-surface px-5 py-2.5 text-sm font-extrabold text-muted transition-all active:translate-y-[2px] active:border-b-2 hover:border-primary/40 hover:text-foreground"
+											className="btn btn-secondary px-5 py-2.5 text-sm text-muted disabled:opacity-60"
 										>
 											Ghi lại
 										</button>
@@ -414,7 +406,7 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 											type="button"
 											onClick={handleConfirm}
 											disabled={isUploading}
-											className="btn btn-primary disabled:opacity-60"
+											className="btn btn-secondary text-primary-dark disabled:opacity-60"
 										>
 											<svg
 												viewBox="0 0 16 16"
@@ -427,7 +419,7 @@ function PartRecorder({ part, isDone, onDone, onUndone }: PartRecorderProps) {
 											>
 												<polyline points="2,8 6,12 14,4" />
 											</svg>
-											{isUploading ? "Đang upload…" : "Xác nhận"}
+											{isUploading ? "Đang tải lên…" : "Xác nhận bản ghi"}
 										</button>
 									</>
 								)}
@@ -451,6 +443,24 @@ export function SpeakingPanel({ parts, speakingDone, onMarkDone, onUnmarkDone, f
 	const sorted = [...parts].sort((a, b) => a.display_order - b.display_order)
 	const [activeIdx, setActiveIdx] = useState(0)
 	const active = sorted[activeIdx]
+	const activeDone = active ? speakingDone.has(active.id) : false
+	const handleNextPart = useCallback(
+		() => setActiveIdx((i) => Math.min(i + 1, sorted.length - 1)),
+		[sorted.length],
+	)
+	const hasNextPart = activeIdx < sorted.length - 1
+	const activeFooter = hasNextPart
+		? {
+				...footer,
+				isLastSkill: false,
+				nextTone: "secondary" as const,
+				statusText: activeDone
+					? `Phần ${activeIdx + 1} đã xác nhận bản ghi`
+					: `Phần ${activeIdx + 1} chưa xác nhận bản ghi`,
+				nextLabel: `Tiếp: Phần ${activeIdx + 2}`,
+				onNext: handleNextPart,
+			}
+		: footer
 
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
@@ -465,120 +475,25 @@ export function SpeakingPanel({ parts, speakingDone, onMarkDone, onUnmarkDone, f
 				/>
 			)}
 
-			{/* Part tabs */}
-			<div className="flex items-center justify-between gap-3 border-t-2 border-border/50 bg-card px-4 py-2.5">
-				<div className="flex items-center gap-2">
-					<svg
-						viewBox="0 0 16 16"
-						className="size-4 shrink-0 text-skill-speaking"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="1.5"
-						strokeLinecap="round"
-						aria-hidden="true"
-					>
-						<path d="M8 1a2.5 2.5 0 00-2.5 2.5v5a2.5 2.5 0 005 0V3.5A2.5 2.5 0 008 1z" />
-						<path d="M3 9a5 5 0 0010 0M8 14v2" />
-					</svg>
-					<span className="text-sm font-extrabold text-foreground">Phần {activeIdx + 1}</span>
-				</div>
-
-				<div className="flex items-center gap-1.5">
-					{sorted.map((p, i) => {
-						const isActive = i === activeIdx
-						const done = speakingDone.has(p.id)
-						return (
-							<button
-								key={p.id}
-								type="button"
-								onClick={() => setActiveIdx(i)}
-								className={cn(
-									"relative overflow-hidden rounded-(--radius-button) border-2 border-b-4 px-3 pb-2.5 pt-1.5 text-xs font-extrabold transition-all active:translate-y-[2px] active:border-b-2",
-									isActive
-										? "border-primary/70 bg-primary text-white"
-										: "border-border bg-surface text-muted hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
-								)}
-							>
-								<span className="inline-flex items-center gap-1.5">
-									Phần {i + 1}
-									{done && <span className="text-[10px]">✓</span>}
-								</span>
-								<span
-									className={cn(
-										"absolute inset-x-0 bottom-0 h-1 overflow-hidden",
-										isActive ? "bg-white/20" : "bg-primary/10",
-									)}
-								>
-									<span
-										className={cn(
-											"block h-full transition-[width] duration-300",
-											isActive ? "bg-white" : done ? "bg-primary" : "",
-										)}
-										style={{ width: done ? "100%" : "0%" }}
-									/>
-								</span>
-							</button>
-						)
-					})}
-				</div>
-
-				<div className="w-20">
-					<p className="text-right text-xs text-muted">
-						{speakingDone.size}/{sorted.length} xong
-					</p>
-				</div>
-			</div>
-
-			{/* Global footer */}
-			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t-2 border-border/50 bg-card px-5">
-				<div className="w-24">
-					<p className="text-xs text-muted">
-						{speakingDone.size}/{sorted.length} hoàn thành
-					</p>
-				</div>
-				<p className="text-sm font-extrabold text-skill-speaking">
-					{footer.skillLabel}
-					<span className="ml-1 text-xs font-normal text-muted">({footer.skillProgress})</span>
-				</p>
-				{footer.isLastSkill ? (
-					<button
-						type="button"
-						onClick={footer.onSubmit}
-						disabled={footer.isSubmitting}
-						className="btn btn-primary disabled:opacity-60"
-					>
-						<svg
-							viewBox="0 0 16 16"
-							className="size-4"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2.5"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							aria-hidden="true"
-						>
-							<polyline points="2,8 6,12 14,4" />
-						</svg>
-						Nộp bài
-					</button>
-				) : (
-					<button type="button" onClick={footer.onNext} className="btn btn-secondary">
-						Phần tiếp
-						<svg
-							viewBox="0 0 16 16"
-							className="size-4"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							aria-hidden="true"
-						>
-							<path d="M6 3l5 5-5 5" />
-						</svg>
-					</button>
-				)}
-			</div>
+			<ExamRoomFooter
+				{...activeFooter}
+				toneClass="text-skill-speaking"
+				context={
+					<ExamRoomProgressTabs
+						items={sorted.map((part, i) => {
+							const done = speakingDone.has(part.id)
+							return {
+								id: String(i),
+								label: `Phần ${i + 1}`,
+								meta: done ? "✓" : undefined,
+								progressPct: done ? 100 : 0,
+							}
+						})}
+						activeId={String(activeIdx)}
+						onChange={(id) => setActiveIdx(Number(id))}
+					/>
+				}
+			/>
 		</div>
 	)
 }

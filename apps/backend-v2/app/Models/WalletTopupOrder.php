@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 #[Fillable([
     'order_code',
+    'account_id',
     'profile_id',
     'package_id',
     'amount_vnd',
@@ -47,6 +48,11 @@ class WalletTopupOrder extends BaseModel
     public function profile(): BelongsTo
     {
         return $this->belongsTo(Profile::class);
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'account_id');
     }
 
     public function package(): BelongsTo

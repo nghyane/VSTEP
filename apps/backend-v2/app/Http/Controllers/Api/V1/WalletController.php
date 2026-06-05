@@ -22,7 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 /**
- * Wallet endpoints cho active profile.
+ * Wallet endpoints cho account wallet, active profile chỉ là giao dịch context.
  * Route group mount middleware `active-profile` → guarantee $profile hiện diện.
  */
 final class WalletController extends Controller
@@ -38,7 +38,7 @@ final class WalletController extends Controller
         $profile = $request->profile();
         $balance = $this->walletService->getBalance($profile);
         $last = CoinTransaction::query()
-            ->where('profile_id', $profile->id)
+            ->where('account_id', $profile->account_id)
             ->orderByDesc('id')
             ->first();
 
@@ -54,7 +54,7 @@ final class WalletController extends Controller
         $perPage = min((int) $request->integer('per_page', 20), 100);
 
         $page = CoinTransaction::query()
-            ->where('profile_id', $profile->id)
+            ->where('account_id', $profile->account_id)
             ->orderByDesc('id')
             ->paginate($perPage);
 
@@ -91,8 +91,8 @@ final class WalletController extends Controller
      */
     public function orderStatus(Request $request, WalletTopupOrder $order): JsonResponse
     {
-        if ($order->profile_id !== $request->profile()->id) {
-            abort(403, 'Order does not belong to active profile.');
+        if ($order->account_id !== $request->user()->id) {
+            abort(403, 'Order does not belong to this account.');
         }
 
         return response()->json([

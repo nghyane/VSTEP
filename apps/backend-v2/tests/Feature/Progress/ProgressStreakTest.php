@@ -182,6 +182,23 @@ class ProgressStreakTest extends TestCase
         $response->assertJsonPath('data.scores.spider', null);
     }
 
+    public function test_overview_score_timeline_keeps_latest_twenty_sessions_in_chronological_order(): void
+    {
+        [$profile, $version] = $this->seedExamVersion();
+        $base = Carbon::parse('2026-01-01 12:00:00', 'Asia/Ho_Chi_Minh');
+
+        for ($i = 0; $i < 25; $i++) {
+            $this->createFullTestSession($profile, $version, $base->copy()->addDays($i));
+        }
+
+        $overview = $this->app->make(ProgressService::class)->getOverview($profile);
+        $dates = array_column($overview['scores']['timeline'], 'date');
+
+        $this->assertCount(20, $dates);
+        $this->assertSame($base->copy()->addDays(5)->toDateString(), $dates[0]);
+        $this->assertSame($base->copy()->addDays(24)->toDateString(), $dates[19]);
+    }
+
     /**
      * @return array{0: Profile, 1: ExamVersion}
      */

@@ -1,12 +1,5 @@
 import { queryOptions } from "@tanstack/react-query"
-import type {
-	ExamDetail,
-	ExamDraft,
-	ExamListItem,
-	ExamSessionData,
-	ExamSessionSummary,
-	SessionResultsData,
-} from "#/features/exam/types"
+import type { ExamListItem, ExamOverview, ExamRoomData, SessionResultsData } from "#/features/exam/types"
 import { type ApiResponse, api, type PaginatedResponse } from "#/lib/api"
 
 export { appConfigQuery } from "#/features/config/queries"
@@ -36,22 +29,16 @@ export const examsQuery = (params: ExamsQueryParams = {}) =>
 			api.get("exams", { searchParams: examSearchParams(params) }).json<PaginatedResponse<ExamListItem>>(),
 	})
 
-export const examDetailQuery = (id: string) =>
+export const examOverviewQuery = (id: string) =>
 	queryOptions({
 		queryKey: ["exams", id],
-		queryFn: () => api.get(`exams/${id}`).json<ApiResponse<ExamDetail>>(),
+		queryFn: () => api.get(`exams/${id}`).json<ApiResponse<ExamOverview>>(),
 	})
 
-export const mySessionsQuery = queryOptions({
-	queryKey: ["exam-sessions", "mine"],
-	queryFn: () => api.get("exam-sessions").json<ApiResponse<ExamSessionSummary[]>>(),
-	staleTime: 30_000,
-})
-
-export const examSessionQuery = (sessionId: string) =>
+export const examRoomQuery = (sessionId: string) =>
 	queryOptions({
-		queryKey: ["exam-sessions", sessionId],
-		queryFn: () => api.get(`exam-sessions/${sessionId}`).json<ApiResponse<ExamSessionData>>(),
+		queryKey: ["exam-sessions", sessionId, "room"],
+		queryFn: () => api.get(`exam-sessions/${sessionId}/room`).json<ApiResponse<ExamRoomData>>(),
 		staleTime: Number.POSITIVE_INFINITY,
 		retry: false,
 	})
@@ -65,14 +52,6 @@ export const sessionResultsQuery = (sessionId: string) =>
 		refetchInterval: (query) => {
 			const data = query.state.data?.data
 			if (!data) return false
-			return data.summary.has_pending_ai ? 5_000 : false
+			return data.summary.has_pending_jobs ? 5_000 : false
 		},
-	})
-
-export const examDraftQuery = (sessionId: string) =>
-	queryOptions({
-		queryKey: ["exam-sessions", sessionId, "draft"],
-		queryFn: () => api.get(`exam-sessions/${sessionId}/draft`).json<ApiResponse<ExamDraft | null>>(),
-		staleTime: Number.POSITIVE_INFINITY,
-		retry: false,
 	})

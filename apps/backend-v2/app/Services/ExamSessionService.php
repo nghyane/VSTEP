@@ -125,10 +125,77 @@ final class ExamSessionService
     }
 
     /**
+     * Restart active session atomically: abandon old session and create a new paid attempt.
+     *
+     * @param  array<int,string>  $selectedSkills
+     */
+    public function restartSession(
+        Profile $profile,
+        ExamVersion $version,
+        string $abandonSessionId,
+        string $mode,
+        array $selectedSkills,
+        float $timeExtensionFactor = 1.0,
+    ): ExamSession {
+        $allSkills = ['listening', 'reading', 'writing', 'speaking'];
+        $isFullTest = $mode === 'full' || count(array_intersect($selectedSkills, $allSkills)) === 4;
+        if ($mode === 'full') {
+            $selectedSkills = $allSkills;
+        }
+
+        $cost = $this->computeCost($selectedSkills);
+        $totalMinutes = $this->computeDuration($version, $selectedSkills);
+        $deadlineMinutes = (int) ceil($totalMinutes * $timeExtensionFactor);
+
+        return DB::transaction(function () use (
+            $profile, $version, $abandonSessionId, $mode, $selectedSkills, $isFullTest,
+            $timeExtensionFactor, $cost, $deadlineMinutes,
+        ) {
+            /** @var ExamSession|null $active */
+            $active = ExamSession::query()
+                ->where('id', $abandonSessionId)
+                ->where('profile_id', $profile->id)
+                ->where('exam_version_id', $version->id)
+                ->where('status', ExamSessionStatus::Active)
+                ->where('server_deadline_at', '>', now())
+                ->lockForUpdate()
+                ->first();
+
+            if ($active === null) {
+                throw ValidationException::withMessages([
+                    'session' => ['Lượt làm hiện tại không còn khả dụng. Hãy tải lại đề thi.'],
+                ]);
+            }
+
+            $type = $isFullTest ? CoinTransactionType::ExamFull : CoinTransactionType::ExamCustom;
+            $this->walletService->spend($profile, $cost, $type);
+
+            $active->update([
+                'status' => ExamSessionStatus::Abandoned,
+                'submitted_at' => now(),
+            ]);
+            ExamSessionDraft::query()->where('session_id', $active->id)->delete();
+
+            return ExamSession::create([
+                'profile_id' => $profile->id,
+                'exam_version_id' => $version->id,
+                'mode' => $mode,
+                'selected_skills' => $selectedSkills,
+                'is_full_test' => $isFullTest,
+                'time_extension_factor' => $timeExtensionFactor,
+                'started_at' => now(),
+                'server_deadline_at' => now()->addMinutes($deadlineMinutes),
+                'status' => ExamSessionStatus::Active,
+                'coins_charged' => $cost,
+            ]);
+        });
+    }
+
+    /**
      * Submit exam. Chấm MCQ sync. Writing/speaking → tạo submission + dispatch grading jobs.
      *
      * @param  array<int,array{item_ref_type:string,item_ref_id:string,selected_index:int}>  $mcqAnswers
-     * @param  array<int,array{task_id:string,text:string,word_count:int}>  $writingAnswers
+     * @param  array<int,array{task_id:string,text:?string,word_count:int}>  $writingAnswers
      * @param  array<int,array{part_id:string,audio_key:string,duration_seconds:int}>  $speakingAnswers
      */
     public function submit(
@@ -211,14 +278,19 @@ final class ExamSessionService
             // ── 2. Writing submissions + grading jobs ──
             $writingJobs = [];
             foreach ($writingAnswers as $w) {
+                $text = trim((string) $w['text']);
+                $wordCount = $text === '' ? 0 : (int) $w['word_count'];
                 $submission = ExamWritingSubmission::create([
                     'session_id' => $session->id,
                     'profile_id' => $session->profile_id,
                     'task_id' => $w['task_id'],
-                    'text' => $w['text'],
-                    'word_count' => $w['word_count'],
+                    'text' => $text,
+                    'word_count' => $wordCount,
                     'submitted_at' => now(),
                 ]);
+                if ($text === '') {
+                    continue;
+                }
                 $job = $this->assessments->submitExamWriting($submission);
                 $writingJobs[] = [
                     'submission_id' => $submission->id,
@@ -296,15 +368,6 @@ final class ExamSessionService
         }
 
         return max($total, 1);
-    }
-
-    public function getDraft(Profile $profile, ExamSession $session): ?ExamSessionDraft
-    {
-        if ($session->profile_id !== $profile->id) {
-            throw new NotOwnerException;
-        }
-
-        return ExamSessionDraft::query()->where('session_id', $session->id)->first();
     }
 
     /**
