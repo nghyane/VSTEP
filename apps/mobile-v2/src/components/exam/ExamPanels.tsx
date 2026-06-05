@@ -8,6 +8,8 @@ import { useTTSPlayer } from "@/hooks/use-tts-player";
 import { useThemeColors, spacing, radius, fontSize, fontFamily, colors as themeColors } from "@/theme";
 import type { ExamVersionMcqItem, ExamVersionListeningSection, ExamVersionReadingPassage, ExamVersionWritingTask, ListeningPlaySummaryItem } from "@/types/api";
 
+const LISTENING_DARK = "#0B7FB2";
+
 // ── Listening Panel ──
 
 interface ListeningPanelProps {
@@ -222,10 +224,17 @@ export function ListeningPanel({ sections, sessionId, initialPlaySummary, answer
         <TouchableOpacity
           onPress={retryOnlyError ? () => setAudioRetry((v) => v + 1) : togglePlay}
           disabled={!sound && !canPlayTtsFallback && !retryOnlyError}
-          style={[s.playBtn, { backgroundColor: retryOnlyError ? c.mutedForeground : color }]}
+          style={[
+            s.playBtn,
+            {
+              backgroundColor: retryOnlyError ? c.mutedForeground : color,
+              borderColor: retryOnlyError ? c.mutedForeground : color,
+              borderBottomColor: retryOnlyError ? c.border : LISTENING_DARK,
+            },
+          ]}
         >
-          <Ionicons name={retryOnlyError ? "refresh" : isPlaying ? "pause" : "play"} size={22} color="#fff" />
-          <Text style={s.playBtnText}>{retryOnlyError ? "Thử lại" : isPlaying ? "Tạm dừng" : "Phát audio"}</Text>
+          <Ionicons name={retryOnlyError ? "refresh" : isPlaying ? "stop" : "play"} size={22} color="#fff" />
+          <Text style={s.playBtnText}>{retryOnlyError ? "Thử lại" : isPlaying ? "Dừng" : "Phát audio"}</Text>
         </TouchableOpacity>
         {audioNotice && <Text style={[s.audioNotice, { color: c.mutedForeground }]}>{audioNotice}</Text>}
         {audioError && <Text style={[s.audioError, { color: c.destructive }]}>{audioError}</Text>}
@@ -447,7 +456,7 @@ const s = StyleSheet.create({
   audioCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
   audioPartLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
   audioSubText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
-  playBtn: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: radius.full, alignSelf: "flex-start" },
+  playBtn: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.full, alignSelf: "flex-start" },
   playBtnText: { color: "#fff", fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   audioNotice: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   audioError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },

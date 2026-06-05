@@ -37,10 +37,19 @@ Chia theo 10 nhóm endpoint tương ứng business module.
 ## 1. Auth
 
 ### `POST /api/v1/auth/register` — public
-Tạo account + profile đầu + cấp 100 xu.
+Tạo account + profile đầu + cấp 100 xu, sau đó gửi email xác thực.
 
 Request: `{ email, password, nickname, target_level, target_deadline }`
-Response: `{ access_token, refresh_token, user, profile }`
+Response: `{ user, profile, email_verification_sent }`
+
+### `GET /api/v1/auth/email/verify/{id}/{hash}` — public signed URL
+Xác thực email đăng ký. Browser request redirect về frontend success screen; JSON request trả `{ success }`.
+
+### `POST /api/v1/auth/email/verification-notification` — public
+Gửi lại email xác thực cho account chưa verify. Không expose account không tồn tại.
+
+Request: `{ email }`
+Response: `{ success }`
 
 ### `POST /api/v1/auth/login` — public
 Login, mặc định active profile = profile đầu của account.
@@ -115,8 +124,10 @@ List gói nạp active.
 ### `POST /api/v1/wallet/topup` — jwt
 Tạo topup order status pending.
 
-Request: `{ package_id, payment_provider? }`
+Request: `{ package_id, payment_provider?, return_url, cancel_url }`
 Response: `{ data: { id, amount_vnd, coins_to_credit, status, provider_ref, ... } }`
+
+`return_url` và `cancel_url` là URL client muốn PayOS chuyển về sau thanh toán/hủy. Client bắt buộc gửi cả hai URL; backend chỉ forward vào payment gateway. Trạng thái thanh toán thật chỉ được cập nhật từ gateway callback đã verify signature.
 
 ### `POST /api/v1/wallet/topup/{orderId}/confirm` — jwt
 Mock confirm payment. Idempotent. Real gateway sẽ dùng callback riêng (phase 2).
@@ -304,10 +315,13 @@ List published courses, có flags `enrolled`, `commitment_status`.
 ### `GET /api/v1/courses/{id}` — jwt
 Detail + schedule + enrollment status + commitment status.
 
-### `POST /api/v1/courses/{id}/enroll` — jwt
-Mua course bằng VND (payment external). Tạo enrollment + cấp bonus xu.
+### `POST /api/v1/courses/{id}/enrollment-orders` — jwt
+Tạo order mua course bằng VND (payment external). Enrollment + bonus xu chỉ được tạo sau callback/confirm thanh toán hợp lệ.
 
-Response: `{ enrollment_id, bonus_received }` hoặc 409 (full/already enrolled).
+Request: `{ payment_provider, commitment_signature, return_url, cancel_url }`
+Response: `{ data: { id, amount_vnd, status, payment_url, ... } }` hoặc 409/422.
+
+`return_url` và `cancel_url` là URL client muốn PayOS chuyển về sau thanh toán/hủy. Client bắt buộc gửi cả hai URL; backend chỉ forward vào payment gateway. Trạng thái thanh toán thật chỉ được cập nhật từ gateway callback đã verify signature.
 
 ### `GET /api/v1/courses/{id}/my-slots` — jwt
 Slots available cho profile này (sau khi enrolled + commitment met).
@@ -443,7 +457,16 @@ Recent messages.
 
 ---
 
-## 12. Admin (admin panel)
+## 12. Public Config
+
+### `GET /api/v1/config` — public
+Public runtime config consumed by learner frontend.
+
+Response: `{ wallet: { onboarding_initial_coins }, profile: { max_profiles_per_account }, support: { zalo_phone }, pricing: { exam: { full_test_cost_coins, custom_per_skill_coins, max_cost_coins }, practice: { feedback_cost_coins } } }`
+
+---
+
+## 13. Admin (admin panel)
 
 Under `/api/v1/admin`, auth `jwt:admin`.
 
@@ -465,7 +488,7 @@ Under `/api/v1/admin`, auth `jwt:admin`.
 
 ---
 
-## 13. Teacher panel
+## 14. Teacher panel
 
 > **Updated**: Teacher không tự set lịch (trung tâm quản lý). Xem RFC 0011.
 

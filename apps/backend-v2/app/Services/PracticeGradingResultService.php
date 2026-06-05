@@ -12,7 +12,11 @@ use App\Models\Profile;
 
 final class PracticeGradingResultService
 {
-    /** @return array{data: array<string,mixed>|null, rubric: array<string,mixed>|null} */
+    public function __construct(
+        private readonly AssessmentDiagnosticsService $diagnosticsService,
+    ) {}
+
+    /** @return array{attempt_id?: string, data: array<string,mixed>|null, rubric: array<string,mixed>|null} */
     public function writing(Profile $profile, PracticeWritingSubmission $submission): array
     {
         if ($submission->profile_id !== $profile->id) {
@@ -22,7 +26,7 @@ final class PracticeGradingResultService
         return $this->payload($submission->id);
     }
 
-    /** @return array{data: array<string,mixed>|null, rubric: array<string,mixed>|null} */
+    /** @return array{attempt_id?: string, data: array<string,mixed>|null, rubric: array<string,mixed>|null} */
     public function speaking(Profile $profile, PracticeSpeakingSubmission $submission): array
     {
         if ($submission->profile_id !== $profile->id) {
@@ -32,7 +36,7 @@ final class PracticeGradingResultService
         return $this->payload($submission->id);
     }
 
-    /** @return array{data: array<string,mixed>|null, rubric: array<string,mixed>|null} */
+    /** @return array{attempt_id?: string, data: array<string,mixed>|null, rubric: array<string,mixed>|null} */
     private function payload(string $submissionId): array
     {
         $attempt = AssessmentAttempt::query()
@@ -52,6 +56,7 @@ final class PracticeGradingResultService
                 'overall_band' => $attempt->result->overall_band,
                 'criterion_scores' => $attempt->result->criterion_scores,
                 'caps_applied' => $attempt->result->caps_applied,
+                'diagnostics' => $this->diagnosticsService->forAttempt($attempt),
                 'calculation_trace' => $attempt->result->calculation_trace,
                 'feedback' => $attempt->result->feedback,
             ],
@@ -59,8 +64,18 @@ final class PracticeGradingResultService
                 'id' => $attempt->rubric->id,
                 'title' => $attempt->rubric->title,
                 'task_type' => $attempt->rubric->task_type->value,
+                'max_score' => $this->maxScore($attempt->rubric->scoring_policy),
                 'criteria' => $attempt->rubric->criteria,
             ],
         ];
+    }
+
+    /** @param array<string,mixed>|null $policy */
+    private function maxScore(?array $policy): int
+    {
+        return match ((string) ($policy['scale'] ?? '')) {
+            'vstep_0_10' => 10,
+            default => throw new \RuntimeException('Assessment rubric scoring scale is not supported.'),
+        };
     }
 }

@@ -9,6 +9,8 @@ use App\Exceptions\GoogleAccountConflictException;
 use App\Models\Profile;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 
@@ -24,31 +26,28 @@ final class AuthService
      *
      * @param  array{email:string,password:string}  $accountData
      * @param  array{nickname:string,target_level:string,target_deadline:string,entry_level?:string|null}  $profileData
-     * @return array{user:User,profile:Profile,access_token:string,refresh_token:string,expires_in:int}
+     * @return array{user:User,profile:Profile}
      */
     public function register(array $accountData, array $profileData): array
     {
-        return DB::transaction(function () use ($accountData, $profileData) {
+        $result = DB::transaction(function () use ($accountData, $profileData) {
             $user = User::create([
                 ...$accountData,
                 'role' => Role::Learner,
-                'email_verified_at' => now(),
             ]);
 
             $profile = $this->profileService->createInitialProfile($user, $profileData);
             $this->persistActiveProfile($user, $profile);
 
-            $accessToken = $this->tokenService->issueAccessToken($user, $profile);
-            [, $plainToken] = $this->tokenService->createRefreshToken($user, null);
-
             return [
                 'user' => $user,
                 'profile' => $profile,
-                'access_token' => $accessToken,
-                'refresh_token' => $plainToken,
-                'expires_in' => config('jwt.ttl') * 60,
             ];
         });
+
+        $result['user']->sendEmailVerificationNotification();
+
+        return $result;
     }
 
     /**
@@ -76,6 +75,11 @@ final class AuthService
                 'email' => ['Tài khoản đã bị vô hiệu hoá. Liên hệ quản trị viên để được hỗ trợ.'],
             ]);
         }
+        if (! $user->hasVerifiedEmail()) {
+            throw ValidationException::withMessages([
+                'email' => ['Vui lòng xác thực email trước khi đăng nhập.'],
+            ]);
+        }
         $profile = $this->resolveActiveProfile($user);
         $this->persistActiveProfile($user, $profile);
         $accessToken = $this->tokenService->issueAccessToken($user, $profile);
@@ -88,6 +92,96 @@ final class AuthService
             'refresh_token' => $plainToken,
             'expires_in' => config('jwt.ttl') * 60,
         ];
+    }
+
+    public function sendPasswordResetLink(string $email): bool
+    {
+        $user = User::query()->where('email', $email)->first();
+        if ($user !== null && $user->password === null) {
+            throw ValidationException::withMessages([
+                'email' => ['Tài khoản này đăng nhập bằng Google. Vui lòng dùng nút đăng nhập Google.'],
+            ]);
+        }
+
+        $status = Password::sendResetLink(['email' => $email]);
+
+        if ($status === Password::RESET_LINK_SENT) {
+            return true;
+        }
+
+        if ($status === Password::INVALID_USER) {
+            return false;
+        }
+
+        if ($status === Password::RESET_THROTTLED) {
+            throw ValidationException::withMessages([
+                'email' => ['Email đặt lại mật khẩu vừa được gửi. Vui lòng chờ trước khi gửi lại.'],
+            ]);
+        }
+
+        throw ValidationException::withMessages([
+            'email' => ['Không gửi được email đặt lại mật khẩu. Vui lòng thử lại sau.'],
+        ]);
+    }
+
+    public function resetPassword(string $email, string $token, string $password, string $passwordConfirmation): void
+    {
+        $user = User::query()->where('email', $email)->first();
+        if ($user !== null && $user->password === null) {
+            throw ValidationException::withMessages([
+                'email' => ['Tài khoản này đăng nhập bằng Google. Vui lòng dùng nút đăng nhập Google.'],
+            ]);
+        }
+
+        $status = Password::reset(
+            [
+                'email' => $email,
+                'token' => $token,
+                'password' => $password,
+                'password_confirmation' => $passwordConfirmation,
+            ],
+            function (User $user, string $password): void {
+                $user->forceFill(['password' => Hash::make($password)])->save();
+            },
+        );
+
+        if ($status !== Password::PASSWORD_RESET) {
+            throw ValidationException::withMessages([
+                'email' => ['Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.'],
+            ]);
+        }
+    }
+
+    public function verifyEmail(string $userId, string $hash): User
+    {
+        $user = User::query()->find($userId);
+        if ($user === null || ! hash_equals($hash, sha1($user->getEmailForVerification()))) {
+            throw ValidationException::withMessages([
+                'email' => ['Liên kết xác thực email không hợp lệ.'],
+            ]);
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
+
+        return $user;
+    }
+
+    public function resendEmailVerification(string $email): void
+    {
+        $user = User::query()->where('email', $email)->first();
+        if ($user === null) {
+            // Match password reset behavior: do not expose whether an email exists.
+            return;
+        }
+        if ($user->hasVerifiedEmail()) {
+            throw ValidationException::withMessages([
+                'email' => ['Email này đã được xác thực. Vui lòng đăng nhập.'],
+            ]);
+        }
+
+        $user->sendEmailVerificationNotification();
     }
 
     /**

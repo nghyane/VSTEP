@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Grading;
 
+use App\DTOs\Grading\Params\TaskFulfillmentParams;
+use App\Models\GradingRubric;
 use App\Services\Grading\WritingScoringFormula;
 use Tests\TestCase;
 
@@ -58,46 +60,48 @@ final class WritingScoringFormulaTest extends TestCase
     }
 
     /* ─── Vocabulary ───
-     * V = min(cap, clampRound(base + B_u + B_l + B_r + B_c))
-     * base=2, cap=8 (v11 recalibrated)
-     * B_u: unique_ratio >0.50→1, >0.60→2, >0.70→3
-     * B_l: avg_word_len >5.0→1, >6.0→2
-     * B_r: readability >10→1, >12→2
+     * Evidence model = lexical range, sophistication, diversity, readability.
+     * Missing CEFR evidence keeps lexical range conservative instead of applying a hard cap.
      */
 
-    /** unique_ratio=0.3 → B_u=0, word_len=4.0 → B_l=0. base=2 → 2.0. */
+    /** Low diversity and missing CEFR evidence stay conservative. */
     public function test_vocabulary_low_unique(): void
     {
         $score = $this->formula->vocabulary([
             'unique_ratio' => 0.3,
             'avg_word_length' => 4.0,
         ]);
-        $this->assertSame(2.0, $score);
+        $this->assertSame(3.0, $score);
     }
 
-    /** unique_ratio=0.7 → B_u=3, word_len=5.8 → B_l=1. base=2+3+1=6. */
+    /** High diversity alone is not enough for high vocabulary without CEFR/sophistication evidence. */
     public function test_vocabulary_high_unique_long_words(): void
     {
         $score = $this->formula->vocabulary([
             'unique_ratio' => 0.7,
             'avg_word_length' => 5.8,
         ]);
-        $this->assertSame(6.0, $score);
+        $this->assertSame(4.0, $score);
     }
 
-    /** unique_ratio=0.9 → B_u=3, word_len=6.5 → B_l=2, readability=13 → B_r=2. 2+3+2+2=9 → cap 8. */
-    public function test_vocabulary_capped_at_8(): void
+    public function test_vocabulary_uses_cefr_and_sophistication_evidence(): void
     {
         $score = $this->formula->vocabulary([
-            'unique_ratio' => 0.9,
-            'avg_word_length' => 6.5,
+            'word_count' => 150,
+            'unique_ratio' => 0.7,
+            'avg_word_length' => 5.8,
+            'readability_grade' => 10,
+            'complex_vocab_count' => 6,
+            'cefr_weighted_avg' => 2.8,
+            'cefr_advanced_ratio' => 0.2,
+            'cefr_vocab_count' => 40,
         ]);
-        $this->assertLessThanOrEqual(8.0, $score);
+        $this->assertSame(7.5, $score);
     }
 
     /* ─── Task Fulfillment ───
      * T = clampRound((covered/required)×M + depth×3 + pos + examples − irrelevant)
-     * M = 6 (Task 1) or 8 (Task 2)
+     * M comes from the active writing rubric.
      */
 
     /** 3/3, depth=0.8, examples, position → (3/3)×7=7+2.4+0.5+0.5=10.4→10. */
@@ -142,9 +146,11 @@ final class WritingScoringFormulaTest extends TestCase
         $this->assertSame(7.0, $score);
     }
 
-    /** Task 1 letter: 3/3, depth=0.5, position → (3/3)×5=5+1.5+0.5=7.0. */
+    /** Task 1 letter uses the task1 multiplier from the active rubric. */
     public function test_task_fulfillment_task1_letter(): void
     {
+        $params = $this->taskFulfillmentParams();
+
         $score = $this->formula->taskFulfillment([
             'points_covered' => 3,
             'points_required' => 3,
@@ -153,7 +159,47 @@ final class WritingScoringFormulaTest extends TestCase
             'has_clear_position' => true,
             'has_irrelevant_content' => false,
         ], 1);
-        $this->assertSame(7.0, $score);
+
+        $expected = round(($params->task1Multiplier + 0.5 * 3 + $params->positionBonus) * 2) / 2;
+        $this->assertSame($expected, $score);
+    }
+
+    public function test_task_fulfillment_applies_word_count_cap_from_rubric(): void
+    {
+        $params = $this->taskFulfillmentParams();
+        $wordCount = (int) $params->taskFulfillmentWordCaps[0]['max_words'];
+
+        $score = $this->formula->taskFulfillment([
+            'points_covered' => 3,
+            'points_required' => 3,
+            'depth_factor' => 1.0,
+            'has_examples' => true,
+            'has_clear_position' => true,
+            'has_irrelevant_content' => false,
+            'word_count' => $wordCount,
+        ], 1);
+
+        $this->assertSame($params->taskFulfillmentScoreCap($wordCount), $score);
+    }
+
+    public function test_short_response_cap_limits_all_rubric_scores_from_rubric(): void
+    {
+        $rubric = $this->writingRubric();
+        $params = $rubric->taskFulfillmentParams();
+        $wordCount = (int) $params->shortResponseCaps[1]['max_words'];
+        $expectedCap = $params->shortResponseScoreCap($wordCount);
+
+        $result = $this->formula->applyShortResponseCap([
+            'task_fulfillment' => 6.0,
+            'organization' => 4.0,
+            'grammar' => 4.5,
+            'vocabulary' => 2.0,
+        ], $wordCount, $rubric);
+
+        $this->assertSame(['word_count' => $wordCount, 'cap' => $expectedCap], $result['capApplied']);
+        foreach ($result['rubricScores'] as $score) {
+            $this->assertSame($expectedCap, $score);
+        }
     }
 
     /* ─── Organization ───
@@ -239,6 +285,36 @@ final class WritingScoringFormulaTest extends TestCase
         $this->assertSame(2.0, $score);
     }
 
+    public function test_task_fulfillment_params_accepts_short_essay_caps_alias(): void
+    {
+        $params = TaskFulfillmentParams::fromArray([
+            'coverage_multiplier' => 7,
+            'task1_multiplier' => 7,
+            'position_bonus' => 0.5,
+            'irrelevant_penalty' => 2,
+            'default_points_required' => 3,
+            'word_minimum_task1' => 120,
+            'word_minimum_task2' => 250,
+            'depth_minimum' => 0.25,
+            'non_assessable_word_limit' => 10,
+            'severe_minimum_words_task1' => 60,
+            'severe_minimum_words_task2' => 125,
+            'minimum_covered_points' => 1,
+            'short_essay_caps' => [
+                ['max_words' => 10, 'cap' => 1],
+                ['max_words' => 30, 'cap' => 2],
+            ],
+            'task_fulfillment_word_caps' => [
+                ['max_words' => 80, 'cap' => 4],
+            ],
+            'tf_cap_ratio' => 1.3,
+        ]);
+
+        $this->assertSame(2.0, $params->shortResponseScoreCap(20));
+        $this->assertSame(60, $params->severeMinimumWords(1));
+        $this->assertSame(125, $params->severeMinimumWords(2));
+    }
+
     /* ─── Grammar — edge cases ─── */
 
     /** sentenceCount=0 → guard chia 0, errorPenalty = 0. (4+5)/2 = 4.5. */
@@ -247,5 +323,15 @@ final class WritingScoringFormulaTest extends TestCase
         $syntax = ['count' => 0, 'types' => [], 'details' => []];
         $score = $this->formula->grammar($syntax, 5, 0);
         $this->assertSame(4.5, $score);
+    }
+
+    private function writingRubric(): GradingRubric
+    {
+        return GradingRubric::query()->where('skill', 'writing')->firstOrFail();
+    }
+
+    private function taskFulfillmentParams(): TaskFulfillmentParams
+    {
+        return $this->writingRubric()->taskFulfillmentParams();
     }
 }

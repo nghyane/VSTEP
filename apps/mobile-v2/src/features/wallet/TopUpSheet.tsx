@@ -16,12 +16,13 @@ import type { TopupPackage, TopupOrder, WalletBalance } from "@/features/wallet/
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
 
 const PENDING_TOPUP_ORDER_KEY = "wallet.pendingTopupOrder";
-const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/dashboard";
+const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/wallet";
 
 interface PendingTopupOrder {
   id: string;
-  profileId: string;
   coins: number;
+  orderCode?: number | null;
+  providerRef?: string | null;
 }
 
 interface Props {
@@ -64,7 +65,13 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
     if (checkingPaymentRef.current) return;
     setChecking(true);
     try {
-      const order = await api.get<TopupOrder>(`/api/v1/wallet/topup/${orderToCheck.id}/status`);
+      let order = await api.get<TopupOrder>(`/api/v1/wallet/topup/${orderToCheck.id}/status`);
+      if (order.status === "pending") {
+        for (const paymentReturnId of getPaymentReturnIds(orderToCheck, order)) {
+          order = await reportTopupPaymentReturn(paymentReturnId).catch(() => order);
+          if (order.status !== "pending") break;
+        }
+      }
       if (order.status === "paid") {
         const balance = await api.get<WalletBalance>("/api/v1/wallet/balance");
         syncWalletBalanceCache(queryClient, balance.balance, balance.lastTransactionAt);
@@ -104,21 +111,11 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
     let mounted = true;
     loadPendingTopupOrder().then((order) => {
       if (!mounted || !order) return;
-      if (profile && order.profileId !== profile.id) {
-        void clearPendingTopupOrder();
-        return;
-      }
       setPendingOrder(order);
       void checkOrderPayment(order, false);
     }).catch(() => undefined);
     return () => { mounted = false; };
-  }, [checkOrderPayment, profile]);
-
-  useEffect(() => {
-    if (!pendingOrder || !profile || pendingOrder.profileId === profile.id) return;
-    setPendingOrder(null);
-    void clearPendingTopupOrder();
-  }, [pendingOrder, profile]);
+  }, [checkOrderPayment]);
 
   useEffect(() => {
     if (!pendingOrder) return;
@@ -140,6 +137,7 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
         packageId: selected.id,
         paymentProvider: "payos",
         returnUrl: createTopupReturnUrl(),
+        cancelUrl: createTopupReturnUrl(),
       });
 
       if (!order.paymentUrl) {
@@ -147,7 +145,12 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
         return;
       }
 
-      const nextPendingOrder = { id: order.id, profileId: profile.id, coins: order.coinsToCredit || selected.totalCoins };
+      const nextPendingOrder = {
+        id: order.id,
+        coins: order.coinsToCredit || selected.totalCoins,
+        orderCode: order.orderCode,
+        providerRef: order.providerRef,
+      };
       await savePendingTopupOrder(nextPendingOrder);
       setPendingOrder(nextPendingOrder);
       await Linking.openURL(order.paymentUrl);
@@ -230,10 +233,21 @@ function createTopupReturnUrl(): string {
   return configured || DEFAULT_PAYOS_RETURN_URL;
 }
 
+function reportTopupPaymentReturn(paymentLinkId: string): Promise<TopupOrder> {
+  return api.post<TopupOrder>("/api/v1/wallet/topup/payment-return", { id: paymentLinkId });
+}
+
+function getPaymentReturnIds(pendingOrder: PendingTopupOrder, order: TopupOrder): string[] {
+  const ids = [order.orderCode, pendingOrder.orderCode, order.providerRef, pendingOrder.providerRef]
+    .filter((id): id is number | string => typeof id === "number" || (typeof id === "string" && id.length > 0))
+    .map(String);
+  return [...new Set(ids)];
+}
+
 function isPendingTopupOrder(value: unknown): value is PendingTopupOrder {
   if (!value || typeof value !== "object") return false;
   const record = value as Record<string, unknown>;
-  return typeof record.id === "string" && typeof record.profileId === "string" && typeof record.coins === "number";
+  return typeof record.id === "string" && typeof record.coins === "number";
 }
 
 async function loadPendingTopupOrder(): Promise<PendingTopupOrder | null> {

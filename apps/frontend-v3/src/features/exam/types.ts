@@ -1,7 +1,9 @@
 export type SkillKey = "listening" | "reading" | "writing" | "speaking"
 export type SkillScores = Record<SkillKey, number | null>
 
-export interface Exam {
+// ─── Exam catalog ───
+
+export interface ExamBase {
 	id: string
 	slug: string
 	title: string
@@ -11,16 +13,65 @@ export interface Exam {
 	is_published: boolean
 	created_at: string
 	updated_at: string
-	/** Số lượt làm đã hoàn thành (submitted/graded/auto_submitted). Chỉ có ở list endpoint. */
-	attempts_count?: number
 }
+
+export interface Exam extends ExamBase {}
+
+export interface ExamListItem extends ExamBase {
+	attempts_count: number
+	user_state: ExamListUserState
+}
+
+export type ExamListUserStatus = "not_started" | "in_progress" | "submitted"
+export type ExamListStatusTone = "primary" | "success" | "warning"
+export type ExamListPrimaryAction = "start" | "continue" | "restart"
+
+interface ExamListUserStateBase<
+	TStatus extends ExamListUserStatus,
+	TTone extends ExamListStatusTone,
+	TAction extends ExamListPrimaryAction,
+> {
+	status: TStatus
+	status_label: string
+	status_tone: TTone
+	primary_action: TAction
+	primary_action_label: string
+}
+
+export type ExamNotStartedUserState = ExamListUserStateBase<"not_started", "success", "start"> & {
+	active_session_id: null
+	deadline_at: null
+	selected_skills: null
+	progress_label: null
+	session_count: 0
+}
+
+export type ExamInProgressUserState = ExamListUserStateBase<"in_progress", "warning", "continue"> & {
+	active_session_id: string
+	deadline_at: string
+	selected_skills: SkillKey[]
+	progress_label: string
+	session_count: 0
+}
+
+export type ExamSubmittedUserState = ExamListUserStateBase<"submitted", "primary", "restart"> & {
+	active_session_id: null
+	deadline_at: null
+	selected_skills: null
+	progress_label: null
+	session_count: number
+}
+
+export type ExamListUserState = ExamNotStartedUserState | ExamInProgressUserState | ExamSubmittedUserState
+
+// ─── Exam version content ───
 
 export interface ExamVersionMcqItem {
 	id: string
 	display_order: number
 	stem: string
 	options: [string, string, string, string]
-	correct_index: number
+	correct_index?: number
 }
 
 export interface ExamVersionListeningSection {
@@ -75,9 +126,46 @@ export interface ExamVersion {
 	speaking_parts: ExamVersionSpeakingPart[]
 }
 
-export interface ExamDetail {
+export type ExamVersionSummary = Pick<ExamVersion, "id" | "version_number" | "is_active" | "published_at">
+
+export interface ExamSkillSummary {
+	skill: SkillKey
+	duration_minutes: number
+	item_count: number
+	part_count: number
+}
+
+// ─── Session & Room ───
+
+export type ExamSessionStatus = "active" | "submitted" | "auto_submitted" | "grading" | "graded" | "abandoned"
+
+export interface ExamSessionSummary {
+	id: string
+	exam_id: string | null
+	exam_version_id: string
+	mode: "full" | "custom"
+	selected_skills: SkillKey[]
+	is_full_test: boolean
+	status: ExamSessionStatus
+	started_at: string
+	submitted_at: string | null
+	server_deadline_at: string
+	scores: Record<SkillKey, number | null> | null
+}
+
+export interface ExamOverview {
 	exam: Exam
-	version: ExamVersion
+	version: ExamVersionSummary
+	skill_summaries: Record<SkillKey, ExamSkillSummary>
+	pricing: {
+		full_test_cost_coins: number
+		custom_per_skill_coins: number
+	}
+	attempt_state: {
+		active_session: ExamSessionSummary | null
+		active_current_version_session: ExamSessionSummary | null
+		history: ExamSessionSummary[]
+	}
 }
 
 export interface StartSessionPayload {
@@ -93,21 +181,6 @@ export interface StartSessionResult {
 	status: string
 }
 
-export interface ExamSessionSummary {
-	id: string
-	exam_id: string | null
-	exam_version_id: string
-	mode: "full" | "custom"
-	selected_skills: SkillKey[]
-	is_full_test: boolean
-	status: "active" | "submitted" | "graded" | "auto_submitted"
-	started_at: string
-	submitted_at: string | null
-	server_deadline_at: string
-	/** Per-skill scores (0–10). null khi session chưa terminal hoặc skill chưa graded. */
-	scores: Record<SkillKey, number | null> | null
-}
-
 export interface ExamSessionData {
 	id: string
 	profile_id: string
@@ -119,9 +192,36 @@ export interface ExamSessionData {
 	started_at: string
 	server_deadline_at: string
 	submitted_at: string | null
-	status: "active" | "submitted" | "graded"
+	status: ExamSessionStatus
 	coins_charged: number
+	remaining_seconds?: number
 }
+
+export interface ListeningPlaySummaryItem {
+	section_id: string
+	part: number
+	played: boolean
+	played_at: string | null
+}
+
+export interface LogListeningPlayedResult extends ListeningPlaySummaryItem {
+	already_played: boolean
+}
+
+export interface ExamRoomData {
+	session: ExamSessionData
+	exam: Exam
+	version: ExamVersion
+	draft: ExamDraft | null
+	listening_play_summary: ListeningPlaySummaryItem[]
+	actions: {
+		can_answer: boolean
+		can_submit: boolean
+		can_view_result: boolean
+	}
+}
+
+// ─── Answer / Submit / Draft ───
 
 export interface McqAnswerPayload {
 	item_ref_type: string
@@ -201,59 +301,28 @@ export interface SubmitSessionResult {
 	speaking_jobs: GradingJobRef[]
 }
 
-export interface McqDetailItem {
-	item_ref_type: "exam_listening_item" | "exam_reading_item"
-	item_ref_id: string
-	selected_index: number | null
-	correct_index: number
-	is_correct: boolean
-	answered_at: string | null
-}
+// ─── Derived UI ───
 
-import type { AssessmentFeedback, CriterionScore } from "#/features/grading/types"
-
-export interface WritingFeedbackItem {
-	submission_id: string
-	attempt_id: string | null
-	task_id: string
-	word_count: number
-	text: string
-	overall_band: number | null
-	criterion_scores: CriterionScore[] | null
-	feedback: AssessmentFeedback | null
-	calculation_trace: unknown
-}
-
-export interface SpeakingFeedbackItem {
-	submission_id: string
-	attempt_id: string | null
-	part_id: string
-	audio_url: string | null
-	transcript: string | null
-	overall_band: number | null
-	criterion_scores: CriterionScore[] | null
-	feedback: AssessmentFeedback | null
-	calculation_trace: unknown
-}
-
-export interface SessionResultsData {
-	session: ExamSessionSummary
-	scores: SkillScores
-	overall_band: number | null
-	level: string
-	/** Aggregate MCQ: score (đã chấm) / total (số câu trong scope, câu không đáp tính sai). */
-	mcq: { score: number; total: number }
-	mcq_detail: McqDetailItem[]
-	writing_feedback: WritingFeedbackItem[]
-	speaking_feedback: SpeakingFeedbackItem[]
-	listening_play_summary: Array<{ section_id: string; part: number; played: boolean }>
-}
-
-/** Derived UI model per skill — computed from ExamVersion */
 export interface SkillSection {
 	skill: SkillKey
 	durationMinutes: number
 	itemCount: number
-	/** id of the underlying section/passage/task/part */
 	sectionIds: string[]
 }
+
+// ─── Result types (re-export) ───
+
+export type {
+	ExamResultDisplaySummary,
+	ExamResultMcqSummary,
+	ExamResultOverallSummary,
+	ExamResultReview,
+	ExamResultReviewSection,
+	ExamResultReviewSkill,
+	ExamResultStatus,
+	ExamResultSummary,
+	McqDetailItem,
+	SessionResultsData,
+	SpeakingFeedbackItem,
+	WritingFeedbackItem,
+} from "./types/result"

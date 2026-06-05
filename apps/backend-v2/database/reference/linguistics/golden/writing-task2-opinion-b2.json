@@ -1,0 +1,16 @@
+{
+  "id": "writing-task2-opinion-b2",
+  "task_type": "writing_task_2_essay",
+  "genre": "opinion",
+  "expected_band": 7.0,
+  "expected_level": "B2",
+  "expected_source": "internal_vstep_golden_fixture",
+  "prompt": "Some people believe that students should use technology more often in class. To what extent do you agree or disagree?",
+  "requirements": ["state opinion", "give reasons", "support ideas"],
+  "text": "In my opinion, technology should be used more often in class because it can make learning more flexible and effective. Although traditional lessons are still useful, digital tools give students access to a wider range of information and allow them to practise at their own speed.\n\nFirstly, online resources can help learners understand difficult topics more clearly. For example, videos, interactive quizzes and online dictionaries can support students who need extra practice after school. As a result, learning does not depend only on the teacher's explanation in the classroom.\n\nHowever, technology should not completely replace face-to-face teaching. If students use their phones without guidance, they may become distracted. Therefore, schools need clear rules and teachers should choose suitable activities.\n\nIn conclusion, I agree that technology can be beneficial in education, provided that it is used carefully. It offers valuable support, but it works best when teachers combine it with direct instruction and discussion.",
+  "expected_signals": {
+    "linking_min": 5,
+    "collocation_min": 3,
+    "grammar_types_min": 4
+  }
+}

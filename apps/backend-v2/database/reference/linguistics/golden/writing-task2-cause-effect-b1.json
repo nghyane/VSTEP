@@ -1,0 +1,12 @@
+{
+  "id": "writing-task2-cause-effect-b1",
+  "task_type": "writing_task_2_essay",
+  "genre": "cause_effect",
+  "expected_band": 6.0,
+  "expected_level": "B1",
+  "expected_source": "internal_vstep_golden_fixture",
+  "prompt": "Many young people do not exercise enough. What are the causes and effects?",
+  "requirements": ["causes", "effects", "examples"],
+  "text": "Many young people do not do enough exercise today. The main reason is that they spend too much time using phones and computers. One major cause is the widespread use of social media, which encourages teenagers to sit for many hours.\n\nThis leads to several health problems. For example, young people may gain weight and become tired more easily. As a consequence, their mental health and educational outcomes may also become worse because they cannot concentrate well at school.\n\nTherefore, families and schools should encourage more outdoor activities. If young people exercise more often, they will have a better quality of life.",
+  "expected_signals": {"linking_min": 3, "collocation_min": 5, "grammar_types_min": 2}
+}

@@ -40,6 +40,7 @@ VSTEP Task 2 — Essay (target: ~250 words). Format: introduction → body parag
 Infer 3-5 key requirements from the task.
 @endif
 
-TASK: Read the full {{ ($part ?? 2) === 1 ? 'letter' : 'essay' }} above. For each requirement, answer ONLY YES or NO.
-YES = the {{ ($part ?? 2) === 1 ? 'letter' : 'essay' }} addresses this topic, even briefly. NO = the topic is completely absent.
-Output a JSON array of booleans in the same order as the requirements above (true for YES, false for NO).
+TASK: Read the full {{ ($part ?? 2) === 1 ? 'letter' : 'essay' }} above.
+- For each requirement, answer true if it is addressed even briefly, false if completely absent.
+- Set has_irrelevant_content=true only when the response is mostly about another topic or does not answer the prompt.
+Return structured output with requirements_met in the same order as the requirements above.

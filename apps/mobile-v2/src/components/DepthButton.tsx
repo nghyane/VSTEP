@@ -1,7 +1,6 @@
 // 3D Depth Button — Duolingo press effect, synced with frontend-v3 .btn-primary
 import { useRef, useState, type ReactNode } from "react";
 import { Animated, Pressable, StyleSheet, Text, type ViewStyle } from "react-native";
-import * as Haptics from "expo-haptics";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
 type Variant = "primary" | "secondary" | "destructive" | "coin" | "info";
@@ -15,6 +14,7 @@ interface DepthButtonProps {
   disabled?: boolean;
   style?: ViewStyle;
   fullWidth?: boolean;
+  pressAnimation?: boolean;
 }
 
 export function DepthButton({
@@ -25,6 +25,7 @@ export function DepthButton({
   disabled = false,
   style,
   fullWidth = false,
+  pressAnimation = true,
 }: DepthButtonProps) {
   const c = useThemeColors();
   const translateY = useRef(new Animated.Value(0)).current;
@@ -33,18 +34,19 @@ export function DepthButton({
   const sizeStyle = SIZE_MAP[size];
 
   function handlePressIn() {
+    if (!pressAnimation) return;
     setPressed(true);
-    Animated.timing(translateY, { toValue: 4, duration: 60, useNativeDriver: true }).start();
+    Animated.timing(translateY, { toValue: 2, duration: 100, useNativeDriver: true }).start();
   }
 
   function handlePressOut() {
+    if (!pressAnimation) return;
     setPressed(false);
     Animated.timing(translateY, { toValue: 0, duration: 100, useNativeDriver: true }).start();
   }
 
   function handlePress() {
     if (disabled) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
     onPress?.();
   }
 
@@ -63,7 +65,7 @@ export function DepthButton({
           {
             backgroundColor: bg,
             borderColor: bg,
-            borderBottomWidth: pressed ? 0 : 4,
+            borderBottomWidth: pressed && pressAnimation ? 2 : 4,
             borderBottomColor: shadow,
             opacity: disabled ? 0.5 : 1,
             transform: [{ translateY }],

@@ -17,13 +17,16 @@ use App\Assessment\Enums\AssessmentSkill;
 use App\Assessment\Enums\AssessmentSourceType;
 use App\Assessment\Enums\AssessmentTaskType;
 use App\Assessment\Enums\CriterionKey;
+use App\Assessment\Services\AssessmentManager;
 use App\Assessment\Services\AssessmentProcessingService;
 use App\Assessment\Services\AssessmentSubmissionService;
-use App\Assessment\Services\StrategyRegistry;
 use App\Jobs\ProcessAssessmentJob;
 use App\Models\AssessmentRubric;
+use App\Models\GradingRubric;
 use App\Models\Profile;
 use App\Models\User;
+use App\Services\AssessmentResultDisplayService;
+use App\Services\Grading\RubricResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -33,9 +36,7 @@ final class AssessmentProcessingTest extends TestCase
 
     public function test_submits_and_processes_assessment_attempt(): void
     {
-        $this->app->singleton(StrategyRegistry::class, fn () => new StrategyRegistry([
-            new PassingAssessmentStrategy,
-        ]));
+        $this->fakeAssessmentManager(PassingAssessmentStrategy::class);
 
         $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
         $rubric = $this->activeRubric();
@@ -73,9 +74,7 @@ final class AssessmentProcessingTest extends TestCase
 
     public function test_marks_job_failed_when_evidence_is_invalid(): void
     {
-        $this->app->singleton(StrategyRegistry::class, fn () => new StrategyRegistry([
-            new FailingAssessmentStrategy,
-        ]));
+        $this->fakeAssessmentManager(FailingAssessmentStrategy::class);
 
         $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
         $this->activeRubric();
@@ -104,9 +103,7 @@ final class AssessmentProcessingTest extends TestCase
 
     public function test_queue_job_processes_assessment_job(): void
     {
-        $this->app->singleton(StrategyRegistry::class, fn () => new StrategyRegistry([
-            new PassingAssessmentStrategy,
-        ]));
+        $this->fakeAssessmentManager(PassingAssessmentStrategy::class);
 
         $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
         $this->activeRubric();
@@ -128,6 +125,110 @@ final class AssessmentProcessingTest extends TestCase
         ]);
     }
 
+    public function test_extremely_short_writing_response_is_scored_as_non_assessable(): void
+    {
+        $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
+        $tfParams = GradingRubric::query()->where('skill', 'writing')->firstOrFail()->taskFulfillmentParams();
+
+        $attempt = $this->app->make(AssessmentSubmissionService::class)->submit(new AssessmentInput(
+            profileId: $profile->id,
+            skill: AssessmentSkill::Writing,
+            taskType: AssessmentTaskType::WritingTask1Letter,
+            sourceType: AssessmentSourceType::Practice,
+            sourceId: '00000000-0000-0000-0000-000000000004',
+            prompt: [
+                'part' => 1,
+                'prompt' => 'Write a letter to apologize, explain, and suggest a plan.',
+            ],
+            requirements: ['Apologize for missing the party', 'Explain why you could not attend', 'Suggest a plan to make it up'],
+            text: 'hrrrlnhập đại cũng có điểm',
+            metadata: ['word_count' => 1],
+        ));
+
+        $result = $this->app->make(AssessmentProcessingService::class)->process($attempt->job);
+        $expectedCap = $tfParams->shortResponseScoreCap(1);
+
+        $this->assertSame($expectedCap, $result->overall_band);
+        $this->assertSame('assessment_requirements_not_met', $result->caps_applied['type']);
+        $this->assertContains('severe_minimum_word_count', $result->caps_applied['failed_requirements']);
+
+        $display = $this->app->make(AssessmentResultDisplayService::class)->forResult($result);
+        $this->assertSame('not_assessable', $display['status']);
+        $this->assertFalse($display['is_assessable']);
+        $this->assertFalse($display['ui']['show_criterion_breakdown']);
+
+        foreach ($result->criterion_scores as $criterion) {
+            $this->assertEquals($expectedCap, $criterion['score']);
+        }
+    }
+
+    public function test_writing_response_with_no_task_coverage_is_non_assessable(): void
+    {
+        $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
+        $prompt = "You forgot your close friend's birthday party last weekend. Write a letter to your friend to:\n- Apologize for missing the party\n- Explain why you couldn't attend\n- Suggest a plan to make it up";
+
+        $attempt = $this->app->make(AssessmentSubmissionService::class)->submit(new AssessmentInput(
+            profileId: $profile->id,
+            skill: AssessmentSkill::Writing,
+            taskType: AssessmentTaskType::WritingTask1Letter,
+            sourceType: AssessmentSourceType::Practice,
+            sourceId: '00000000-0000-0000-0000-000000000005',
+            prompt: [
+                'part' => 1,
+                'prompt' => $prompt,
+            ],
+            requirements: ['apologize', 'explain reason', 'suggest plan'],
+            text: $prompt,
+            metadata: ['word_count' => 36],
+        ));
+
+        $result = $this->app->make(AssessmentProcessingService::class)->process($attempt->job);
+
+        $this->assertSame(1.0, $result->overall_band);
+        $this->assertSame('assessment_requirements_not_met', $result->caps_applied['type']);
+        $this->assertSame(0, $result->caps_applied['points_covered']);
+        $this->assertContains('severe_minimum_word_count', $result->caps_applied['failed_requirements']);
+        $this->assertContains('task_coverage', $result->caps_applied['failed_requirements']);
+
+        $display = $this->app->make(AssessmentResultDisplayService::class)->forResult($result);
+        $this->assertSame('not_assessable', $display['status']);
+        $this->assertFalse($display['is_assessable']);
+        $this->assertFalse($display['ui']['show_criterion_breakdown']);
+
+        foreach ($result->criterion_scores as $criterion) {
+            $this->assertEquals(1.0, $criterion['score']);
+        }
+    }
+
+    public function test_under_target_writing_with_task_coverage_remains_assessable(): void
+    {
+        $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
+        $text = str_repeat('I am sorry that I missed your birthday party because my family had an emergency. ', 7);
+
+        $attempt = $this->app->make(AssessmentSubmissionService::class)->submit(new AssessmentInput(
+            profileId: $profile->id,
+            skill: AssessmentSkill::Writing,
+            taskType: AssessmentTaskType::WritingTask1Letter,
+            sourceType: AssessmentSourceType::Practice,
+            sourceId: '00000000-0000-0000-0000-000000000006',
+            prompt: [
+                'part' => 1,
+                'prompt' => 'Write a letter to apologize, explain, and suggest a plan.',
+            ],
+            requirements: ['apologize', 'explain reason', 'suggest plan'],
+            text: $text,
+            metadata: ['word_count' => 84],
+        ));
+
+        $result = $this->app->make(AssessmentProcessingService::class)->process($attempt->job);
+
+        $this->assertNotSame('assessment_requirements_not_met', $result->caps_applied['type'] ?? null);
+
+        $display = $this->app->make(AssessmentResultDisplayService::class)->forResult($result);
+        $this->assertNotSame('not_assessable', $display['status']);
+        $this->assertTrue($display['ui']['show_criterion_breakdown']);
+    }
+
     private function activeRubric(): AssessmentRubric
     {
         return AssessmentRubric::updateOrCreate(
@@ -142,6 +243,16 @@ final class AssessmentProcessingTest extends TestCase
                 'effective_from' => now(),
             ],
         );
+    }
+
+    /** @param class-string<AssessmentStrategy> $strategyClass */
+    private function fakeAssessmentManager(string $strategyClass): void
+    {
+        $this->app->singleton(AssessmentManager::class, fn ($app) => new AssessmentManager(
+            $app,
+            $app->make(RubricResolver::class),
+            [AssessmentTaskType::WritingTask2Essay->value => $strategyClass],
+        ));
     }
 }
 

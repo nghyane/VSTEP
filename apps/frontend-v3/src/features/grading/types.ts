@@ -25,6 +25,144 @@ export interface AssessmentFeedback {
 	rewrites?: Array<Rewrite | string>
 }
 
+export interface AssessmentResultDisplay {
+	status: "not_assessable" | "below_b1" | "passed"
+	status_label: string
+	level: "B1" | "B2" | "C1" | "below_b1" | null
+	level_label: string
+	is_assessable: boolean
+	is_passing: boolean
+	score: {
+		value: number
+		max: number
+		label: string
+		should_show: boolean
+		emphasis: "primary" | "secondary"
+	}
+	reason: {
+		code: string
+		label: string | null
+		source: string | null
+		details: Record<string, unknown> | unknown[]
+	}
+	message: string
+	thresholds: {
+		min_b1: number
+		min_b2: number
+		min_c1: number
+		max_score: number
+	}
+	ui: {
+		tone: "danger" | "warning" | "success"
+		badge: string
+		show_score: boolean
+		show_criterion_breakdown: boolean
+		show_feedback: boolean
+		primary_action: "rewrite" | null
+	}
+}
+
+export interface AssessmentAnnotation {
+	start: number
+	end: number
+	length: number
+	text: string
+	type: "spelling" | "grammar" | "punctuation" | "style" | "other"
+	severity: string
+	category: string
+	message: string
+	suggestions: string[]
+	rule_id: string
+}
+
+export interface AssessmentDiagnostics {
+	summary: {
+		word_count: number | null
+		sentence_count: number | null
+		paragraph_count: number | null
+		total_error_count: number | null
+		grammar_error_count: number | null
+		spelling_error_count: number | null
+		punctuation_error_count: number | null
+		linking_word_count: number | null
+		unique_ratio: number | null
+		avg_word_length: number | null
+		readability_grade: number | null
+	}
+	data_status?: Record<string, boolean>
+	annotations: AssessmentAnnotation[]
+	by_type: Record<AssessmentAnnotation["type"], AssessmentAnnotation[]>
+	counts_by_category: Record<string, number>
+	service_status?: {
+		language_tool?: {
+			available: boolean
+			checked?: boolean
+			message: string | null
+		}
+	}
+	word_requirement?: {
+		minimum: number
+		actual: number | null
+		is_met: boolean | null
+		missing: number | null
+	}
+	task_coverage?: {
+		required_points: number
+		covered_points: number | null
+		coverage_ratio: number | null
+		has_requirement_details: boolean
+		source?: "heuristic" | "final"
+		requirements: Array<{
+			text: string
+			met: boolean | null
+		}>
+	}
+	format?: {
+		letter_format_expected: boolean
+		has_salutation: boolean | null
+		has_closing: boolean | null
+		tone: {
+			formal_count: number | null
+			informal_count: number | null
+			informal_words: string[] | null
+		}
+	}
+	cohesion?: {
+		linking_word_count: number | null
+		sentence_variety: number | null
+	}
+	vocabulary_profile?: {
+		cefr_weighted_avg: number | null
+		cefr_advanced_ratio: number | null
+		cefr_vocab_count: number | null
+		complex_vocab_count: number | null
+	}
+	profanity?: {
+		found: boolean
+		words: string[]
+		count: number
+	}
+	speech?: {
+		transcript: string | null
+		confidence: number | null
+		speaking_rate: number | null
+		pause_count: number | null
+		word_count: number | null
+	}
+	fluency?: {
+		speaking_rate: number | null
+		pause_count: number | null
+		word_count: number | null
+	}
+	pronunciation?: {
+		overall: number | null
+		raw: Record<string, unknown>
+	}
+	content?: {
+		content_factor: number | null
+	}
+}
+
 export interface InsightsEntry {
 	label: string
 	detail: string
@@ -34,6 +172,8 @@ export interface WritingGradingResult {
 	id?: string
 	criterion_scores: CriterionScore[]
 	overall_band: number
+	display?: AssessmentResultDisplay
+	diagnostics?: AssessmentDiagnostics
 	feedback: AssessmentFeedback | null
 	annotations?: { _insights?: Record<string, InsightsEntry> } | null
 	created_at?: string
@@ -43,10 +183,18 @@ export interface SpeakingGradingResult {
 	id?: string
 	criterion_scores: CriterionScore[]
 	overall_band: number
+	display?: AssessmentResultDisplay
+	diagnostics?: AssessmentDiagnostics
 	feedback: AssessmentFeedback | null
 	pronunciation_report?: { accuracy_score: number; insights?: Record<string, InsightsEntry> } | null
 	transcript?: string | null
 	created_at?: string
+}
+
+export interface PracticeSpeakingResultResponse {
+	attempt_id?: string
+	data: SpeakingGradingResult | null
+	rubric: RubricMeta | null
 }
 
 export interface RubricCriteriaMeta {
@@ -94,6 +242,14 @@ export interface AssessmentFeedbackRequestState {
 	requested: boolean
 	cost_coins: number
 	status: "none" | "pending" | "ready" | "failed"
+}
+
+export interface RequestFeedbackResponse {
+	submission_id: string
+	status: "pending" | "ready" | "failed"
+	cost_coins: number
+	charged: boolean
+	feedback: AssessmentFeedback | null
 }
 
 export interface AssessmentView {

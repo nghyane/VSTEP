@@ -1,12 +1,13 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { HTTPError } from "ky"
-import { Icon } from "#/components/Icon"
+import { useEffect } from "react"
+import { Icon, StaticIcon } from "#/components/Icon"
+import { appConfigQuery } from "#/features/config/queries"
 import { type ConversationReview, getConversationReview } from "#/features/practice/actions"
 
 interface Props {
 	sessionId: string
 	turnCount: number
-	onClose: () => void
 }
 
 function ReviewContent({ review }: { review: ConversationReview }) {
@@ -67,34 +68,47 @@ function ReviewContent({ review }: { review: ConversationReview }) {
 	)
 }
 
-export function ConversationReviewPopup({ sessionId, turnCount, onClose }: Props) {
+export function ConversationReviewPanel({ sessionId, turnCount }: Props) {
+	const queryClient = useQueryClient()
+	const { data: configData } = useQuery(appConfigQuery)
 	const { data, isPending, isError, error, refetch } = useQuery({
 		queryKey: ["conversation-review", sessionId],
 		queryFn: () => getConversationReview(sessionId),
 	})
+	const feedbackCost = configData?.data.pricing.practice.feedback_cost_coins ?? 0
+
+	useEffect(() => {
+		if (!data) return
+		queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] })
+	}, [data, queryClient])
 
 	let errorMsg = "Không thể tải đánh giá."
 	if (error instanceof HTTPError) {
 		const status = error.response.status
-		if (status === 503) errorMsg = "AI tạm thời không phản hồi. Vui lòng thử lại sau."
+		if (status === 503) errorMsg = "AI đang bận, bạn thử lại nhé."
 		else if (status === 403) errorMsg = "Bạn không có quyền xem đánh giá này."
-		else errorMsg = `Lỗi server (${status}). Vui lòng thử lại.`
+		else errorMsg = error.message || `Lỗi server (${status}). Vui lòng thử lại.`
 	}
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-			<div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-6 shadow-xl mx-4 animate-[popIn_0.25s_ease-out] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-				<div className="flex items-center justify-between mb-2">
-					<h2 className="font-extrabold text-lg text-foreground">Đánh giá của AI</h2>
-					<button type="button" onClick={onClose} className="p-1 text-muted hover:text-foreground transition">
-						<Icon name="close" size="sm" />
-					</button>
-				</div>
-				<p className="text-xs text-muted mb-4">Bạn đã hoàn thành {turnCount} lượt nói</p>
+		<div id="ai-conversation-feedback" className="card p-5 space-y-4 animate-[fadeIn_0.2s_ease-out]">
+			<div>
+				<p className="text-xs font-bold uppercase tracking-wide text-subtle">Đánh giá của AI</p>
+				<p className="text-xs text-muted mb-4">
+					Bạn đã hoàn thành {turnCount} lượt nói
+					{feedbackCost > 0 && (
+						<span className="inline-flex items-center gap-1.5">
+							&nbsp;· Tốn <StaticIcon name="coin" size="xs" className="h-3.5 w-auto -translate-y-0.5" />{" "}
+							{feedbackCost} xu
+						</span>
+					)}
+				</p>
+			</div>
 
-				{isPending && (
-					<div className="text-center py-8">
-						<div className="flex justify-center gap-1.5 mb-3">
+			{isPending && (
+				<div className="border-t-2 border-border pt-4">
+					<div className="flex items-center gap-2">
+						<div className="flex gap-1">
 							<div className="w-2.5 h-2.5 rounded-full bg-skill-speaking animate-[dotBounce_1.2s_ease-in-out_infinite]" />
 							<div
 								className="w-2.5 h-2.5 rounded-full bg-skill-speaking animate-[dotBounce_1.2s_ease-in-out_infinite]"
@@ -107,19 +121,25 @@ export function ConversationReviewPopup({ sessionId, turnCount, onClose }: Props
 						</div>
 						<p className="text-sm font-bold text-muted">AI đang phân tích hội thoại...</p>
 					</div>
-				)}
+				</div>
+			)}
 
-				{isError && (
-					<div className="text-center py-6">
+			{isError && (
+				<div className="border-t-2 border-border pt-4">
+					<div className="rounded-(--radius-card) border-2 border-b-4 border-destructive/30 bg-destructive/5 p-4">
 						<p className="text-sm text-destructive mb-3">{errorMsg}</p>
 						<button type="button" onClick={() => refetch()} className="btn btn-secondary px-6">
 							Thử lại
 						</button>
 					</div>
-				)}
+				</div>
+			)}
 
-				{data && <ReviewContent review={data.data} />}
-			</div>
+			{data && (
+				<div className="border-t-2 border-border pt-4">
+					<ReviewContent review={data.data} />
+				</div>
+			)}
 		</div>
 	)
 }

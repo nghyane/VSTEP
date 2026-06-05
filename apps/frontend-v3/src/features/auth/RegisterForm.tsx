@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router"
+import { HTTPError } from "ky"
 import { useState } from "react"
 import { ScrollArea } from "#/components/ScrollArea"
+import { resendEmailVerification } from "#/features/auth/actions"
 import { DatePicker } from "#/features/auth/DatePicker"
 import { GoogleButton } from "#/features/auth/GoogleButton"
 import { PasswordInput } from "#/features/auth/PasswordInput"
@@ -257,7 +259,7 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 								))}
 							</div>
 							<p className="text-[11px] text-subtle">
-								Dùng để gợi ý lộ trình ban đầu. Bạn sẽ được cập nhật "Dự đoán" sau khi làm đủ 5 bài thi thử.
+								Dùng để tạo lộ trình ban đầu. Dự đoán năng lực sẽ cập nhật theo kết quả đánh giá và thi thử.
 							</p>
 						</div>
 
@@ -308,6 +310,12 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 				</ScrollArea>
 
 				<div className="shrink-0 space-y-3 pt-2">
+					{!googleMode && (
+						<p className="text-xs font-bold text-muted text-center">
+							Sau bước này, hệ thống sẽ gửi email xác thực. Bạn cần mở liên kết trong email trước khi đăng
+							nhập.
+						</p>
+					)}
 					{error && (
 						<p className="text-sm font-bold text-destructive text-center bg-destructive/10 rounded-(--radius-button) py-2">
 							{error}
@@ -318,7 +326,13 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 						disabled={submitting}
 						className="btn btn-primary w-full h-12 text-base disabled:opacity-50"
 					>
-						{submitting ? "Đang tạo..." : "Bắt đầu học"}
+						{submitting
+							? googleMode
+								? "Đang tạo..."
+								: "Đang gửi email..."
+							: googleMode
+								? "Bắt đầu học"
+								: "Tạo tài khoản & gửi email xác thực"}
 					</button>
 				</div>
 			</form>
@@ -329,6 +343,74 @@ function Step2({ onBack, onSubmit, submitting, initialNickname, googleMode }: St
 // ─── Main component ────────────────────────────────────────────────────────
 
 type Flow = "password" | "google"
+
+function authErrorMessage(error: unknown, fallback: string) {
+	if (error instanceof HTTPError) {
+		const body = error.data as { message?: string; errors?: { email?: string[] } } | undefined
+		return body?.errors?.email?.[0] ?? body?.message ?? fallback
+	}
+	return fallback
+}
+
+function EmailVerificationSent({ email }: { email: string }) {
+	const [submitting, setSubmitting] = useState(false)
+	const [message, setMessage] = useState<string | null>(null)
+	const [error, setError] = useState<string | null>(null)
+
+	async function handleResend() {
+		setSubmitting(true)
+		setMessage(null)
+		setError(null)
+		try {
+			await resendEmailVerification(email)
+			setMessage("Đã gửi lại email xác thực. Vui lòng kiểm tra hộp thư.")
+		} catch (err) {
+			setError(authErrorMessage(err, "Không gửi lại được email xác thực."))
+		} finally {
+			setSubmitting(false)
+		}
+	}
+
+	return (
+		<>
+			<div className="text-center mb-6">
+				<h1 className="font-extrabold text-2xl text-foreground">Kiểm tra email</h1>
+				<p className="text-sm text-subtle mt-1">
+					Tài khoản đã được tạo. Mở liên kết xác thực đã gửi tới <b>{email}</b> trước khi đăng nhập.
+				</p>
+			</div>
+
+			<div className="rounded-(--radius-card) border border-primary/20 bg-primary/5 p-4 text-sm text-subtle">
+				Nếu không thấy email, hãy kiểm tra thư rác hoặc bấm gửi lại sau ít phút.
+			</div>
+
+			{message && (
+				<p className="text-sm font-bold text-success text-center bg-success/10 rounded-(--radius-button) py-2 mt-4">
+					{message}
+				</p>
+			)}
+			{error && (
+				<p className="text-sm font-bold text-destructive text-center bg-destructive/10 rounded-(--radius-button) py-2 mt-4">
+					{error}
+				</p>
+			)}
+
+			<div className="space-y-3 mt-5">
+				<button
+					type="button"
+					disabled={submitting}
+					onClick={handleResend}
+					className="btn btn-primary w-full h-12 text-base disabled:opacity-50"
+				>
+					{submitting ? "Đang gửi..." : "Gửi lại email xác thực"}
+				</button>
+				<Link to="/" search={{ auth: "login" }} className="btn btn-secondary w-full h-12 text-base">
+					Tôi đã xác thực, đăng nhập
+				</Link>
+			</div>
+		</>
+	)
+}
 
 export function RegisterForm({ onboardingOnly = false }: { onboardingOnly?: boolean } = {}) {
 	const register = useAuth((s) => s.register)
@@ -343,6 +425,7 @@ export function RegisterForm({ onboardingOnly = false }: { onboardingOnly?: bool
 	const [submitting, setSubmitting] = useState(false)
 	const [googleLoading, setGoogleLoading] = useState(false)
 	const [suggestedNickname, setSuggestedNickname] = useState<string | null>(null)
+	const [verificationEmail, setVerificationEmail] = useState<string | null>(null)
 	const [credentials, setCredentials] = useState<Step1Data>({
 		email: "",
 		password: "",
@@ -379,7 +462,7 @@ export function RegisterForm({ onboardingOnly = false }: { onboardingOnly?: bool
 					target_deadline: deadline,
 				})
 			} else {
-				await register({
+				const result = await register({
 					email: credentials.email,
 					password: credentials.password,
 					nickname,
@@ -387,6 +470,7 @@ export function RegisterForm({ onboardingOnly = false }: { onboardingOnly?: bool
 					target_level: level,
 					target_deadline: deadline,
 				})
+				if (result) setVerificationEmail(result.email)
 			}
 		} finally {
 			setSubmitting(false)
@@ -411,6 +495,10 @@ export function RegisterForm({ onboardingOnly = false }: { onboardingOnly?: bool
 				googleLoading={googleLoading}
 			/>
 		)
+	}
+
+	if (verificationEmail) {
+		return <EmailVerificationSent email={verificationEmail} />
 	}
 
 	return (

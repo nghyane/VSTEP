@@ -50,7 +50,7 @@ export function ListeningContent() {
 											key={ex.id}
 											title={ex.title}
 											description={ex.description}
-											meta={ex.estimated_minutes ? `${ex.estimated_minutes} phút` : ""}
+											meta={ex.estimated_minutes ? `~${ex.estimated_minutes} phút` : ""}
 											progress={
 												p
 													? {

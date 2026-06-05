@@ -35,6 +35,13 @@ final class AdminDashboardService
         $today = CarbonImmutable::now()->startOfDay();
         $week = CarbonImmutable::now()->subDays(7)->startOfDay();
 
+        $assessmentPending = AssessmentJob::query()->where('status', AssessmentJobStatus::Pending)->count();
+        $assessmentFailed = AssessmentJob::query()->where('status', AssessmentJobStatus::Failed)->count();
+        $assessmentDoneToday = AssessmentJob::query()
+            ->where('status', AssessmentJobStatus::Ready)
+            ->where('completed_at', '>=', $today)
+            ->count();
+
         return [
             'users_total' => User::query()->count(),
             'users_today' => User::query()->where('created_at', '>=', $today)->count(),
@@ -48,12 +55,12 @@ final class AdminDashboardService
                 ->where('status', ExamSessionStatus::Active)
                 ->where('server_deadline_at', '<', now())
                 ->count(),
-            'assessment_pending' => AssessmentJob::query()->where('status', AssessmentJobStatus::Pending)->count(),
-            'assessment_failed' => AssessmentJob::query()->where('status', AssessmentJobStatus::Failed)->count(),
-            'assessment_done_today' => AssessmentJob::query()
-                ->where('status', AssessmentJobStatus::Ready)
-                ->where('completed_at', '>=', $today)
-                ->count(),
+            'grading_pending' => $assessmentPending,
+            'grading_failed' => $assessmentFailed,
+            'grading_done_today' => $assessmentDoneToday,
+            'assessment_pending' => $assessmentPending,
+            'assessment_failed' => $assessmentFailed,
+            'assessment_done_today' => $assessmentDoneToday,
             'vocab_topics' => VocabTopic::query()->count(),
             'grammar_points' => GrammarPoint::query()->count(),
             'courses' => Course::query()->count(),
@@ -75,14 +82,14 @@ final class AdminDashboardService
             ];
         }
 
-        $missingAudio = ExamVersionListeningSection::query()
+        $examListeningSectionsMissingAudio = ExamVersionListeningSection::query()
             ->whereNull('audio_url')
             ->orWhere('audio_url', '')
             ->count();
-        if ($missingAudio > 0) {
+        if ($examListeningSectionsMissingAudio > 0) {
             $alerts[] = [
                 'type' => 'warning',
-                'message' => "{$missingAudio} phần nghe chưa có audio",
+                'message' => "{$examListeningSectionsMissingAudio} đoạn nghe trong đề thi chưa có file audio",
                 'action' => '/exams',
             ];
         }

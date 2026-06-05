@@ -3,7 +3,6 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollVie
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
 
 import { DepthButton } from "@/components/DepthButton";
@@ -311,7 +310,6 @@ function ListenPrompt({ word }: { word: VocabWord }) {
       <Text style={[s.faceKicker, { color: c.mutedForeground }]}>Nghe và gõ từ</Text>
       <HapticTouchable
         onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => undefined);
           void speakWord(word.word);
         }}
         style={[s.listenButton, { backgroundColor: c.primaryTint, borderColor: c.primary }]}

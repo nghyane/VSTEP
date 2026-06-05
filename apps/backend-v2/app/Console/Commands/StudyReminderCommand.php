@@ -7,6 +7,8 @@ namespace App\Console\Commands;
 use App\Enums\IconKey;
 use App\Enums\NotificationType;
 use App\Models\Profile;
+use App\Models\ProfileDailyActivity;
+use App\Services\NotificationEmailService;
 use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -22,12 +24,12 @@ final class StudyReminderCommand extends Command
 
     protected $description = 'Send study reminders to inactive learners';
 
-    public function handle(NotificationService $notificationService): int
+    public function handle(NotificationService $notificationService, NotificationEmailService $emailService): int
     {
         $yesterday = Carbon::today()->subDay()->toDateString();
 
         $staleProfiles = Profile::query()
-            ->with('user')
+            ->with('account')
             ->whereNotExists(function ($q) use ($yesterday) {
                 $q->select(DB::raw(1))
                     ->from('profile_daily_activity')
@@ -40,7 +42,7 @@ final class StudyReminderCommand extends Command
         $sent = 0;
 
         foreach ($staleProfiles as $profile) {
-            $notificationService->push(
+            $notification = $notificationService->push(
                 $profile,
                 NotificationType::StudyReminder,
                 'Đã đến lúc luyện tập!',
@@ -48,11 +50,46 @@ final class StudyReminderCommand extends Command
                 IconKey::Book,
                 dedupKey: 'study_reminder_'.$profile->id.'_'.Carbon::today()->toDateString(),
             );
+
+            if ($notification !== null) {
+                $inactiveDays = $this->inactiveDays($profile);
+                if ($this->shouldSendEmail($inactiveDays)) {
+                    $emailService->sendToProfile(
+                        $profile,
+                        'Đã lâu rồi bạn chưa luyện tập VSTEP',
+                        [
+                            "Bạn đã chưa luyện tập {$inactiveDays} ngày.",
+                            'Dành 15 phút hôm nay để lấy lại nhịp học và tiếp tục cải thiện kỹ năng nhé.',
+                        ],
+                        'Vào luyện tập',
+                        '/luyen-tap',
+                    );
+                }
+            }
             $sent++;
         }
 
         $this->info("Sent {$sent} study reminders.");
 
         return self::SUCCESS;
+    }
+
+    private function inactiveDays(Profile $profile): int
+    {
+        $latestActivityDate = ProfileDailyActivity::query()
+            ->where('profile_id', $profile->id)
+            ->max('date_local');
+
+        $anchor = $latestActivityDate !== null
+            ? Carbon::parse((string) $latestActivityDate)->startOfDay()
+            : Carbon::parse($profile->created_at)->startOfDay();
+
+        return (int) $anchor->diffInDays(Carbon::today());
+    }
+
+    private function shouldSendEmail(int $inactiveDays): bool
+    {
+        return in_array($inactiveDays, [3, 7, 14], true)
+            || ($inactiveDays > 14 && ($inactiveDays - 14) % 7 === 0);
     }
 }

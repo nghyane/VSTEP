@@ -47,7 +47,7 @@ export function PracticeFlow({ words, mode, back }: Props) {
 					{isFlipMode ? (
 						<FlipCard
 							item={s.current}
-							flip={{ flipped, highlight: null, onFlip: s.flip }}
+							flip={{ flipped, highlight: null, onReveal: s.reveal }}
 							faces={{
 								front: <PracticeFront item={s.current} />,
 								back: <PracticeBack item={s.current} />,
@@ -74,9 +74,14 @@ function usePracticeKeyboard(s: PracticeSession) {
 			if (!s.current) return
 			const isInput = e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement
 			// Space → flip flashcard (only flashcard mode, not when typing in input)
-			if (e.key === " " && (s.current.mode === "flashcard" || s.current.mode === "reverse") && !isInput) {
+			if (
+				e.key === " " &&
+				(s.current.mode === "flashcard" || s.current.mode === "reverse") &&
+				s.phase === "prompt" &&
+				!isInput
+			) {
 				e.preventDefault()
-				s.flip()
+				s.reveal()
 				return
 			}
 			// 1-4 → rate (after reveal, not when typing)
@@ -87,5 +92,5 @@ function usePracticeKeyboard(s: PracticeSession) {
 		}
 		window.addEventListener("keydown", onKeyDown)
 		return () => window.removeEventListener("keydown", onKeyDown)
-	}, [s.current, s.phase, s.submitting, s.flip, s.rate])
+	}, [s.current, s.phase, s.submitting, s.reveal, s.rate])
 }

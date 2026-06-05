@@ -1,21 +1,24 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
 import {
 	type ShadowingAttemptResult,
 	ShadowingSegmentView,
 } from "#/features/practice/components/ShadowingSegmentView"
 import { ShadowingSidebar } from "#/features/practice/components/ShadowingSidebar"
+import { TTSVoicePicker } from "#/features/practice/components/TTSVoicePicker"
 import { shadowingProgressQuery, useMarkShadowingDone } from "#/features/practice/shadowing-progress"
 import type { ShadowingLessonDetail } from "#/features/practice/types"
+import { useSpeechTranscriber } from "#/features/practice/use-speech-transcriber"
+import { detectProfanity } from "#/lib/profanity"
 import { useToast } from "#/lib/toast"
 import {
 	cn,
 	compareWords,
+	pickBoundaryEnglishVoice,
 	pickEnglishVoice,
 	speak,
-	speechRecognitionNetworkMessage,
 	stopSpeaking,
 	warmupTTS,
 } from "#/lib/utils"
@@ -24,7 +27,9 @@ interface Props {
 	lesson: ShadowingLessonDetail
 }
 
-type MicState = "idle" | "listening" | "speaking" | "recording"
+type MicState = "idle" | "speaking" | "recording" | "processing"
+const VOICE_ERROR_MESSAGE =
+	"Giọng đọc này không phát được trên trình duyệt hiện tại. Vui lòng chọn giọng khác."
 
 export function ShadowingInProgress({ lesson }: Props) {
 	const { segments } = lesson
@@ -34,26 +39,38 @@ export function ShadowingInProgress({ lesson }: Props) {
 	const [current, setCurrent] = useState(0)
 	const [done, setDone] = useState<Set<number>>(new Set())
 	const mergedDone = new Set([...persistedDone, ...done])
-	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickEnglishVoice())
+	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickBoundaryEnglishVoice())
 	const [mic, setMic] = useState<MicState>("idle")
 	const [speakingCharIndex, setSpeakingCharIndex] = useState(-1)
-	const [elapsed, setElapsed] = useState(0)
 	const [attempts, setAttempts] = useState<Map<number, ShadowingAttemptResult>>(new Map())
 	const [sidebarOpen, setSidebarOpen] = useState(true)
 	const [emptyWarning, setEmptyWarning] = useState(false)
-	const recognitionRef = useRef<{ stop: () => void } | null>(null)
-	const stoppedRef = useRef(false)
-	const autoRestartRef = useRef(0)
-	const timerRef = useRef<number | null>(null)
+	const {
+		elapsedSeconds: elapsed,
+		start: startSpeechTranscription,
+		stop: stopSpeechTranscription,
+		abort: abortSpeechTranscription,
+	} = useSpeechTranscriber(30)
 	const autoPlayedRef = useRef(false)
 
 	const segment = segments[current]
 	const attempt = attempts.get(current) ?? null
+	const handleVoiceChange = useCallback((nextVoice: SpeechSynthesisVoice) => {
+		stopSpeaking()
+		setMic("idle")
+		setSpeakingCharIndex(-1)
+		setVoice(nextVoice)
+	}, [])
+	const handleVoiceError = useCallback(() => {
+		setMic("idle")
+		setSpeakingCharIndex(-1)
+		useToast.getState().add(VOICE_ERROR_MESSAGE)
+	}, [])
 
 	useEffect(() => {
 		if (voice) return
 		const load = () => {
-			const v = pickEnglishVoice()
+			const v = pickBoundaryEnglishVoice() ?? pickEnglishVoice()
 			if (v) setVoice(v)
 		}
 		window.speechSynthesis?.addEventListener("voiceschanged", load)
@@ -72,14 +89,16 @@ export function ShadowingInProgress({ lesson }: Props) {
 			speak(segment.text, {
 				rate: 0.85,
 				voice,
+				boundaryFallback: false,
 				onBoundary: (ci) => setSpeakingCharIndex(ci),
+				onError: handleVoiceError,
 				onEnd: () => {
 					setMic("idle")
 					setSpeakingCharIndex(-1)
 				},
 			})
 		}, 500)
-	}, [voice, segment.text])
+	}, [voice, segment.text, handleVoiceError])
 
 	const handleListen = () => {
 		if (mic === "speaking") {
@@ -98,7 +117,9 @@ export function ShadowingInProgress({ lesson }: Props) {
 			speak(segment.text, {
 				rate: 0.85,
 				voice,
+				boundaryFallback: false,
 				onBoundary: (ci) => setSpeakingCharIndex(ci),
+				onError: handleVoiceError,
 				onEnd: () => {
 					setMic("idle")
 					setSpeakingCharIndex(-1)
@@ -107,12 +128,35 @@ export function ShadowingInProgress({ lesson }: Props) {
 		}, 500)
 	}
 
+	const applyTranscript = (text: string) => {
+		const profanity = detectProfanity(text)
+		const { results, correct } = compareWords(segment.text, text)
+		const accuracyPercent =
+			segment.word_count > 0 && !profanity.found
+				? Math.min(100, Math.round((correct / segment.word_count) * 100))
+				: null
+		setAttempts((prev) =>
+			new Map(prev).set(current, {
+				transcript: text,
+				wordResults: profanity.found ? results.map((result) => ({ ...result, accuracy: "wrong" })) : results,
+				correctCount: profanity.found ? 0 : correct,
+				accuracyPercent,
+				profanity,
+			}),
+		)
+		if (accuracyPercent !== null && accuracyPercent >= 50) {
+			setDone((prev) => new Set(prev).add(current))
+			markDoneMut.mutate({
+				lesson_id: lesson.id,
+				segment_index: current,
+				accuracy_percent: accuracyPercent,
+			})
+		}
+	}
+
 	const handleRecord = () => {
 		if (mic === "recording") {
-			stoppedRef.current = true
-			recognitionRef.current?.stop()
-			if (timerRef.current) clearInterval(timerRef.current)
-			timerRef.current = null
+			stopSpeechTranscription()
 			return
 		}
 		if (mic !== "idle") return
@@ -121,114 +165,25 @@ export function ShadowingInProgress({ lesson }: Props) {
 		setSpeakingCharIndex(-1)
 		setEmptyWarning(false)
 
-		const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-		if (!SR) {
-			useToast.getState().add("Trình duyệt này không hỗ trợ nhận dạng giọng nói. Vui lòng dùng Chrome.")
-			return
-		}
-
-		const recognition = new SR()
-		recognition.lang = "en-US"
-		recognition.continuous = true
-		recognition.interimResults = true
-		recognition.maxAlternatives = 1
-		recognitionRef.current = recognition
-		stoppedRef.current = false
-		autoRestartRef.current = 0
-		setElapsed(0)
-
-		let transcript = ""
-		recognition.onresult = (e: Event) => {
-			const evt = e as unknown as { results: ArrayLike<{ 0: { transcript: string } }> }
-			let full = ""
-			for (let i = 0; i < evt.results.length; i++) full += evt.results[i][0].transcript
-			transcript = full
-		}
-		recognition.onerror = (e: Event) => {
-			const err = e as unknown as { error: string; message?: string }
-			if (
-				err.error === "not-allowed" ||
-				err.error === "service-not-allowed" ||
-				err.error === "audio-capture"
-			) {
-				stoppedRef.current = true
-				recognition.abort()
+		void startSpeechTranscription({
+			language: "en-US",
+			onStart: () => setMic("recording"),
+			onProcessing: () => setMic("processing"),
+			onResult: ({ transcript }) => {
 				setMic("idle")
-				if (timerRef.current) clearInterval(timerRef.current)
-				timerRef.current = null
-				useToast.getState().add("Không thể truy cập microphone. Kiểm tra cài đặt trình duyệt.")
-				return
-			}
-			if (err.error === "network") {
-				stoppedRef.current = true
-				recognition.abort()
-				setMic("idle")
-				if (timerRef.current) clearInterval(timerRef.current)
-				timerRef.current = null
-				useToast.getState().add(speechRecognitionNetworkMessage(navigator.userAgent, navigator.onLine))
-				return
-			}
-		}
-		recognition.onend = () => {
-			if (!stoppedRef.current) {
-				autoRestartRef.current += 1
-				if (autoRestartRef.current <= 3) {
-					try {
-						recognition.start()
-						return
-					} catch {
-						/* fall through */
-					}
-				}
-			}
-			if (timerRef.current) clearInterval(timerRef.current)
-			timerRef.current = null
-			setMic("idle")
-			const text = transcript.trim()
-			if (text) {
 				setEmptyWarning(false)
-				const { results, correct } = compareWords(segment.text, text)
-				const accuracyPercent =
-					segment.word_count > 0 ? Math.min(100, Math.round((correct / segment.word_count) * 100)) : null
-				setAttempts((prev) =>
-					new Map(prev).set(current, {
-						transcript: text,
-						wordResults: results,
-						correctCount: correct,
-						accuracyPercent,
-					}),
-				)
-				if (accuracyPercent !== null && accuracyPercent >= 50) {
-					setDone((prev) => new Set(prev).add(current))
-					markDoneMut.mutate({
-						lesson_id: lesson.id,
-						segment_index: current,
-						accuracy_percent: accuracyPercent,
-					})
-				}
-			} else {
+				applyTranscript(transcript)
+			},
+			onEmpty: () => {
+				setMic("idle")
 				setEmptyWarning(true)
 				setTimeout(() => setEmptyWarning(false), 3000)
-			}
-		}
-
-		try {
-			recognition.start()
-			setMic("recording")
-			const startTime = Date.now()
-			timerRef.current = window.setInterval(() => {
-				const sec = Math.floor((Date.now() - startTime) / 1000)
-				setElapsed(sec)
-				if (sec >= 30) {
-					stoppedRef.current = true
-					recognitionRef.current?.stop()
-					if (timerRef.current) clearInterval(timerRef.current)
-					timerRef.current = null
-				}
-			}, 200)
-		} catch {
-			setMic("idle")
-		}
+			},
+			onError: (message) => {
+				setMic("idle")
+				useToast.getState().add(message)
+			},
+		})
 	}
 
 	const goTo = (idx: number) => {
@@ -236,11 +191,8 @@ export function ShadowingInProgress({ lesson }: Props) {
 		setMic("idle")
 		setSpeakingCharIndex(-1)
 		if (mic === "recording") {
-			stoppedRef.current = true
-			recognitionRef.current?.stop()
+			abortSpeechTranscription()
 		}
-		if (timerRef.current) clearInterval(timerRef.current)
-		timerRef.current = null
 		setCurrent(idx)
 	}
 
@@ -259,7 +211,9 @@ export function ShadowingInProgress({ lesson }: Props) {
 			speak(segments[current].text, {
 				rate: 0.85,
 				voice,
+				boundaryFallback: false,
 				onBoundary: (ci) => setSpeakingCharIndex(ci),
+				onError: handleVoiceError,
 				onEnd: () => {
 					setMic("idle")
 					setSpeakingCharIndex(-1)
@@ -272,10 +226,9 @@ export function ShadowingInProgress({ lesson }: Props) {
 	useEffect(() => {
 		return () => {
 			stopSpeaking()
-			recognitionRef.current?.stop()
-			if (timerRef.current) clearInterval(timerRef.current)
+			abortSpeechTranscription()
 		}
-	}, [])
+	}, [abortSpeechTranscription])
 
 	return (
 		<div className="flex flex-col h-screen bg-background">
@@ -293,6 +246,11 @@ export function ShadowingInProgress({ lesson }: Props) {
 				<span className="text-xs font-bold text-muted shrink-0">
 					{mergedDone.size}/{segments.length}
 				</span>
+				<TTSVoicePicker
+					voice={voice}
+					onVoiceChange={handleVoiceChange}
+					accentClassName="border-skill-speaking text-skill-speaking"
+				/>
 				<button
 					type="button"
 					onClick={() => setSidebarOpen((v) => !v)}
@@ -309,6 +267,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 					<div className="flex-1 overflow-y-auto">
 						<div className="max-w-2xl mx-auto px-6 py-6">
 							<ShadowingSegmentView
+								key={`${segment.id}:${attempt?.transcript ?? ""}`}
 								segment={segment}
 								isSpeaking={mic === "speaking"}
 								speakingCharIndex={speakingCharIndex}
@@ -334,6 +293,21 @@ export function ShadowingInProgress({ lesson }: Props) {
 										</button>
 									</div>
 									<p className="text-sm font-bold text-destructive tabular-nums">{elapsed}s / 30s</p>
+								</div>
+							) : mic === "processing" ? (
+								<div className="flex flex-col items-center gap-2 py-2">
+									<div className="flex gap-1.5">
+										<div className="w-2.5 h-2.5 rounded-full bg-skill-speaking animate-[dotBounce_1.2s_ease-in-out_infinite]" />
+										<div
+											className="w-2.5 h-2.5 rounded-full bg-skill-speaking animate-[dotBounce_1.2s_ease-in-out_infinite]"
+											style={{ animationDelay: "0.2s" }}
+										/>
+										<div
+											className="w-2.5 h-2.5 rounded-full bg-skill-speaking animate-[dotBounce_1.2s_ease-in-out_infinite]"
+											style={{ animationDelay: "0.4s" }}
+										/>
+									</div>
+									<p className="text-xs font-bold text-muted">Đang xử lý giọng nói…</p>
 								</div>
 							) : mic === "speaking" ? (
 								<div className="flex flex-col items-center gap-2">

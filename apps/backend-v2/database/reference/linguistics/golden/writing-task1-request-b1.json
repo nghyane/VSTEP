@@ -1,0 +1,12 @@
+{
+  "id": "writing-task1-request-b1",
+  "task_type": "writing_task_1_letter",
+  "genre": "request",
+  "expected_band": 6.0,
+  "expected_level": "B1",
+  "expected_source": "internal_vstep_golden_fixture",
+  "prompt": "Write a letter to request information about an English course.",
+  "requirements": ["state request", "ask for details", "close politely"],
+  "text": "Dear Mr Brown,\n\nI am writing to request more information about the English course advertised on your website. Firstly, I would like to know when the next class starts and how many students there are in each group.\n\nCould you please provide further details about the course fee and the weekly timetable? I would be grateful if you could also tell me whether there is a placement test before the course begins.\n\nPlease let me know at your earliest convenience. I look forward to hearing from you.\n\nYours sincerely,\nNghia",
+  "expected_signals": {"linking_min": 1, "collocation_min": 5, "grammar_types_min": 1}
+}

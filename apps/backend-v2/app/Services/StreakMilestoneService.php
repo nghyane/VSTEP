@@ -16,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 /**
  * Streak milestone reward — claim xu khi đạt mốc N ngày streak.
  *
- * Idempotent: 1 claim/(profile, milestone_days). Tham chiếu config
+ * Idempotent: 1 claim/(account, milestone_days). Tham chiếu config
  * `streak.milestones` cho danh sách mốc + số xu.
  */
 final class StreakMilestoneService
@@ -56,7 +56,7 @@ final class StreakMilestoneService
         }
 
         $claims = ProfileStreakClaim::query()
-            ->where('profile_id', $profile->id)
+            ->where('account_id', $profile->account_id)
             ->get(['milestone_days', 'claimed_at'])
             ->keyBy('milestone_days');
 
@@ -97,18 +97,19 @@ final class StreakMilestoneService
             }
 
             $existing = ProfileStreakClaim::query()
-                ->where('profile_id', $profile->id)
+                ->where('account_id', $profile->account_id)
                 ->where('milestone_days', $milestone['days'])
                 ->lockForUpdate()
                 ->first();
 
             if ($existing !== null) {
                 throw ValidationException::withMessages([
-                    'milestone_days' => ['Mốc này đã được nhận thưởng.'],
+                    'milestone_days' => ['Mốc này đã được nhận thưởng trên tài khoản.'],
                 ]);
             }
 
             $claim = ProfileStreakClaim::query()->create([
+                'account_id' => $profile->account_id,
                 'profile_id' => $profile->id,
                 'milestone_days' => $milestone['days'],
                 'coins_granted' => $milestone['coins'],

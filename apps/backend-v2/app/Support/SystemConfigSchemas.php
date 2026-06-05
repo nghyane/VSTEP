@@ -54,6 +54,8 @@ final class SystemConfigSchemas
             'onboarding.initial_coins' => ['type' => 'number', 'min' => 0, 'max' => 100000, 'integer' => true],
 
             'profile.max_profiles_per_account' => ['type' => 'number', 'min' => 1, 'max' => 20, 'integer' => true],
+
+            'support.zalo_phone' => ['type' => 'string'],
         ];
     }
 

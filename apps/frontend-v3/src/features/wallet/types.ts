@@ -24,7 +24,8 @@ export interface PromoRedeemResult {
 export interface TopupOrder {
 	id: string
 	order_code: number
-	profile_id: string
+	account_id: string
+	profile_id: string | null
 	package_id: string
 	amount_vnd: number
 	coins_to_credit: number

@@ -5,6 +5,9 @@ export interface AppConfig {
 	profile: {
 		max_profiles_per_account: number
 	}
+	support: {
+		zalo_phone: string
+	}
 	pricing: {
 		exam: {
 			full_test_cost_coins: number

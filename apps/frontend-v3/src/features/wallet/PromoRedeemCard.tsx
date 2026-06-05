@@ -23,13 +23,10 @@ export function PromoRedeemCard() {
 			setFieldError(null)
 			setSuccess({ coins: data.coins_granted, balance: data.balance_after })
 		},
-		onError: async (err) => {
+		onError: (err) => {
 			let message = "Mã không hợp lệ hoặc đã hết hạn."
 			if (err instanceof HTTPError) {
-				const body = (await err.response
-					.clone()
-					.json()
-					.catch(() => null)) as { message?: string; errors?: Record<string, string[]> } | null
+				const body = err.data as { message?: string; errors?: Record<string, string[]> } | undefined
 				const firstFieldError = body?.errors ? Object.values(body.errors)[0]?.[0] : undefined
 				message = firstFieldError ?? body?.message ?? message
 			}
@@ -58,7 +55,7 @@ export function PromoRedeemCard() {
 					<div className="min-w-0 flex-1">
 						<h3 className="font-bold text-base text-foreground">Nhập mã quà tặng</h3>
 						<p className="text-sm text-subtle mt-0.5">
-							Nhập mã khuyến mãi hoặc mã đối tác để nhận xu vào ví hồ sơ hiện tại.
+							Nhập mã khuyến mãi hoặc mã đối tác để nhận xu vào ví tài khoản.
 						</p>
 					</div>
 				</div>

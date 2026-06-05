@@ -51,7 +51,7 @@ export interface AdminListeningDetail {
 
 export type ListeningFormInput = Omit<
 	AdminListeningExercise,
-	"id" | "question_count" | "created_at" | "updated_at"
+	"id" | "audio_url" | "question_count" | "created_at" | "updated_at"
 >
 
 // ─── Reading ─────────────────────────────────────────────
@@ -160,10 +160,13 @@ export interface AdminSpeakingDrillSentence {
 
 export type SpeakingDrillFormInput = Omit<
 	AdminSpeakingDrill,
-	"id" | "sentence_count" | "created_at" | "updated_at"
+	"id" | "audio_url" | "sentence_count" | "created_at" | "updated_at"
 >
 
-export type SpeakingDrillSentenceFormInput = Omit<AdminSpeakingDrillSentence, "id" | "drill_id">
+export type SpeakingDrillSentenceFormInput = Omit<
+	AdminSpeakingDrillSentence,
+	"id" | "drill_id" | "word_count" | "audio_start" | "audio_end"
+>
 
 export interface AdminSpeakingDrillDetail {
 	drill: AdminSpeakingDrill

@@ -42,13 +42,10 @@ export function ChangePasswordDialog({ open, onClose }: Props) {
 			reset()
 			onClose()
 		},
-		onError: async (err) => {
+		onError: (err) => {
 			const out: FieldErrors = {}
 			if (err instanceof HTTPError) {
-				const body = (await err.response
-					.clone()
-					.json()
-					.catch(() => null)) as { errors?: Record<string, string[]>; message?: string } | null
+				const body = err.data as { errors?: Record<string, string[]>; message?: string } | undefined
 				const e = body?.errors ?? {}
 				if (e.current_password?.[0]) out.current_password = e.current_password[0]
 				if (e.new_password?.[0]) out.new_password = e.new_password[0]

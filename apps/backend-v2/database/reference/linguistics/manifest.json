@@ -1,0 +1,25 @@
+{
+  "version": "2026.06.02",
+  "datasets": {
+    "lexical_signals": {
+      "file": "bootstrap/lexical-signals.jsonl",
+      "purpose": "Writing/speaking linking devices, collocations and discourse signals for transparent scoring evidence."
+    },
+    "cefr_vocabulary": {
+      "file": "bootstrap/cefr-vocabulary.jsonl",
+      "purpose": "CEFR vocabulary baseline for lexical range analysis and fallback classification."
+    },
+    "grammar_patterns": {
+      "file": "bootstrap/grammar-patterns.jsonl",
+      "purpose": "CEFR-aligned deterministic grammar range patterns for transparent syntax evidence."
+    },
+    "open_language_profiles": {
+      "file": "vendor/open-language-profiles",
+      "purpose": "Vendored CEFR-J/Open Language Profiles CSV snapshots imported by linguistics:sync."
+    },
+    "golden_probes": {
+      "file": "golden",
+      "purpose": "VSTEP writing samples used by linguistics:probe to detect missing reference signals."
+    }
+  }
+}

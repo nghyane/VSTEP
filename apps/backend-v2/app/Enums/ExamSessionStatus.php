@@ -11,6 +11,7 @@ enum ExamSessionStatus: string
     case AutoSubmitted = 'auto_submitted';
     case Grading = 'grading';
     case Graded = 'graded';
+    case Abandoned = 'abandoned';
 
     /**
      * Statuses representing a finished exam (submitted by user or system).

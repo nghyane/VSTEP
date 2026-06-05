@@ -1,6 +1,7 @@
 import type {
 	ExamDraft,
 	ExamDraftPayload,
+	LogListeningPlayedResult,
 	StartSessionPayload,
 	StartSessionResult,
 	SubmitSessionPayload,
@@ -24,6 +25,16 @@ export async function startExamSession(
 	return res.data
 }
 
+export async function restartExamSession(
+	examId: string,
+	payload: StartSessionPayload & { abandon_session_id: string },
+): Promise<StartSessionResult> {
+	const res = await api
+		.post(`exams/${examId}/sessions/restart`, { json: payload })
+		.json<ApiResponse<StartSessionResult>>()
+	return res.data
+}
+
 export async function submitExamSession(
 	sessionId: string,
 	payload: SubmitSessionPayload,
@@ -34,8 +45,14 @@ export async function submitExamSession(
 	return res.data
 }
 
-export async function logListeningPlayed(sessionId: string, sectionId: string): Promise<void> {
-	await api.post(`exam-sessions/${sessionId}/listening-played`, { json: { section_id: sectionId } })
+export async function logListeningPlayed(
+	sessionId: string,
+	sectionId: string,
+): Promise<LogListeningPlayedResult> {
+	const res = await api
+		.post(`exam-sessions/${sessionId}/listening-played`, { json: { section_id: sectionId } })
+		.json<ApiResponse<LogListeningPlayedResult>>()
+	return res.data
 }
 
 export async function uploadExamSpeakingAudio(
@@ -62,11 +79,6 @@ export async function uploadExamSpeakingAudio(
 		audio_key: presign.data.audio_key,
 		audio_url: presign.data.audio_url,
 	}
-}
-
-export async function abandonExamSession(sessionId: string): Promise<{ abandoned: boolean }> {
-	const res = await api.post(`exam-sessions/${sessionId}/abandon`).json<ApiResponse<{ abandoned: boolean }>>()
-	return res.data
 }
 
 export async function saveExamDraft(sessionId: string, payload: ExamDraftPayload): Promise<ExamDraft> {

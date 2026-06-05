@@ -25,7 +25,6 @@ export function SpeakingDrillForm({ initial, onSubmit, onCancel, submitting }: P
 		description: initial?.description ?? "",
 		level: initial?.level ?? "B1",
 		estimated_minutes: initial?.estimated_minutes ?? 10,
-		audio_url: initial?.audio_url ?? "",
 		is_published: initial?.is_published ?? false,
 	})
 	const [errors, setErrors] = useState<Record<string, string[]>>({})
@@ -87,15 +86,6 @@ export function SpeakingDrillForm({ initial, onSubmit, onCancel, submitting }: P
 					/>
 				</FormField>
 
-				<FormField label="Audio URL" htmlFor="audio_url" error={errors.audio_url}>
-					<Input
-						id="audio_url"
-						value={state.audio_url ?? ""}
-						onChange={(e) => set("audio_url", e.target.value || null)}
-						placeholder="https://cdn.example.com/audio.mp3"
-					/>
-				</FormField>
-
 				<Row gutter={12}>
 					<Col span={8}>
 						<FormField label="Level" htmlFor="level" required error={errors.level}>
@@ -113,7 +103,12 @@ export function SpeakingDrillForm({ initial, onSubmit, onCancel, submitting }: P
 						</FormField>
 					</Col>
 					<Col span={8}>
-						<FormField label="Thời lượng (phút)" htmlFor="minutes" required error={errors.estimated_minutes}>
+						<FormField
+							label="~ Thời lượng ước tính (phút)"
+							htmlFor="minutes"
+							required
+							error={errors.estimated_minutes}
+						>
 							<Input
 								id="minutes"
 								type="number"

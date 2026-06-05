@@ -93,7 +93,7 @@ function ShadowingSection({
 								title={l.title}
 								description={null}
 								level={l.level}
-								meta={`${l.segment_count} đoạn · ${l.estimated_minutes ?? "?"} phút`}
+								meta={`${l.segment_count} đoạn · ~${l.estimated_minutes ?? "?"} phút`}
 								progress={
 									doneCount > 0
 										? { status: pct >= 100 ? "completed" : "in_progress", score: doneCount, total }
@@ -147,7 +147,7 @@ function ConversationSection({
 							title={s.title}
 							description={s.description}
 							level={s.level}
-							meta={`${s.character_name} · ${s.estimated_minutes} phút`}
+							meta={`${s.character_name} · ~${s.estimated_minutes} phút`}
 							tag={completed.has(s.id) ? "Đã luyện" : undefined}
 							overlay={
 								<Link

@@ -29,4 +29,14 @@ class ExerciseFeedback extends BaseModel
     {
         return $this->belongsTo(Profile::class);
     }
+
+    public function listeningExercise(): BelongsTo
+    {
+        return $this->belongsTo(PracticeListeningExercise::class, 'content_id');
+    }
+
+    public function readingExercise(): BelongsTo
+    {
+        return $this->belongsTo(PracticeReadingExercise::class, 'content_id');
+    }
 }

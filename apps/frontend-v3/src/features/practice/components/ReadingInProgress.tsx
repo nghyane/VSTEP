@@ -1,13 +1,14 @@
-import { Link } from "@tanstack/react-router"
-import { useState } from "react"
-import { Icon } from "#/components/Icon"
+import { useEffect, useState } from "react"
 import { HighlightablePassage, PassageSpeechControl } from "#/features/exam/components/HighlightablePassage"
-import { ExerciseFeedbackCard } from "#/features/practice/components/ExerciseFeedbackCard"
+import { PracticeCompletionPopup } from "#/features/practice/components/PracticeCompletionPopup"
+import { PracticeExamShell } from "#/features/practice/components/PracticeExamShell"
+import { PracticeMcqResultPanel } from "#/features/practice/components/PracticeMcqResultPanel"
 import { QuestionList } from "#/features/practice/components/QuestionList"
-import { QuestionNav } from "#/features/practice/components/QuestionNav"
 import { TranslateSelection } from "#/features/practice/components/TranslateSelection"
+import { TTSVoicePicker } from "#/features/practice/components/TTSVoicePicker"
 import type { ReadingExerciseDetail } from "#/features/practice/types"
 import type { McqPracticeSession } from "#/features/practice/use-mcq-session"
+import { pickBoundaryEnglishVoice, stopSpeaking } from "#/lib/utils"
 
 interface Props {
 	detail: ReadingExerciseDetail
@@ -17,103 +18,105 @@ interface Props {
 export function ReadingInProgress({ detail, session }: Props) {
 	const { exercise, questions } = detail
 	const [activeCharIndex, setActiveCharIndex] = useState<number | null>(null)
+	const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+	const [finishRequested, setFinishRequested] = useState(false)
+	const [showCompletion, setShowCompletion] = useState(false)
+	const [voice, setVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickBoundaryEnglishVoice())
+	const canFinish =
+		questions.length > 0 && questions.every((question) => session.answers[question.id] !== undefined)
+	const handleNext = () =>
+		setCurrentQuestionIndex((index) => (questions.length > 0 ? (index + 1) % questions.length : 0))
+	const handleVoiceChange = (nextVoice: SpeechSynthesisVoice) => {
+		stopSpeaking()
+		setActiveCharIndex(null)
+		setVoice(nextVoice)
+	}
+	const handleFinish = () => {
+		setFinishRequested(true)
+		session.submit()
+	}
+
+	useEffect(() => {
+		if (finishRequested && session.result) setShowCompletion(true)
+	}, [finishRequested, session.result])
+	const resultConfig = {
+		backTo: "/luyen-tap/doc",
+		buttonClassName:
+			"inline-flex items-center justify-center py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-reading shadow-[0_3px_0_var(--color-skill-reading-dark)] active:shadow-[0_1px_0_var(--color-skill-reading-dark)] active:translate-y-[2px] transition uppercase",
+		contentId: exercise.id,
+		contentType: "practice_reading_exercise",
+		label: "Kết quả đọc",
+	} as const
 
 	return (
-		<div className="flex flex-col h-screen bg-background">
-			{/* Header */}
-			<div className="flex items-center gap-3 border-b-2 border-border bg-surface px-4 py-2.5 shrink-0">
-				<Link to="/luyen-tap/doc" className="p-1 hover:opacity-70 shrink-0">
-					<Icon name="close" size="xs" className="text-muted" />
-				</Link>
-				<div className="flex-1 h-1.5 bg-border rounded-full overflow-hidden">
-					<div
-						className="h-full bg-skill-reading rounded-full transition-all"
-						style={{ width: `${(session.answeredCount / questions.length) * 100}%` }}
-					/>
-				</div>
-				<span className="text-xs font-bold text-muted shrink-0">
-					{session.answeredCount}/{questions.length}
-				</span>
-			</div>
-
-			{/* Scrollable content */}
-			<div className="flex-1 overflow-y-auto">
-				<div className="max-w-5xl mx-auto px-6 py-6">
-					{/* Result */}
-					{session.result && (
-						<div className="card p-6 text-center mb-6">
-							<img src="/mascot/lac-happy.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
-							<p className="font-extrabold text-2xl text-foreground">
-								{session.result.score}/{session.result.total}
-							</p>
-							<p className="text-sm text-muted mt-1">câu đúng</p>
-							<div className="flex justify-center gap-3 mt-4">
-								<Link
-									to="/luyen-tap/doc"
-									className="py-2 px-5 font-bold text-sm rounded-(--radius-button) text-primary-foreground bg-skill-reading shadow-[0_3px_0_var(--color-skill-reading-dark)] active:shadow-[0_1px_0_var(--color-skill-reading-dark)] active:translate-y-[2px] transition uppercase"
-								>
-									Về danh sách
-								</Link>
-							</div>
-							<div className="mx-auto mt-5 max-w-md">
-								<ExerciseFeedbackCard contentType="practice_reading_exercise" contentId={exercise.id} />
-							</div>
-						</div>
-					)}
-
-					{/* Two-column: passage + questions */}
-					<div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
-						{/* Passage */}
-						<div className="card p-6 self-start lg:sticky lg:top-6">
-							<TranslateSelection>
-								<div className="mb-2 flex items-center justify-between gap-3">
-									<p className="text-xs font-bold text-skill-reading uppercase tracking-wide">
-										Part {exercise.part}
-									</p>
-									<PassageSpeechControl text={exercise.passage} onActiveCharChange={setActiveCharIndex} />
-								</div>
-								<h2 className="font-bold text-lg text-foreground mb-4">{exercise.title}</h2>
-								<HighlightablePassage
-									text={exercise.passage}
-									passageId={exercise.id}
-									activeCharIndex={activeCharIndex}
-									className="text-sm leading-relaxed text-foreground/90"
-								/>
-							</TranslateSelection>
-						</div>
-
-						{/* Questions */}
-						<QuestionList
-							questions={questions}
-							answers={session.answers}
-							result={session.result}
-							onSelect={session.select}
-							accentColor="var(--color-skill-reading)"
+		<PracticeExamShell
+			backTo="/luyen-tap/doc"
+			title="Reading"
+			partLabel={`Part ${exercise.part}`}
+			questions={questions}
+			answers={session.answers}
+			result={session.result}
+			answeredCount={session.answeredCount}
+			accentColor="var(--color-skill-reading)"
+			primaryActionClassName="bg-skill-reading [--btn-shadow:var(--color-skill-reading-dark)]"
+			onSubmit={session.result ? undefined : session.submit}
+			submitting={session.submitting}
+			currentQuestionIndex={currentQuestionIndex}
+			onPrevious={() => setCurrentQuestionIndex((index) => Math.max(index - 1, 0))}
+			onNext={handleNext}
+			onFinish={handleFinish}
+			canFinish={canFinish}
+			finishLabel="Finish"
+			onQuestionJump={setCurrentQuestionIndex}
+			topBarContent={
+				<TTSVoicePicker
+					voice={voice}
+					onVoiceChange={handleVoiceChange}
+					accentClassName="border-skill-reading text-skill-reading"
+				/>
+			}
+			rightSidebar={
+				session.result ? <PracticeMcqResultPanel result={session.result} config={resultConfig} /> : undefined
+			}
+		>
+			<div className="overflow-hidden">
+				<div className="px-5 pt-5 pb-2 md:px-7">
+					<div className="mb-2 flex items-center justify-between gap-3">
+						<p className="text-xs font-bold uppercase tracking-[0.2em] text-skill-reading">Reading passage</p>
+						<PassageSpeechControl
+							text={exercise.passage}
+							onActiveCharChange={setActiveCharIndex}
+							voice={voice}
+							onVoiceChange={handleVoiceChange}
+							showVoicePicker={false}
 						/>
 					</div>
+					<h2 className="text-2xl font-extrabold text-foreground">{exercise.title}</h2>
+				</div>
+				<div className="space-y-6 p-5 md:p-7">
+					<TranslateSelection>
+						<HighlightablePassage
+							text={exercise.passage}
+							passageId={exercise.id}
+							activeCharIndex={activeCharIndex}
+							className="text-sm leading-relaxed text-foreground/90"
+						/>
+					</TranslateSelection>
+					<QuestionList
+						questions={questions}
+						answers={session.answers}
+						result={session.result}
+						onSelect={session.select}
+						accentColor="var(--color-skill-reading)"
+						visibleQuestionIndex={currentQuestionIndex}
+					/>
 				</div>
 			</div>
-
-			{/* Footer */}
-			<div className="flex items-center gap-2 border-t-2 border-border bg-surface px-4 py-2.5 shrink-0">
-				<QuestionNav
-					questions={questions}
-					answers={session.answers}
-					result={session.result}
-					accentColor="var(--color-skill-reading)"
-				/>
-				<div className="flex-1" />
-				{!session.result && (
-					<button
-						type="button"
-						onClick={session.submit}
-						disabled={session.submitting || session.answeredCount < questions.length}
-						className="py-2 px-6 text-sm font-bold rounded-(--radius-button) text-primary-foreground bg-skill-reading shadow-[0_3px_0_var(--color-skill-reading-dark)] active:shadow-[0_1px_0_var(--color-skill-reading-dark)] active:translate-y-[2px] transition disabled:opacity-50 uppercase"
-					>
-						Nộp bài
-					</button>
-				)}
-			</div>
-		</div>
+			<PracticeCompletionPopup
+				open={showCompletion}
+				backTo="/luyen-tap/doc"
+				onKeepReviewing={() => setShowCompletion(false)}
+			/>
+		</PracticeExamShell>
 	)
 }

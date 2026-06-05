@@ -74,7 +74,7 @@ final class SpeakingConversationController extends Controller
             'session' => [
                 'user_turn_count' => $session->user_turn_count,
                 'expected_turns' => $session->scenario->expected_turns,
-                'should_end' => $session->user_turn_count >= $session->scenario->expected_turns,
+                'should_end' => false,
             ],
         ]]);
     }
@@ -131,14 +131,16 @@ final class SpeakingConversationController extends Controller
     {
         Gate::authorize('view', $conversationSession);
 
-        return response()->json(['data' => $this->service->reviewSession($conversationSession)]);
+        return response()->json(['data' => $this->service->reviewSession($request->profile(), $conversationSession)]);
     }
 
     public function pronunciationReview(PronunciationReviewRequest $request): JsonResponse
     {
         $result = $this->service->pronunciationReview(
+            $request->profile(),
             $request->validated('original'),
             $request->validated('transcript'),
+            $request->validated('segment_id'),
         );
 
         return response()->json(['data' => $result]);

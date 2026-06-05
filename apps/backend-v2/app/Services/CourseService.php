@@ -23,17 +23,15 @@ use App\Models\TeacherSlot;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 final class CourseService
 {
-    /** Fallback xu/booking khi course chưa set (chỉ áp khi DB column null, mặc định DB = 50). */
     public const BOOKING_COIN_COST_FALLBACK = 50;
 
-    /** Phải đặt lịch trước ít nhất N giờ so với giờ bắt đầu slot. */
     public const BOOKING_LEAD_TIME_HOURS = 24;
 
-    /** Booking page slot grid: 1 tuần đã qua + 4 tuần tới. */
     private const BOOKING_GRID_PAST_DAYS = 7;
 
     private const BOOKING_GRID_FUTURE_DAYS = 35;
@@ -42,10 +40,10 @@ final class CourseService
         private readonly WalletService $walletService,
         private readonly NotificationService $notificationService,
         private readonly AdminNotificationService $adminNotificationService,
+        private readonly NotificationEmailService $emailService,
         private readonly ProgressService $progressService,
     ) {}
 
-    /** @return Collection<int,Course> */
     public function listPublished(): Collection
     {
         return Course::query()
@@ -59,18 +57,6 @@ final class CourseService
             ->get();
     }
 
-    /**
-     * Bundle list response cho FE: courses + enrolled_course_ids + enrollments map
-     * (next_session + commitment per khóa đã ghi danh).
-     *
-     * `enrollments` luôn trả stdClass để FE có shape `Record<courseId, {...}>` ổn định:
-     * khi không có khóa nào, PHP empty array serialize thành `[]` thay vì `{}`.
-     *
-     * Bảo mật: `livestream_url` chỉ được expose cho khóa user đã ghi danh — đây là core asset
-     * của khóa học, người chưa mua không được thấy.
-     *
-     * @return array{data: Collection<int,Course>, enrolled_course_ids: list<string>, enrollments: \stdClass}
-     */
     public function listForProfile(?Profile $profile): array
     {
         if (! $profile) {
@@ -84,9 +70,6 @@ final class CourseService
             ];
         }
 
-        // Học viên đã ghi danh phải thấy khóa của họ kể cả khi admin tạm đóng
-        // ghi danh (toggle is_published=false). Đóng ghi danh = chặn người
-        // mới mua, không phải xóa course khỏi "Khóa của tôi".
         $enrolledIds = CourseEnrollment::query()
             ->where('profile_id', $profile->id)
             ->pluck('course_id');
@@ -106,9 +89,6 @@ final class CourseService
             ->orderBy('start_date')
             ->get();
 
-        // Sau filter union ở trên, $enrolledIds có thể chứa course không nằm
-        // trong $courses (vd profile có nhiều enrollment cũ với khóa đã xóa).
-        // Intersect lại để FE chỉ thấy id thuộc list trả về.
         $courseIdSet = $courses->pluck('id')->flip();
         $enrolledIds = $enrolledIds->filter(fn ($id) => $courseIdSet->has($id))->values();
         $enrolledSet = $enrolledIds->flip();
@@ -142,14 +122,6 @@ final class CourseService
         return $course;
     }
 
-    /**
-     * Create enrollment — single source of truth for both learner and admin flows.
-     *
-     * Guards: duplicate check + capacity check (with row lock to prevent races).
-     * Callers decide whether to credit bonus coins and provide optional metadata.
-     *
-     * Must be called inside a DB::transaction by the caller (CourseOrderService or AdminCourseService).
-     */
     public function createEnrollment(
         Profile $profile,
         Course $course,
@@ -202,29 +174,37 @@ final class CourseService
 
         $title = $notiTitle ?? 'Ghi danh thành công';
         $body = $notiBody ?? "Bạn đã tham gia khóa {$locked->title}.";
-        DB::afterCommit(fn () => $this->notificationService->push(
-            profile: $profile,
-            type: NotificationType::CourseEnrolled,
-            title: $title,
-            body: $body,
-            iconKey: IconKey::Book,
-            dedupKey: "course_enroll:{$locked->id}:{$profile->id}",
-        ));
+        DB::afterCommit(function () use ($profile, $locked, $title, $body): void {
+            $notification = $this->notificationService->push(
+                profile: $profile,
+                type: NotificationType::CourseEnrolled,
+                title: $title,
+                body: $body,
+                iconKey: IconKey::Book,
+                dedupKey: "course_enroll:{$locked->id}:{$profile->id}",
+            );
+
+            if ($notification !== null) {
+                try {
+                    $this->emailService->sendCourseEnrolled(
+                        $profile,
+                        $title,
+                        $body,
+                        $locked->id,
+                    );
+                } catch (\Throwable $e) {
+                    Log::error('Failed to send course enrollment notification email', [
+                        'course_id' => $locked->id,
+                        'profile_id' => $profile->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        });
 
         return $enrollment;
     }
 
-    /**
-     * Commitment status: pending / met / violated based on full tests in window.
-     *
-     * Phases:
-     *  - not_enrolled: chưa ghi danh
-     *  - met: đã đủ required full tests trong window
-     *  - violated: now > windowEnd nhưng chưa đủ → khóa cam kết bị vi phạm
-     *  - pending: còn trong window và chưa đủ
-     *
-     * @return array{phase: string, completed: int, required: int, window_start_at: ?string, deadline_at: ?string}
-     */
     public function commitmentStatus(Profile $profile, Course $course): array
     {
         $enrollment = CourseEnrollment::query()
@@ -267,11 +247,6 @@ final class CourseService
         ];
     }
 
-    /**
-     * Next upcoming session (date >= today). Null nếu hết lịch.
-     *
-     * @return array{id: string, session_number: int, date: string, start_time: string, end_time: string, topic: string}|null
-     */
     public function nextSession(Course $course): ?array
     {
         $today = now()->startOfDay()->toDateString();
@@ -295,9 +270,6 @@ final class CourseService
         ];
     }
 
-    /**
-     * Book teacher slot. Gate: enrolled + commitment met + slot limit.
-     */
     public function bookSlot(
         Profile $profile,
         Course $course,
@@ -354,7 +326,6 @@ final class CourseService
                 'booked_at' => now(),
             ]);
 
-            // Trừ xu sau khi tạo booking để source_id reference được booking record.
             $this->walletService->spend(
                 $profile,
                 $cost,
@@ -363,50 +334,63 @@ final class CourseService
                 ['slot_id' => $slot->id, 'course_id' => $slot->course_id],
             );
 
-            DB::afterCommit(fn () => $this->notificationService->push(
-                profile: $profile,
-                type: NotificationType::BookingCreated,
-                title: 'Đặt lịch thành công',
-                body: 'Lịch hẹn đã được xác nhận. Link phòng học sẽ được giảng viên cập nhật trước buổi học.',
-                iconKey: IconKey::Calendar,
-                dedupKey: "booking:{$booking->id}",
-            ));
+            DB::afterCommit(function () use ($profile, $slot, $booking): void {
+                $notification = $this->notificationService->push(
+                    profile: $profile,
+                    type: NotificationType::BookingCreated,
+                    title: 'Đặt lịch thành công',
+                    body: 'Lịch hẹn đã được xác nhận. Link phòng học sẽ được giảng viên cập nhật trước buổi học.',
+                    iconKey: IconKey::Calendar,
+                    dedupKey: "booking:{$booking->id}",
+                );
 
-            // Notify teacher to add meet link.
+                if ($notification !== null) {
+                    $this->emailService->sendLearnerBookingCreated($profile, $slot);
+                }
+            });
+
             DB::afterCommit(function () use ($slot, $profile, $booking) {
                 $learnerName = $profile->nickname ?? $profile->account?->full_name ?? 'Học viên';
                 $course = $slot->course;
                 $courseName = $course?->title ?? 'Khóa học';
+                $startsAt = $slot->starts_at->setTimezone('Asia/Ho_Chi_Minh')->format('H:i d/m/Y');
 
                 $teacher = $course?->teacher;
                 if ($teacher === null) {
                     $teacher = User::find($slot->teacher_id);
                 }
                 if ($teacher !== null) {
-                    $this->adminNotificationService->push(
+                    $notification = $this->adminNotificationService->push(
                         user: $teacher,
                         type: AdminNotificationType::BookingCreated,
                         title: 'Có học viên đặt lịch 1-1',
-                        body: "{$learnerName} đã đặt slot {$slot->starts_at->setTimezone('Asia/Ho_Chi_Minh')->format('H:i d/m/Y')} — {$courseName}. Vui lòng thêm link Google Meet.",
+                        body: "{$learnerName} đã đặt slot {$startsAt} — {$courseName}. Vui lòng thêm link Google Meet.",
                         iconKey: IconKey::Calendar,
                         payload: ['booking_id' => $booking->id, 'course_id' => $slot->course_id],
                         dedupKey: "teacher_booking:{$booking->id}",
                     );
+
+                    if ($notification !== null) {
+                        $this->emailService->sendTeacherBookingCreated($teacher, $learnerName, $courseName, $startsAt);
+                    }
                 }
 
-                // Notify all admins about new booking.
                 $admins = User::where('role', Role::Admin)->get();
                 $teacherName = $teacher?->full_name ?? 'giáo viên';
                 foreach ($admins as $admin) {
-                    $this->adminNotificationService->push(
+                    $notification = $this->adminNotificationService->push(
                         user: $admin,
                         type: AdminNotificationType::BookingCreated,
                         title: 'Booking 1-1 mới',
-                        body: "{$learnerName} đặt slot {$slot->starts_at->setTimezone('Asia/Ho_Chi_Minh')->format('H:i d/m/Y')} với {$teacherName} — {$courseName}.",
+                        body: "{$learnerName} đặt slot {$startsAt} với {$teacherName} — {$courseName}.",
                         iconKey: IconKey::Calendar,
                         payload: ['booking_id' => $booking->id, 'course_id' => $slot->course_id],
                         dedupKey: "admin_booking:{$booking->id}:{$admin->id}",
                     );
+
+                    if ($notification !== null) {
+                        $this->emailService->sendAdminBookingCreated($admin, $learnerName, $teacherName, $courseName, $startsAt);
+                    }
                 }
             });
 
@@ -414,26 +398,6 @@ final class CourseService
         });
     }
 
-    /**
-     * Booking page payload cho FE (`BookingPageData`):
-     *  - teacher: thông tin giáo viên (id, full_name, title, bio)
-     *  - slots: tất cả slot trong cửa sổ hiển thị (-7d…+35d) + status đã suy luận theo profile hiện tại
-     *  - my_bookings_count: số booking active của profile cho course này
-     *
-     * Status mapping per slot:
-     *  - past: starts_at < now (bất kể status DB)
-     *  - booked_me: profile có TeacherBooking active trên slot
-     *  - booked_other: slot.status = 'booked' và không phải của profile
-     *  - available: slot.status = 'open'
-     *
-     * @return array{
-     *     teacher: array{id: string, full_name: string, title: ?string, bio: ?string},
-     *     slots: list<array{id: string, starts_at: string, duration_minutes: int, status: string, meet_url: ?string}>,
-     *     my_bookings_count: int,
-     *     max_bookings_per_student: int,
-     *     commitment: array{phase: string, completed: int, required: int, window_start_at: ?string, deadline_at: ?string},
-     * }
-     */
     public function getBookingPageData(Profile $profile, Course $course): array
     {
         $course->loadMissing('teacher:id,full_name,title,bio');
@@ -441,21 +405,17 @@ final class CourseService
         $now = now();
         $windowStart = $now->copy()->subDays(self::BOOKING_GRID_PAST_DAYS)->startOfDay();
         $windowEnd = $now->copy()->addDays(self::BOOKING_GRID_FUTURE_DAYS)->endOfDay();
-        // Student chỉ thấy slot từ ngày khóa bắt đầu trở đi.
         $courseStart = $course->start_date->startOfDay();
         if ($windowStart->lt($courseStart)) {
             $windowStart = $courseStart;
         }
 
-        /** @var Collection<int,TeacherSlot> $slots */
         $slots = TeacherSlot::query()
             ->where('course_id', $course->id)
             ->whereBetween('starts_at', [$windowStart, $windowEnd])
             ->orderBy('starts_at')
             ->get();
 
-        // Một query cho tất cả booking active của profile trong course
-        // → vừa map vào slots, vừa derive my_bookings_count (không gọi COUNT thứ 2).
         $myBookings = TeacherBooking::query()
             ->where('profile_id', $profile->id)
             ->whereHas('slot', fn ($q) => $q->where('course_id', $course->id))
@@ -501,19 +461,6 @@ final class CourseService
         ];
     }
 
-    /**
-     * Predictive rule-based model: identify enrolled learners at risk of failing their target.
-     *
-     * Risk criteria (any one triggers flag):
-     * - Average band < 5.0
-     * - No exam activity in 7 days (streak = 0)
-     * - Deadline within 14 days and current band < target
-     *
-     * Trend direction is derived from comparing the latest exam session band
-     * against the previous sessions' average.
-     *
-     * @return list<array{profile_id: string, nickname: string, band: float|null, trend: string, streak: int, days_to_deadline: int|null, target_level: string, risk_reasons: list<string>}>
-     */
     public function predictAtRiskLearners(Course $course): array
     {
         $enrollments = $course->enrollments()->with('profile:id,nickname,target_level,target_deadline')->get();
@@ -527,22 +474,18 @@ final class CourseService
 
             $reasons = [];
 
-            // Check band
             $avgBand = $this->avgBandFromChart($chart);
 
-            // Trend direction: latest session band vs previous average
             $trend = $this->trendDirection($profile);
 
             if ($avgBand !== null && $avgBand < 5.0) {
                 $reasons[] = 'Điểm trung bình thấp ('.number_format($avgBand, 1).')';
             }
 
-            // Check streak
             if ($streak === 0) {
                 $reasons[] = 'Không luyện tập trong 7 ngày';
             }
 
-            // Check deadline
             $daysToDeadline = $overview['profile']['days_until_exam'];
             if ($daysToDeadline !== null && $daysToDeadline <= 14 && $avgBand !== null) {
                 $targetBand = match ($profile->target_level) {
@@ -572,7 +515,6 @@ final class CourseService
         return $result;
     }
 
-    /** @param  array<string, float|int|null>|null  $chart */
     private function avgBandFromChart(?array $chart): ?float
     {
         if ($chart === null) {
@@ -593,12 +535,6 @@ final class CourseService
         return round(array_sum($bands) / count($bands), 1);
     }
 
-    /**
-     * Compare the latest exam session's overall band against the previous
-     * sessions' average to determine direction.
-     *
-     * @return string 'improving' | 'declining' | 'stable' | 'insufficient_data'
-     */
     private function trendDirection(Profile $profile): string
     {
         $sessions = ExamSession::query()
@@ -638,9 +574,6 @@ final class CourseService
         return 'stable';
     }
 
-    /**
-     * Compute a rough overall band for a single exam session.
-     */
     private function sessionAvgBand(string $sessionId): ?float
     {
         $bands = [];
@@ -665,7 +598,6 @@ final class CourseService
             $bands[] = (float) $speakingBands->avg();
         }
 
-        // Listening
         $listeningAnswers = DB::table('exam_mcq_answers')
             ->join('exam_listening_items', 'exam_mcq_answers.content_ref_id', '=', 'exam_listening_items.id')
             ->where('exam_mcq_answers.session_id', $sessionId)
@@ -677,7 +609,6 @@ final class CourseService
             $bands[] = ($listeningAnswers->filter(fn ($c) => $c)->count() / $listeningAnswers->count()) * 10;
         }
 
-        // Reading
         $readingAnswers = DB::table('exam_mcq_answers')
             ->join('exam_reading_items', 'exam_mcq_answers.content_ref_id', '=', 'exam_reading_items.id')
             ->where('exam_mcq_answers.session_id', $sessionId)

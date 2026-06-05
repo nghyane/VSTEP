@@ -93,7 +93,7 @@ final class ForceSubmitExpiredExams implements ShouldQueue
             'submitted_at' => $session->server_deadline_at,
         ]);
 
-        // Xóa draft autosave — cùng pattern submit() và abandon().
+        // Xóa draft autosave — cùng pattern submit().
         ExamSessionDraft::query()->where('session_id', $session->id)->delete();
 
         // Streak: chỉ tính full test. RFC 0017 — defer ngoài transaction để rollback an toàn.

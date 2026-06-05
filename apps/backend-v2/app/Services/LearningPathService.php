@@ -25,11 +25,6 @@ use Illuminate\Support\Facades\DB;
  */
 final class LearningPathService implements LearningPathInterface
 {
-    /**
-     * Suggestion threshold — skills below this band trigger a suggestion.
-     */
-    private const WEAK_BAND_THRESHOLD = 5.0;
-
     public function __construct(
         private readonly ProgressService $progress,
     ) {}
@@ -93,8 +88,8 @@ final class LearningPathService implements LearningPathInterface
             ? ProfileVocabSrsState::query()
                 ->where('profile_id', $profile->id)
                 ->whereIn('word_id', $wordIds)
-                ->where('stability', '>', 0) // Learned = has FSRS stability
-                ->count()
+                ->distinct('word_id')
+                ->count('word_id')
             : 0;
 
         $coveragePct = $totalItems > 0
@@ -148,11 +143,7 @@ final class LearningPathService implements LearningPathInterface
         $totalItems = $pointIds->count();
 
         $completedItems = $totalItems > 0
-            ? ProfileGrammarMastery::query()
-                ->where('profile_id', $profile->id)
-                ->whereIn('grammar_point_id', $pointIds)
-                ->where('computed_level', 'mastered')
-                ->count()
+            ? $this->practicedGrammarPointCount($profile, $pointIds->all())
             : 0;
 
         $coveragePct = $totalItems > 0
@@ -185,10 +176,30 @@ final class LearningPathService implements LearningPathInterface
         }
 
         if ($remaining > 0) {
-            return "Còn {$remaining} chủ điểm ngữ pháp {$level} chưa mastered. Ưu tiên các điểm sai nhiều.";
+            return "Còn {$remaining} chủ điểm ngữ pháp {$level} chưa luyện. Ưu tiên các điểm sai nhiều.";
         }
 
-        return "Đã master tất cả chủ điểm ngữ pháp {$level}. Có thể chuyển lên cấp độ cao hơn.";
+        return "Đã luyện tất cả chủ điểm ngữ pháp {$level}. Tiếp tục làm lại các điểm chưa mastered.";
+    }
+
+    /**
+     * @param  list<string>  $pointIds
+     */
+    private function practicedGrammarPointCount(Profile $profile, array $pointIds): int
+    {
+        $masteryPointIds = ProfileGrammarMastery::query()
+            ->where('profile_id', $profile->id)
+            ->whereIn('grammar_point_id', $pointIds)
+            ->where('attempts', '>', 0)
+            ->pluck('grammar_point_id');
+
+        $attemptPointIds = DB::table('practice_grammar_attempts')
+            ->where('profile_id', $profile->id)
+            ->whereIn('grammar_point_id', $pointIds)
+            ->distinct()
+            ->pluck('grammar_point_id');
+
+        return $masteryPointIds->merge($attemptPointIds)->unique()->count();
     }
 
     // ──── Exam skills (writing/speaking/listening/reading) ────
@@ -228,34 +239,25 @@ final class LearningPathService implements LearningPathInterface
             return "Chưa có bài thi {$skillLabel} nào. Làm ít nhất 1 bài thi thử để hệ thống đánh giá trình độ.";
         }
 
-        if ($band < self::WEAK_BAND_THRESHOLD) {
+        $targetBand = $this->targetBand($targetLevel);
+
+        if ($band < $targetBand) {
             $skillLabel = $this->skillLabel($skill);
-            $targetBand = match ($targetLevel) {
-                'C1' => 8.5,
-                'B2' => 6.0,
-                default => 4.0,
-            };
 
             return "Band {$skillLabel} {$level} đang yếu ({$band} < {$targetBand} mục tiêu {$targetLevel}). Cần luyện tập thêm kỹ năng này.";
         }
 
-        if ($band < $this->nextLevelThreshold($level)) {
-            return $this->skillLabel($skill)." {$level}: band {$band} đang ở mức khá. Tiếp tục luyện tập để đạt chuẩn {$targetLevel}.";
-        }
-
-        return $this->skillLabel($skill)." {$level}: band {$band} đã vững. Có thể tập trung vào các kỹ năng yếu hơn.";
+        return $this->skillLabel($skill)." {$level}: band {$band} đã đạt mục tiêu {$targetLevel}. Có thể tập trung vào các kỹ năng yếu hơn.";
     }
 
     // ──── Helpers ────
 
-    private function nextLevelThreshold(string $level): float
+    private function targetBand(string $targetLevel): float
     {
-        return match ($level) {
-            'A1' => 3.5,
-            'A2' => 4.0,
-            'B1' => 6.0,
-            'B2' => 8.5,
-            default => 9.0,
+        return match ($targetLevel) {
+            'C1' => 8.5,
+            'B2' => 6.0,
+            default => 4.0,
         };
     }
 

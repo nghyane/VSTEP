@@ -18,6 +18,7 @@ final class PronunciationReviewRequest extends FormRequest
         return [
             'original' => ['required', 'string', 'max:500'],
             'transcript' => ['required', 'string', 'max:500'],
+            'segment_id' => ['nullable', 'uuid'],
         ];
     }
 }

@@ -2,16 +2,16 @@ import { Link } from "@tanstack/react-router"
 
 export function LandingCTA() {
 	return (
-		<section className="py-20">
-			<div className="max-w-[1140px] mx-auto px-8">
-				<div className="card bg-primary-tint border-primary/20 p-10 lg:p-14 flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+		<section className="py-14 sm:py-20">
+			<div className="max-w-[1140px] mx-auto px-4 sm:px-6 lg:px-8">
+				<div className="card bg-primary-tint border-primary/20 p-6 sm:p-10 lg:p-14 flex flex-col lg:flex-row items-center gap-6 sm:gap-8 lg:gap-12">
 					<img
 						src="/mascot/lac-happy.png"
 						alt=""
-						className="w-32 h-32 lg:w-44 lg:h-44 object-contain shrink-0"
+						className="w-24 h-24 sm:w-32 sm:h-32 lg:w-44 lg:h-44 object-contain shrink-0"
 					/>
 					<div className="flex-1 text-center lg:text-left">
-						<h2 className="font-sans font-extrabold text-3xl md:text-4xl text-foreground leading-tight tracking-tight">
+						<h2 className="font-sans font-extrabold text-2xl sm:text-3xl md:text-4xl text-foreground leading-tight tracking-tight">
 							Mở khóa buổi luyện đầu tiên cùng Lạc.
 						</h2>
 						<p className="text-muted text-base mt-3 leading-relaxed max-w-lg mx-auto lg:mx-0">
@@ -32,7 +32,7 @@ export function LandingCTA() {
 					<Link
 						to="/"
 						search={{ auth: "register" }}
-						className="btn btn-primary text-base px-10 py-3.5 shrink-0"
+						className="btn btn-primary text-base px-10 py-3.5 shrink-0 w-full text-center sm:w-auto"
 					>
 						Nhận 100 xu
 					</Link>

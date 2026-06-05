@@ -8,7 +8,10 @@ use App\Assessment\Enums\AssessmentSkill;
 use App\Assessment\Enums\AssessmentSourceType;
 use App\Assessment\Enums\AssessmentTaskType;
 use App\Enums\CoinTransactionType;
+use App\Enums\PracticeFeedbackStatus;
+use App\Enums\PracticeFeedbackSubmissionType;
 use App\Models\AssessmentAttempt;
+use App\Models\AssessmentEvidence;
 use App\Models\AssessmentResult;
 use App\Models\AssessmentRubric;
 use App\Models\PracticeFeedbackRequest;
@@ -17,6 +20,7 @@ use App\Models\PracticeWritingPrompt;
 use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
 use App\Models\User;
+use App\Services\LanguageToolService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -49,6 +53,134 @@ class WritingPracticeTest extends TestCase
         $response->assertJsonStructure(['data' => [
             'outline_sections', 'template_sections', 'sample_markers',
         ]]);
+    }
+
+    public function test_realtime_writing_diagnostics_returns_readiness_and_requirement_metrics(): void
+    {
+        $prompt = PracticeWritingPrompt::factory()->create([
+            'part' => 1,
+            'min_words' => 120,
+            'required_points' => ['Apologize for missing the party'],
+        ]);
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/writing/diagnostics', [
+                'prompt_id' => $prompt->id,
+                'text' => 'Dear John, I apologize for missing the party.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.diagnostics.word_requirement.minimum', 120)
+            ->assertJsonPath('data.diagnostics.word_requirement.is_met', false)
+            ->assertJsonPath('data.diagnostics.format.letter_format_expected', true)
+            ->assertJsonPath('data.diagnostics.format.has_salutation', true)
+            ->assertJsonPath('data.diagnostics.task_coverage.source', 'heuristic')
+            ->assertJsonPath('data.readiness.status', 'needs_work');
+    }
+
+    public function test_realtime_writing_diagnostics_requires_authentication(): void
+    {
+        $prompt = PracticeWritingPrompt::factory()->create();
+
+        $this->postJson('/api/v1/practice/writing/diagnostics', [
+            'prompt_id' => $prompt->id,
+            'text' => 'Dear John, I am writing to thank you.',
+        ])->assertUnauthorized();
+    }
+
+    public function test_realtime_writing_diagnostics_validates_payload(): void
+    {
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/writing/diagnostics', [
+                'prompt_id' => 'not-a-uuid',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['prompt_id', 'text']);
+    }
+
+    public function test_realtime_writing_diagnostics_counts_empty_text_as_zero_words(): void
+    {
+        $prompt = PracticeWritingPrompt::factory()->create(['min_words' => 100]);
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/writing/diagnostics', [
+                'prompt_id' => $prompt->id,
+                'text' => " \n\t ",
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.diagnostics.summary.word_count', 0)
+            ->assertJsonPath('data.diagnostics.word_requirement.actual', 0)
+            ->assertJsonPath('data.diagnostics.word_requirement.missing', 100)
+            ->assertJsonPath('data.diagnostics.task_coverage.covered_points', 0)
+            ->assertJsonPath('data.readiness.status', 'needs_work');
+    }
+
+    public function test_realtime_writing_diagnostics_flags_non_english_text(): void
+    {
+        $prompt = PracticeWritingPrompt::factory()->create(['min_words' => 1]);
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/writing/diagnostics', [
+                'prompt_id' => $prompt->id,
+                'text' => 'Tôi muốn viết bài này bằng tiếng Việt.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.language.is_english', false)
+            ->assertJsonPath('data.readiness.status', 'needs_work')
+            ->assertJsonPath('data.readiness.reasons.0.code', 'non_english');
+    }
+
+    public function test_realtime_writing_diagnostics_returns_ready_when_basic_checks_pass(): void
+    {
+        $prompt = PracticeWritingPrompt::factory()->create([
+            'part' => 2,
+            'min_words' => 10,
+            'required_points' => ['Discuss education benefits'],
+        ]);
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/writing/diagnostics', [
+                'prompt_id' => $prompt->id,
+                'text' => 'Education benefits learners because education improves opportunities and builds confidence for young people today.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.diagnostics.word_requirement.is_met', true)
+            ->assertJsonPath('data.diagnostics.task_coverage.requirements.0.met', true)
+            ->assertJsonPath('data.readiness.status', 'ready');
+    }
+
+    public function test_realtime_writing_diagnostics_marks_language_tool_outage_as_unavailable(): void
+    {
+        $this->app->bind(LanguageToolService::class, function () {
+            $mock = $this->createMock(LanguageToolService::class);
+            $mock->method('check')->willThrowException(new \RuntimeException('down'));
+            $mock->method('toAnnotations')->willReturn([]);
+
+            return $mock;
+        });
+
+        $prompt = PracticeWritingPrompt::factory()->create([
+            'part' => 2,
+            'min_words' => 5,
+            'required_points' => ['Discuss education benefits'],
+        ]);
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/writing/diagnostics', [
+                'prompt_id' => $prompt->id,
+                'text' => 'Education benefits learners because education improves opportunities and builds confidence.',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.diagnostics.service_status.language_tool.available', false)
+            ->assertJsonPath('data.diagnostics.summary.total_error_count', null)
+            ->assertJsonPath('data.readiness.status', 'needs_work')
+            ->assertJsonPath('data.readiness.reasons.0.code', 'language_check_unavailable');
     }
 
     public function test_full_writing_flow(): void
@@ -136,6 +268,38 @@ class WritingPracticeTest extends TestCase
         $this->assertSame(1, PracticeFeedbackRequest::query()->where('submission_id', $submission->id)->count());
     }
 
+    public function test_paid_feedback_retries_without_charge_when_saved_feedback_is_empty(): void
+    {
+        [$user, $submission] = $this->gradedWritingSubmission();
+        $attempt = $submission->assessmentAttempt()->firstOrFail();
+        $attempt->result()->firstOrFail()->update(['feedback' => []]);
+        PracticeFeedbackRequest::create([
+            'profile_id' => $submission->profile_id,
+            'submission_type' => PracticeFeedbackSubmissionType::Writing->value,
+            'submission_id' => $submission->id,
+            'status' => PracticeFeedbackStatus::Ready,
+            'requested_at' => now(),
+            'completed_at' => now(),
+        ]);
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/assessment-attempts/{$attempt->id}/feedback")
+            ->assertAccepted()
+            ->assertJsonPath('data.status', 'ready')
+            ->assertJsonPath('data.charged', false)
+            ->assertJsonPath('data.feedback.strengths.0', 'Tra loi dung yeu cau de bai');
+
+        $this->assertSame(
+            ['Tra loi dung yeu cau de bai'],
+            $attempt->result()->firstOrFail()->feedback['strengths'],
+        );
+        $this->assertDatabaseMissing('coin_transactions', [
+            'profile_id' => $submission->profile_id,
+            'type' => CoinTransactionType::PracticeFeedback->value,
+        ]);
+    }
+
     public function test_assessment_view_returns_normalized_writing_result(): void
     {
         [$user, $submission] = $this->gradedWritingSubmission();
@@ -151,7 +315,40 @@ class WritingPracticeTest extends TestCase
             ->assertJsonPath('data.context.word_count', 6)
             ->assertJsonPath('data.rubric.max_score', 10)
             ->assertJsonPath('data.result.overall_band', 6)
+            ->assertJsonPath('data.result.display.status', 'passed')
+            ->assertJsonPath('data.result.display.level', 'B2')
+            ->assertJsonPath('data.result.display.ui.show_criterion_breakdown', true)
+            ->assertJsonPath('data.result.diagnostics.summary.spelling_error_count', 1)
+            ->assertJsonPath('data.result.diagnostics.word_requirement.minimum', 250)
+            ->assertJsonPath('data.result.diagnostics.word_requirement.missing', 244)
+            ->assertJsonPath('data.result.diagnostics.task_coverage.requirements.0.met', true)
+            ->assertJsonPath('data.result.diagnostics.format.has_salutation', false)
+            ->assertJsonPath('data.result.diagnostics.by_type.spelling.0.text', 'practice')
+            ->assertJsonPath('data.result.diagnostics.by_type.spelling.0.suggestions.0', 'practise')
             ->assertJsonPath('data.feedback_request.can_request', true);
+    }
+
+    public function test_assessment_view_marks_missing_writing_diagnostics_as_null(): void
+    {
+        [$user, $submission] = $this->gradedWritingSubmission();
+        $attempt = $submission->assessmentAttempt()->firstOrFail();
+        AssessmentEvidence::query()
+            ->where('attempt_id', $attempt->id)
+            ->update(['signals' => [], 'evidence' => []]);
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/assessment-attempts/{$attempt->id}/view")
+            ->assertOk()
+            ->assertJsonPath('data.result.diagnostics.data_status.vocabulary_metrics_available', false)
+            ->assertJsonPath('data.result.diagnostics.summary.word_count', null)
+            ->assertJsonPath('data.result.diagnostics.summary.total_error_count', null)
+            ->assertJsonPath('data.result.diagnostics.word_requirement.actual', null)
+            ->assertJsonPath('data.result.diagnostics.word_requirement.missing', null)
+            ->assertJsonPath('data.result.diagnostics.task_coverage.covered_points', null)
+            ->assertJsonPath('data.result.diagnostics.task_coverage.coverage_ratio', null)
+            ->assertJsonPath('data.result.diagnostics.format.has_salutation', null)
+            ->assertJsonPath('data.result.diagnostics.cohesion.linking_word_count', null);
     }
 
     public function test_assessment_view_feedback_endpoint_charges_once(): void
@@ -241,6 +438,60 @@ class WritingPracticeTest extends TestCase
             'criterion_scores' => [['key' => 'grammar', 'score' => 6.0, 'weight' => 0.25]],
             'overall_band' => 6.0,
             'calculation_trace' => ['formula' => 'test'],
+        ]);
+        AssessmentEvidence::create([
+            'attempt_id' => $attempt->id,
+            'rubric_id' => $rubric->id,
+            'signals' => [
+                'grammar' => [
+                    'errors' => [[
+                        'offset' => 10,
+                        'length' => 8,
+                        'message' => 'Possible spelling mistake found.',
+                        'category' => 'Typos',
+                        'rule_id' => 'MORFOLOGIK_RULE_EN_US',
+                        'replacements' => ['practise'],
+                    ]],
+                    'annotations' => [[
+                        'start' => 10,
+                        'end' => 18,
+                        'severity' => 'error',
+                        'category' => 'typos',
+                        'message' => 'Possible spelling mistake found.',
+                        'suggestion' => 'practise',
+                    ]],
+                ],
+                'vocabulary' => [
+                    'word_count' => 6,
+                    'sentence_count' => 1,
+                    'paragraph_count' => 1,
+                    'total_error_count' => 1,
+                    'grammar_error_count' => 0,
+                    'spelling_error_count' => 1,
+                    'punctuation_error_count' => 0,
+                    'linking_word_count' => 0,
+                    'unique_ratio' => 1.0,
+                    'avg_word_length' => 4.8,
+                    'readability_grade' => 1.0,
+                    'has_salutation' => false,
+                    'has_closing' => false,
+                    'tone_signals' => [
+                        'formal_count' => 0,
+                        'informal_count' => 0,
+                        'informal_words' => [],
+                    ],
+                ],
+            ],
+            'evidence' => [
+                'task' => [
+                    'points_covered' => 1,
+                    'points_required' => 1,
+                    'requirements_met' => [true],
+                    'word_count' => 6,
+                ],
+            ],
+            'validation' => ['passed' => true],
+            'extraction_trace' => ['strategy' => 'test'],
         ]);
 
         return [$user, $submission];

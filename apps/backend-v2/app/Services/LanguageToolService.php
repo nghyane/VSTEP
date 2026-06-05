@@ -67,6 +67,20 @@ class LanguageToolService
     }
 
     /**
+     * Speaking transcripts should not be penalized for casing, typography,
+     * punctuation or style suggestions caused by ASR/transcription format.
+     *
+     * @return array<int, array{offset: int, length: int, message: string, category: string, rule_id: string, replacements: string[]}>
+     */
+    public function checkSpeakingTranscript(string $text, string $language = 'en-US'): array
+    {
+        return array_values(array_filter(
+            $this->check($text, $language),
+            fn (array $match): bool => $this->isSpeakingGrammarSignal((string) $match['category']),
+        ));
+    }
+
+    /**
      * Convert LanguageTool matches to grading annotations format.
      *
      * @return array<int, array{start: int, end: int, severity: string, category: string, message: string, suggestion: string|null}>
@@ -94,5 +108,14 @@ class LanguageToolService
             Str::contains($cat, 'style') => 'suggestion',
             default => 'error',
         };
+    }
+
+    private function isSpeakingGrammarSignal(string $category): bool
+    {
+        $cat = Str::lower($category);
+
+        return Str::contains($cat, 'grammar')
+            || Str::contains($cat, 'typo')
+            || Str::contains($cat, 'confused');
     }
 }

@@ -8,9 +8,11 @@ use App\Enums\BookingStatus;
 use App\Enums\CoinTransactionType;
 use App\Enums\ExamSessionStatus;
 use App\Enums\SlotStatus;
+use App\Jobs\SendPaymentInvoiceEmail;
 use App\Models\CoinTransaction;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
+use App\Models\CourseEnrollmentOrder;
 use App\Models\Exam;
 use App\Models\ExamSession;
 use App\Models\ExamVersion;
@@ -22,7 +24,11 @@ use App\Services\Admin\Course\AdminCourseBookingService;
 use App\Services\CourseOrderService;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -50,17 +56,65 @@ class CourseEnrollmentTest extends TestCase
 
         $token = $this->tokenFor($user);
         $response = $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos']);
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload());
 
         $response->assertCreated();
         $response->assertJsonPath('data.status', 'pending');
         $response->assertJsonPath('data.amount_vnd', 100_000);
     }
 
+    public function test_enrollment_payment_redirect_forwards_client_urls(): void
+    {
+        $capturedPayload = null;
+        Http::fake(function (Request $request) use (&$capturedPayload) {
+            $capturedPayload = $request->data();
+
+            return Http::response([
+                'data' => [
+                    'checkoutUrl' => 'https://pay.payos.test/checkout',
+                    'paymentLinkId' => 'payos_link_test',
+                ],
+            ]);
+        });
+
+        [$user, $profile, $course] = $this->seedCourse(100_000, 200);
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload([
+                'return_url' => "https://app.vstepgo.com/khoa-hoc/{$course->id}",
+                'cancel_url' => "https://app.vstepgo.com/khoa-hoc/{$course->id}?from=payos",
+            ]))
+            ->assertCreated();
+
+        $this->assertSame("https://app.vstepgo.com/khoa-hoc/{$course->id}", $capturedPayload['returnUrl']);
+        $this->assertSame("https://app.vstepgo.com/khoa-hoc/{$course->id}?from=payos", $capturedPayload['cancelUrl']);
+    }
+
+    public function test_enrollment_payment_redirect_urls_are_required(): void
+    {
+        Http::fake();
+
+        [$user, $profile, $course] = $this->seedCourse(100_000, 200);
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", [
+                'payment_provider' => 'payos',
+                'commitment_signature' => $this->signatureSvg(),
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['return_url', 'cancel_url']);
+
+        Http::assertNothingSent();
+    }
+
     public function test_enrollment_confirm_creates_enrollment_and_credits_bonus(): void
     {
         [$user, $profile, $course] = $this->seedCourse(100_000, 200);
         $wallet = $this->app->make(WalletService::class);
+        Mail::fake();
+        Queue::fake();
 
         $token = $this->tokenFor($user);
         $orderCode = $this->createEnrollmentOrder($token, $course);
@@ -75,10 +129,15 @@ class CourseEnrollmentTest extends TestCase
             'profile_id' => $profile->id,
             'course_id' => $course->id,
             'bonus_coins_received' => 200,
+            'commitment_signature' => $this->signatureSvg(),
         ]);
 
         // Bonus coins credited (onboarding bonus via SystemConfig may add more)
         $this->assertGreaterThanOrEqual(200, $wallet->getBalance($profile));
+        Queue::assertPushed(SendPaymentInvoiceEmail::class, function (SendPaymentInvoiceEmail $job) use ($confirmed): bool {
+            return $job->orderType === SendPaymentInvoiceEmail::TYPE_COURSE_ENROLLMENT
+                && $job->orderId === $confirmed->id;
+        });
     }
 
     public function test_enrollment_confirm_idempotent(): void
@@ -102,6 +161,35 @@ class CourseEnrollmentTest extends TestCase
         $this->assertSame(1, $count);
     }
 
+    public function test_invoice_email_failure_does_not_fail_enrollment_confirmation(): void
+    {
+        [$user, $profile, $course] = $this->seedCourse(100_000, 200);
+
+        $token = $this->tokenFor($user);
+        $orderCode = $this->createEnrollmentOrder($token, $course);
+
+        config(['queue.default' => 'sync']);
+        Mail::shouldReceive('html')->andReturnNull();
+        Mail::shouldReceive('to')->andThrow(new \RuntimeException('SMTP down'));
+
+        try {
+            $confirmed = $this->app->make(CourseOrderService::class)
+                ->confirmByOrderCode($orderCode, 'test_txn_id', null);
+
+            $this->assertTrue($confirmed->isPaid());
+            $this->assertDatabaseHas('course_enrollments', [
+                'profile_id' => $profile->id,
+                'course_id' => $course->id,
+            ]);
+            $this->assertDatabaseHas('course_enrollment_orders', [
+                'order_code' => $orderCode,
+                'status' => 'paid',
+            ]);
+        } finally {
+            $this->restoreMailFacade();
+        }
+    }
+
     public function test_enrollment_rejects_full_course(): void
     {
         [$user, $profile, $course] = $this->seedCourse(100_000, 0, maxSlots: 1);
@@ -115,23 +203,76 @@ class CourseEnrollmentTest extends TestCase
 
         $token = $this->tokenFor($user);
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos'])
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload())
             ->assertStatus(422);
     }
 
-    public function test_enrollment_rejects_duplicate(): void
+    public function test_enrollment_order_replaces_pending_order(): void
     {
         [$user, $profile, $course] = $this->seedCourse(100_000, 200);
 
         $token = $this->tokenFor($user);
-        $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos'])
+        $first = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload())
             ->assertCreated();
 
-        // Second attempt — already has pending order
+        $second = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload())
+            ->assertCreated();
+
+        $this->assertDatabaseHas('course_enrollment_orders', [
+            'id' => $first->json('data.id'),
+            'status' => 'cancelled',
+        ]);
+        $this->assertDatabaseHas('course_enrollment_orders', [
+            'id' => $second->json('data.id'),
+            'status' => 'pending',
+        ]);
+        $this->assertSame(1, CourseEnrollmentOrder::query()->where('profile_id', $profile->id)->where('course_id', $course->id)->where('status', 'pending')->count());
+    }
+
+    public function test_enrollment_order_can_be_cancelled_by_owner(): void
+    {
+        [$user, $profile, $course] = $this->seedCourse(100_000, 200);
+
+        $token = $this->tokenFor($user);
+        $orderId = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload())
+            ->assertCreated()
+            ->json('data.id');
+
         $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos'])
-            ->assertStatus(422);
+            ->postJson("/api/v1/courses/enrollment-orders/{$orderId}/cancel")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'cancelled');
+
+        $this->assertDatabaseHas('course_enrollment_orders', [
+            'id' => $orderId,
+            'profile_id' => $profile->id,
+            'status' => 'cancelled',
+        ]);
+    }
+
+    public function test_enrollment_order_requires_commitment_signature(): void
+    {
+        [$user, $profile, $course] = $this->seedCourse(100_000, 200);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload(['commitment_signature' => null]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['commitment_signature']);
+    }
+
+    public function test_enrollment_order_rejects_non_svg_commitment_signature(): void
+    {
+        [$user, $profile, $course] = $this->seedCourse(100_000, 200);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload([
+                'commitment_signature' => 'not-svg',
+            ]))
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['commitment_signature']);
     }
 
     public function test_booking_requires_commitment_met(): void
@@ -347,8 +488,24 @@ class CourseEnrollmentTest extends TestCase
     private function createEnrollmentOrder(string $token, Course $course): int
     {
         return $this->withHeader('Authorization', "Bearer {$token}")
-            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", ['payment_provider' => 'payos'])
+            ->postJson("/api/v1/courses/{$course->id}/enrollment-orders", $this->enrollmentPayload())
             ->json('data.order_code');
+    }
+
+    /** @param  array<string, mixed>  $overrides */
+    private function enrollmentPayload(array $overrides = []): array
+    {
+        return array_merge([
+            'payment_provider' => 'payos',
+            'commitment_signature' => $this->signatureSvg(),
+            'return_url' => 'https://vstepgo.test/wallet',
+            'cancel_url' => 'https://vstepgo.test/wallet',
+        ], $overrides);
+    }
+
+    private function signatureSvg(): string
+    {
+        return '<svg xmlns="http://www.w3.org/2000/svg"><path d="M1 1L9 9"/></svg>';
     }
 
     private function confirmEnrollment(string $token, Course $course): void
@@ -361,8 +518,21 @@ class CourseEnrollmentTest extends TestCase
 
     private function tokenFor(User $user): string
     {
-        return $this->postJson('/api/v1/auth/login', [
-            'email' => $user->email, 'password' => 'password',
-        ])->json('data.access_token');
+        $response = $this
+            ->withServerVariables(['REMOTE_ADDR' => '127.0.1.'.random_int(1, 250)])
+            ->postJson('/api/v1/auth/login', [
+                'email' => $user->email,
+                'password' => 'password',
+            ]);
+
+        $response->assertOk();
+
+        return (string) $response->json('data.access_token');
+    }
+
+    private function restoreMailFacade(): void
+    {
+        $this->app->forgetInstance('mail.manager');
+        Facade::clearResolvedInstance('mail.manager');
     }
 }

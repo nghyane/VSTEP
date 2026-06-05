@@ -19,13 +19,6 @@ interface Props {
 
 const LEVELS: SpeakingScenarioFormInput["level"][] = ["A1", "A2", "B1", "B2", "C1"]
 
-const VOICE_OPTIONS = [
-	{ value: "us Sierra", label: "Sierra (US Female)" },
-	{ value: "us Adam", label: "Adam (US Male)" },
-	{ value: "uk Emma", label: "Emma (UK Female)" },
-	{ value: "uk James", label: "James (UK Male)" },
-]
-
 export function SpeakingScenarioForm({ initial, onSubmit, onCancel, submitting }: Props) {
 	const [state, setState] = useState<SpeakingScenarioFormInput>({
 		slug: initial?.slug ?? "",
@@ -94,33 +87,23 @@ export function SpeakingScenarioForm({ initial, onSubmit, onCancel, submitting }
 				</Row>
 
 				<Row gutter={12}>
-					<Col span={8}>
-						<FormField label="Tên nhân vật" htmlFor="character_name" required error={errors.character_name}>
+					<Col span={12}>
+						<FormField
+							label="Tên nhân vật AI"
+							htmlFor="character_name"
+							required
+							error={errors.character_name}
+						>
 							<Input
 								id="character_name"
 								value={state.character_name}
 								onChange={(e) => set("character_name", e.target.value)}
 								invalid={!!errors.character_name}
-								placeholder="Patricia"
+								placeholder="Patricia / Interviewer / Hotel receptionist"
 							/>
 						</FormField>
 					</Col>
-					<Col span={8}>
-						<FormField label="Giọng nói" htmlFor="character_voice_label" required error={errors.character_voice_label}>
-							<Select
-								id="character_voice_label"
-								value={state.character_voice_label}
-								onChange={(e) => set("character_voice_label", e.target.value)}
-							>
-								{VOICE_OPTIONS.map((v) => (
-									<option key={v.value} value={v.value}>
-										{v.label}
-									</option>
-								))}
-							</Select>
-						</FormField>
-					</Col>
-					<Col span={8}>
+					<Col span={12}>
 						<FormField label="Level" htmlFor="level" required error={errors.level}>
 							<Select
 								id="level"
@@ -137,6 +120,12 @@ export function SpeakingScenarioForm({ initial, onSubmit, onCancel, submitting }
 					</Col>
 				</Row>
 
+				<Alert
+					type="info"
+					showIcon
+					message="Tên và avatar nhân vật sẽ hiển thị ở màn luyện, đồng thời dùng để AI nhập vai trong prompt. Người học vẫn có thể đổi giọng đọc riêng ở frontend; đổi giọng không đổi tên nhân vật."
+				/>
+
 				<FormField label="Mô tả tình huống" htmlFor="description" required error={errors.description}>
 					<Textarea
 						id="description"
@@ -147,7 +136,12 @@ export function SpeakingScenarioForm({ initial, onSubmit, onCancel, submitting }
 					/>
 				</FormField>
 
-				<FormField label="Câu mở đầu (AI nói trước)" htmlFor="opening_line" required error={errors.opening_line}>
+				<FormField
+					label="Câu mở đầu (AI nói trước)"
+					htmlFor="opening_line"
+					required
+					error={errors.opening_line}
+				>
 					<Textarea
 						id="opening_line"
 						value={state.opening_line}
@@ -157,7 +151,12 @@ export function SpeakingScenarioForm({ initial, onSubmit, onCancel, submitting }
 					/>
 				</FormField>
 
-				<FormField label="System Prompt (cho AI)" htmlFor="system_prompt" required error={errors.system_prompt}>
+				<FormField
+					label="System Prompt (cho AI)"
+					htmlFor="system_prompt"
+					required
+					error={errors.system_prompt}
+				>
 					<Textarea
 						id="system_prompt"
 						value={state.system_prompt}
@@ -177,7 +176,12 @@ export function SpeakingScenarioForm({ initial, onSubmit, onCancel, submitting }
 
 				<Row gutter={12}>
 					<Col span={8}>
-						<FormField label="Thời lượng (phút)" htmlFor="estimated_minutes" required error={errors.estimated_minutes}>
+						<FormField
+							label="~ Thời lượng ước tính (phút)"
+							htmlFor="estimated_minutes"
+							required
+							error={errors.estimated_minutes}
+						>
 							<Input
 								id="estimated_minutes"
 								type="number"
@@ -188,7 +192,12 @@ export function SpeakingScenarioForm({ initial, onSubmit, onCancel, submitting }
 						</FormField>
 					</Col>
 					<Col span={8}>
-						<FormField label="Số lượt nói dự kiến" htmlFor="expected_turns" required error={errors.expected_turns}>
+						<FormField
+							label="Số lượt người học dự kiến"
+							htmlFor="expected_turns"
+							required
+							error={errors.expected_turns}
+						>
 							<Input
 								id="expected_turns"
 								type="number"

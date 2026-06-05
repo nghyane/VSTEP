@@ -57,6 +57,35 @@ class StreakMilestoneTest extends TestCase
         $this->service->claim($this->profile, 7);
     }
 
+    public function test_claim_duplicate_is_rejected_across_profiles_in_same_account(): void
+    {
+        $sibling = Profile::factory()->forAccount($this->profile->account)->create();
+        $this->seedStreakState(7, $this->profile);
+        $this->seedStreakState(7, $sibling);
+
+        $this->service->claim($this->profile, 7);
+
+        $milestones = $this->service->listForProfile($sibling);
+        $this->assertTrue($milestones[0]['claimed']);
+
+        $this->expectException(ValidationException::class);
+        $this->service->claim($sibling, 7);
+    }
+
+    public function test_different_accounts_can_claim_same_milestone(): void
+    {
+        $otherUser = User::factory()->create();
+        $otherProfile = Profile::factory()->initial()->forAccount($otherUser)->create();
+        $this->seedStreakState(7, $this->profile);
+        $this->seedStreakState(7, $otherProfile);
+
+        $first = $this->service->claim($this->profile, 7);
+        $second = $this->service->claim($otherProfile, 7);
+
+        $this->assertSame(100, $first['coins_granted']);
+        $this->assertSame(100, $second['coins_granted']);
+    }
+
     public function test_claim_fails_when_streak_insufficient(): void
     {
         $this->seedStreakState(5);
@@ -73,11 +102,13 @@ class StreakMilestoneTest extends TestCase
         $this->service->claim($this->profile, 99);
     }
 
-    private function seedStreakState(int $streak): void
+    private function seedStreakState(int $streak, ?Profile $profile = null): void
     {
+        $profile ??= $this->profile;
+
         for ($i = $streak - 1; $i >= 0; $i--) {
             ProfileDailyActivity::query()->insert([
-                'profile_id' => $this->profile->id,
+                'profile_id' => $profile->id,
                 'date_local' => now()->subDays($i)->toDateString(),
             ]);
         }

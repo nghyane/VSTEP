@@ -1,5 +1,6 @@
 import {
 	ClockCircleOutlined,
+	CopyOutlined,
 	DeleteOutlined,
 	EditOutlined,
 	ExclamationCircleOutlined,
@@ -9,7 +10,17 @@ import {
 } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { Alert, Input as AntInput, Empty, Flex, Space, Switch as AntdSwitch, Table, Tag, Typography } from "antd"
+import {
+	Alert,
+	Switch as AntdSwitch,
+	Input as AntInput,
+	Empty,
+	Flex,
+	Space,
+	Table,
+	Tag,
+	Typography,
+} from "antd"
 import { useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
@@ -39,6 +50,8 @@ interface Search {
 }
 
 const EXPIRING_SOON_DAYS = 7
+const SLUG_MAX_LENGTH = 80
+const TITLE_MAX_LENGTH = 200
 
 function startOfTodayMs(): number {
 	const d = new Date()
@@ -132,6 +145,24 @@ function deleteDescription(c: AdminCourse): string {
 	return parts.join(" ")
 }
 
+function appendCloneSuffix(value: string, suffix: string, maxLength: number): string {
+	return `${value.slice(0, maxLength - suffix.length)}${suffix}`
+}
+
+function buildCloneInitial(c: AdminCourse): AdminCourse {
+	const slugSuffix = `-copy-${Date.now().toString(36)}`
+	const titleSuffix = " (copy)"
+
+	return {
+		...c,
+		slug: appendCloneSuffix(c.slug, slugSuffix, SLUG_MAX_LENGTH),
+		title: appendCloneSuffix(c.title, titleSuffix, TITLE_MAX_LENGTH),
+		start_date: "",
+		end_date: "",
+		is_published: false,
+	}
+}
+
 function CoursesListPage() {
 	const navigate = useNavigate({ from: "/courses/" })
 	const search = Route.useSearch()
@@ -139,6 +170,7 @@ function CoursesListPage() {
 
 	const [draftQ, setDraftQ] = useState(q)
 	const [createOpen, setCreateOpen] = useState(false)
+	const [createInitial, setCreateInitial] = useState<AdminCourse | null>(null)
 	const [deleting, setDeleting] = useState<AdminCourse | null>(null)
 
 	const { data, isLoading } = useQuery(courseListQuery({ page, q, is_published, target_level, per_page: 20 }))
@@ -148,6 +180,11 @@ function CoursesListPage() {
 
 	function setSearch(next: Partial<Search>): void {
 		navigate({ search: { ...search, ...next, page: next.page ?? 1 } })
+	}
+
+	function closeCreateModal(): void {
+		setCreateOpen(false)
+		setCreateInitial(null)
 	}
 
 	const expiryStats = countExpiryWarnings(data?.data)
@@ -175,13 +212,24 @@ function CoursesListPage() {
 		}
 	}
 
+	function cloneCourse(c: AdminCourse): void {
+		setCreateInitial(buildCloneInitial(c))
+		setCreateOpen(true)
+	}
+
 	return (
 		<Flex vertical gap={24}>
 			<PageHeader
 				title="Khóa học"
 				subtitle="Quản lý khóa học: gán giáo viên, lịch, giá và cam kết."
 				action={
-					<Button icon={<PlusOutlined />} onClick={() => setCreateOpen(true)}>
+					<Button
+						icon={<PlusOutlined />}
+						onClick={() => {
+							setCreateInitial(null)
+							setCreateOpen(true)
+						}}
+					>
 						Tạo khóa học
 					</Button>
 				}
@@ -275,7 +323,11 @@ function CoursesListPage() {
 								</Typography.Text>
 							),
 						},
-						{ title: "Tiêu đề", dataIndex: "title", render: (v: string) => <strong>{v}</strong> },
+						{
+							title: "Tiêu đề",
+							dataIndex: "title",
+							render: (v: string) => <strong>{v}</strong>,
+						},
 						{
 							title: "Level",
 							dataIndex: "target_level",
@@ -333,10 +385,26 @@ function CoursesListPage() {
 						},
 						{
 							title: "",
-							width: 128,
+							width: 160,
 							align: "right" as const,
 							render: (_, c: AdminCourse) => (
 								<Space size={4}>
+									<button
+										type="button"
+										onClick={() => cloneCourse(c)}
+										disabled={create.isPending}
+										style={{
+											background: "none",
+											border: 0,
+											padding: 4,
+											cursor: create.isPending ? "not-allowed" : "pointer",
+											color: create.isPending ? "#cbd5e1" : undefined,
+										}}
+										aria-label="Nhân bản khóa học"
+										title="Nhân bản khóa học"
+									>
+										<CopyOutlined />
+									</button>
 									<Link to="/courses/$courseId" params={{ courseId: c.id }} aria-label="Xem chi tiết">
 										<EyeOutlined />
 									</Link>
@@ -358,14 +426,22 @@ function CoursesListPage() {
 				/>
 			)}
 
-			<Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Tạo khóa học" size="xl">
+			<Modal
+				open={createOpen}
+				onClose={closeCreateModal}
+				title={createInitial ? "Nhân bản khóa học" : "Tạo khóa học"}
+				size="xl"
+			>
 				<CourseForm
+					key={createInitial?.slug ?? "create"}
+					initial={createInitial ?? undefined}
 					submitting={create.isPending}
-					onCancel={() => setCreateOpen(false)}
+					onCancel={closeCreateModal}
 					onSubmit={async (input) => {
-						await create.mutateAsync(input)
-						showSuccess("Đã tạo khóa học.")
-						setCreateOpen(false)
+						const res = await create.mutateAsync(input)
+						showSuccess(createInitial ? "Đã nhân bản khóa học." : "Đã tạo khóa học.")
+						closeCreateModal()
+						if (createInitial) navigate({ to: "/courses/$courseId", params: { courseId: res.data.id } })
 					}}
 				/>
 			</Modal>

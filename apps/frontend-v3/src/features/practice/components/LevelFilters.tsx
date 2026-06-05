@@ -1,7 +1,8 @@
 import { cn } from "#/lib/utils"
+import { ENTRY_LEVELS, parseVstepLevel, type VstepLevel } from "#/lib/vstep"
 
-const LEVELS = ["A1", "A2", "B1", "B2", "C1"] as const
-export type Level = (typeof LEVELS)[number]
+export const LEVELS = ENTRY_LEVELS
+export type Level = VstepLevel
 
 export const LEVEL_COLORS: Record<Level, { active: string; text: string }> = {
 	A1: { active: "bg-success/15 border-success/40", text: "text-success" },
@@ -14,18 +15,24 @@ export const LEVEL_COLORS: Record<Level, { active: string; text: string }> = {
 interface Props {
 	level: Level | null
 	onLevelChange: (v: Level | null) => void
+	availableLevels?: readonly Level[]
+	allowClear?: boolean
 }
 
-export function LevelFilters({ level, onLevelChange }: Props) {
+export function toLevel(value: string): Level | null {
+	return parseVstepLevel(value)
+}
+
+export function LevelFilters({ level, onLevelChange, availableLevels = LEVELS, allowClear = true }: Props) {
 	return (
 		<div className="flex items-center gap-1.5">
-			{LEVELS.map((lv) => {
+			{availableLevels.map((lv) => {
 				const active = level === lv
 				return (
 					<button
 						key={lv}
 						type="button"
-						onClick={() => onLevelChange(active ? null : lv)}
+						onClick={() => onLevelChange(active && allowClear ? null : lv)}
 						className={cn(
 							"px-3 py-1.5 rounded-(--radius-button) text-xs font-bold border-2 transition-colors cursor-pointer",
 							active

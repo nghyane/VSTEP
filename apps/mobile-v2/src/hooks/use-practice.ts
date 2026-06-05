@@ -35,6 +35,25 @@ export interface SubmitResult {
   items: { questionId: string; isCorrect: boolean; correctIndex: number; explanation: string }[];
 }
 
+export type ExerciseFeedbackContentType = "practice_listening_exercise" | "practice_reading_exercise";
+
+export interface ExerciseFeedbackPayload {
+  contentType: ExerciseFeedbackContentType;
+  contentId: string;
+  rating: number;
+  comment?: string;
+}
+
+export interface ExerciseFeedback {
+  id: string;
+  contentType: ExerciseFeedbackContentType;
+  contentId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ReadingExercise {
   id: string; slug: string; title: string;
   description: string | null; part: number;
@@ -55,7 +74,7 @@ export interface WritingPrompt {
 }
 
 export interface WritingSubmission {
-  submissionId: string; wordCount: number; submittedAt: string; gradingStatus: string;
+  submissionId: string; attemptId: string; wordCount: number; submittedAt: string; gradingStatus: string;
 }
 
 export interface WritingOutlineSection {
@@ -90,6 +109,7 @@ export interface WritingSampleMarker {
 
 export interface WritingHistoryItem {
   id: string;
+  attemptId: string;
   submittedAt: string;
   wordCount: number;
   prompt: { id: string; slug: string; title: string; part: number } | null;
@@ -199,6 +219,11 @@ export interface SpeakingConversationTurnFeedback {
   better?: string | null;
   betterIpa?: string | null;
   userIpa?: string | null;
+  profanity?: {
+    found: boolean;
+    words: string[];
+    count: number;
+  };
 }
 
 export interface SpeakingConversationSession {
@@ -282,6 +307,11 @@ interface AssessmentResultPayload {
 
 interface PracticeGradingResultResponse {
   data: AssessmentResultPayload | null;
+}
+
+interface AssessmentViewResponse {
+  status: "pending" | "processing" | "ready" | "failed";
+  result: AssessmentResultPayload | null;
 }
 
 export interface PresignUploadResponse {
@@ -622,6 +652,10 @@ export async function submitReadingSession(
   return api.post<SubmitResult>(`/api/v1/practice/reading/sessions/${sessionId}/submit`, { answers });
 }
 
+export async function submitExerciseFeedback(payload: ExerciseFeedbackPayload) {
+  return api.post<ExerciseFeedback>("/api/v1/feedback", payload);
+}
+
 export async function startWritingSession(promptId: string) {
   return api.post<{ sessionId: string; startedAt: string }>("/api/v1/practice/writing/sessions", { exerciseId: promptId });
 }
@@ -717,17 +751,15 @@ export function useGradingJobStatus(jobId: string) {
 
 // ── Writing grading result ──
 
-export function useWritingGradingResult(submissionId: string) {
+export function useWritingGradingResult(attemptId: string) {
   return useQuery({
-    queryKey: ["practice", "writing", "result", submissionId],
+    queryKey: ["assessment-attempts", attemptId, "view"],
     queryFn: async () => {
-      const response = await api.get<PracticeGradingResultResponse>(
-        `/api/v1/practice/writing/submissions/${submissionId}/result`,
-      );
+      const response = await api.get<AssessmentViewResponse>(`/api/v1/assessment-attempts/${attemptId}/view`);
       return normalizeWritingGradingResult(response);
     },
     refetchInterval: (q) => (q.state.data?.overallBand != null ? false : 5000),
-    enabled: !!submissionId,
+    enabled: !!attemptId,
     retry: false,
   });
 }
@@ -747,8 +779,8 @@ export function useSpeakingGradingResult(submissionId: string) {
   });
 }
 
-function normalizeWritingGradingResult(response: PracticeGradingResultResponse): WritingGradingResult | null {
-  const result = response.data;
+function normalizeWritingGradingResult(response: PracticeGradingResultResponse | AssessmentViewResponse): WritingGradingResult | null {
+  const result = "result" in response ? response.result : response.data;
   if (!result) return null;
 
   const feedback = result.feedback;

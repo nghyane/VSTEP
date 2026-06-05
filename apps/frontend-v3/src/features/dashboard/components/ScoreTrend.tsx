@@ -1,30 +1,60 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { SkillIcon } from "#/components/SkillIcon"
-import { examSessionsQuery, overviewQuery, selectTargetBand } from "#/features/dashboard/queries"
-import { skills } from "#/lib/skills"
-import { formatShortDate, round } from "#/lib/utils"
+import { overviewQuery, selectTargetBand } from "#/features/dashboard/queries"
+import type { OverviewData, ScoreTimelinePoint } from "#/features/dashboard/types"
+import type { ApiResponse } from "#/lib/api"
+import { type Skill, type SkillKey, skills } from "#/lib/skills"
+import { cn, formatShortDate, round } from "#/lib/utils"
 
 const Y_MAX = 180
 const Y_MIN = 20
 const bandToY = (v: number) => Y_MAX - (v / 10) * (Y_MAX - Y_MIN)
 
-function computeAvg(scores: Record<string, number | null> | null): number {
-	if (!scores) return 0
-	const vals = skills.map((s) => scores[s.key]).filter((v): v is number => v !== null)
-	return vals.length > 0 ? round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
+function computeAvg(point: ScoreTimelinePoint, visibleSkills: readonly Skill[]): number | null {
+	const vals = visibleSkills.map((s) => point[s.key]).filter((v): v is number => v !== null)
+	return vals.length > 0 ? round(vals.reduce((a, b) => a + b, 0) / vals.length) : null
+}
+
+function avgPoints(tests: ScoreTimelinePoint[], centers: number[], visibleSkills: readonly Skill[]): string {
+	return tests
+		.map((test, index) => {
+			const avg = computeAvg(test, visibleSkills)
+			return avg !== null ? `${centers[index]},${bandToY(avg)}` : null
+		})
+		.filter((point): point is string => point !== null)
+		.join(" ")
+}
+
+function outlierNotice(overview: ApiResponse<OverviewData>): string | null {
+	const quality = overview.data.scores.quality
+	if (!quality?.has_outlier) return null
+
+	const outlierLabels = skills
+		.filter((skill) => quality.outlier_skills.includes(skill.key))
+		.map((skill) => skill.label)
+	const message =
+		quality.status === "consecutive_low"
+			? "Điểm thấp đã xuất hiện ở ít nhất 2 lượt liên tiếp. Hệ thống đã bắt đầu cập nhật năng lực hiện tại theo xu hướng mới."
+			: "Lượt thi mới nhất thấp bất thường so với phong độ gần đây. Hệ thống vẫn ghi nhận trong lịch sử, nhưng cần thêm 1 lượt xác nhận trước khi cập nhật năng lực hiện tại."
+
+	if (outlierLabels.length === 0) return message
+
+	return `${message} Kỹ năng bị ảnh hưởng: ${outlierLabels.join(", ")}.`
 }
 
 export function ScoreTrend() {
+	const { data: overview, isLoading } = useQuery(overviewQuery)
 	const { data: targetBand } = useQuery({ ...overviewQuery, select: selectTargetBand })
-	const { data: sessions, isLoading } = useQuery(examSessionsQuery)
 	const [activeIdx, setActiveIdx] = useState<number | null>(null)
+	const [selectedSkills, setSelectedSkills] = useState<SkillKey[]>(() => skills.map((skill) => skill.key))
 
-	if (isLoading || !sessions || targetBand === undefined) return null
+	if (isLoading || !overview || targetBand === undefined) return null
 
 	const target = targetBand
+	const timeline = overview.data.scores.timeline
 
-	if (sessions.length === 0) {
+	if (timeline.length === 0) {
 		return (
 			<section className="card p-6">
 				<h3 className="font-extrabold text-lg text-foreground">Điểm qua các lần thi</h3>
@@ -33,10 +63,24 @@ export function ScoreTrend() {
 		)
 	}
 
-	const tests = sessions.slice(0, 10).reverse()
+	const tests = timeline.slice(-10)
+	const notice = outlierNotice(overview)
+	const visibleSkills = skills.filter((skill) => selectedSkills.includes(skill.key))
 	const spacing = Math.min(98, 500 / tests.length)
 	const startX = 78
 	const centers = tests.map((_, i) => startX + i * spacing)
+
+	function toggleSkill(skillKey: SkillKey) {
+		setSelectedSkills((current) => {
+			if (!current.includes(skillKey)) return [...current, skillKey]
+			if (current.length === 1) return current
+			return current.filter((key) => key !== skillKey)
+		})
+	}
+
+	function showAllSkills() {
+		setSelectedSkills(skills.map((skill) => skill.key))
+	}
 
 	return (
 		<section className="card p-6">
@@ -45,24 +89,44 @@ export function ScoreTrend() {
 
 			<div className="flex flex-wrap gap-2 mt-3 mb-4">
 				{skills.map((s) => (
-					<span
+					<button
 						key={s.key}
-						className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+						type="button"
+						aria-pressed={selectedSkills.includes(s.key)}
+						onClick={() => toggleSkill(s.key)}
+						className={cn(
+							"inline-flex items-center gap-1.5 rounded-full border-2 px-3 py-1.5 text-xs font-bold transition",
+							selectedSkills.includes(s.key)
+								? "border-current bg-surface opacity-100"
+								: "border-border bg-surface/40 opacity-45 grayscale",
+						)}
 						style={{ color: s.color }}
 					>
 						<SkillIcon name={s.pngIcon} size="sm" />
 						{s.label}
-					</span>
+					</button>
 				))}
+				<button
+					type="button"
+					onClick={showAllSkills}
+					className="inline-flex items-center gap-1.5 rounded-full border-2 border-border bg-surface px-3 py-1.5 text-xs font-bold text-subtle transition hover:text-foreground"
+				>
+					Tất cả
+				</button>
 				<span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-primary-dark">
 					<span className="w-4 h-0.5 bg-primary-dark rounded" />
-					Trung bình
+					TB kỹ năng có điểm
 				</span>
 				<span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-destructive">
 					<span className="w-4 h-0.5 border-t-2 border-dashed border-destructive" />
 					Mục tiêu
 				</span>
 			</div>
+			{notice && (
+				<div className="mb-4 rounded-(--radius-card) border-2 border-warning/20 bg-warning/10 px-4 py-3 text-sm font-bold leading-relaxed text-warning-dark">
+					{notice}
+				</div>
+			)}
 
 			<svg viewBox="0 0 600 220" role="img" aria-label="Score trend chart" className="w-full">
 				<g fontSize="10" fill="var(--color-placeholder)">
@@ -87,13 +151,16 @@ export function ScoreTrend() {
 					const cx = centers[ti] ?? 0
 					const isActive = activeIdx === ti
 					return (
-						<g key={test.id}>
-							{skills.map((s, si) => {
-								const v = test.scores?.[s.key] ?? 0
+						<g key={`${test.date}-${ti}`}>
+							{visibleSkills.map((s, si) => {
+								const v = test[s.key]
+								if (v === null) return null
+								const groupWidth = visibleSkills.length * 16
+
 								return (
 									<rect
 										key={s.key}
-										x={cx - 30 + si * 16}
+										x={cx - groupWidth / 2 + si * 16}
 										y={bandToY(v)}
 										width={14}
 										height={Math.max(0, Y_MAX - bandToY(v))}
@@ -104,7 +171,7 @@ export function ScoreTrend() {
 								)
 							})}
 							<text x={cx} y={210} textAnchor="middle" fontSize="10" fill="var(--color-subtle)">
-								{test.submitted_at ? formatShortDate(test.submitted_at) : ""}
+								{formatShortDate(test.date)}
 							</text>
 							{/* Hover hit-area: full chart-height column. Pointer-events visible only on this rect. */}
 							<rect
@@ -137,11 +204,11 @@ export function ScoreTrend() {
 					fontWeight="700"
 					fill="var(--color-destructive)"
 				>
-					B2 = {target}
+					{overview.data.profile.target_level} ≥ {target}
 				</text>
 
 				<polyline
-					points={tests.map((t, i) => `${centers[i]},${bandToY(computeAvg(t.scores))}`).join(" ")}
+					points={avgPoints(tests, centers, visibleSkills)}
 					fill="none"
 					stroke="var(--color-primary-dark)"
 					strokeWidth={2}
@@ -149,9 +216,11 @@ export function ScoreTrend() {
 					strokeLinejoin="round"
 				/>
 				{tests.map((t, i) => {
-					const avg = computeAvg(t.scores)
+					const avg = computeAvg(t, visibleSkills)
+					if (avg === null) return null
+
 					return (
-						<g key={`avg-${t.id}`}>
+						<g key={`avg-${t.date}-${i}`}>
 							<circle
 								cx={centers[i]}
 								cy={bandToY(avg)}
@@ -175,11 +244,7 @@ export function ScoreTrend() {
 				})}
 
 				{activeIdx !== null && tests[activeIdx] && (
-					<ScoreTooltip
-						test={tests[activeIdx]}
-						cx={centers[activeIdx] ?? 0}
-						submittedAt={tests[activeIdx].submitted_at}
-					/>
+					<ScoreTooltip test={tests[activeIdx]} cx={centers[activeIdx] ?? 0} visibleSkills={visibleSkills} />
 				)}
 			</svg>
 		</section>
@@ -187,12 +252,12 @@ export function ScoreTrend() {
 }
 
 interface ScoreTooltipProps {
-	test: { scores: Record<string, number | null> | null }
+	test: ScoreTimelinePoint
 	cx: number
-	submittedAt: string | null
+	visibleSkills: readonly Skill[]
 }
 
-function ScoreTooltip({ test, cx, submittedAt }: ScoreTooltipProps) {
+function ScoreTooltip({ test, cx, visibleSkills }: ScoreTooltipProps) {
 	const TOOLTIP_W = 96
 	const TOOLTIP_H = 78
 	const PAD = 5
@@ -201,7 +266,7 @@ function ScoreTooltip({ test, cx, submittedAt }: ScoreTooltipProps) {
 	const placeRight = cx < 300
 	const x = placeRight ? cx + 28 : cx - 28 - TOOLTIP_W
 	const y = 28
-	const avg = computeAvg(test.scores)
+	const avg = computeAvg(test, visibleSkills)
 	const headerY = y + 11
 	const firstRowY = y + 24
 	const dividerY = y + TOOLTIP_H - 14
@@ -220,10 +285,10 @@ function ScoreTooltip({ test, cx, submittedAt }: ScoreTooltipProps) {
 				strokeWidth={1}
 			/>
 			<text x={x + PAD} y={headerY} fontSize={FS} fontWeight="800" fill="var(--color-foreground)">
-				{submittedAt ? formatShortDate(submittedAt) : "—"}
+				{formatShortDate(test.date)}
 			</text>
-			{skills.map((s, idx) => {
-				const v = test.scores?.[s.key]
+			{visibleSkills.map((s, idx) => {
+				const v = test[s.key]
 				const rowY = firstRowY + idx * ROW_H
 				return (
 					<g key={s.key}>
@@ -253,7 +318,7 @@ function ScoreTooltip({ test, cx, submittedAt }: ScoreTooltipProps) {
 				strokeWidth={0.75}
 			/>
 			<text x={x + PAD} y={footerY} fontSize={FS} fontWeight="800" fill="var(--color-primary-dark)">
-				Trung bình
+				TB có điểm
 			</text>
 			<text
 				x={x + TOOLTIP_W - PAD}
@@ -263,7 +328,7 @@ function ScoreTooltip({ test, cx, submittedAt }: ScoreTooltipProps) {
 				fontWeight="800"
 				fill="var(--color-primary-dark)"
 			>
-				{avg}
+				{avg !== null ? avg : "—"}
 			</text>
 		</g>
 	)

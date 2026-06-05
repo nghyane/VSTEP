@@ -8,6 +8,8 @@ use App\Enums\IconKey;
 use App\Enums\NotificationType;
 use App\Models\Notification;
 use App\Models\Profile;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\ValidationException;
 
 final class NotificationService
 {
@@ -52,8 +54,18 @@ final class NotificationService
             ->update(['read_at' => now()]);
     }
 
-    public function markRead(Notification $notification): bool
+    public function list(Profile $profile): LengthAwarePaginator
     {
+        return Notification::query()
+            ->where('profile_id', $profile->id)
+            ->orderByDesc('created_at')
+            ->paginate(20);
+    }
+
+    public function markRead(Profile $profile, Notification $notification): bool
+    {
+        $this->assertOwnedByProfile($profile, $notification);
+
         if ($notification->read_at !== null) {
             return false;
         }
@@ -63,11 +75,28 @@ final class NotificationService
         return $notification->save();
     }
 
+    public function delete(Profile $profile, Notification $notification): void
+    {
+        $this->assertOwnedByProfile($profile, $notification);
+        $notification->delete();
+    }
+
     public function unreadCount(Profile $profile): int
     {
         return Notification::query()
             ->where('profile_id', $profile->id)
             ->whereNull('read_at')
             ->count();
+    }
+
+    private function assertOwnedByProfile(Profile $profile, Notification $notification): void
+    {
+        if ((string) $notification->profile_id === $profile->id) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'notification' => ['Notification does not belong to the active profile.'],
+        ])->status(403);
     }
 }

@@ -1,11 +1,13 @@
-import { useMutation } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { HTTPError } from "ky"
 import { useState } from "react"
-import { Icon } from "#/components/Icon"
+import { Icon, StaticIcon } from "#/components/Icon"
+import { appConfigQuery } from "#/features/config/queries"
 import { getPronunciationReview, type PronunciationReview } from "#/features/practice/actions"
 import { ShadowingWordChips } from "#/features/practice/components/ShadowingWordChips"
 import type { ShadowingSegment } from "#/features/practice/types"
 import { useIpa } from "#/lib/phonemize"
+import { censorProfanityText, censorProfanityWords, type ProfanityDiagnostic } from "#/lib/profanity"
 import { cn, translateText, type WordCompareResult } from "#/lib/utils"
 
 export interface ShadowingAttemptResult {
@@ -13,6 +15,7 @@ export interface ShadowingAttemptResult {
 	wordResults: WordCompareResult[]
 	correctCount: number
 	accuracyPercent: number | null
+	profanity?: ProfanityDiagnostic
 }
 
 interface Props {
@@ -81,42 +84,38 @@ function TranslateButton({ text }: { text: string }) {
 	)
 }
 
-function ReviewPopup({
+function ReviewPanel({
 	review,
 	isError,
 	isServiceDown,
+	errorMessage,
 	onRetry,
-	onClose,
 }: {
 	review: PronunciationReview | null
 	isError: boolean
 	isServiceDown: boolean
+	errorMessage: string
 	onRetry: () => void
-	onClose: () => void
 }) {
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-			<div className="w-full max-w-md max-h-[85vh] overflow-y-auto rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-6 shadow-xl mx-4 animate-[popIn_0.25s_ease-out]">
-				<div className="flex items-center justify-between mb-4">
-					<h2 className="font-extrabold text-lg text-foreground">AI nhận xét phát âm</h2>
-					<button type="button" onClick={onClose} className="p-1 text-muted hover:text-foreground transition">
-						<Icon name="close" size="sm" />
+		<div id="ai-shadowing-feedback" className="card p-5 space-y-4 animate-[fadeIn_0.2s_ease-out]">
+			<div>
+				<p className="text-xs font-bold uppercase tracking-wide text-subtle">AI nhận xét phát âm</p>
+				<p className="mt-1 text-sm text-muted">Phân tích phát âm, ngữ điệu và mẹo luyện lại câu shadowing.</p>
+			</div>
+			{isError ? (
+				<div className="rounded-(--radius-card) border-2 border-b-4 border-destructive/30 bg-destructive/5 p-4">
+					<p className="text-sm text-destructive mb-3">
+						{isServiceDown ? "AI đang bận, bạn thử lại nhé." : errorMessage}
+					</p>
+					<button type="button" onClick={onRetry} className="btn btn-secondary px-6">
+						Thử lại
 					</button>
 				</div>
-				{isError ? (
-					<div className="text-center py-6">
-						<p className="text-sm text-destructive mb-3">
-							{isServiceDown
-								? "AI tạm thời không phản hồi. Vui lòng thử lại sau."
-								: "Không thể tải nhận xét."}
-						</p>
-						<button type="button" onClick={onRetry} className="btn btn-secondary px-6">
-							Thử lại
-						</button>
-					</div>
-				) : !review ? (
-					<div className="text-center py-8">
-						<div className="flex justify-center gap-1.5 mb-3">
+			) : !review ? (
+				<div className="border-t-2 border-border pt-4">
+					<div className="flex items-center gap-2">
+						<div className="flex gap-1">
 							<div className="w-2.5 h-2.5 rounded-full bg-skill-speaking animate-[dotBounce_1.2s_ease-in-out_infinite]" />
 							<div
 								className="w-2.5 h-2.5 rounded-full bg-skill-speaking animate-[dotBounce_1.2s_ease-in-out_infinite]"
@@ -129,42 +128,87 @@ function ReviewPopup({
 						</div>
 						<p className="text-sm font-bold text-muted">AI đang phân tích...</p>
 					</div>
-				) : (
-					<div className="space-y-3">
-						<div className="rounded-(--radius-card) border-2 border-b-4 border-skill-speaking/30 bg-skill-speaking/5 p-4">
-							<p className="text-xs font-extrabold text-skill-speaking uppercase tracking-wider mb-1.5">
-								Phát âm
-							</p>
-							<p className="text-sm text-foreground">{review.pronunciation}</p>
-						</div>
-						<div className="rounded-(--radius-card) border-2 border-b-4 border-info/30 bg-info/5 p-4">
-							<p className="text-xs font-extrabold text-info uppercase tracking-wider mb-1.5">Ngữ điệu</p>
-							<p className="text-sm text-foreground">{review.intonation}</p>
-						</div>
-						<div className="rounded-(--radius-card) border-2 border-b-4 border-warning/30 bg-warning/5 p-4">
-							<p className="text-xs font-extrabold text-warning uppercase tracking-wider mb-1.5">Mẹo</p>
-							<p className="text-sm text-foreground">{review.tip}</p>
-						</div>
+				</div>
+			) : (
+				<div className="space-y-3 border-t-2 border-border pt-4">
+					<div className="rounded-(--radius-card) border-2 border-b-4 border-skill-speaking/30 bg-skill-speaking/5 p-4">
+						<p className="text-xs font-extrabold text-skill-speaking uppercase tracking-wider mb-1.5">
+							Phát âm
+						</p>
+						<p className="text-sm text-foreground">{review.pronunciation}</p>
 					</div>
-				)}
-			</div>
+					<div className="rounded-(--radius-card) border-2 border-b-4 border-info/30 bg-info/5 p-4">
+						<p className="text-xs font-extrabold text-info uppercase tracking-wider mb-1.5">Ngữ điệu</p>
+						<p className="text-sm text-foreground">{review.intonation}</p>
+					</div>
+					<div className="rounded-(--radius-card) border-2 border-b-4 border-warning/30 bg-warning/5 p-4">
+						<p className="text-xs font-extrabold text-warning uppercase tracking-wider mb-1.5">Mẹo</p>
+						<p className="text-sm text-foreground">{review.tip}</p>
+					</div>
+				</div>
+			)}
 		</div>
 	)
 }
 
 export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, onListen, attempt }: Props) {
+	const queryClient = useQueryClient()
+	const { data: configData } = useQuery(appConfigQuery)
 	const [showIpa, setShowIpa] = useState(false)
 	const [showReview, setShowReview] = useState(false)
 	const accuracyPercent = attempt?.accuracyPercent ?? null
+	const profanity = attempt?.profanity
+	const hasProfanity = profanity?.found ?? false
+	const displayTranscript =
+		hasProfanity && attempt ? censorProfanityText(attempt.transcript) : attempt?.transcript
 	const segmentIpa = useIpa(segment.text, segment.ipa)
+	const feedbackCost = configData?.data.pricing.practice.feedback_cost_coins ?? 0
 
-	const reviewMutation = useMutation({
-		mutationFn: () => getPronunciationReview(segment.text, attempt?.transcript ?? ""),
+	const reviewQuery = useQuery({
+		queryKey: ["shadowing-pronunciation-review", segment.id, attempt?.transcript ?? ""],
+		queryFn: () => getPronunciationReview(segment.text, attempt?.transcript ?? "", segment.id),
+		enabled: false,
 	})
+	const reviewErrorMessage =
+		reviewQuery.error instanceof HTTPError
+			? reviewQuery.error.message || `Lỗi server (${reviewQuery.error.response.status}). Vui lòng thử lại.`
+			: reviewQuery.error instanceof Error
+				? reviewQuery.error.message
+				: "Không thể tải nhận xét."
+
+	const fetchReview = async () => {
+		const result = await reviewQuery.refetch()
+		if (result.data) {
+			queryClient.invalidateQueries({ queryKey: ["wallet", "balance"] })
+		}
+	}
+	const reviewButtonLabel = hasProfanity
+		? "Hãy nói lại bằng ngôn ngữ phù hợp"
+		: reviewQuery.isFetching
+			? "AI đang phân tích..."
+			: reviewQuery.data
+				? "Xem lại nhận xét AI"
+				: "Nhờ AI nhận xét phát âm"
 
 	const handleReview = () => {
-		setShowReview(true)
-		reviewMutation.mutate()
+		if (reviewQuery.isFetching || hasProfanity) return
+		const revealReview = () => {
+			setShowReview(true)
+			window.setTimeout(() => {
+				document
+					.getElementById("ai-shadowing-feedback")
+					?.scrollIntoView({ behavior: "smooth", block: "start" })
+			}, 0)
+		}
+		if (reviewQuery.data) {
+			revealReview()
+			return
+		}
+		const requestReview = () => {
+			revealReview()
+			fetchReview()
+		}
+		requestReview()
 	}
 
 	return (
@@ -239,31 +283,56 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 
 					<div className="card p-4">
 						<p className="text-xs text-muted mb-1">Bạn đã nói:</p>
-						<p className="text-sm font-bold text-foreground italic">"{attempt.transcript}"</p>
+						<p className="text-sm font-bold text-foreground italic">"{displayTranscript}"</p>
 					</div>
+
+					{hasProfanity && profanity && (
+						<div className="rounded-(--radius-card) border-2 border-b-4 border-warning/30 bg-warning/5 p-4">
+							<div className="flex items-start gap-2.5">
+								<Icon name="lightning" size="xs" className="text-warning shrink-0 mt-0.5" />
+								<div>
+									<p className="text-sm font-bold text-warning">
+										Không tính lượt này vì có từ ngữ không phù hợp
+									</p>
+									<p className="text-xs text-muted mt-1">
+										Phát hiện ({profanity.count} lần):{" "}
+										<span className="font-bold text-foreground">{censorProfanityWords(profanity.words)}</span>
+										. Hãy nói lại đúng câu mẫu bằng ngôn ngữ lịch sự.
+									</p>
+								</div>
+							</div>
+						</div>
+					)}
 
 					<ShadowingWordChips words={attempt.wordResults} />
 
-					<button
-						type="button"
-						onClick={handleReview}
-						className="w-full flex items-center justify-center gap-2 py-3 rounded-(--radius-button) border-2 border-b-4 border-skill-speaking/30 bg-skill-speaking/10 text-skill-speaking font-bold text-sm transition hover:bg-skill-speaking/20 active:translate-y-[1px] active:border-b-2"
-					>
-						<Icon name="lightning" size="xs" />
-						Nhờ AI nhận xét phát âm
-					</button>
+					<div className="relative">
+						<button
+							type="button"
+							onClick={handleReview}
+							disabled={reviewQuery.isFetching || hasProfanity}
+							className="w-full flex items-center justify-center gap-2 py-3 rounded-(--radius-button) border-2 border-b-4 border-skill-speaking/30 bg-skill-speaking/10 text-skill-speaking font-bold text-sm transition hover:bg-skill-speaking/20 active:translate-y-[1px] active:border-b-2 disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							<Icon name="lightning" size="xs" />
+							{reviewButtonLabel}
+							{feedbackCost > 0 && !reviewQuery.data && !hasProfanity && (
+								<span className="inline-flex items-center gap-1.5">
+									· <StaticIcon name="coin" size="xs" className="h-3.5 w-auto -translate-y-0.5" />{" "}
+									{feedbackCost} xu
+								</span>
+							)}
+						</button>
+					</div>
 				</div>
 			)}
 
 			{showReview && (
-				<ReviewPopup
-					review={reviewMutation.data?.data ?? null}
-					isError={reviewMutation.isError}
-					isServiceDown={
-						reviewMutation.error instanceof HTTPError && reviewMutation.error.response.status === 503
-					}
-					onRetry={() => reviewMutation.mutate()}
-					onClose={() => setShowReview(false)}
+				<ReviewPanel
+					review={reviewQuery.data?.data ?? null}
+					isError={reviewQuery.isError}
+					isServiceDown={reviewQuery.error instanceof HTTPError && reviewQuery.error.response.status === 503}
+					errorMessage={reviewErrorMessage}
+					onRetry={fetchReview}
 				/>
 			)}
 		</div>

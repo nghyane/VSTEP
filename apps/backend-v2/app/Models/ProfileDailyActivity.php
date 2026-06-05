@@ -43,7 +43,7 @@ class ProfileDailyActivity extends Model
         'reading' => ['count' => 'reading_exercise_count'],
         'listening' => ['count' => 'listening_exercise_count'],
         'writing' => ['count' => 'writing_submission_count'],
-        'speaking_drill' => ['count' => 'speaking_drill_session_count', 'duration' => 'speaking_drill_duration_seconds'],
+        'speaking_drill' => ['count' => 'drill_session_count', 'duration' => 'drill_duration_seconds'],
         'speaking_submission' => ['count' => 'speaking_submission_count'],
         'vocab_review' => ['count' => 'vocab_review_count'],
         'exam_session' => ['count' => 'exam_session_count'],
@@ -55,7 +55,7 @@ class ProfileDailyActivity extends Model
     ): void {
         $typeConfig = self::ACTIVITY_TYPES[$activityType]
             ?? throw new \InvalidArgumentException("Unknown activity type: {$activityType}");
-        $date = Carbon::now()->toDateString();
+        $date = self::todayLocalDate();
         $query = self::query()->where('profile_id', $profileId)->where('date_local', $date);
 
         if (! $query->exists()) {
@@ -79,7 +79,7 @@ class ProfileDailyActivity extends Model
 
     public static function trackSpending(string $profileId, int $coinsSpent): void
     {
-        $date = Carbon::now()->toDateString();
+        $date = self::todayLocalDate();
         $query = self::query()->where('profile_id', $profileId)->where('date_local', $date);
         if (! $query->exists()) {
             self::query()->insert(['profile_id' => $profileId, 'date_local' => $date, 'coins_spent' => $coinsSpent, 'updated_at' => now()]);
@@ -87,5 +87,12 @@ class ProfileDailyActivity extends Model
             return;
         }
         $query->incrementEach(['coins_spent' => $coinsSpent], ['updated_at' => now()]);
+    }
+
+    private static function todayLocalDate(): string
+    {
+        $timezone = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
+
+        return Carbon::now($timezone)->toDateString();
     }
 }

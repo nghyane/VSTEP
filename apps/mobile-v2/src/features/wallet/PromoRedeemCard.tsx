@@ -57,7 +57,7 @@ export function PromoRedeemCard() {
           <View style={styles.headerText}>
             <Text style={[styles.title, { color: c.foreground }]}>Nhập mã quà tặng</Text>
             <Text style={[styles.subtitle, { color: c.subtle }]}>
-              Nhập mã khuyến mãi hoặc đối tác để nhận xu vào ví hồ sơ hiện tại.
+              Nhập mã khuyến mãi hoặc đối tác để nhận xu vào ví tài khoản.
             </Text>
           </View>
         </View>

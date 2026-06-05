@@ -133,7 +133,8 @@ export function CreateProfileForm({ onSubmit, onCancel }: Props) {
 										})}
 									</div>
 									<p className="text-[11px] text-subtle">
-										Dùng để gợi ý lộ trình ban đầu. "Dự đoán" sẽ tự cập nhật sau khi làm đủ 5 bài thi thử.
+										Dùng để tạo lộ trình ban đầu. Dự đoán năng lực sẽ cập nhật theo kết quả đánh giá và thi
+										thử.
 									</p>
 								</div>
 							)}

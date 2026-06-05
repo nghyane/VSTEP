@@ -10,8 +10,8 @@ import { useWritingPrompts } from "@/hooks/use-practice";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 const PARTS = [
-  { part: 1, label: "Task 1 — Viết thư",  desc: "Viết thư theo tình huống. AI chấm cấu trúc, ngữ pháp, từ vựng." },
-  { part: 2, label: "Task 2 — Viết luận", desc: "Viết luận nghị luận. AI chấm lập luận, mạch lạc, ngôn ngữ." },
+  { part: 1, label: "Task 1 — Viết thư",  desc: "Viết thư theo tình huống. Hệ thống chấm cấu trúc, ngữ pháp, từ vựng." },
+  { part: 2, label: "Task 2 — Viết luận", desc: "Viết luận nghị luận. Hệ thống chấm lập luận, mạch lạc, ngôn ngữ." },
 ];
 
 const COLOR = "#58CC02";
@@ -50,20 +50,28 @@ export default function WritingListScreen() {
         <Text style={[s.backText, { color: c.foreground }]}>Luyện tập</Text>
       </HapticTouchable>
 
-      <View style={s.headerRow}>
-        <View>
-          <Text style={[s.title, { color: c.foreground }]}>Luyện viết</Text>
-          <Text style={[s.sub, { color: c.mutedForeground }]}>Thư + luận · AI chấm theo rubric Bộ GD</Text>
-        </View>
-        <View style={[s.historyBtn, { borderColor: c.border }]}>
-          <HapticTouchable
-            scalePress
-            onPress={() => router.push("/(app)/practice/writing/history" as never)}
-          >
-            <Ionicons name="time-outline" size={18} color={c.primary} />
-          </HapticTouchable>
-        </View>
+      <View>
+        <Text style={[s.title, { color: c.foreground }]}>Luyện viết</Text>
+        <Text style={[s.sub, { color: c.mutedForeground }]}>Thư + luận · hệ thống chấm theo rubric Bộ GD</Text>
       </View>
+
+      <HapticTouchable scalePress activeOpacity={0.9} onPress={() => router.push("/(app)/practice/writing/history" as never)}>
+        <View
+          style={[
+            s.resultsCard,
+            { backgroundColor: c.card, borderColor: COLOR + "40", borderBottomColor: COLOR },
+          ]}
+        >
+          <View style={[s.resultsIcon, { backgroundColor: COLOR + "18" }]}>
+            <GameIcon name="writing" size={30} />
+          </View>
+          <View style={s.resultsBody}>
+            <Text style={[s.resultsTitle, { color: c.foreground }]}>Kết quả chấm bài viết</Text>
+            <Text style={[s.resultsSub, { color: c.mutedForeground }]}>Xem lại các bài viết đã được chấm điểm chi tiết.</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={COLOR} />
+        </View>
+      </HapticTouchable>
 
       {isLoading && (
         <View style={s.center}><ActivityIndicator color={COLOR} size="large" /></View>
@@ -134,10 +142,27 @@ const s = StyleSheet.create({
   scroll: { paddingHorizontal: spacing.xl, gap: spacing.lg, paddingBottom: spacing["3xl"] },
   backRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   backText: { fontSize: fontSize.sm, fontFamily: fontFamily.semiBold },
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   sub: { fontSize: fontSize.sm, marginTop: spacing.xs },
-  historyBtn: { borderWidth: 2, borderRadius: radius.full, padding: spacing.sm, marginTop: spacing.sm },
+  resultsCard: {
+    borderWidth: 2,
+    borderBottomWidth: 4,
+    borderRadius: radius.xl,
+    padding: spacing.base,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.md,
+  },
+  resultsIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  resultsBody: { flex: 1, minWidth: 0 },
+  resultsTitle: { fontSize: fontSize.base, fontFamily: fontFamily.bold },
+  resultsSub: { fontSize: fontSize.xs, marginTop: 2, lineHeight: 18 },
   center: { paddingVertical: spacing["2xl"], alignItems: "center" },
   partLabel: { fontSize: fontSize.lg, fontFamily: fontFamily.extraBold, marginBottom: 2 },
   partDesc: { fontSize: fontSize.xs, marginBottom: spacing.md },
@@ -145,10 +170,10 @@ const s = StyleSheet.create({
   emptyText: { fontSize: fontSize.sm },
   cardGrid: { gap: spacing.md },
   cardRow: { flexDirection: "row", gap: spacing.md },
-  cardWrapper: { flex: 1 },
-  cardTouchable: { flex: 1 },
+  cardWrapper: { flex: 1, height: 220 },
+  cardTouchable: { flex: 1, height: 220 },
   card: {
-    flex: 1,
+    height: 220,
     borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.lg,
     padding: spacing.base, gap: spacing.sm,
     shadowColor: "#000", shadowOffset: { width: 0, height: 2 },
@@ -156,7 +181,7 @@ const s = StyleSheet.create({
   },
   taskBadge: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
   taskBadgeText: { fontSize: 10, fontFamily: fontFamily.extraBold },
-  cardTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.bold, lineHeight: 20 },
-  cardMeta: { flexDirection: "row", alignItems: "center", gap: 4 },
+  cardTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.bold, lineHeight: 20, height: 84 },
+  cardMeta: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: "auto" },
   cardMetaText: { fontSize: fontSize.xs },
 });

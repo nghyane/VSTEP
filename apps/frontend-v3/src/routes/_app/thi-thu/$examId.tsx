@@ -1,27 +1,26 @@
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { Suspense, useMemo, useState } from "react"
+import { Suspense, useState } from "react"
 import { Header } from "#/components/Header"
-import { Icon } from "#/components/Icon"
+import { StaticIcon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
-import { DurationPanel } from "#/features/exam/components/DurationPanel"
-import { ExamDetailHeader } from "#/features/exam/components/ExamDetailHeader"
-import { SectionSelector } from "#/features/exam/components/SectionSelector"
-import { examDetailQuery, mySessionsQuery } from "#/features/exam/queries"
-import type { ExamSessionSummary, SkillKey } from "#/features/exam/types"
+import { ExamModeSelector } from "#/features/exam/components/ExamModeSelector"
+import { StartExamPanel } from "#/features/exam/components/StartExamPanel"
+import { examOverviewQuery } from "#/features/exam/queries"
+import type { ExamOverview, ExamSessionSummary, SkillKey } from "#/features/exam/types"
 import { avgSkillScores, formatDate, formatVstepBand } from "#/lib/utils"
+
+type ExamMode = "full" | "custom"
 
 export const Route = createFileRoute("/_app/thi-thu/$examId")({
 	loader: ({ context: { queryClient }, params }) =>
-		Promise.all([
-			queryClient.ensureQueryData(examDetailQuery(params.examId)),
-			queryClient.ensureQueryData(mySessionsQuery),
-		]),
+		queryClient.fetchQuery({ ...examOverviewQuery(params.examId), staleTime: 0 }),
 	component: ExamDetailPage,
 })
 
 function ExamDetailPage() {
 	const { examId } = Route.useParams()
+	const [mode, setMode] = useState<ExamMode>("full")
 	const [selected, setSelected] = useState<Set<SkillKey>>(new Set())
 
 	function handleToggleSkill(skill: SkillKey) {
@@ -37,7 +36,13 @@ function ExamDetailPage() {
 		<>
 			<Header title="Chi tiết đề thi" backTo="/thi-thu" />
 			<Suspense fallback={<Loading />}>
-				<ExamDetailContent examId={examId} selected={selected} onToggleSkill={handleToggleSkill} />
+				<ExamDetailContent
+					examId={examId}
+					mode={mode}
+					selected={selected}
+					onChangeMode={setMode}
+					onToggleSkill={handleToggleSkill}
+				/>
 			</Suspense>
 		</>
 	)
@@ -45,57 +50,77 @@ function ExamDetailPage() {
 
 interface ContentProps {
 	examId: string
+	mode: ExamMode
 	selected: Set<SkillKey>
+	onChangeMode: (mode: ExamMode) => void
 	onToggleSkill: (skill: SkillKey) => void
 }
 
 function getSkillLabel(s: ExamSessionSummary): string {
-	if (s.is_full_test || s.selected_skills.length === 4) return "Full"
-	if (s.selected_skills.length === 0) return "Full"
-	const map: Record<string, string> = {
-		listening: "L",
-		reading: "R",
-		writing: "W",
-		speaking: "S",
+	if (s.is_full_test || s.selected_skills.length === 4 || s.selected_skills.length === 0) return "4 kỹ năng"
+	const map: Record<SkillKey, string> = {
+		listening: "Nghe",
+		reading: "Đọc",
+		writing: "Viết",
+		speaking: "Nói",
 	}
-	return s.selected_skills.map((k) => map[k] ?? k).join("+")
+	return s.selected_skills.map((k) => map[k] ?? k).join(" + ")
 }
 
-function ExamDetailContent({ examId, selected, onToggleSkill }: ContentProps) {
-	const { data } = useSuspenseQuery(examDetailQuery(examId))
-	const { data: sessionsData } = useSuspenseQuery(mySessionsQuery)
-	const detail = data.data
+function computeStats(overview: ExamOverview) {
+	const { skill_summaries: summaries } = overview
+	const totalMcq = summaries.listening.item_count + summaries.reading.item_count
+	const totalFreeResponse = summaries.writing.part_count + summaries.speaking.part_count
+	return { totalMcq, totalFreeResponse }
+}
 
-	const examSessions = useMemo(() => {
-		return sessionsData.data
-			.filter((s) => s.exam_id === examId)
-			.sort(
-				(a, b) =>
-					new Date(b.submitted_at ?? b.started_at).getTime() -
-					new Date(a.submitted_at ?? a.started_at).getTime(),
-			)
-	}, [sessionsData, examId])
+function ExamDetailContent({ examId, mode, selected, onChangeMode, onToggleSkill }: ContentProps) {
+	const { data } = useSuspenseQuery(examOverviewQuery(examId))
+	const overview = data.data
 
-	const historySessions = examSessions.filter((s) => s.status !== "active")
+	const historySessions = overview.attempt_state.history
+	const { totalMcq, totalFreeResponse } = computeStats(overview)
 
 	return (
-		<div className="px-10 flex-1 overflow-auto">
-			<div className="flex gap-8">
-				{/* LEFT: content */}
-				<div className="flex-1 min-w-0 space-y-8 pb-12">
-					<ExamDetailHeader detail={detail} />
-					<SectionSelector detail={detail} selected={selected} onToggleSkill={onToggleSkill} />
-
-					{/* Tip */}
-					{selected.size > 0 && selected.size < 4 && (
-						<div className="flex items-center gap-2 text-sm text-muted bg-background rounded-(--radius-card) px-4 py-3 border border-border">
-							<Icon name="lightning" size="xs" className="shrink-0 text-warning" />
-							<span>
-								Mẹo: Chọn 1–2 kỹ năng để luyện tập trung vào điểm yếu của bạn. Chọn tất cả 4 kỹ năng để làm
-								full test.
-							</span>
+		<div className="px-10 pb-12">
+			<div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+				<div className="min-w-0 space-y-8">
+					<div className="card space-y-5 p-5">
+						<div>
+							{overview.exam.tags.length > 0 && (
+								<div className="flex flex-wrap items-center gap-2 mb-3">
+									{overview.exam.tags.map((tag) => (
+										<span
+											key={tag}
+											className="inline-flex items-center rounded-full bg-background px-2.5 py-1 text-xs font-extrabold text-subtle"
+										>
+											{tag}
+										</span>
+									))}
+								</div>
+							)}
+							<h1 className="text-2xl font-extrabold leading-tight text-foreground md:text-3xl">
+								{overview.exam.title}
+							</h1>
+							{overview.exam.source_school && (
+								<p className="mt-1 text-sm font-bold text-muted">Nguồn: {overview.exam.source_school}</p>
+							)}
 						</div>
-					)}
+
+						<div className="grid grid-cols-3 gap-3">
+							<MetaCell icon="timer-md" value={`${overview.exam.total_duration_minutes}`} unit="phút" />
+							<MetaCell icon="clipboard-md" value={`${totalMcq}`} unit="câu trắc nghiệm" />
+							<MetaCell icon="pencil-md" value={`${totalFreeResponse}`} unit="phần tự luận" />
+						</div>
+
+						<ExamModeSelector
+							overview={overview}
+							mode={mode}
+							selected={selected}
+							onChangeMode={onChangeMode}
+							onToggleSkill={onToggleSkill}
+						/>
+					</div>
 
 					{historySessions.length > 0 && (
 						<div className="space-y-4">
@@ -103,15 +128,13 @@ function ExamDetailContent({ examId, selected, onToggleSkill }: ContentProps) {
 								Lịch sử làm bài ({historySessions.length} lần)
 							</h2>
 							<div className="card overflow-hidden">
-								{/* Header row */}
 								<div className="flex items-center gap-3 px-5 py-2.5 border-b border-border-light text-xs text-subtle font-medium">
 									<span className="w-8 tabular-nums">Lần</span>
 									<span className="flex-1">Ngày nộp</span>
-									<span className="w-12">Kỹ năng</span>
+									<span className="w-28">Kỹ năng</span>
 									<span className="w-16">Điểm</span>
 									<span className="w-24" />
 								</div>
-								{/* Data rows */}
 								{historySessions.map((s, idx) => {
 									const score = avgSkillScores(s.scores)
 									const isPending = s.status === "submitted" && score === null
@@ -126,7 +149,7 @@ function ExamDetailContent({ examId, selected, onToggleSkill }: ContentProps) {
 											<span className="flex-1 text-subtle tabular-nums whitespace-nowrap">
 												{s.submitted_at ? formatDate(s.submitted_at) : "—"}
 											</span>
-											<span className="w-12 text-muted font-medium">{getSkillLabel(s)}</span>
+											<span className="w-28 truncate text-muted font-medium">{getSkillLabel(s)}</span>
 											<span className="w-16">
 												{isPending ? (
 													<span className="text-xs text-subtle italic">Đang chấm...</span>
@@ -140,12 +163,12 @@ function ExamDetailContent({ examId, selected, onToggleSkill }: ContentProps) {
 											</span>
 											<span className="w-24 text-right">
 												<Link
-													to="/phong-thi/$sessionId/chi-tiet"
+													to="/phong-thi/$sessionId"
 													params={{ sessionId: s.id }}
-													search={{ examId }}
-													className="btn btn-secondary text-xs py-1.5 px-3"
+													className="inline-flex items-center gap-1 text-xs font-bold text-primary transition-colors hover:text-primary-dark"
 												>
 													Xem kết quả
+													<span aria-hidden="true">→</span>
 												</Link>
 											</span>
 										</div>
@@ -156,10 +179,31 @@ function ExamDetailContent({ examId, selected, onToggleSkill }: ContentProps) {
 					)}
 				</div>
 
-				{/* RIGHT: duration panel */}
-				<div className="w-80 shrink-0">
-					<DurationPanel detail={detail} selected={selected} />
+				<div className="min-w-0">
+					<StartExamPanel overview={overview} mode={mode} selected={selected} />
 				</div>
+			</div>
+		</div>
+	)
+}
+
+function MetaCell({
+	icon,
+	value,
+	unit,
+}: {
+	icon: "timer-md" | "clipboard-md" | "pencil-md"
+	value: string
+	unit: string
+}) {
+	return (
+		<div className="flex items-center gap-3 rounded-(--radius-card) bg-background px-4 py-3">
+			<div className="flex shrink-0 items-center justify-center text-foreground/80">
+				<StaticIcon name={icon} size="md" />
+			</div>
+			<div className="flex flex-col leading-tight">
+				<span className="font-extrabold text-foreground tabular-nums text-base">{value}</span>
+				<span className="text-xs text-subtle">{unit}</span>
 			</div>
 		</div>
 	)

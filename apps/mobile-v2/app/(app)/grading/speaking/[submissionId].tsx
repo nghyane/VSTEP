@@ -56,7 +56,7 @@ export default function SpeakingGradingScreen() {
 
         {!isLoading && !isError && !resultReady ? (
           <GradingPendingState
-            title="AI đang chấm bài nói"
+            title="Hệ thống đang chấm bài nói"
             subtitle="Kết quả sẽ tự cập nhật vài giây một lần. Transcript và phát âm sẽ hiện khi chấm xong."
             accentColor={accentText}
             onBack={() => router.back()}

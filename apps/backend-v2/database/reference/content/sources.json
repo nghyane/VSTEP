@@ -1,0 +1,30 @@
+{
+  "official_vstep_format": {
+    "title": "VSTEP.3-5 test format",
+    "publisher": "ULIS-VNU VSTEP Test Center",
+    "url": "https://vstep.vnu.edu.vn/test-format/",
+    "accessed_at": "2026-06-04",
+    "usage": "Official structure for reading, listening, writing and speaking task counts, time limits and task shapes."
+  },
+  "oxford_3000_5000": {
+    "title": "Oxford 3000 and Oxford 5000 CEFR word lists",
+    "publisher": "Oxford University Press",
+    "url": "https://www.oxfordlearnersdictionaries.com/wordlists/oxford3000-5000",
+    "accessed_at": "2026-06-04",
+    "usage": "CEFR-aligned vocabulary level guidance for topic and keyword selection."
+  },
+  "cefr_companion_communicative_competences": {
+    "title": "CEFR Companion Volume communicative language competences",
+    "publisher": "Council of Europe",
+    "url": "https://rm.coe.int/common-european-framework-of-reference-for-languages-learning-teaching/16809ea0d4",
+    "accessed_at": "2026-06-04",
+    "usage": "Communicative function and interaction descriptors for writing and speaking practice coverage."
+  },
+  "internal_curated_vstep_practice": {
+    "title": "Internal curated VSTEP practice content",
+    "publisher": "VSTEP backend seed data",
+    "url": null,
+    "accessed_at": "2026-06-04",
+    "usage": "Original authored practice prompts and speaking tasks aligned to official VSTEP task types and common exam domains."
+  }
+}

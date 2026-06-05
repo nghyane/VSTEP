@@ -31,9 +31,12 @@ export function ConversationFeedback({ feedback }: Props) {
   const grammarCount = feedback.grammarCorrections?.length ?? 0;
   const vocabUsed = feedback.vocabCheck?.filter((v) => v.used).length ?? feedback.wordCount?.used ?? 0;
   const vocabTotal = feedback.vocabCheck?.length ?? feedback.wordCount?.target ?? 0;
-  const summary = `${vocabUsed}/${vocabTotal} từ${
-    grammarCount > 0 ? ` · ${grammarCount} gợi ý ngữ pháp` : " · Ngữ pháp OK"
-  }`;
+  const hasProfanity = feedback.profanity?.found ?? false;
+  const summary = hasProfanity
+    ? "Từ ngữ không phù hợp"
+    : `${vocabUsed}/${vocabTotal} từ${
+        grammarCount > 0 ? ` · ${grammarCount} gợi ý ngữ pháp` : " · Ngữ pháp OK"
+      }`;
 
   return (
     <View style={s.wrap}>
@@ -55,6 +58,24 @@ export function ConversationFeedback({ feedback }: Props) {
 
       {open ? (
         <View style={s.body}>
+          {hasProfanity && feedback.profanity ? (
+            <View
+              style={[
+                s.profanityBlock,
+                { borderColor: c.warning + "4D", backgroundColor: c.warningTint + "80" },
+              ]}
+            >
+              <View style={s.grammarHeader}>
+                <Ionicons name="warning-outline" size={14} color={c.warning} />
+                <Text style={[s.profanityTitle, { color: c.warning }]}>Giữ ngôn ngữ lịch sự</Text>
+              </View>
+              <Text style={[s.profanityText, { color: c.mutedForeground }]}>
+                Phát hiện {feedback.profanity.count} từ không phù hợp: {censorWords(feedback.profanity.words)}.
+                Hãy trả lời lại bằng tiếng Anh phù hợp với ngữ cảnh học thuật.
+              </Text>
+            </View>
+          ) : null}
+
           {feedback.vocabCheck && feedback.vocabCheck.length > 0 ? (
             <Section label="Sử dụng từ">
               {feedback.vocabCheck.map((v) => (
@@ -187,6 +208,14 @@ const s = StyleSheet.create({
   grammarWrong: { fontSize: fontSize.sm, textDecorationLine: "line-through" },
   grammarCorrect: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
   grammarExp: { fontSize: fontSize.xs, fontStyle: "italic" },
+  profanityBlock: {
+    borderWidth: 2,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    gap: spacing.xs,
+  },
+  profanityTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
+  profanityText: { fontSize: fontSize.xs, lineHeight: 18 },
   betterBlock: {
     borderWidth: 2,
     borderRadius: radius.md,
@@ -204,3 +233,12 @@ const s = StyleSheet.create({
   speakBtn: { padding: 4 },
   betterIpa: { fontSize: fontSize.xs, fontStyle: "italic" },
 });
+
+function censorWords(words: string[]): string {
+  return words.map(censorWord).join(", ");
+}
+
+function censorWord(word: string): string {
+  if (word.length <= 2) return "*".repeat(word.length);
+  return `${word[0]}${"*".repeat(word.length - 2)}${word[word.length - 1]}`;
+}

@@ -111,17 +111,11 @@ final class ImportExamRequest extends FormRequest
             $sections = collect($versionData['listening_sections'] ?? []);
             $passages = collect($versionData['reading_passages'] ?? []);
 
-            // Build section_id → item mapping for validator
-            $sectionIds = $sections->mapWithKeys(fn ($s, $i) => [$i => "sec_{$i}"])->all();
             $sectionItems = collect($versionData['listening_items'] ?? [])
-                ->groupBy('section_index')
-                ->mapWithKeys(fn ($items, $idx) => ["sec_{$idx}" => $items]);
+                ->groupBy('section_index');
 
-            // Build passage_id → item mapping
-            $passageIds = $passages->mapWithKeys(fn ($p, $i) => [$i => "pas_{$i}"])->all();
             $passageItems = collect($versionData['reading_items'] ?? [])
-                ->groupBy('passage_index')
-                ->mapWithKeys(fn ($items, $idx) => ["pas_{$idx}" => $items]);
+                ->groupBy('passage_index');
 
             $validator = new ExamVersionValidator;
             $errors = $validator->validateFixtureData(

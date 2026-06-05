@@ -1,14 +1,21 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { useEffect, useRef, useState } from "react"
+import { type CSSProperties, useEffect, useRef, useState } from "react"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { ProfileDropdown } from "#/components/ProfileDropdown"
 import { StreakIcon } from "#/components/StreakIcon"
 import { streakQuery } from "#/features/dashboard/queries"
 import { StreakDialog } from "#/features/dashboard/StreakDialog"
 import { unreadCountQuery } from "#/features/notifications/queries"
+import { getOrderStatus } from "#/features/wallet/actions"
+import { PromoRedeemSuccessPopup } from "#/features/wallet/PromoRedeemSuccessPopup"
 import { walletBalanceQuery } from "#/features/wallet/queries"
 import { TopUpDialog } from "#/features/wallet/TopUpDialog"
+import {
+	clearPendingTopupOrder,
+	readPendingTopupOrder,
+	TOPUP_RETURN_SIGNAL_KEY,
+} from "#/features/wallet/topup-pending"
 import { useSession } from "#/lib/auth"
 import { useCoinGain } from "#/lib/coin-gain"
 import { cn, formatNumber } from "#/lib/utils"
@@ -19,21 +26,28 @@ interface Props {
 }
 
 export function Header({ title, backTo }: Props) {
+	const queryClient = useQueryClient()
 	const { profile } = useSession()
+	const profileStreakQuery = { ...streakQuery, queryKey: ["streak", profile.id] }
 	const { data: walletData } = useQuery(walletBalanceQuery)
-	const { data: streakData } = useQuery(streakQuery)
+	const { data: streakData } = useQuery(profileStreakQuery)
 	const { data: unreadData } = useQuery(unreadCountQuery)
 
 	const balance = walletData ? walletData.data.balance : null
 	const streakInfo = streakData?.data ?? null
 	const streak = streakInfo ? streakInfo.current : null
+	const [displayedStreak, setDisplayedStreak] = useState<number | null>(null)
 	const unread = unreadData ? unreadData.data.count : 0
+	const previousUnreadRef = useRef<number | null>(null)
 	const initial = profile.nickname.charAt(0).toUpperCase()
 	const [topupOpen, setTopupOpen] = useState(false)
+	const [topupSuccess, setTopupSuccess] = useState<{ coins: number; balance: number } | null>(null)
+	const checkingTopupRef = useRef(false)
 	const [streakOpen, setStreakOpen] = useState(false)
 
 	const pulse = useCoinGain((s) => s.pulse)
-	const gainAmount = useCoinGain((s) => s.amount)
+	const coinDelta = useCoinGain((s) => s.amount)
+	const coinDeltaSign = coinDelta < 0 ? "-" : "+"
 	const lastPulseRef = useRef(pulse)
 	const [animKey, setAnimKey] = useState(0)
 	useEffect(() => {
@@ -43,12 +57,71 @@ export function Header({ title, backTo }: Props) {
 		const t = setTimeout(() => setAnimKey(0), 1600)
 		return () => clearTimeout(t)
 	}, [pulse])
+	useEffect(() => {
+		const previous = previousUnreadRef.current
+		previousUnreadRef.current = unread
+		if (previous === null || unread <= previous) return
+		void queryClient.invalidateQueries({ queryKey: walletBalanceQuery.queryKey })
+	}, [queryClient, unread])
 
 	const [streakAnimKey, setStreakAnimKey] = useState(0)
+	const previousStreakRef = useRef<number | null>(null)
+	const previousProfileIdRef = useRef(profile.id)
+	const streakTargetRef = useRef<HTMLDivElement>(null)
+	const [streakReward, setStreakReward] = useState<{
+		key: number
+		delta: number
+		targetX: number
+		targetY: number
+	} | null>(null)
 	function handleStreakClick() {
 		setStreakAnimKey((k) => k + 1)
 		setStreakOpen(true)
 	}
+	useEffect(() => {
+		if (previousProfileIdRef.current === profile.id) return
+		previousProfileIdRef.current = profile.id
+		previousStreakRef.current = null
+		setDisplayedStreak(null)
+		setStreakReward(null)
+		setStreakAnimKey(0)
+	}, [profile.id])
+	useEffect(() => {
+		if (streak === null) return
+
+		const previous = previousStreakRef.current
+		if (previous === null) {
+			previousStreakRef.current = streak
+			setDisplayedStreak(streak)
+			return
+		}
+
+		if (streak > previous) {
+			const rect = streakTargetRef.current?.getBoundingClientRect()
+			setDisplayedStreak(previous)
+			setStreakReward({
+				key: Date.now(),
+				delta: streak - previous,
+				targetX: rect ? rect.left + rect.width / 2 - window.innerWidth / 2 : 0,
+				targetY: rect ? rect.top + rect.height / 2 - window.innerHeight / 2 : 0,
+			})
+
+			const countTimer = window.setTimeout(() => {
+				setDisplayedStreak(streak)
+				setStreakAnimKey((k) => k + 1)
+			}, 1200)
+			const clearTimer = window.setTimeout(() => setStreakReward(null), 1650)
+			previousStreakRef.current = streak
+
+			return () => {
+				window.clearTimeout(countTimer)
+				window.clearTimeout(clearTimer)
+			}
+		}
+
+		if (streak !== previous) setDisplayedStreak(streak)
+		previousStreakRef.current = streak
+	}, [streak])
 	useEffect(() => {
 		if (streakAnimKey === 0) return
 		const t = setTimeout(() => setStreakAnimKey(0), 1000)
@@ -60,6 +133,61 @@ export function Header({ title, backTo }: Props) {
 		setCoinClickKey((k) => k + 1)
 		setTopupOpen(true)
 	}
+	function handleTopupSuccessClose() {
+		const coins = topupSuccess?.coins ?? 0
+		setTopupSuccess(null)
+		if (coins > 0) {
+			setTimeout(() => useCoinGain.getState().trigger(coins), 220)
+		}
+	}
+	useEffect(() => {
+		async function checkPendingTopup() {
+			if (checkingTopupRef.current) return
+			const pending = readPendingTopupOrder()
+			if (!pending) return
+
+			checkingTopupRef.current = true
+			try {
+				const order = await getOrderStatus(pending.orderId)
+				if (order.status === "paid") {
+					clearPendingTopupOrder(pending.orderId)
+					const wallet = await queryClient.fetchQuery(walletBalanceQuery)
+					setTopupSuccess({
+						coins: order.coins_to_credit || pending.coins,
+						balance: wallet.data.balance,
+					})
+					void queryClient.invalidateQueries({ queryKey: walletBalanceQuery.queryKey })
+					return
+				}
+
+				if (["failed", "cancelled", "expired"].includes(order.status)) {
+					clearPendingTopupOrder(pending.orderId)
+				}
+			} catch {
+				// Keep the pending order so the next focus/return signal can retry.
+			} finally {
+				checkingTopupRef.current = false
+			}
+		}
+
+		const onFocus = () => void checkPendingTopup()
+		const onVisibilityChange = () => {
+			if (document.visibilityState === "visible") void checkPendingTopup()
+		}
+		const onStorage = (event: StorageEvent) => {
+			if (event.key === TOPUP_RETURN_SIGNAL_KEY) void checkPendingTopup()
+		}
+
+		void checkPendingTopup()
+		window.addEventListener("focus", onFocus)
+		document.addEventListener("visibilitychange", onVisibilityChange)
+		window.addEventListener("storage", onStorage)
+		return () => {
+			window.removeEventListener("focus", onFocus)
+			document.removeEventListener("visibilitychange", onVisibilityChange)
+			window.removeEventListener("storage", onStorage)
+		}
+	}, [queryClient])
 	useEffect(() => {
 		if (coinClickKey === 0) return
 		const t = setTimeout(() => setCoinClickKey(0), 1000)
@@ -123,12 +251,15 @@ export function Header({ title, backTo }: Props) {
 								className="pointer-events-none absolute left-1/2 top-0 inline-flex w-max items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-coin text-coin-dark font-extrabold text-sm tabular-nums shadow-md whitespace-nowrap animate-[coinFlyUp_1300ms_cubic-bezier(0.34,1.56,0.64,1)_forwards]"
 							>
 								<StaticIcon name="coin" size="xs" className="h-4 w-auto shrink-0" />
-								<span className="leading-none">+{formatNumber(gainAmount)}</span>
+								<span className="leading-none">
+									{coinDeltaSign}
+									{formatNumber(Math.abs(coinDelta))} xu
+								</span>
 							</span>
 						</>
 					)}
 				</div>
-				<div className="relative shrink-0">
+				<div ref={streakTargetRef} className="relative shrink-0">
 					<button
 						type="button"
 						onClick={handleStreakClick}
@@ -146,7 +277,7 @@ export function Header({ title, backTo }: Props) {
 							)}
 						/>
 						<span className="font-extrabold text-base text-streak tabular-nums leading-none">
-							{streak !== null ? streak : "–"}
+							{displayedStreak !== null ? displayedStreak : "–"}
 						</span>
 					</button>
 					{streakAnimKey > 0 && (
@@ -160,9 +291,40 @@ export function Header({ title, backTo }: Props) {
 				<ProfileDropdown unread={unread} initial={initial} />
 			</div>
 			<TopUpDialog open={topupOpen} onClose={() => setTopupOpen(false)} />
+			<PromoRedeemSuccessPopup
+				open={topupSuccess !== null}
+				coinsAdded={topupSuccess?.coins ?? 0}
+				newBalance={topupSuccess?.balance ?? 0}
+				eyebrow="Nạp xu thành công"
+				onClose={handleTopupSuccessClose}
+			/>
+			{streakReward && <StreakRewardFly key={streakReward.key} reward={streakReward} />}
 			{streakInfo && (
 				<StreakDialog open={streakOpen} onClose={() => setStreakOpen(false)} streak={streakInfo} />
 			)}
+		</div>
+	)
+}
+
+function StreakRewardFly({ reward }: { reward: { delta: number; targetX: number; targetY: number } }) {
+	return (
+		<div
+			aria-hidden
+			className="pointer-events-none fixed left-1/2 top-1/2 z-[70] -translate-x-1/2 -translate-y-1/2"
+			style={
+				{
+					"--streak-target-x": `${reward.targetX}px`,
+					"--streak-target-y": `${reward.targetY}px`,
+				} as CSSProperties
+			}
+		>
+			<div className="animate-[streakRewardFly_2400ms_cubic-bezier(0.34,1.56,0.64,1)_forwards]">
+				<StreakIcon
+					burning
+					burnKey={reward.delta}
+					className="h-36 w-auto animate-[streakRewardGlow_1200ms_ease-out_forwards] drop-shadow-[0_0_28px_rgba(255,200,0,0.75)]"
+				/>
+			</div>
 		</div>
 	)
 }

@@ -3,12 +3,14 @@
 use App\Http\Middleware\ActiveProfile;
 use App\Http\Middleware\CheckRole;
 use App\Http\Middleware\JsonUtf8;
+use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Exceptions\InvalidSignatureException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -41,6 +43,37 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return null;
+        });
+
+        $exceptions->render(function (InvalidSignatureException $e, Request $request) {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            $frontendUrl = rtrim((string) config('app.frontend_url'), '/');
+            if ($request->is('api/v1/auth/email/verify/*')) {
+                $userId = $request->route('id');
+                $user = is_string($userId) ? User::query()->find($userId) : null;
+
+                if ($user?->hasVerifiedEmail()) {
+                    if ($request->expectsJson()) {
+                        return response()->json(['data' => ['success' => true]]);
+                    }
+
+                    return redirect()->away($frontendUrl.'/?'.http_build_query([
+                        'auth' => 'email-verified',
+                    ]));
+                }
+            }
+
+            $message = 'Liên kết xác thực email không hợp lệ hoặc đã hết hạn.';
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 403);
+            }
+
+            return redirect()->away($frontendUrl.'/?'.http_build_query([
+                'auth' => 'email-verification-invalid',
+            ]));
         });
 
         // Clean 404 — hide model class names and stack traces

@@ -71,7 +71,7 @@ class PromoRedeemTest extends TestCase
     public function test_redeem_rejects_duplicate_for_same_account(): void
     {
         $user = User::factory()->create();
-        $profile = Profile::factory()->initial()->forAccount($user)->create();
+        Profile::factory()->initial()->forAccount($user)->create();
         PromoCode::factory()->create(['code' => 'ONCE', 'amount_coins' => 50, 'per_account_limit' => 1]);
 
         $login = $this->postJson('/api/v1/auth/login', [
@@ -89,6 +89,20 @@ class PromoRedeemTest extends TestCase
             ->assertStatus(422);
 
         $this->assertSame(1, PromoCodeRedemption::count());
+    }
+
+    public function test_redeem_rejects_duplicate_across_profiles_in_same_account(): void
+    {
+        $user = User::factory()->create();
+        $profileA = Profile::factory()->initial()->forAccount($user)->create();
+        $profileB = Profile::factory()->forAccount($user)->create();
+        PromoCode::factory()->create(['code' => 'ONCE', 'amount_coins' => 50, 'per_account_limit' => 1]);
+
+        $service = $this->app->make(PromoService::class);
+        $service->redeem($user, $profileA, 'ONCE');
+
+        $this->expectException(ValidationException::class);
+        $service->redeem($user, $profileB, 'ONCE');
     }
 
     public function test_redeem_respects_total_uses_limit(): void

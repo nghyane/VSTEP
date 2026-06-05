@@ -16,7 +16,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
  */
 final class AiServiceUnavailableException extends HttpException
 {
-    public function __construct(string $message = 'AI service tạm thời không phản hồi. Vui lòng thử lại sau.')
+    public function __construct(string $message = 'AI đang bận, bạn thử lại nhé.')
     {
         parent::__construct(503, $message);
     }

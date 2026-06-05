@@ -128,6 +128,7 @@ final class ExamImportService
                 'prompt' => $task['prompt'],
                 'min_words' => $task['min_words'],
                 'instructions' => isset($task['instructions']) ? json_encode($task['instructions'], JSON_UNESCAPED_UNICODE) : null,
+                'requirements' => isset($task['requirements']) ? json_encode($task['requirements'], JSON_UNESCAPED_UNICODE) : null,
                 'display_order' => $task['display_order'] ?? $index,
             ]);
         }
@@ -142,6 +143,7 @@ final class ExamImportService
                 'duration_minutes' => $part['duration_minutes'],
                 'speaking_seconds' => $part['speaking_seconds'],
                 'content' => json_encode($part['content'], JSON_UNESCAPED_UNICODE),
+                'requirements' => isset($part['requirements']) ? json_encode($part['requirements'], JSON_UNESCAPED_UNICODE) : null,
                 'display_order' => $part['display_order'] ?? $index,
             ]);
         }

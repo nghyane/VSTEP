@@ -5,7 +5,6 @@ import { useCallback, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
 
 import { FocusHeader } from "@/components/FocusHeader";
 import { DepthButton } from "@/components/DepthButton";
@@ -35,8 +34,6 @@ export default function SrsReviewScreen() {
   const handleRate = useCallback(
     async (rating: SrsRating) => {
       if (!current || reviewMutation.isPending) return;
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
       try {
         await reviewMutation.mutateAsync({ wordId: current.word.id, rating });
       } catch {

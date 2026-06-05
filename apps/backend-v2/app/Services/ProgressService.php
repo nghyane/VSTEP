@@ -34,6 +34,10 @@ use Illuminate\Support\Facades\DB;
  */
 class ProgressService
 {
+    private const ROBUST_MIN_SAMPLES = 5;
+
+    private const OUTLIER_DROP_THRESHOLD = 3.0;
+
     public function __construct(
         private readonly StreakMilestoneService $streakMilestoneService,
     ) {}
@@ -51,7 +55,8 @@ class ProgressService
             'listening' => 'listening',
             'reading' => 'reading',
             'writing' => 'writing',
-            'speaking' => 'speaking_submission',
+            'speaking_drill' => 'speaking_drill',
+            'speaking_vstep_practice' => 'speaking_submission',
             default => 'mcq',
         };
 
@@ -60,6 +65,25 @@ class ProgressService
             activityType: $activityType,
             count: 1,
             durationSeconds: $session->duration_seconds ?? 0,
+        );
+    }
+
+    public function recordSpeakingConversationCompletion(string $profileId, int $durationSeconds): void
+    {
+        ProfileDailyActivity::addActivity(
+            profileId: $profileId,
+            activityType: 'speaking_submission',
+            count: 1,
+            durationSeconds: $durationSeconds,
+        );
+    }
+
+    public function recordSpeakingDrillActivity(string $profileId): void
+    {
+        ProfileDailyActivity::addActivity(
+            profileId: $profileId,
+            activityType: 'speaking_drill',
+            count: 1,
         );
     }
 
@@ -102,6 +126,7 @@ class ProgressService
             'scores' => [
                 'spider' => $chart,
                 'timeline' => $this->computeScoreTimeline($profile),
+                'quality' => $this->computeScoreQuality($profile),
                 'growth' => $this->computeGrowth($profile),
             ],
             'stats' => [
@@ -225,7 +250,7 @@ class ProgressService
             'listening' => (int) $row->listening_exercise_count,
             'reading' => (int) $row->reading_exercise_count,
             'writing' => (int) $row->writing_submission_count,
-            'speaking' => (int) $row->speaking_submission_count,
+            'speaking' => (int) $row->speaking_submission_count + (int) $row->drill_session_count,
             'vocab' => (int) $row->vocab_review_count,
             'exam' => (int) $row->exam_session_count,
         ])->values()->toArray();
@@ -254,9 +279,11 @@ class ProgressService
             ->where('profile_id', $profile->id)
             ->whereIn('mode', ['custom', 'full'])
             ->whereIn('status', ExamSessionStatus::terminalValues())
-            ->orderBy('submitted_at')
+            ->orderByDesc('submitted_at')
             ->limit(20)
-            ->get();
+            ->get()
+            ->sortBy('submitted_at')
+            ->values();
 
         if ($sessions->isEmpty()) {
             return [];
@@ -471,7 +498,9 @@ class ProgressService
         return $this->computeChart($profile, 10);
     }
 
-    /** @return array<string,float|int|null>|null */
+    /**
+     * @return array{listening: float|null, reading: float|null, writing: float|null, speaking: float|null, sample_size: int, skill_sample_sizes: array<string, int>}|null
+     */
     private function computeChart(Profile $profile, int $windowSize): ?array
     {
         $sessions = ExamSession::query()
@@ -486,30 +515,225 @@ class ProgressService
             return null;
         }
 
-        $writingBands = ExamWritingSubmission::query()
+        $writingBandsBySession = ExamWritingSubmission::query()
             ->with('assessmentAttempt.result')
             ->whereIn('session_id', $sessions)
             ->get()
-            ->map(fn (ExamWritingSubmission $submission): ?float => $submission->assessmentAttempt?->result?->overall_band)
-            ->filter(fn (?float $band): bool => $band !== null);
+            ->mapWithKeys(fn (ExamWritingSubmission $submission): array => [
+                $submission->session_id => $submission->assessmentAttempt?->result?->overall_band,
+            ]);
 
-        $speakingBands = ExamSpeakingSubmission::query()
+        $speakingBandsBySession = ExamSpeakingSubmission::query()
             ->with('assessmentAttempt.result')
             ->whereIn('session_id', $sessions)
             ->get()
-            ->map(fn (ExamSpeakingSubmission $submission): ?float => $submission->assessmentAttempt?->result?->overall_band)
-            ->filter(fn (?float $band): bool => $band !== null);
+            ->mapWithKeys(fn (ExamSpeakingSubmission $submission): array => [
+                $submission->session_id => $submission->assessmentAttempt?->result?->overall_band,
+            ]);
 
-        $listeningAvg = $this->mcqAvgBand($sessions, 'exam_listening_item');
-        $readingAvg = $this->mcqAvgBand($sessions, 'exam_reading_item');
+        $writingBands = $this->bandsInSessionOrder($sessions, $writingBandsBySession);
+        $speakingBands = $this->bandsInSessionOrder($sessions, $speakingBandsBySession);
+
+        $listeningBands = $this->mcqBands($sessions, 'exam_listening_item');
+        $readingBands = $this->mcqBands($sessions, 'exam_reading_item');
 
         return [
-            'listening' => $listeningAvg,
-            'reading' => $readingAvg,
-            'writing' => $writingBands->isNotEmpty() ? round((float) $writingBands->avg(), 1) : null,
-            'speaking' => $speakingBands->isNotEmpty() ? round((float) $speakingBands->avg(), 1) : null,
+            'listening' => $this->robustAvgBand($listeningBands),
+            'reading' => $this->robustAvgBand($readingBands),
+            'writing' => $this->robustAvgBand($writingBands),
+            'speaking' => $this->robustAvgBand($speakingBands),
             'sample_size' => $sessions->count(),
+            'skill_sample_sizes' => [
+                'listening' => $listeningBands->count(),
+                'reading' => $readingBands->count(),
+                'writing' => $writingBands->count(),
+                'speaking' => $speakingBands->count(),
+            ],
         ];
+    }
+
+    /**
+     * @param  Collection<int, string>  $sessionIds
+     * @param  Collection<string, float|int|null>  $bandsBySession
+     * @return Collection<int, float>
+     */
+    private function bandsInSessionOrder(Collection $sessionIds, Collection $bandsBySession): Collection
+    {
+        return $sessionIds
+            ->map(fn (string $sessionId): ?float => $bandsBySession->get($sessionId) !== null
+                ? (float) $bandsBySession->get($sessionId)
+                : null)
+            ->filter(fn (?float $band): bool => $band !== null)
+            ->values();
+    }
+
+    /** @param Collection<int, float> $bands Latest first. */
+    private function robustAvgBand(Collection $bands): ?float
+    {
+        if ($bands->isEmpty()) {
+            return null;
+        }
+
+        return round((float) $this->dropIsolatedOutliers($bands)->avg(), 1);
+    }
+
+    /** @param Collection<int, float> $bands Latest first. */
+    private function dropIsolatedOutliers(Collection $bands): Collection
+    {
+        if ($bands->count() < self::ROBUST_MIN_SAMPLES) {
+            return $bands;
+        }
+
+        return $bands
+            ->reject(fn (float $band, int $index): bool => $this->isIsolatedLowOutlier($bands, $index, $band))
+            ->values();
+    }
+
+    /** @param Collection<int, float> $values */
+    private function median(Collection $values): ?float
+    {
+        if ($values->isEmpty()) {
+            return null;
+        }
+
+        $sorted = $values->sort()->values();
+        $count = $sorted->count();
+        $middle = intdiv($count, 2);
+
+        if ($count % 2 === 1) {
+            return (float) $sorted->get($middle);
+        }
+
+        return ((float) $sorted->get($middle - 1) + (float) $sorted->get($middle)) / 2;
+    }
+
+    /**
+     * @return array{status: string, has_outlier: bool, consecutive_low: bool, outlier_skills: list<string>}
+     */
+    private function computeScoreQuality(Profile $profile): array
+    {
+        $sessions = ExamSession::query()
+            ->where('profile_id', $profile->id)
+            ->whereIn('mode', ['custom', 'full'])
+            ->whereIn('status', ExamSessionStatus::terminalValues())
+            ->orderByDesc('submitted_at')
+            ->limit(10)
+            ->pluck('id');
+
+        if ($sessions->isEmpty()) {
+            return $this->emptyScoreQuality();
+        }
+
+        $writingBandsBySession = ExamWritingSubmission::query()
+            ->with('assessmentAttempt.result')
+            ->whereIn('session_id', $sessions)
+            ->get()
+            ->mapWithKeys(fn (ExamWritingSubmission $submission): array => [
+                $submission->session_id => $submission->assessmentAttempt?->result?->overall_band,
+            ]);
+
+        $speakingBandsBySession = ExamSpeakingSubmission::query()
+            ->with('assessmentAttempt.result')
+            ->whereIn('session_id', $sessions)
+            ->get()
+            ->mapWithKeys(fn (ExamSpeakingSubmission $submission): array => [
+                $submission->session_id => $submission->assessmentAttempt?->result?->overall_band,
+            ]);
+
+        $skillBands = [
+            'listening' => $this->mcqBands($sessions, 'exam_listening_item'),
+            'reading' => $this->mcqBands($sessions, 'exam_reading_item'),
+            'writing' => $this->bandsInSessionOrder($sessions, $writingBandsBySession),
+            'speaking' => $this->bandsInSessionOrder($sessions, $speakingBandsBySession),
+        ];
+
+        $outlierSkills = [];
+        $consecutiveLow = false;
+        foreach ($skillBands as $skill => $bands) {
+            $status = $this->latestOutlierStatus($bands);
+            if (! $status['is_outlier']) {
+                continue;
+            }
+
+            $outlierSkills[] = $skill;
+            $consecutiveLow = $consecutiveLow || $status['consecutive_low'];
+        }
+
+        if ($outlierSkills === []) {
+            return $this->emptyScoreQuality();
+        }
+
+        return [
+            'status' => $consecutiveLow ? 'consecutive_low' : 'single_outlier',
+            'has_outlier' => true,
+            'consecutive_low' => $consecutiveLow,
+            'outlier_skills' => array_values($outlierSkills),
+        ];
+    }
+
+    /** @return array{status: 'normal', has_outlier: false, consecutive_low: false, outlier_skills: list<string>} */
+    private function emptyScoreQuality(): array
+    {
+        return [
+            'status' => 'normal',
+            'has_outlier' => false,
+            'consecutive_low' => false,
+            'outlier_skills' => [],
+        ];
+    }
+
+    /**
+     * @param  Collection<int, float>  $bands Latest first.
+     * @return array{is_outlier: bool, consecutive_low: bool}
+     */
+    private function latestOutlierStatus(Collection $bands): array
+    {
+        if ($bands->count() < self::ROBUST_MIN_SAMPLES) {
+            return ['is_outlier' => false, 'consecutive_low' => false];
+        }
+
+        $latest = (float) $bands->first();
+        $historyMedian = $this->median($bands->slice(1)->values());
+        if ($historyMedian === null) {
+            return ['is_outlier' => false, 'consecutive_low' => false];
+        }
+
+        $outlierLimit = $historyMedian - self::OUTLIER_DROP_THRESHOLD;
+        if ($latest >= $outlierLimit) {
+            return ['is_outlier' => false, 'consecutive_low' => false];
+        }
+
+        $secondLatest = $bands->get(1);
+
+        return [
+            'is_outlier' => true,
+            'consecutive_low' => $secondLatest !== null && (float) $secondLatest < $outlierLimit,
+        ];
+    }
+
+    /** @param Collection<int, float> $bands Latest first. */
+    private function isIsolatedLowOutlier(Collection $bands, int $index, float $band): bool
+    {
+        $comparison = $bands->except([$index])->values();
+        if ($comparison->count() < self::ROBUST_MIN_SAMPLES - 1) {
+            return false;
+        }
+
+        $median = $this->median($comparison);
+        if ($median === null || $band >= $median - self::OUTLIER_DROP_THRESHOLD) {
+            return false;
+        }
+
+        $previous = $bands->get($index + 1);
+        $next = $bands->get($index - 1);
+
+        return ! $this->isLowAgainstMedian($previous, $median)
+            && ! $this->isLowAgainstMedian($next, $median);
+    }
+
+    private function isLowAgainstMedian(mixed $value, float $median): bool
+    {
+        return $value !== null && (float) $value < $median - self::OUTLIER_DROP_THRESHOLD;
     }
 
     public function predictLevel(?array $chart, ?string $entryLevel): ?string
@@ -546,6 +770,14 @@ class ProgressService
             return null;
         }
 
+        $bands = $this->mcqBands($sessionIds, $itemRefType);
+
+        return $this->robustAvgBand($bands);
+    }
+
+    /** @param Collection<int, string> $sessionIds */
+    private function mcqBands(Collection $sessionIds, string $itemRefType): Collection
+    {
         $results = DB::table('exam_mcq_answers')
             ->whereIn('session_id', $sessionIds)
             ->where('item_ref_type', $itemRefType)
@@ -554,11 +786,13 @@ class ProgressService
             ->get();
 
         if ($results->isEmpty()) {
-            return null;
+            return collect();
         }
 
-        $bands = $results->map(fn ($r) => round($r->correct / $r->total * 10, 1));
+        $bandsBySession = $results->mapWithKeys(fn ($r): array => [
+            $r->session_id => round($r->correct / $r->total * 10, 1),
+        ]);
 
-        return round($bands->avg(), 1);
+        return $this->bandsInSessionOrder($sessionIds, $bandsBySession);
     }
 }

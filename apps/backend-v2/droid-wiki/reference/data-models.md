@@ -2,6 +2,33 @@
 
 ## Core tables
 
+### users
+
+Authentication account for every role.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | UUID PK | |
+| `email` | varchar | Stored lowercase |
+| `password` | varchar nullable | Null for Google-only accounts |
+| `google_id` | varchar nullable | Set after Google login/linking |
+| `role` | varchar | learner/teacher/staff/admin |
+| `email_verified_at` | timestamp nullable | Google accounts are verified from Google token |
+| `active_profile_id` | UUID nullable | Current learner profile context |
+
+### password_reset_tokens
+
+Laravel Password Broker token store for forgot-password only.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `email` | varchar PK | Account email |
+| `token` | varchar | Hashed reset token |
+| `created_at` | timestamp nullable | Used for expiry/throttle |
+
+Do not use this table for signup email verification or OTP codes. Signup email
+verification needs a separate flow (Laravel signed URL after account creation, or
+
 ### profiles
 
 See [Profile business rules](../primitives/profile.md) for the full domain model.

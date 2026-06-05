@@ -16,5 +16,5 @@ return [
         'url' => env('VNPAY_URL', 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html'),
     ],
 
-    'order_expiry_minutes' => (int) env('PAYMENT_ORDER_EXPIRY_MINUTES', 15),
+    'order_expiry_minutes' => (int) env('PAYMENT_ORDER_EXPIRY_MINUTES', 10),
 ];

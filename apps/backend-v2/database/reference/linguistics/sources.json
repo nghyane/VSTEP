@@ -1,0 +1,93 @@
+{
+  "cefr_companion_cohesion_descriptors": {
+    "title": "CEFR Companion Volume — Communicative Language Competences",
+    "publisher": "Council of Europe",
+    "url": "https://rm.coe.int/chapter-5-communicative-language-competences/1680a084c3",
+    "accessed_at": "2026-06-02",
+    "usage": "Descriptor-aligned categories for coherence, cohesion and vocabulary range."
+  },
+  "oxford_3000_5000": {
+    "title": "Oxford 3000 and Oxford 5000 CEFR vocabulary reference",
+    "publisher": "Oxford University Press",
+    "url": "https://www.oxfordlearnersdictionaries.com/wordlists/oxford3000-5000",
+    "accessed_at": "2026-06-02",
+    "usage": "CEFR-aligned vocabulary baseline for lexical range analysis."
+  },
+  "task1_letter_curated": {
+    "title": "Curated VSTEP Task 1 letter vocabulary supplement",
+    "publisher": "Internal curated fixture based on public ESL writing phrase references",
+    "url": null,
+    "accessed_at": "2026-06-02",
+    "usage": "Task-specific words that common general CEFR lists underrepresent in letter writing."
+  },
+  "english_profile_grammar": {
+    "title": "English Profile Grammar reference categories",
+    "publisher": "English Profile / Cambridge English",
+    "url": "https://englishprofile.org/english-grammar-profile",
+    "accessed_at": "2026-06-02",
+    "usage": "CEFR-aligned grammar range categories represented as deterministic regex patterns."
+  },
+  "cefr_j_wordlist_1_5": {
+    "title": "The CEFR-J Wordlist Version 1.5",
+    "publisher": "Tono Laboratory, Tokyo University of Foreign Studies",
+    "url": "https://github.com/openlanguageprofiles/olp-en-cefrj/blob/master/cefrj-vocabulary-profile-1.5.csv",
+    "accessed_at": "2026-06-02",
+    "usage": "Importable CEFR-J vocabulary profile for research/commercial use with proper citation."
+  },
+  "octanove_c1c2_1_0": {
+    "title": "Octanove Vocabulary Profile C1/C2 Version 1.0",
+    "publisher": "Octanove Labs / Open Language Profiles",
+    "url": "https://github.com/openlanguageprofiles/olp-en-cefrj/blob/master/octanove-vocabulary-profile-c1c2-1.0.csv",
+    "accessed_at": "2026-06-02",
+    "usage": "C1/C2 vocabulary supplement under Creative Commons Attribution-ShareAlike 4.0."
+  },
+  "cefr_j_grammar_profile_20180315": {
+    "title": "The CEFR-J Grammar Profile Version 20180315",
+    "publisher": "Tono Laboratory, Tokyo University of Foreign Studies",
+    "url": "https://github.com/openlanguageprofiles/olp-en-cefrj/blob/master/cefrj-grammar-profile-20180315.csv",
+    "accessed_at": "2026-06-02",
+    "usage": "Importable CEFR-J grammar profile items for transparent grammar reference evidence."
+  },
+  "oxford_3000_5000_and_vstep_academic_baseline": {
+    "title": "Oxford 3000/5000 style academic vocabulary baseline for VSTEP writing",
+    "publisher": "Internal curated fixture aligned to existing CEFR vocabulary seeder",
+    "url": null,
+    "accessed_at": "2026-06-02",
+    "usage": "Academic/formal vocabulary signals retained from existing deterministic scoring baseline."
+  },
+  "test_english_b2_apology_and_ielts_gt_task1_phrase_banks": {
+    "title": "B2/IELTS General Task 1 apology letter useful expressions",
+    "publisher": "Curated from public ESL writing phrase banks",
+    "url": "https://test-english.com/explanation/b2-writing-explanation/a-formal-letter-of-apology-b2-english-writing/",
+    "accessed_at": "2026-06-02",
+    "usage": "Task 1 letter function phrases for apology, explanation and repair offer."
+  },
+  "ielts_task1_letter_phrase_banks": {
+    "title": "IELTS General Training Task 1 letter phrase banks",
+    "publisher": "Curated from public ESL/IELTS letter writing resources",
+    "url": "https://www.ieltsjacky.com/ielts-letter-writing-vocabulary.html",
+    "accessed_at": "2026-06-02",
+    "usage": "Task 1 letter function phrases for request, complaint, invitation, advice, thanks and arrangements."
+  },
+  "cambridge_cefr_sample_writing_commentary": {
+    "title": "Cambridge English sample writing responses and CEFR commentaries",
+    "publisher": "Cambridge English",
+    "url": "https://www.cambridgeenglish.org/Images/733992-sample-writing-responses-general.pdf",
+    "accessed_at": "2026-06-02",
+    "usage": "Evidence categories for lexical resource and cohesion in written responses."
+  },
+  "internal_vstep_golden_fixture": {
+    "title": "Internal VSTEP golden probe fixture",
+    "publisher": "Internal calibration fixture",
+    "url": null,
+    "accessed_at": "2026-06-02",
+    "usage": "Non-official internal probe labels used to validate deterministic scoring consistency, not external examiner accuracy."
+  },
+  "cefr_companion_spoken_interaction_descriptors": {
+    "title": "CEFR Companion Volume — Spoken production and interaction descriptors",
+    "publisher": "Council of Europe",
+    "url": "https://rm.coe.int/common-european-framework-of-reference-for-languages-learning-teaching/16809ea0d4",
+    "accessed_at": "2026-06-02",
+    "usage": "Descriptor-aligned categories for spoken coherence, interaction repair and topic development."
+  }
+}

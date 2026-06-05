@@ -13,7 +13,7 @@ const MODE_LABEL = {
 interface FlipState {
 	flipped: boolean
 	highlight: "correct" | "wrong" | null
-	onFlip: () => void
+	onReveal: () => void
 }
 
 interface Faces {
@@ -29,7 +29,7 @@ interface Props {
 
 export function FlipCard({ item, flip, faces }: Props) {
 	const word = item.entry.word
-	const { flipped, highlight, onFlip } = flip
+	const { flipped, highlight, onReveal } = flip
 	const tone =
 		highlight === "correct"
 			? "border-primary"
@@ -44,7 +44,7 @@ export function FlipCard({ item, flip, faces }: Props) {
 				<div className="flip-face">
 					<button
 						type="button"
-						onClick={onFlip}
+						onClick={onReveal}
 						aria-label="Lật thẻ"
 						className={cn(
 							"card w-full p-8 text-center min-h-[26rem] flex flex-col cursor-pointer hover:shadow-lg transition-shadow",
@@ -59,18 +59,10 @@ export function FlipCard({ item, flip, faces }: Props) {
 
 				{/* BACK */}
 				<div className="flip-face flip-face-back">
-					<button
-						type="button"
-						onClick={onFlip}
-						aria-label="Lật lại"
-						className={cn(
-							"card w-full p-8 text-center min-h-[26rem] flex flex-col cursor-pointer hover:shadow-lg transition-shadow",
-							tone,
-						)}
-					>
+					<div className={cn("card w-full p-8 text-center min-h-[26rem] flex flex-col", tone)}>
 						<CardHeader mode={item.mode} word={word.word} />
 						<div className="flex-1 flex flex-col items-center justify-center gap-3">{faces.back}</div>
-					</button>
+					</div>
 				</div>
 			</div>
 		</div>

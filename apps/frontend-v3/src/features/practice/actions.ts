@@ -4,7 +4,9 @@ import type {
 	ExerciseFeedback,
 	ExerciseFeedbackPayload,
 	PracticeSession,
+	SpeechTranscription,
 	SubmitResult,
+	WritingRealtimeDiagnostics,
 	WritingSubmission,
 } from "#/features/practice/types"
 import { type ApiResponse, api } from "#/lib/api"
@@ -55,6 +57,12 @@ export async function submitWritingSession(sessionId: string, text: string) {
 		.json<ApiResponse<WritingSubmission>>()
 }
 
+export async function getWritingDiagnostics(promptId: string, text: string, signal?: AbortSignal) {
+	return api
+		.post("practice/writing/diagnostics", { json: { prompt_id: promptId, text }, signal })
+		.json<ApiResponse<WritingRealtimeDiagnostics>>()
+}
+
 export async function startConversation(scenarioId: string) {
 	return api
 		.post("practice/speaking/conversations", { json: { scenario_id: scenarioId } })
@@ -83,6 +91,14 @@ export async function endConversation(sessionId: string) {
 	>()
 }
 
+export async function transcribePracticeAudio(audio: Blob, language = "en-US") {
+	const body = new FormData()
+	body.append("audio", audio, `speech.${audio.type.includes("mp4") ? "m4a" : "webm"}`)
+	body.append("language", language)
+
+	return api.post("audio/transcribe", { body }).json<ApiResponse<SpeechTranscription>>()
+}
+
 export interface ConversationReview {
 	strengths: string[]
 	improvements: string[]
@@ -102,8 +118,8 @@ export interface PronunciationReview {
 	tip: string
 }
 
-export async function getPronunciationReview(original: string, transcript: string) {
+export async function getPronunciationReview(original: string, transcript: string, segmentId: string) {
 	return api
-		.post("practice/speaking/pronunciation-review", { json: { original, transcript } })
+		.post("practice/speaking/pronunciation-review", { json: { original, transcript, segment_id: segmentId } })
 		.json<ApiResponse<PronunciationReview>>()
 }

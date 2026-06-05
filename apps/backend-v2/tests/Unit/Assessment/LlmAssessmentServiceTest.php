@@ -7,6 +7,7 @@ namespace Tests\Unit\Assessment;
 use App\Ai\AiClient;
 use App\Services\Ai\LlmTaskFulfillmentAssessor;
 use App\Services\Ai\LlmWritingFeedbackGenerator;
+use App\Services\WritingContentQualityAnalyzer;
 use Tests\TestCase;
 
 final class LlmAssessmentServiceTest extends TestCase
@@ -19,7 +20,7 @@ final class LlmAssessmentServiceTest extends TestCase
     {
         parent::setUp();
         $fakeAi = $this->makeFakeAi();
-        $this->extractor = new LlmTaskFulfillmentAssessor($fakeAi);
+        $this->extractor = new LlmTaskFulfillmentAssessor($fakeAi, new WritingContentQualityAnalyzer);
         $this->feedback = new LlmWritingFeedbackGenerator($fakeAi);
     }
 
@@ -49,7 +50,7 @@ final class LlmAssessmentServiceTest extends TestCase
             }
         };
 
-        $extractor = new LlmTaskFulfillmentAssessor($fakeAi);
+        $extractor = new LlmTaskFulfillmentAssessor($fakeAi, new WritingContentQualityAnalyzer);
 
         $result = $extractor->assess(
             text: 'Test.',

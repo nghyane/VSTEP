@@ -29,9 +29,12 @@ function PracticePage() {
 	const invalidate = useCallback(() => {
 		qc.invalidateQueries({ queryKey: ["vocab", "topics", topicId] })
 		qc.invalidateQueries({ queryKey: ["vocab", "topics"], exact: true })
+		qc.invalidateQueries({ queryKey: ["learning-path"] })
 	}, [qc, topicId])
 
-	useEffect(() => invalidate, [invalidate])
+	useEffect(() => {
+		return () => invalidate()
+	}, [invalidate])
 
 	if (!data) {
 		return (

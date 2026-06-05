@@ -17,7 +17,6 @@ import { useMutation } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { DepthButton } from "@/components/DepthButton";
@@ -33,7 +32,7 @@ import {
   type WritingSampleMarker,
 } from "@/hooks/use-practice";
 import { getApiErrorMessage } from "@/lib/api";
-import { translateText } from "@/lib/translate";
+import { translateText, translateTextStrict } from "@/lib/translate";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 const COLOR = "#58CC02";
@@ -84,7 +83,7 @@ export default function WritingExerciseScreen() {
           <Text style={[s.previewMeta, { color: c.subtle }]}>
             {detail.minWords}–{detail.maxWords} từ{detail.estimatedMinutes ? ` · ${detail.estimatedMinutes} phút` : ""}
           </Text>
-          <Text style={[s.previewNote, { color: c.mutedForeground }]}>AI sẽ chấm bài sau khi bạn nộp</Text>
+          <Text style={[s.previewNote, { color: c.mutedForeground }]}>Hệ thống sẽ chấm bài sau khi bạn nộp</Text>
           <DepthButton
             onPress={() => startMutation.mutate()}
             disabled={startMutation.isPending}
@@ -124,7 +123,7 @@ interface EditorScreenProps {
 function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProps) {
   const [text, setText] = useState("");
   const [selection, setSelection] = useState({ start: 0, end: 0 });
-  const [submitted, setSubmitted] = useState<{ submissionId: string; wordCount: number } | null>(null);
+  const [submitted, setSubmitted] = useState<{ attemptId: string; wordCount: number } | null>(null);
   const [showReview, setShowReview] = useState(false);
   const [showSample, setShowSample] = useState(false);
   const [promptTr, setPromptTr] = useState<string | null>(null);
@@ -142,7 +141,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
   const submitMutation = useMutation({
     mutationFn: () => submitWritingSession(sessionId, text),
     onSuccess: (res) => {
-      setSubmitted({ submissionId: res.submissionId, wordCount: res.wordCount });
+      setSubmitted({ attemptId: res.attemptId, wordCount: res.wordCount });
       setShowReview(true);
     },
   });
@@ -193,10 +192,8 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
     if (sampleTrLoading) return;
     setSampleTrLoading(true);
     setSampleTrError(false);
-    translateText(detail.sampleAnswer!, "en", "vi")
-      .then((res) => {
-        setSampleTr(res ?? "");
-      })
+    translateTextStrict(detail.sampleAnswer!, "en", "vi")
+      .then((res) => setSampleTr(res))
       .catch(() => {
         setSampleTrError(true);
       })
@@ -233,7 +230,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
             <Ionicons name="checkmark-circle" size={48} color={COLOR} />
             <Text style={[s.resultTitle, { color: c.foreground }]}>Đã nộp bài!</Text>
             <Text style={[s.resultSub, { color: c.mutedForeground }]}>
-              {submitted.wordCount} từ · AI đang chấm bài
+              {submitted.wordCount} từ · hệ thống đang chấm bài
             </Text>
             <DepthButton
               onPress={() => setShowReview(true)}
@@ -385,7 +382,6 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
             fullWidth
             disabled={submitMutation.isPending}
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               submitMutation.mutate();
             }}
             style={{ backgroundColor: COLOR, borderColor: COLOR }}
@@ -418,7 +414,7 @@ function EditorScreen({ detail, sessionId, onBack, insets, c }: EditorScreenProp
       {submitted ? (
         <WritingReviewSheet
           visible={showReview}
-          submissionId={submitted.submissionId}
+          attemptId={submitted.attemptId}
           onClose={() => setShowReview(false)}
         />
       ) : null}
@@ -452,29 +448,59 @@ function WritingSampleModal({
   onClose: () => void;
   c: ReturnType<typeof useThemeColors>;
 }) {
+  const [activeSegment, setActiveSegment] = useState<SampleSegment | null>(null);
   const segments = useMemo(() => buildSampleSegments(answer, markers), [answer, markers]);
+  const isTranslated = translation !== null;
+  const handleClose = () => {
+    setActiveSegment(null);
+    onClose();
+  };
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
       <View style={[s.modalRoot, { backgroundColor: c.background }]}>
         <View style={[s.modalHeader, { borderBottomColor: c.borderLight, backgroundColor: c.surface }]}>
           <View>
             <Text style={[s.modalEyebrow, { color: COLOR }]}>Bài mẫu</Text>
             <Text style={[s.modalTitle, { color: c.foreground }]}>Cấu trúc và chỉ dẫn</Text>
           </View>
-          <HapticTouchable onPress={onClose} style={s.closeBtn}>
+          <HapticTouchable onPress={handleClose} style={s.closeBtn}>
             <Ionicons name="close" size={22} color={c.foreground} />
           </HapticTouchable>
         </View>
 
         <ScrollView contentContainerStyle={s.modalScroll} showsVerticalScrollIndicator={false}>
           <DepthCard style={[s.sampleAnswerCard, { backgroundColor: c.card }]}>
+            <View style={s.sampleAnswerHeader}>
+              <View style={s.sampleHeaderCopy}>
+                <Text style={[s.sampleLabel, { color: c.foreground }]}>Bài mẫu</Text>
+                <Text style={[s.sampleHint, { color: c.mutedForeground }]}>Nhấn vào đoạn tô màu để xem phân tích.</Text>
+              </View>
+              <HapticTouchable onPress={onToggleTranslation} style={s.dictToggle}>
+                <Text
+                  style={[
+                    s.dictBtn,
+                    {
+                      color: isTranslated || translationError ? "#FFF" : c.subtle,
+                      backgroundColor: isTranslated || translationError ? COLOR : "transparent",
+                      borderColor: isTranslated || translationError ? COLOR : c.muted,
+                    },
+                  ]}
+                >
+                  {translationLoading ? "..." : isTranslated ? "Ẩn dịch" : "Dịch"}
+                </Text>
+              </HapticTouchable>
+            </View>
+            {translationError ? (
+              <Text style={[s.transText, { color: c.destructive }]}>Không thể dịch. Thử lại sau.</Text>
+            ) : null}
             <Text style={[s.sampleText, { color: c.foreground }]}>
               {segments.map((segment, index) => {
                 if (!segment.marker) return <Text key={index}>{segment.text}</Text>;
                 return (
                   <Text
                     key={index}
+                    onPress={() => setActiveSegment(segment)}
                     style={[
                       s.sampleHighlight,
                       {
@@ -488,77 +514,51 @@ function WritingSampleModal({
                 );
               })}
             </Text>
-          </DepthCard>
-
-          <SampleAnalysis markers={markers} c={c} />
-
-          <DepthCard style={[s.sampleCard, { backgroundColor: c.card }]}>
-            <View style={s.promptHeader}>
-              <Text style={[s.sampleLabel, { color: c.foreground }]}>Dịch bài mẫu</Text>
-              <HapticTouchable onPress={onToggleTranslation} style={s.dictToggle}>
-                <Text
-                  style={[
-                    s.dictBtn,
-                    {
-                      color: translation || translationError ? "#FFF" : c.subtle,
-                      backgroundColor: translation || translationError ? COLOR : "transparent",
-                      borderColor: translation || translationError ? COLOR : c.muted,
-                    },
-                  ]}
-                >
-                  {translationLoading ? "..." : translation ? "Ẩn dịch" : "Dịch"}
-                </Text>
-              </HapticTouchable>
-            </View>
             {translation ? (
               <View style={[s.transBlock, { borderLeftColor: COLOR + "60" }]}>
                 <Text style={[s.transLabel, { color: COLOR }]}>Dịch</Text>
                 <Text style={[s.transText, { color: c.mutedForeground }]}>{translation}</Text>
               </View>
-            ) : translationError ? (
-              <Text style={[s.transText, { color: c.destructive }]}>Không thể dịch. Thử lại sau.</Text>
             ) : null}
           </DepthCard>
         </ScrollView>
+
+        <MarkerAnalysisModal
+          segment={activeSegment}
+          onClose={() => setActiveSegment(null)}
+          c={c}
+        />
       </View>
     </Modal>
   );
 }
 
-function SampleAnalysis({ markers, c }: { markers: WritingSampleMarker[]; c: ReturnType<typeof useThemeColors> }) {
+function MarkerAnalysisModal({
+  segment,
+  onClose,
+  c,
+}: {
+  segment: SampleSegment | null;
+  onClose: () => void;
+  c: ReturnType<typeof useThemeColors>;
+}) {
+  const marker = segment?.marker ?? null;
   return (
-    <DepthCard
-      style={[s.analysisCard, { backgroundColor: c.card }]}
-    >
-      <View style={s.analysisHeader}>
-        <Ionicons name="sparkles" size={18} color={COLOR} />
-        <View style={s.analysisHeaderCopy}>
-          <Text style={[s.sampleLabel, { color: c.foreground }]}>Phân tích bài mẫu</Text>
-          <Text style={[s.analysisSub, { color: c.mutedForeground }]}>Các điểm tô màu trong bài và lý do nên học.</Text>
-        </View>
-      </View>
-      {markers.length > 0 ? (
-        <View style={s.markerList}>
-          {markers.map((marker) => (
-            <View
-              key={marker.id}
-              style={[s.markerCard, { backgroundColor: c.surface, borderColor: c.border }]}
-            >
-              <View style={[s.markerDot, { backgroundColor: markerColor(marker.color) }]} />
-              <View style={s.markerCopy}>
-                <Text style={[s.markerLabel, { color: c.foreground }]}>{marker.label}</Text>
-                <Text style={[s.markerSnippet, { color: c.subtle }]}>{marker.match}</Text>
-                {marker.detail ? (
-                  <Text style={[s.markerDetail, { color: c.mutedForeground }]}>{marker.detail}</Text>
-                ) : null}
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <Text style={[s.analysisEmpty, { color: c.mutedForeground }]}>Bài mẫu này chưa có dữ liệu phân tích chi tiết.</Text>
-      )}
-    </DepthCard>
+    <Modal visible={!!marker} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={s.markerOverlay} onPress={onClose}>
+        <Pressable style={[s.markerPopup, { backgroundColor: c.card, borderColor: marker ? markerColor(marker.color) : COLOR }]} onPress={() => {}}>
+          <View style={s.markerPopupHeader}>
+            <View style={[s.markerDot, { backgroundColor: marker ? markerColor(marker.color) : COLOR }]} />
+            <Text style={[s.markerLabel, { color: c.foreground }]}>{marker?.label}</Text>
+            <HapticTouchable onPress={onClose} style={s.closeBtn}>
+              <Ionicons name="close" size={18} color={c.subtle} />
+            </HapticTouchable>
+          </View>
+          {segment?.text ? <Text style={[s.markerSnippet, { color: c.subtle }]}>{segment.text}</Text> : null}
+          {marker?.detail ? <Text style={[s.markerDetail, { color: c.mutedForeground }]}>{marker.detail}</Text> : null}
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -580,17 +580,8 @@ function buildSampleSegments(answer: string, markers: WritingSampleMarker[]): Sa
 
   const ranges: { start: number; end: number; marker: WritingSampleMarker }[] = [];
   for (const marker of markers) {
-    let idx = -1;
-    let occurrence = 0;
-    const target = marker.occurrence || 1;
-    let searchFrom = 0;
-    while (occurrence < target) {
-      idx = answer.indexOf(marker.match, searchFrom);
-      if (idx === -1) break;
-      occurrence += 1;
-      searchFrom = idx + 1;
-    }
-    if (idx !== -1) ranges.push({ start: idx, end: idx + marker.match.length, marker });
+    const range = findMarkerRange(answer, marker.match, marker.occurrence || 1);
+    if (range) ranges.push({ ...range, marker });
   }
 
   ranges.sort((a, b) => a.start - b.start);
@@ -605,6 +596,50 @@ function buildSampleSegments(answer: string, markers: WritingSampleMarker[]): Sa
   }
   if (cursor < answer.length) result.push({ text: answer.slice(cursor), marker: null });
   return result;
+}
+
+function normalizeMarkerText(value: string): string {
+  return value.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function findMarkerRange(answer: string, match: string, occurrence: number): { start: number; end: number } | null {
+  let idx = -1;
+  let found = 0;
+  let searchFrom = 0;
+  while (found < occurrence) {
+    idx = answer.indexOf(match, searchFrom);
+    if (idx === -1) break;
+    found += 1;
+    searchFrom = idx + 1;
+  }
+  if (idx !== -1 && found === occurrence) return { start: idx, end: idx + match.length };
+
+  const normalizedTarget = normalizeMarkerText(match);
+  if (!normalizedTarget) return null;
+
+  const matches: { start: number; end: number }[] = [];
+  const tokenRegex = /\S+/g;
+  const tokens: { text: string; start: number; end: number }[] = [];
+  let tokenMatch = tokenRegex.exec(answer);
+  while (tokenMatch) {
+    tokens.push({ text: tokenMatch[0], start: tokenMatch.index, end: tokenMatch.index + tokenMatch[0].length });
+    tokenMatch = tokenRegex.exec(answer);
+  }
+
+  for (let start = 0; start < tokens.length; start++) {
+    let text = "";
+    for (let end = start; end < tokens.length; end++) {
+      text = text ? `${text} ${tokens[end].text}` : tokens[end].text;
+      const normalized = normalizeMarkerText(text);
+      if (normalized === normalizedTarget) {
+        matches.push({ start: tokens[start].start, end: tokens[end].end });
+        break;
+      }
+      if (normalized.length > normalizedTarget.length + 12) break;
+    }
+  }
+
+  return matches[occurrence - 1] ?? null;
 }
 
 const s = StyleSheet.create({
@@ -699,7 +734,9 @@ const s = StyleSheet.create({
   modalEyebrow: { fontSize: 10, fontFamily: fontFamily.extraBold, textTransform: "uppercase", letterSpacing: 1 },
   modalTitle: { fontSize: fontSize.base, fontFamily: fontFamily.extraBold },
   modalScroll: { padding: spacing.xl, gap: spacing.lg, paddingBottom: spacing["3xl"] },
-  sampleAnswerCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg },
+  sampleAnswerCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
+  sampleAnswerHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.md },
+  sampleHeaderCopy: { flex: 1, gap: 2 },
   analysisCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.md },
   analysisHeader: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
   analysisHeaderCopy: { flex: 1, gap: 2 },
@@ -716,7 +753,10 @@ const s = StyleSheet.create({
   },
   markerDot: { width: 10, height: 10, borderRadius: 5, marginTop: 4 },
   markerCopy: { flex: 1, gap: 2 },
-  markerLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
+  markerLabel: { flex: 1, fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
   markerSnippet: { fontSize: fontSize.xs, fontFamily: fontFamily.bold, lineHeight: 18 },
   markerDetail: { fontSize: fontSize.xs, lineHeight: 18 },
+  markerOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.38)", justifyContent: "center", padding: spacing.xl },
+  markerPopup: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
+  markerPopupHeader: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
 });

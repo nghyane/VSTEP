@@ -1,0 +1,12 @@
+{
+  "id": "writing-task1-complaint-b2",
+  "task_type": "writing_task_1_letter",
+  "genre": "complaint",
+  "expected_band": 7.0,
+  "expected_level": "B2",
+  "expected_source": "internal_vstep_golden_fixture",
+  "prompt": "Write a letter to complain about a faulty product, explain the problem, and request a solution.",
+  "requirements": ["complain", "explain problem", "request solution"],
+  "text": "Dear Sir or Madam,\n\nI am writing to express my dissatisfaction with a laptop that I bought from your store last week. Unfortunately, the service I received was not up to standard, and the product stopped working after only two days.\n\nThe main problem is that the screen turns off suddenly while I am using it. To make matters worse, your staff did not offer any useful support when I called the customer service desk. However, this situation has caused considerable inconvenience because I need the laptop for my online classes.\n\nI would like to request a refund or a replacement as soon as possible. Please look into this matter and let me know how it will be resolved. I trust this matter will be resolved promptly.\n\nYours faithfully,\nNghia",
+  "expected_signals": {"linking_min": 3, "collocation_min": 6, "grammar_types_min": 2}
+}

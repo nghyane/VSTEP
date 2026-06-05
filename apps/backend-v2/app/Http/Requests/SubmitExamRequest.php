@@ -28,8 +28,8 @@ final class SubmitExamRequest extends FormRequest
             'mcq_answers.*.selected_index' => ['required', 'integer', 'min:0', 'max:3'],
             'writing_answers' => ['nullable', 'array'],
             'writing_answers.*.task_id' => ['required_with:writing_answers', 'uuid'],
-            'writing_answers.*.text' => ['required_with:writing_answers', 'string', 'min:1'],
-            'writing_answers.*.word_count' => ['required_with:writing_answers', 'integer', 'min:0'],
+            'writing_answers.*.text' => ['present', 'nullable', 'string'],
+            'writing_answers.*.word_count' => ['present', 'integer', 'min:0'],
             'speaking_answers' => ['nullable', 'array'],
             'speaking_answers.*.part_id' => ['required_with:speaking_answers', 'uuid'],
             'speaking_answers.*.audio_key' => ['required_with:speaking_answers', 'string', 'max:500'],
@@ -57,8 +57,11 @@ final class SubmitExamRequest extends FormRequest
                     return;
                 }
 
-                $this->validateTaskIds($validator, $version, $this->input('writing_answers', []));
-                $this->validatePartIds($validator, $version, $this->input('speaking_answers', []));
+                $writingAnswers = $this->input('writing_answers');
+                $speakingAnswers = $this->input('speaking_answers');
+
+                $this->validateTaskIds($validator, $version, is_array($writingAnswers) ? $writingAnswers : []);
+                $this->validatePartIds($validator, $version, is_array($speakingAnswers) ? $speakingAnswers : []);
             },
         ];
     }
@@ -72,6 +75,9 @@ final class SubmitExamRequest extends FormRequest
         $validTaskIds = $version->writingTasks()->pluck('id')->map(fn ($id) => (string) $id)->toArray();
 
         foreach ($writingAnswers as $index => $answer) {
+            if (! is_array($answer) || ! array_key_exists('task_id', $answer)) {
+                continue;
+            }
             if (! in_array((string) $answer['task_id'], $validTaskIds, true)) {
                 $validator->errors()->add(
                     "writing_answers.{$index}.task_id",
@@ -90,6 +96,9 @@ final class SubmitExamRequest extends FormRequest
         $validPartIds = $version->speakingParts()->pluck('id')->map(fn ($id) => (string) $id)->toArray();
 
         foreach ($speakingAnswers as $index => $answer) {
+            if (! is_array($answer) || ! array_key_exists('part_id', $answer)) {
+                continue;
+            }
             if (! in_array((string) $answer['part_id'], $validPartIds, true)) {
                 $validator->errors()->add(
                     "speaking_answers.{$index}.part_id",

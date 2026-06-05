@@ -1,13 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
+import { LandingAppBanner } from "#/features/landing/components/LandingAppBanner"
 import { type LandingAuthMode, LandingAuthOverlay } from "#/features/landing/components/LandingAuthOverlay"
 import { LandingCTA } from "#/features/landing/components/LandingCTA"
 import { LandingFAQ } from "#/features/landing/components/LandingFAQ"
 import { LandingFeatures } from "#/features/landing/components/LandingFeatures"
 import { LandingHero } from "#/features/landing/components/LandingHero"
+import { LandingMobileAppNotice } from "#/features/landing/components/LandingMobileAppNotice"
 import { LandingNav } from "#/features/landing/components/LandingNav"
 import { LandingSkills } from "#/features/landing/components/LandingSkills"
 import { LandingSocial } from "#/features/landing/components/LandingSocial"
+import { useMobileLanding } from "#/features/landing/use-mobile-landing"
 import { useAuth } from "#/lib/auth"
 
 type AuthParam = LandingAuthMode | undefined
@@ -15,11 +18,29 @@ type AuthParam = LandingAuthMode | undefined
 export const Route = createFileRoute("/")({
 	validateSearch: (
 		s: Record<string, unknown>,
-	): { auth?: AuthParam; redirect?: string; onboarding?: boolean } => {
-		const auth = s.auth === "login" || s.auth === "register" ? s.auth : undefined
+	): {
+		auth?: AuthParam
+		redirect?: string
+		onboarding?: boolean
+		email?: string
+		token?: string
+		verified?: boolean
+	} => {
+		const auth =
+			s.auth === "login" ||
+			s.auth === "register" ||
+			s.auth === "forgot" ||
+			s.auth === "reset" ||
+			s.auth === "email-verified" ||
+			s.auth === "email-verification-invalid"
+				? s.auth
+				: undefined
 		const redirect = typeof s.redirect === "string" ? s.redirect : undefined
 		const onboarding = s.onboarding === true || s.onboarding === "1" ? true : undefined
-		return { auth, redirect, onboarding }
+		const email = typeof s.email === "string" ? s.email : undefined
+		const token = typeof s.token === "string" ? s.token : undefined
+		const verified = s.verified === true || s.verified === "1" ? true : undefined
+		return { auth, redirect, onboarding, email, token, verified }
 	},
 	component: LandingPage,
 })
@@ -27,9 +48,11 @@ export const Route = createFileRoute("/")({
 function LandingPage() {
 	const status = useAuth((s) => s.status)
 	const navigate = useNavigate()
-	const { auth, redirect: redirectTo, onboarding } = Route.useSearch()
+	const { auth, redirect: redirectTo, onboarding, email, token, verified } = Route.useSearch()
 	const ctaRef = useRef<HTMLDivElement>(null)
 	const [showBtn, setShowBtn] = useState(false)
+	const isMobileLanding = useMobileLanding()
+	const showMobileAppNotice = isMobileLanding && (auth === "register" || auth === "login")
 
 	useEffect(() => {
 		if (status === "authenticated") navigate({ to: redirectTo || "/dashboard" })
@@ -50,17 +73,28 @@ function LandingPage() {
 			<LandingNav showCta={showBtn} />
 
 			<LandingHero ctaRef={ctaRef} />
+			<LandingAppBanner />
 			<LandingSkills />
 			<LandingFeatures />
 			<LandingSocial />
 			<LandingFAQ />
 			<LandingCTA />
 
-			<footer className="border-t border-border py-8 text-center text-sm text-subtle">
+			<footer className="border-t border-border px-4 py-6 text-center text-xs text-subtle sm:py-8 sm:text-sm">
 				© 2025 VSTEP · Luyện thi chứng chỉ tiếng Anh quốc gia
 			</footer>
 
-			{auth && <LandingAuthOverlay mode={auth} onboarding={onboarding === true} />}
+			{showMobileAppNotice ? (
+				<LandingMobileAppNotice mode={auth === "login" ? "login" : "register"} />
+			) : auth ? (
+				<LandingAuthOverlay
+					mode={auth}
+					onboarding={onboarding === true}
+					email={email}
+					token={token}
+					verified={verified === true}
+				/>
+			) : null}
 		</div>
 	)
 }

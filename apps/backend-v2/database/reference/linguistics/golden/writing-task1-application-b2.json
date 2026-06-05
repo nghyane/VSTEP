@@ -1,0 +1,12 @@
+{
+  "id": "writing-task1-application-b2",
+  "task_type": "writing_task_1_letter",
+  "genre": "application",
+  "expected_band": 7.0,
+  "expected_level": "B2",
+  "expected_source": "internal_vstep_golden_fixture",
+  "prompt": "Write an application letter for a part-time teaching assistant position.",
+  "requirements": ["apply", "describe experience", "request interview"],
+  "text": "Dear Ms Taylor,\n\nI am writing to apply for the part-time teaching assistant position at your language centre. I believe I am suitable for this position because I have relevant experience in helping younger students practise English after school.\n\nDuring the last year, I worked as a volunteer tutor, so I became familiar with preparing simple exercises and supporting learners who needed extra help. In addition, I am patient, responsible and able to communicate clearly with students. If I am given the opportunity, I will prepare carefully for every lesson.\n\nPlease find my CV attached for further information. I am available for an interview next week and would be grateful for the opportunity to discuss my application.\n\nYours sincerely,\nNghia",
+  "expected_signals": {"linking_min": 1, "collocation_min": 5, "grammar_types_min": 2}
+}

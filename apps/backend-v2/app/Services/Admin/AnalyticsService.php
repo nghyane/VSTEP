@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Admin;
 
+use App\Assessment\Enums\AssessmentJobStatus;
 use App\Enums\OrderStatus;
 use App\Models\AssessmentJob;
 use Carbon\CarbonInterface;
@@ -233,7 +234,8 @@ final class AnalyticsService
 
         $byDay = [];
         foreach ($rows as $r) {
-            $byDay[$r->day][$r->status] = (int) $r->total;
+            $status = $r->status instanceof AssessmentJobStatus ? $r->status->value : (string) $r->status;
+            $byDay[$r->day][$status] = (int) $r->total;
         }
 
         return $this->fillDailySeries($days, fn (string $date): array => [

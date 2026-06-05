@@ -9,6 +9,8 @@ export interface Turn {
 }
 
 export type TTSSpeed = 0.7 | 0.85 | 1;
+type SpeechVoice = Awaited<ReturnType<typeof Speech.getAvailableVoicesAsync>>[number];
+type SpeakerGender = "male" | "female";
 
 export interface TTSPlayer {
   playing: boolean;
@@ -24,6 +26,8 @@ export interface TTSPlayer {
 }
 
 const SPEAKER_RE = /^([A-Z][A-Za-z\s]+):\s*/;
+const MALE_VOICE_HINTS = ["male", "man", "guy", "david", "mark", "daniel", "arthur", "george", "thomas", "oliver", "james", "john", "matthew"];
+const FEMALE_VOICE_HINTS = ["female", "woman", "women", "jenny", "aria", "zira", "samantha", "ava", "susan", "karen", "moira", "tessa"];
 
 /** Estimate ms per word: ~150 wpm at rate 1.0 → ~400ms/word */
 function msPerWord(rate: number): number {
@@ -33,6 +37,40 @@ function msPerWord(rate: number): number {
 /** Count words in text */
 function countWords(text: string): number {
   return (text.match(/\S+/g) ?? []).length;
+}
+
+function englishVoices(voices: SpeechVoice[]): SpeechVoice[] {
+  return voices.filter((voice) => voice.language.toLowerCase().startsWith("en"));
+}
+
+function speakerGender(speaker: string): SpeakerGender | null {
+  const normalized = speaker.toLowerCase();
+  if (/\b(woman|women|female|lady|girl)\b/.test(normalized)) return "female";
+  if (/\b(man|men|male|gentleman|boy)\b/.test(normalized)) return "male";
+  return null;
+}
+
+function pickVoice(
+  voices: SpeechVoice[],
+  preferredGender: SpeakerGender | null,
+  fallback?: SpeechVoice,
+): SpeechVoice | undefined {
+  const candidates = englishVoices(voices);
+  if (candidates.length === 0) return fallback;
+  if (!preferredGender) return fallback ?? candidates[0];
+
+  const hints = preferredGender === "male" ? MALE_VOICE_HINTS : FEMALE_VOICE_HINTS;
+  const matched = candidates.find((voice) => hints.some((hint) => voice.name.toLowerCase().includes(hint)));
+  if (matched) return matched;
+  if (!fallback) return candidates[0];
+  return candidates.find((voice) => voice.identifier !== fallback.identifier) ?? fallback;
+}
+
+function pitchForSpeaker(speaker: string): number {
+  const gender = speakerGender(speaker);
+  if (gender === "male") return 0.85;
+  if (gender === "female") return 1.05;
+  return 1;
 }
 
 /** Extract word char positions from text */
@@ -60,6 +98,13 @@ function findWordAtChar(
     if (charIndex >= positions[i].start) return globalStart + i;
   }
   return globalStart;
+}
+
+function textFromWordOffset(text: string, wordOffset: number): string {
+  if (wordOffset <= 0) return text;
+  const positions = computeWordPositions(text);
+  const position = positions[wordOffset];
+  return position ? text.slice(position.start) : text;
 }
 
 /** Parse transcript into dialogue turns and strip speaker names from spoken text. */
@@ -111,17 +156,55 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
   const [activeWordIndex, setActiveWordIndex] = useState(-1);
   const [activeTurnIndex, setActiveTurnIndex] = useState(-1);
   const [speed, setSpeed] = useState<TTSSpeed>(0.85);
+  const [voices, setVoices] = useState<SpeechVoice[]>([]);
   const cancelledRef = useRef(false);
   const wordTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const activeWordIndexRef = useRef(-1);
+  const activeTurnIndexRef = useRef(-1);
 
   const turns = useMemo(() => (transcript ? parseDialogue(transcript) : []), [transcript]);
   const totalWords = turns.length > 0 ? turns[turns.length - 1].globalWordEnd + 1 : 0;
+  const primaryVoice = useMemo(() => pickVoice(voices, "female"), [voices]);
+  const secondVoice = useMemo(() => pickVoice(voices, "male", primaryVoice), [voices, primaryVoice]);
+  const speakerVoices = useMemo(() => {
+    const speakers = [...new Set(turns.filter((turn) => turn.speaker).map((turn) => turn.speaker))];
+    const map = new Map<string, SpeechVoice | undefined>();
+    for (let i = 0; i < speakers.length; i++) {
+      const gender = speakerGender(speakers[i]);
+      map.set(speakers[i], gender ? pickVoice(voices, gender, gender === "male" ? secondVoice : primaryVoice) : i === 0 ? primaryVoice : secondVoice);
+    }
+    return map;
+  }, [turns, voices, primaryVoice, secondVoice]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Speech.getAvailableVoicesAsync()
+      .then((available) => {
+        if (!cancelled) setVoices(available);
+      })
+      .catch(() => {
+        if (!cancelled) setVoices([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const clearWordTimer = useCallback(() => {
     if (wordTimerRef.current) {
       clearInterval(wordTimerRef.current);
       wordTimerRef.current = null;
     }
+  }, []);
+
+  const setActiveWord = useCallback((index: number) => {
+    activeWordIndexRef.current = index;
+    setActiveWordIndex(index);
+  }, []);
+
+  const setActiveTurn = useCallback((index: number) => {
+    activeTurnIndexRef.current = index;
+    setActiveTurnIndex(index);
   }, []);
 
   const stop = useCallback(() => {
@@ -133,59 +216,69 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
 
   useEffect(() => {
     stop();
-    setActiveWordIndex(-1);
-    setActiveTurnIndex(-1);
-  }, [transcript, stop]);
+    setActiveWord(-1);
+    setActiveTurn(-1);
+  }, [transcript, stop, setActiveWord, setActiveTurn]);
 
   const startWordTimer = useCallback(
-    (turn: Turn, rate: number) => {
+    (turn: Turn, rate: number, startWordOffset = 0) => {
       clearWordTimer();
       const wordCount = turn.globalWordEnd - turn.globalWordStart + 1;
-      let currentWord = 0;
-      setActiveWordIndex(turn.globalWordStart);
+      let currentWord = startWordOffset;
+      setActiveWord(turn.globalWordStart + startWordOffset);
       wordTimerRef.current = setInterval(() => {
         currentWord++;
         if (currentWord >= wordCount) {
           clearWordTimer();
           return;
         }
-        setActiveWordIndex(turn.globalWordStart + currentWord);
+        setActiveWord(turn.globalWordStart + currentWord);
       }, msPerWord(rate));
     },
-    [clearWordTimer],
+    [clearWordTimer, setActiveWord],
   );
 
   const speakTurn = useCallback(
-    (turnIdx: number) => {
-      if (turnIdx >= turns.length || cancelledRef.current) {
+    (turnIdx: number, startWordOffset = 0) => {
+      if (cancelledRef.current) {
+        setPlaying(false);
+        clearWordTimer();
+        return;
+      }
+      if (turnIdx >= turns.length) {
         setPlaying(false);
         clearWordTimer();
         if (turns.length > 0) {
-          setActiveWordIndex(turns[turns.length - 1].globalWordEnd);
-          setActiveTurnIndex(turns.length - 1);
+          setActiveWord(turns[turns.length - 1].globalWordEnd);
+          setActiveTurn(turns.length - 1);
         }
         return;
       }
 
       const turn = turns[turnIdx];
-      setActiveTurnIndex(turnIdx);
+      const safeStartWordOffset = Math.max(0, Math.min(startWordOffset, turn.globalWordEnd - turn.globalWordStart));
+      const text = textFromWordOffset(turn.text, safeStartWordOffset);
+      setActiveTurn(turnIdx);
 
-      const wordPositions = computeWordPositions(turn.text);
-      startWordTimer(turn, speed);
+      const wordPositions = computeWordPositions(text);
+      const voice = speakerVoices.get(turn.speaker) ?? primaryVoice;
+      startWordTimer(turn, speed, safeStartWordOffset);
 
-      Speech.speak(turn.text, {
+      Speech.speak(text, {
         language: "en-US",
+        voice: voice?.identifier,
+        pitch: pitchForSpeaker(turn.speaker),
         rate: speed,
         onBoundary: (boundary: { charIndex: number; charLength: number }) => {
           if (wordTimerRef.current) clearWordTimer();
-          setActiveWordIndex(
-            findWordAtChar(boundary.charIndex, wordPositions, turn.globalWordStart),
+          setActiveWord(
+            findWordAtChar(boundary.charIndex, wordPositions, turn.globalWordStart + safeStartWordOffset),
           );
         },
         onDone: () => {
           if (cancelledRef.current) return;
           clearWordTimer();
-          setActiveWordIndex(turn.globalWordEnd);
+          setActiveWord(turn.globalWordEnd);
           const delay = turns.some((item) => item.speaker) ? 600 : 400;
           setTimeout(() => {
             if (!cancelledRef.current) speakTurn(turnIdx + 1);
@@ -203,21 +296,28 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
         },
       });
     },
-    [turns, speed, startWordTimer, clearWordTimer],
+    [turns, speakerVoices, primaryVoice, speed, startWordTimer, clearWordTimer, setActiveWord, setActiveTurn],
   );
 
-  const startSpeaking = useCallback(() => {
+  const startSpeaking = useCallback((resume = false) => {
     if (!transcript || turns.length === 0) return;
     cancelledRef.current = false;
     setPlaying(true);
-    setActiveWordIndex(-1);
-    setActiveTurnIndex(-1);
-    speakTurn(0);
-  }, [transcript, turns, speakTurn]);
+    if (!resume || activeWordIndexRef.current < 0 || activeWordIndexRef.current >= totalWords - 1) {
+      setActiveWord(-1);
+      setActiveTurn(-1);
+      speakTurn(0);
+      return;
+    }
+    const turnIdx = Math.max(0, activeTurnIndexRef.current);
+    const turn = turns[turnIdx];
+    const startWordOffset = turn ? Math.max(0, activeWordIndexRef.current - turn.globalWordStart) : 0;
+    speakTurn(turnIdx, startWordOffset);
+  }, [transcript, turns, totalWords, speakTurn, setActiveWord, setActiveTurn]);
 
   const toggle = useCallback(() => {
     if (playing) stop();
-    else startSpeaking();
+    else startSpeaking(true);
   }, [playing, stop, startSpeaking]);
 
   useEffect(() => {

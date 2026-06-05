@@ -1,23 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { assessmentViewQuery } from "#/features/grading/queries"
 import type {
-	AssessmentFeedback,
 	AssessmentView,
 	GradingProgress,
+	RequestFeedbackResponse,
 	WritingGradingResult,
 } from "#/features/grading/types"
 import { type ApiResponse, api } from "#/lib/api"
 
 interface Input {
 	attemptId: string
-}
-
-interface RequestFeedbackResponse {
-	submission_id: string
-	status: string
-	cost_coins: number
-	charged: boolean
-	feedback: AssessmentFeedback | null
 }
 
 export function useWritingAssessment({ attemptId }: Input) {
@@ -36,6 +28,7 @@ export function useWritingAssessment({ attemptId }: Input) {
 			queryClient.invalidateQueries({ queryKey: ["assessment-attempts", attemptId, "view"] })
 			queryClient.invalidateQueries({ queryKey: ["wallet"] })
 		},
+		onError: () => {}, // handled inline via feedbackError; suppress global toast
 	})
 	const viewData = view.data?.data ?? null
 	const viewResult = writingResult(viewData)
@@ -77,6 +70,8 @@ function writingResult(view: AssessmentView | null): WritingGradingResult | null
 	return {
 		overall_band: view.result.overall_band,
 		criterion_scores: view.result.criterion_scores,
+		display: view.result.display,
+		diagnostics: view.result.diagnostics,
 		feedback: view.result.feedback,
 	}
 }

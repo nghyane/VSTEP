@@ -24,6 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'payment_url',
     'gateway_transaction_id',
     'gateway_response',
+    'commitment_signature',
     'callback_received_at',
     'expires_at',
     'paid_at',

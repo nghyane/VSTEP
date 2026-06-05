@@ -202,7 +202,8 @@ export function Subtitle({ exercise, currentTime, activeWordIndex, activeTurnInd
 	if (!exercise.transcript) return null
 
 	if (activeWordIndex !== undefined && activeTurnIndex !== undefined && turns && turns.length > 0) {
-		const hasDialogue = exercise.part === 2 && turns.some((t) => t.speaker)
+		const speakers = new Set(turns.filter((t) => t.speaker).map((t) => t.speaker))
+		const hasDialogue = speakers.size >= 2
 		if (hasDialogue) {
 			return (
 				<TTSDialogueSubtitle

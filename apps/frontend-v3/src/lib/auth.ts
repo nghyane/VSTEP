@@ -9,12 +9,14 @@ import type { Profile, User } from "#/types/auth"
 
 function showError(error: unknown) {
 	if (error instanceof HTTPError) {
-		const body = error.data as { message?: string } | undefined
-		useToast.getState().add(body?.message ?? "Đã có lỗi xảy ra.")
+		const body = error.data as { errors?: { email?: string[] }; message?: string } | undefined
+		useToast.getState().add(body?.errors?.email?.[0] ?? body?.message ?? "Đã có lỗi xảy ra.")
 	} else {
 		useToast.getState().add("Đã có lỗi xảy ra.")
 	}
 }
+
+const EMAIL_VERIFICATION_REQUIRED_MESSAGE = "Vui lòng xác thực email trước khi đăng nhập."
 
 interface OnboardingBonus {
 	amount: number
@@ -31,11 +33,9 @@ interface LoginResponse {
 }
 
 interface RegisterResponse {
-	access_token: string
-	refresh_token: string
 	user: User
 	profile: Profile
-	onboarding_bonus?: OnboardingBonus
+	email_verification_sent: boolean
 }
 
 interface GoogleLoginResponse {
@@ -80,9 +80,35 @@ type AuthState =
  */
 const LEARNER_ROLE = "learner"
 
+const PROFILE_SCOPED_QUERY_PREFIXES = new Set([
+	"activity-heatmap",
+	"assessment-attempts",
+	"booking",
+	"conversation-review",
+	"courses",
+	"exams",
+	"exam-sessions",
+	"grammar",
+	"learning-path",
+	"notifications",
+	"overview",
+	"practice",
+	"shadowing-pronunciation-review",
+	"streak",
+	"vocab",
+	"wallet",
+])
+
+function isProfileScopedQuery(queryKey: readonly unknown[]): boolean {
+	const prefix = queryKey[0]
+	return typeof prefix === "string" && PROFILE_SCOPED_QUERY_PREFIXES.has(prefix)
+}
+
 export interface LoginResult {
 	needsOnboarding: boolean
 	suggestedNickname: string | null
+	emailVerificationRequired?: boolean
+	email?: string
 }
 
 type AuthActions = {
@@ -97,7 +123,7 @@ type AuthActions = {
 		entry_level: string
 		target_level: string
 		target_deadline: string
-	}) => Promise<void>
+	}) => Promise<{ email: string } | null>
 	loginWithGoogle: (idToken: string) => Promise<LoginResult | null>
 	completeOnboarding: (data: {
 		nickname: string
@@ -147,6 +173,18 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			useToast.getState().add("Đăng nhập thành công", "success")
 			return { needsOnboarding: false, suggestedNickname: null }
 		} catch (e) {
+			if (e instanceof HTTPError) {
+				const body = e.data as { errors?: { email?: string[] }; message?: string } | undefined
+				const emailError = body?.errors?.email?.[0]
+				if (emailError === EMAIL_VERIFICATION_REQUIRED_MESSAGE) {
+					return {
+						needsOnboarding: false,
+						suggestedNickname: null,
+						emailVerificationRequired: true,
+						email,
+					}
+				}
+			}
 			showError(e)
 			return null
 		}
@@ -169,18 +207,11 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 	async register(input) {
 		try {
 			const { data } = await api.post("auth/register", { json: input }).json<ApiResponse<RegisterResponse>>()
-			tokens.setAccess(data.access_token)
-			tokens.setRefresh(data.refresh_token)
-			tokens.setUser(data.user)
-			queryClient.clear()
-			set({ status: "authenticated", user: data.user, profile: data.profile })
-			if (data.onboarding_bonus?.granted) {
-				useWelcomeGift.getState().show(data.onboarding_bonus.amount)
-			} else {
-				useToast.getState().add("Tạo tài khoản thành công", "success")
-			}
+			useToast.getState().add("Đã gửi email xác thực", "success")
+			return { email: data.user.email }
 		} catch (e) {
 			showError(e)
+			return null
 		}
 	},
 
@@ -247,6 +278,7 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 
 	async switchProfile(profileId) {
 		try {
+			await queryClient.cancelQueries({ predicate: (query) => isProfileScopedQuery(query.queryKey) })
 			const refreshToken = tokens.getRefresh()
 			if (!refreshToken) throw new Error("No refresh token")
 			const { data } = await api
@@ -260,6 +292,8 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			if (state.status === "authenticated") {
 				set({ status: "authenticated", user: state.user, profile: data.profile })
 			}
+			queryClient.removeQueries({ predicate: (query) => isProfileScopedQuery(query.queryKey) })
+			queryClient.invalidateQueries({ predicate: (query) => isProfileScopedQuery(query.queryKey) })
 			useToast.getState().add("Đã chuyển hồ sơ", "success")
 		} catch (e) {
 			showError(e)

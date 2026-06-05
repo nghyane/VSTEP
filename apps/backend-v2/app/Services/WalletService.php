@@ -8,6 +8,7 @@ use App\Enums\CoinSourceType;
 use App\Enums\CoinTransactionType;
 use App\Models\CoinTransaction;
 use App\Models\Profile;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -15,10 +16,10 @@ use Illuminate\Validation\ValidationException;
 /**
  * Single source of truth for coin economy.
  *
- * Balance = SUM(delta) per profile — derive, không lưu cache.
- * Atomic guarantee: wraps in DB transaction + locks profile row
+ * Balance = SUM(delta) per account — derive, không lưu cache.
+ * Atomic guarantee: wraps in DB transaction + locks account row
  * (SELECT FOR UPDATE) để serialize concurrent spend/credit trên
- * cùng 1 profile. Không race.
+ * cùng 1 account. Không race.
  *
  * KHÔNG service nào khác được write `coin_transactions` trực tiếp.
  */
@@ -26,12 +27,17 @@ final class WalletService
 {
     /**
      * Read-only balance snapshot for display/API responses.
-     * Do not use this method for spend decisions; spend() re-checks under a profile row lock.
+     * Do not use this method for spend decisions; spend() re-checks under an account row lock.
      */
     public function getBalance(Profile $profile): int
     {
+        return $this->getBalanceForAccount($profile->account);
+    }
+
+    public function getBalanceForAccount(User $account): int
+    {
         $balance = CoinTransaction::query()
-            ->where('profile_id', $profile->id)
+            ->where('account_id', $account->id)
             ->orderByDesc('id')
             ->value('balance_after');
 
@@ -58,7 +64,31 @@ final class WalletService
             throw new \InvalidArgumentException("Type {$type->value} is not a credit type.");
         }
 
-        return $this->applyDelta($profile, $amount, $type, $source, $metadata);
+        return $this->applyDelta($profile->account, $profile, $amount, $type, $source, $metadata);
+    }
+
+    /**
+     * Credit account wallet with an optional profile context.
+     *
+     * @param  array<string,mixed>|null  $metadata
+     */
+    public function creditToAccount(
+        User $account,
+        ?Profile $profile,
+        int $amount,
+        CoinTransactionType $type,
+        ?Model $source = null,
+        ?array $metadata = null,
+    ): CoinTransaction {
+        if ($amount <= 0) {
+            throw new \InvalidArgumentException('Credit amount must be positive.');
+        }
+
+        if (! $type->isCredit()) {
+            throw new \InvalidArgumentException("Type {$type->value} is not a credit type.");
+        }
+
+        return $this->applyDelta($account, $profile, $amount, $type, $source, $metadata);
     }
 
     /**
@@ -82,32 +112,36 @@ final class WalletService
             throw new \InvalidArgumentException("Type {$type->value} is not a debit type.");
         }
 
-        return $this->applyDelta($profile, -$amount, $type, $source, $metadata);
+        return $this->applyDelta($profile->account, $profile, -$amount, $type, $source, $metadata);
     }
 
     /**
      * @param  array<string,mixed>|null  $metadata
      */
     private function applyDelta(
-        Profile $profile,
+        User $account,
+        ?Profile $profile,
         int $delta,
         CoinTransactionType $type,
         ?Model $source,
         ?array $metadata,
     ): CoinTransaction {
-        return DB::transaction(function () use ($profile, $delta, $type, $source, $metadata) {
-            // Lock profile row to serialize wallet ops on this profile.
-            $locked = Profile::query()
-                ->whereKey($profile->id)
+        return DB::transaction(function () use ($account, $profile, $delta, $type, $source, $metadata) {
+            if ($profile !== null && $profile->account_id !== $account->id) {
+                throw new \InvalidArgumentException('Profile does not belong to account wallet.');
+            }
+
+            $locked = User::query()
+                ->whereKey($account->id)
                 ->lockForUpdate()
                 ->first();
 
             if ($locked === null) {
-                throw new \RuntimeException('Profile vanished during wallet operation.');
+                throw new \RuntimeException('Account vanished during wallet operation.');
             }
 
             $current = CoinTransaction::query()
-                ->where('profile_id', $profile->id)
+                ->where('account_id', $locked->id)
                 ->orderByDesc('id')
                 ->value('balance_after');
             $current = $current === null ? 0 : (int) $current;
@@ -121,7 +155,8 @@ final class WalletService
             }
 
             return CoinTransaction::create([
-                'profile_id' => $profile->id,
+                'account_id' => $locked->id,
+                'profile_id' => $profile?->id,
                 'type' => $type,
                 'delta' => $delta,
                 'balance_after' => $next,

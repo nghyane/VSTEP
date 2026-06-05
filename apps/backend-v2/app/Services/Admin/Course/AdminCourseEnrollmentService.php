@@ -13,6 +13,7 @@ use App\Models\CourseEnrollmentOrder;
 use App\Models\Profile;
 use App\Services\Admin\Course\Contracts\AdminCourseEnrollmentInterface;
 use App\Services\CourseService;
+use App\Services\NotificationEmailService;
 use App\Services\NotificationService;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,7 @@ final class AdminCourseEnrollmentService implements AdminCourseEnrollmentInterfa
     public function __construct(
         private readonly CourseService $courseService,
         private readonly NotificationService $notification,
+        private readonly NotificationEmailService $email,
     ) {}
 
     public function listEnrollments(Course $course): Builder
@@ -52,14 +54,26 @@ final class AdminCourseEnrollmentService implements AdminCourseEnrollmentInterfa
         });
 
         if ($profile !== null) {
-            DB::afterCommit(fn () => $this->notification->push(
-                profile: $profile,
-                type: NotificationType::CourseUnenrolled,
-                title: 'Bạn đã bị hủy ghi danh',
-                body: "Admin đã hủy ghi danh của bạn khỏi khóa \"{$courseTitle}\". Nếu cần làm rõ, vui lòng liên hệ trung tâm.",
-                iconKey: IconKey::Alert,
-                payload: $courseId !== null ? ['course_id' => $courseId] : null,
-            ));
+            DB::afterCommit(function () use ($profile, $courseTitle, $courseId): void {
+                $notification = $this->notification->push(
+                    profile: $profile,
+                    type: NotificationType::CourseUnenrolled,
+                    title: 'Bạn đã bị hủy ghi danh',
+                    body: "Admin đã hủy ghi danh của bạn khỏi khóa \"{$courseTitle}\". Nếu cần làm rõ, vui lòng liên hệ trung tâm.",
+                    iconKey: IconKey::Alert,
+                    payload: $courseId !== null ? ['course_id' => $courseId] : null,
+                );
+
+                if ($notification !== null) {
+                    $this->email->sendToProfile(
+                        $profile,
+                        'Ghi danh khóa học đã bị hủy',
+                        ["Ghi danh của bạn khỏi khóa \"{$courseTitle}\" đã bị hủy. Nếu cần làm rõ, vui lòng liên hệ trung tâm."],
+                        'Xem khóa học',
+                        '/khoa-hoc',
+                    );
+                }
+            });
         }
     }
 

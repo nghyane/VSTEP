@@ -159,4 +159,21 @@ final class SpeakingScoringFormulaTest extends TestCase
         $this->assertSame(1.0, $this->formula->pronunciation(0.0));
         $this->assertSame(10.0, $this->formula->pronunciation(15.0));
     }
+
+    public function test_pronunciation_combines_azure_dimensions_with_transparent_penalties(): void
+    {
+        $score = $this->formula->pronunciation([
+            'accuracy' => 8.2,
+            'fluency' => 7.4,
+            'prosody' => 9.1,
+            'completeness' => 8.8,
+            'word_count' => 120,
+            'mispronunciation_count' => 3,
+            'unexpected_break_count' => 1,
+            'missing_break_count' => 1,
+            'monotone_count' => 0,
+        ]);
+
+        $this->assertSame(7.5, $score);
+    }
 }

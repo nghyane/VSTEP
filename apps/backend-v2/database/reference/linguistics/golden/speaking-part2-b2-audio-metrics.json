@@ -1,0 +1,27 @@
+{
+  "id": "speaking-part2-b2-audio-metrics",
+  "task_type": "speaking_part_2",
+  "expected_band": 7.0,
+  "expected_level": "B2",
+  "expected_source": "internal_vstep_golden_fixture",
+  "prompt": "Describe a person who has influenced you.",
+  "transcript": "First of all, I would like to talk about my English teacher, who has influenced me a lot. When I was younger, I was quite shy and I did not want to speak English in front of other people. From my experience, her lessons were useful because she always encouraged students to explain their ideas clearly. For example, she asked us to discuss our future career and compare different choices. What I mean is that she did not only teach grammar, but also helped us become more confident. As a result, I became more willing to speak English in class. To sum up, she is important to me because she changed the way I learn.",
+  "audio_metrics": {
+    "speaking_rate": 124.0,
+    "pause_count": 5,
+    "word_count": 119,
+    "confidence": 0.91,
+    "pronunciation": {
+      "accuracy": 8.2,
+      "fluency": 7.6,
+      "prosody": 7.8,
+      "completeness": 8.5,
+      "overall": 8.0,
+      "mispronunciation_count": 3,
+      "unexpected_break_count": 1,
+      "missing_break_count": 1,
+      "monotone_count": 0
+    }
+  },
+  "expected_signals": {"discourse_marker_min": 4, "topic_development_min": 2, "topic_lexis_min": 1, "grammar_types_min": 3}
+}

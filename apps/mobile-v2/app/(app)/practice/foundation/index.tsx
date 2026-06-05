@@ -9,6 +9,7 @@ import { DepthCard } from "@/components/DepthCard";
 import { GameIcon } from "@/components/GameIcon";
 import { useVocabTopics, useVocabSrsQueue } from "@/hooks/use-vocab";
 import { useGrammarPoints } from "@/hooks/use-grammar";
+import { useLearningPath } from "@/features/practice/use-learning-path";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 export default function FoundationIndexScreen() {
@@ -19,10 +20,18 @@ export default function FoundationIndexScreen() {
   const { data: topics, isLoading: topicsLoading } = useVocabTopics();
   const { data: srsQueue, isLoading: srsLoading } = useVocabSrsQueue();
   const { data: grammarPoints, isLoading: grammarLoading } = useGrammarPoints();
+  const { data: learningPath } = useLearningPath();
 
   const topicCount = topics?.length ?? 0;
   const dueCount = srsQueue ? srsQueue.newCount + srsQueue.learningCount + srsQueue.reviewCount : 0;
   const grammarCount = grammarPoints?.length ?? 0;
+  const vocabularyPath = learningPath?.skills.find((skill) => skill.skill === "vocabulary");
+  const grammarPath = learningPath?.skills.find((skill) => skill.skill === "grammar");
+  const vocabularyCompleted = vocabularyPath?.completedItems ?? 0;
+  const vocabularyTotal = vocabularyPath?.totalItems ?? topicCount;
+  const grammarCompleted = grammarPath?.completedItems ?? 0;
+  const grammarTotal = grammarPath?.totalItems ?? grammarCount;
+  const targetLevel = learningPath?.targetLevel ?? "B1";
   const isLoading = topicsLoading || srsLoading || grammarLoading;
 
   return (
@@ -62,8 +71,8 @@ export default function FoundationIndexScreen() {
 
         <View style={s.statRow}>
           <View style={[s.statPill, { backgroundColor: c.muted }]}>
-            <Text style={[s.statValue, { color: c.foreground }]}>{topicCount}</Text>
-            <Text style={[s.statLabel, { color: c.mutedForeground }]}>chủ đề</Text>
+            <Text style={[s.statValue, { color: c.foreground }]}>{vocabularyCompleted}/{vocabularyTotal}</Text>
+            <Text style={[s.statLabel, { color: c.mutedForeground }]}>từ {vocabularyPath?.level ?? targetLevel}</Text>
           </View>
           <View style={[s.statPill, { backgroundColor: dueCount > 0 ? c.primaryTint : c.muted }]}>
             <Text style={[s.statValue, { color: dueCount > 0 ? c.primary : c.foreground }]}>{dueCount}</Text>
@@ -97,8 +106,12 @@ export default function FoundationIndexScreen() {
 
         <View style={s.statRow}>
           <View style={[s.statPill, { backgroundColor: c.muted }]}>
-            <Text style={[s.statValue, { color: c.foreground }]}>{grammarCount}</Text>
-            <Text style={[s.statLabel, { color: c.mutedForeground }]}>điểm ngữ pháp</Text>
+            <Text style={[s.statValue, { color: c.foreground }]}>{grammarCompleted}/{grammarTotal}</Text>
+            <Text style={[s.statLabel, { color: c.mutedForeground }]}>chủ điểm</Text>
+          </View>
+          <View style={[s.statPill, { backgroundColor: c.muted }]}>
+            <Text style={[s.statValue, { color: c.foreground }]}>{targetLevel}</Text>
+            <Text style={[s.statLabel, { color: c.mutedForeground }]}>mục tiêu</Text>
           </View>
         </View>
 

@@ -1,11 +1,12 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
 import { Header } from "#/components/Header"
 import { Icon, type IconName, StaticIcon } from "#/components/Icon"
 import { SupportFab } from "#/components/SupportFab"
+import { cancelEnrollmentOrder } from "#/features/course/actions"
 import { EnrollDialog } from "#/features/course/components/EnrollDialog"
 import { courseDetailQuery } from "#/features/course/queries"
 import {
@@ -18,12 +19,40 @@ import {
 import { cn, formatDate, formatNumber, formatVnd, isSameDay, safeExternalUrl } from "#/lib/utils"
 
 export const Route = createFileRoute("/_app/khoa-hoc/$courseId")({
+	validateSearch: (s: Record<string, unknown>) => ({
+		cancel_order: typeof s.cancel_order === "string" ? s.cancel_order : undefined,
+	}),
 	component: CourseDetailPage,
 })
 
 function CourseDetailPage() {
 	const { courseId } = Route.useParams()
+	const { cancel_order } = Route.useSearch()
+	const queryClient = useQueryClient()
+	const handledCancelOrder = useRef<string | null>(null)
 	const { data, isLoading } = useQuery(courseDetailQuery(courseId))
+	const cancelOrder = useMutation({
+		mutationFn: cancelEnrollmentOrder,
+		onSettled: async () => {
+			await queryClient.invalidateQueries({ queryKey: ["courses"] })
+			window.history.replaceState(null, "", window.location.pathname)
+		},
+	})
+
+	useEffect(() => {
+		if (!cancel_order || handledCancelOrder.current === cancel_order) return
+		handledCancelOrder.current = cancel_order
+		cancelOrder.mutate(cancel_order)
+	}, [cancel_order, cancelOrder])
+
+	useEffect(() => {
+		const refetchCourse = () => {
+			void queryClient.invalidateQueries({ queryKey: ["courses"] })
+			void queryClient.invalidateQueries({ queryKey: ["courses", courseId] })
+		}
+		window.addEventListener("focus", refetchCourse)
+		return () => window.removeEventListener("focus", refetchCourse)
+	}, [courseId, queryClient])
 
 	if (isLoading || !data) {
 		return (

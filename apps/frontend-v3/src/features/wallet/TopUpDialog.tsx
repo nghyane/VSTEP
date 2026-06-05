@@ -5,6 +5,7 @@ import { Icon, StaticIcon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
 import { ScrollArea } from "#/components/ScrollArea"
 import { createTopupOrder } from "#/features/wallet/actions"
+import { savePendingTopupOrder } from "#/features/wallet/topup-pending"
 import { type EnrichedPackage, useTopupDialog } from "#/features/wallet/use-topup-dialog"
 import { cn, formatNumber, formatVnd } from "#/lib/utils"
 
@@ -304,7 +305,12 @@ function BuyButton({ pack }: { pack: EnrichedPackage }) {
 	const mutation = useMutation({
 		mutationFn: () => createTopupOrder(pack.id),
 		onSuccess: (order) => {
-			if (order.payment_url) window.location.href = order.payment_url
+			if (order.payment_url) {
+				savePendingTopupOrder({ orderId: order.id, coins: order.coins_to_credit, createdAt: Date.now() })
+				const paymentWindow = window.open(order.payment_url, "_blank")
+				if (paymentWindow) paymentWindow.opener = null
+				if (!paymentWindow) window.location.href = order.payment_url
+			}
 		},
 	})
 

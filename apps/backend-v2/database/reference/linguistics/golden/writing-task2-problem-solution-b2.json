@@ -1,0 +1,12 @@
+{
+  "id": "writing-task2-problem-solution-b2",
+  "task_type": "writing_task_2_essay",
+  "genre": "problem_solution",
+  "expected_band": 7.0,
+  "expected_level": "B2",
+  "expected_source": "internal_vstep_golden_fixture",
+  "prompt": "Many cities are facing serious traffic problems. What are the causes and what solutions can be introduced?",
+  "requirements": ["explain causes", "suggest solutions", "support ideas"],
+  "text": "Traffic congestion has become a serious problem in many large cities. One major cause is the rapid growth in private car ownership, while public transport is often slow and inconvenient. This leads to longer travel times and lower quality of life for city residents.\n\nTo address this problem, practical measures should be taken by both governments and individuals. Furthermore, governments should introduce better bus routes and invest in safer cycling lanes. One possible solution is to make public transport cheaper, so people are encouraged to use it more often. If these services become reliable, fewer people will drive to work.\n\nAs a consequence, cities could reduce pollution and improve public health. However, this issue could be solved only by combining infrastructure investment with public awareness campaigns. Therefore, in my view, a more effective approach would be to limit cars in city centres while improving transport alternatives.",
+  "expected_signals": {"linking_min": 4, "collocation_min": 7, "grammar_types_min": 3}
+}
