@@ -76,12 +76,14 @@ function PaymentReturnPage() {
 				</dl>
 
 				<div className="mt-7 space-y-3">
-					<a href={appReturnUrl} className="btn btn-primary w-full sm:w-auto">
-						Mở VSTEP GO
-					</a>
-					<button type="button" onClick={closeTab} className="btn btn-primary w-full sm:w-auto">
-						Đóng tab này
-					</button>
+					<div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+						<a href={appReturnUrl} className="btn btn-primary w-full sm:w-auto">
+							Mở VSTEP GO
+						</a>
+						<button type="button" onClick={closeTab} className="btn btn-primary w-full sm:w-auto">
+							Đóng tab này
+						</button>
+					</div>
 					<p className="text-xs text-subtle">
 						Nếu trình duyệt không cho đóng tự động, hãy đóng tab này thủ công và quay lại tab ứng dụng.
 					</p>

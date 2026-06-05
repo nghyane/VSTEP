@@ -343,7 +343,9 @@ function WritingRealtimeHeader({ prompt, state }: RealtimePanelProps) {
 	const languageErrorsChecked = serviceStatus?.language_tool?.checked === true
 	const languageErrorsAvailable = serviceStatus?.language_tool?.available !== false
 	const languageValue =
-		languageErrorsChecked && hasLanguageErrorCount ? formatLanguageErrorValue(summary) : "Chưa kiểm tra"
+		languageErrorsChecked && hasLanguageErrorCount && summary
+			? formatLanguageErrorValue(summary)
+			: "Chưa kiểm tra"
 	const hasTaskCoverage = !!taskCoverage && taskCoverage.required_points > 0
 	const taskCoverageValue = taskCoverage
 		? `${taskCoverage.covered_points ?? "?"}/${taskCoverage.required_points}`

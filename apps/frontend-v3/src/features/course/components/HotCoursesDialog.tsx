@@ -84,6 +84,7 @@ function HotCourseBanner({ course, rank, onClick }: { course: Course; rank: numb
 		<Link
 			to="/khoa-hoc/$courseId"
 			params={{ courseId: course.id }}
+			search={{ cancel_order: undefined }}
 			onClick={onClick}
 			className={cn(
 				"relative block overflow-hidden rounded-(--radius-card) border transition-transform hover:-translate-y-0.5",
