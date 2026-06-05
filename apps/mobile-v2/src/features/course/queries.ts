@@ -83,10 +83,6 @@ export function reportEnrollmentPaymentReturn(paymentLinkId: string) {
   return api.post<EnrollmentOrder>("/api/v1/courses/enrollment-orders/payment-return", { id: paymentLinkId });
 }
 
-export async function fetchEnrollmentOrders() {
-  return api.get<EnrollmentOrder[]>("/api/v1/courses/enrollment-orders");
-}
-
 export function useBookSlot() {
   const qc = useQueryClient();
 
