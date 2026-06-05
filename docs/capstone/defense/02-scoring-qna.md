@@ -5,10 +5,14 @@ File này dùng khi hội đồng hỏi sâu. Trên main deck chỉ nên đưa b
 ## Cách trình bày trên slide chính
 
 ```text
-Answer / Audio
-  -> extracted parameters: word count, spelling errors, transcript, pause count, pronunciation signals, relevance
-  -> backend formula: weighted criteria + caps/penalties
-  -> practice score + feedback
+Parameter              Source             Formula role
+Word count             Text analyzer      WordCountCap
+Spelling errors        Text analyzer      SpellingPenalty
+Topic relevance        AI signal          Relevance / OffTopicPenalty
+Pause count            Speech analyzer    PausePenalty
+Pronunciation signals  Speech service     PronunciationScore
+
+PracticeScore = Formula(parameters) + caps/penalties
 ```
 
 AI/công cụ ngoài chỉ lấy tham số và hỗ trợ feedback. Điểm luyện tập do backend tính bằng công thức cố định.

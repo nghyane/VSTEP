@@ -50,7 +50,7 @@ Do thời gian trình bày có giới hạn và nhóm muốn dành nhiều thờ
 9. **System Architecture** — web/mobile/admin → Laravel API → PostgreSQL/Redis/storage/external services.
 10. **Technology** — Laravel, PostgreSQL, Redis, React, Expo/React Native, Docker/GitHub Actions.
 11. **Technology — Deployment & Quality** — deployment, CI/CD, queue, kiểm thử và cô lập external services.
-12. **Practice Score Formula** — bảng chỉ số: tham số đầu vào → công thức định lượng → điểm luyện tập; AI không tự bốc điểm.
+12. **Practice Score Formula** — bảng chỉ số: tham số đầu vào → nguồn trích xuất → vai trò trong công thức → điểm luyện tập; AI không tự bốc điểm.
 13. **Writing Practice Evaluation** — ví dụ chỉ số Writing: word count, spelling errors, relevance, organization, grammar, vocabulary.
 14. **Speaking Practice Evaluation** — ví dụ chỉ số Speaking: transcript, word count, speaking rate, pause, pronunciation, relevance.
 15. **Abnormal Answer Handling** — bài quá ngắn/lạc đề/copy/spam/non-English bị giới hạn điểm.
@@ -69,3 +69,18 @@ Do thời gian trình bày có giới hạn và nhóm muốn dành nhiều thờ
 ```text
 Hạn chế hiện tại là phần đánh giá Writing và Speaking mới phục vụ mục tiêu luyện tập và tham khảo, chưa thay thế giám khảo chính thức. Ngoài ra, hệ thống cần thêm bộ dữ liệu lớn hơn do giám khảo chấm để kiểm chứng và hiệu chỉnh độ chính xác.
 ```
+
+## Bảng nên đưa lên Slide 12
+
+```text
+Parameter              Source             Formula role
+Word count             Text analyzer      WordCountCap
+Spelling errors        Text analyzer      SpellingPenalty
+Topic relevance        AI signal          Relevance / OffTopicPenalty
+Pause count            Speech analyzer    PausePenalty
+Pronunciation signals  Speech service     PronunciationScore
+
+PracticeScore = Formula(parameters) + caps/penalties
+```
+
+Nói rõ: AI/công cụ chỉ lấy tham số đầu vào; backend mới là nơi tính điểm luyện tập.
