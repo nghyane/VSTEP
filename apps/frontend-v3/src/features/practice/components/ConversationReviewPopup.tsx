@@ -85,7 +85,7 @@ export function ConversationReviewPanel({ sessionId, turnCount }: Props) {
 	let errorMsg = "Không thể tải đánh giá."
 	if (error instanceof HTTPError) {
 		const status = error.response.status
-		if (status === 503) errorMsg = "AI tạm thời không phản hồi. Vui lòng thử lại sau."
+		if (status === 503) errorMsg = "AI đang bận, bạn thử lại nhé."
 		else if (status === 403) errorMsg = "Bạn không có quyền xem đánh giá này."
 		else errorMsg = error.message || `Lỗi server (${status}). Vui lòng thử lại.`
 	}

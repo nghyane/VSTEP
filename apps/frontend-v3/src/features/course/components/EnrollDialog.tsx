@@ -43,6 +43,7 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 			if (order.payment_url) {
 				const paymentWindow = window.open(order.payment_url, "_blank")
 				if (paymentWindow) paymentWindow.opener = null
+				onClose()
 				if (!paymentWindow) window.location.href = order.payment_url
 				return
 			}

@@ -44,6 +44,12 @@ export interface PracticeSession {
 	started_at: string
 }
 
+export interface SpeechTranscription {
+	transcript: string
+	confidence: number
+	duration_ms: number
+}
+
 export interface SubmitResult {
 	score: number
 	total: number

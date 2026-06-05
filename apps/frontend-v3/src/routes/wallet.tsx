@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useEffect } from "react"
 import { reportTopupPaymentReturn } from "#/features/wallet/actions"
 
-type PaymentReturnState = "confirming" | "cancelled"
+type PaymentReturnState = "paid" | "confirming" | "cancelled"
 
 export const Route = createFileRoute("/wallet")({
 	validateSearch: (
@@ -26,6 +26,7 @@ export const Route = createFileRoute("/wallet")({
 function PaymentReturnPage() {
 	const search = Route.useSearch()
 	const state = getPaymentReturnState(search)
+	const isPaid = state === "paid"
 	const isConfirming = state === "confirming"
 	const closeTab = () => window.close()
 
@@ -39,19 +40,29 @@ function PaymentReturnPage() {
 			<section className="card w-full max-w-lg p-8 text-center md:p-10">
 				<div
 					className={`mx-auto flex size-20 items-center justify-center rounded-full text-4xl font-extrabold ${
-						isConfirming ? "bg-primary-tint text-primary" : "bg-destructive/10 text-destructive"
+						isPaid
+							? "bg-success/10 text-success"
+							: isConfirming
+								? "bg-primary-tint text-primary"
+								: "bg-destructive/10 text-destructive"
 					}`}
 				>
-					{isConfirming ? "…" : "!"}
+					{isPaid ? "✓" : isConfirming ? "…" : "!"}
 				</div>
 
 				<h1 className="mt-6 text-2xl font-extrabold text-foreground">
-					{isConfirming ? "Đang xác nhận thanh toán" : "Thanh toán chưa hoàn tất"}
+					{isPaid
+						? "Thanh toán thành công"
+						: isConfirming
+							? "Đang xác nhận thanh toán"
+							: "Thanh toán chưa hoàn tất"}
 				</h1>
 				<p className="mt-3 text-sm leading-relaxed text-muted">
-					{isConfirming
-						? "Kết quả cuối cùng sẽ được backend cập nhật qua callback bảo mật từ PayOS. Bạn có thể đóng tab này và quay lại tab VSTEP GO để tiếp tục."
-						: "Giao dịch đã bị hủy hoặc chưa được PayOS xác nhận thành công. Bạn có thể đóng tab này và quay lại tab VSTEP GO."}
+					{isPaid
+						? "PayOS đã trả về trạng thái thanh toán thành công. Hệ thống sẽ cập nhật ví qua callback bảo mật từ PayOS, bạn có thể đóng tab này và quay lại VSTEP GO."
+						: isConfirming
+							? "Kết quả cuối cùng sẽ được backend cập nhật qua callback bảo mật từ PayOS. Bạn có thể đóng tab này và quay lại tab VSTEP GO để tiếp tục."
+							: "Giao dịch đã bị hủy hoặc chưa được PayOS xác nhận thành công. Bạn có thể đóng tab này và quay lại tab VSTEP GO."}
 				</p>
 
 				<dl className="mt-6 space-y-2 rounded-(--radius-card) border-2 border-border bg-background p-4 text-left text-xs">
@@ -88,5 +99,6 @@ function InfoRow({ label, value }: { label: string; value: string | undefined })
 function getPaymentReturnState(search: { cancel?: boolean; status?: string }): PaymentReturnState {
 	const status = search.status?.toUpperCase()
 	if (search.cancel || status === "CANCELLED" || status === "FAILED") return "cancelled"
+	if (status === "PAID") return "paid"
 	return "confirming"
 }
