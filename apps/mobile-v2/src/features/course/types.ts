@@ -72,14 +72,21 @@ export interface EnrollResult {
   bonusReceived: number;
 }
 
+export type PaymentProvider = "payos" | "vnpay";
+export type OrderStatus = "pending" | "paid" | "failed" | "cancelled" | "expired";
+
 export interface EnrollmentOrder {
   id: string;
+  orderCode: number;
   courseId: string;
-  courseTitle: string;
+  courseTitle: string | null;
   amountVnd: number;
-  status: string;
-  paymentProvider: string;
+  status: OrderStatus;
+  paymentProvider: PaymentProvider;
+  paymentUrl: string | null;
+  providerRef: string | null;
   paidAt: string | null;
+  expiresAt: string | null;
   createdAt: string;
 }
 
@@ -116,6 +123,7 @@ export interface BookingPageData {
   // Per-course coin cost (BE commit 7aec9fb). Older course rows without the
   // column default to 50 server-side, so this is always populated.
   bookingCoinCost: number;
+  bookingLeadTimeHours: number;
   commitment: BookingCommitment;
 }
 

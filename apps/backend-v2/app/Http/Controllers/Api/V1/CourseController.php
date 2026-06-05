@@ -7,8 +7,10 @@ namespace App\Http\Controllers\Api\V1;
 use App\Enums\PaymentProvider;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\BookSlotRequest;
+use App\Http\Requests\Course\CreateEnrollmentOrderRequest;
 use App\Http\Resources\EnrollmentOrderResource;
 use App\Models\Course;
+use App\Models\CourseEnrollmentOrder;
 use App\Models\TeacherSlot;
 use App\Services\CourseOrderService;
 use App\Services\CourseService;
@@ -55,18 +57,17 @@ final class CourseController extends Controller
         ]]);
     }
 
-    public function createEnrollmentOrder(Request $request, Course $course): JsonResponse
+    public function createEnrollmentOrder(CreateEnrollmentOrderRequest $request, Course $course): JsonResponse
     {
-        $validated = $request->validate([
-            'payment_provider' => ['required', 'string', 'in:'.implode(',', PaymentProvider::values())],
-            'return_url' => ['nullable', 'url'],
-        ]);
+        $validated = $request->validated();
 
         $order = $this->courseOrderService->createOrder(
             $request->profile(),
             $course,
             PaymentProvider::from($validated['payment_provider']),
-            $validated['return_url'] ?? null,
+            $validated['commitment_signature'],
+            $validated['return_url'],
+            $validated['cancel_url'],
         );
 
         return response()->json(['data' => EnrollmentOrderResource::make($order)], 201);
@@ -80,6 +81,24 @@ final class CourseController extends Controller
         return EnrollmentOrderResource::collection(
             $this->courseOrderService->getProfileOrders($request->profile())
         )->response();
+    }
+
+    public function cancelEnrollmentOrder(Request $request, CourseEnrollmentOrder $order): JsonResponse
+    {
+        $cancelled = $this->courseOrderService->cancelPendingOrder($request->profile(), $order);
+
+        return response()->json(['data' => EnrollmentOrderResource::make($cancelled)]);
+    }
+
+    public function handleEnrollmentPaymentReturn(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'id' => ['required', 'string'],
+        ]);
+
+        $order = $this->courseOrderService->refreshFromPaymentReturn($request->profile(), $validated['id']);
+
+        return response()->json(['data' => EnrollmentOrderResource::make($order)]);
     }
 
     /**

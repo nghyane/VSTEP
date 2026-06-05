@@ -116,7 +116,7 @@ export interface WritingGradingResult {
 
 export interface SpeakingTopic {
   name: string;
-  questions: string[];
+  questions?: string[];
 }
 
 export interface SpeakingTask {
@@ -127,7 +127,7 @@ export interface SpeakingTask {
 export interface SpeakingTaskDetail {
   id: string; slug: string; title: string;
   part: number; taskType: string; speakingSeconds: number;
-  content: { topics: SpeakingTopic[] };
+  content: { topics?: SpeakingTopic[] } | null;
 }
 
 export interface SpeakingDrill {
@@ -329,7 +329,7 @@ export function audioUploadMetaFromUri(uri: string): AudioUploadMeta {
 }
 
 export async function presignUpload(
-  context: "speaking" | "exam_speaking" = "speaking",
+  context: "practice_speaking" | "exam_speaking" = "practice_speaking",
   meta: AudioUploadMeta = { contentType: "audio/webm", extension: "webm" },
 ) {
   return api.post<PresignUploadResponse>("/api/v1/audio/presign-upload", {
@@ -706,7 +706,7 @@ export function useWritingHistory(part?: number) {
 export function useGradingJobStatus(jobId: string) {
   return useQuery({
     queryKey: ["grading", "job", jobId],
-    queryFn: () => api.get<GradingJobStatus>(`/api/v1/grading/jobs/${jobId}/status`),
+    queryFn: () => api.get<GradingJobStatus>(`/api/v1/assessment-jobs/${jobId}`),
     refetchInterval: (q) => {
       const status = q.state.data?.status;
       return status === "ready" || status === "failed" ? false : 3000;

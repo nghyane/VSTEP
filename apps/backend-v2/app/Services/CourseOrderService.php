@@ -6,12 +6,14 @@ namespace App\Services;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentProvider;
+use App\Jobs\SendPaymentInvoiceEmail;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseEnrollmentOrder;
 use App\Models\Profile;
 use App\Services\Payment\OrderNotFoundAfterValidation;
 use App\Services\Payment\PaymentGatewayRegistry;
+use App\Services\Payment\PayOsGateway;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +41,9 @@ final class CourseOrderService
         Profile $profile,
         Course $course,
         PaymentProvider $provider,
-        ?string $returnUrl = null,
+        string $commitmentSignature,
+        string $returnUrl,
+        string $cancelUrl,
     ): CourseEnrollmentOrder {
         if (! $course->is_published) {
             throw ValidationException::withMessages(['course' => ['Khóa học đang đóng ghi danh.']]);
@@ -59,18 +63,14 @@ final class CourseOrderService
             throw ValidationException::withMessages(['course' => ['Bạn đã ghi danh khóa học này.']]);
         }
 
-        // Check if user already has paid or pending order for this course
         $existing = CourseEnrollmentOrder::query()
             ->where('profile_id', $profile->id)
             ->where('course_id', $course->id)
             ->whereIn('status', OrderStatus::activeValues())
             ->first();
 
-        if ($existing !== null) {
-            if ($existing->isPaid()) {
-                throw ValidationException::withMessages(['course' => ['Bạn đã ghi danh khóa học này.']]);
-            }
-            throw ValidationException::withMessages(['course' => ['Bạn đang có đơn thanh toán chờ xác nhận cho khóa học này.']]);
+        if ($existing?->isPaid()) {
+            throw ValidationException::withMessages(['course' => ['Bạn đã ghi danh khóa học này.']]);
         }
 
         $amount = $course->price_vnd;
@@ -78,7 +78,13 @@ final class CourseOrderService
         $expiryMinutes = (int) config('payment.order_expiry_minutes', 15);
 
         try {
-            return DB::transaction(function () use ($profile, $course, $provider, $amount, $gateway, $expiryMinutes, $returnUrl) {
+            return DB::transaction(function () use ($profile, $course, $provider, $amount, $gateway, $expiryMinutes, $returnUrl, $cancelUrl, $commitmentSignature) {
+                CourseEnrollmentOrder::query()
+                    ->where('profile_id', $profile->id)
+                    ->where('course_id', $course->id)
+                    ->where('status', OrderStatus::Pending)
+                    ->update(['status' => OrderStatus::Cancelled]);
+
                 $order = CourseEnrollmentOrder::create([
                     'order_code' => $this->nextOrderCode(),
                     'profile_id' => $profile->id,
@@ -86,12 +92,11 @@ final class CourseOrderService
                     'amount_vnd' => $amount,
                     'status' => OrderStatus::Pending,
                     'payment_provider' => $provider->value,
+                    'commitment_signature' => $commitmentSignature,
                     'expires_at' => now()->addMinutes($expiryMinutes),
                 ]);
 
-                $paymentReturnUrl = $returnUrl ?? config('app.frontend_url')."/courses/return?order={$order->id}";
-                $cancelUrl = config('app.frontend_url')."/courses/{$course->id}";
-                $response = $gateway->createPayment($order, $paymentReturnUrl, $cancelUrl);
+                $response = $gateway->createPayment($order, $returnUrl, $cancelUrl);
 
                 $order->update([
                     'payment_url' => $response->paymentUrl,
@@ -171,6 +176,8 @@ final class CourseOrderService
                     'callback_received_at' => now(),
                 ]);
 
+                $this->sendInvoiceAfterCommit($locked);
+
                 return $locked;
             }
 
@@ -179,6 +186,7 @@ final class CourseOrderService
                 profile: $locked->profile,
                 course: $locked->course,
                 creditBonus: true,
+                commitmentSignature: $locked->commitment_signature,
             );
 
             // Mark order paid
@@ -190,7 +198,23 @@ final class CourseOrderService
                 'callback_received_at' => now(),
             ]);
 
+            $this->sendInvoiceAfterCommit($locked);
+
             return $locked;
+        });
+    }
+
+    private function sendInvoiceAfterCommit(CourseEnrollmentOrder $order): void
+    {
+        DB::afterCommit(function () use ($order): void {
+            try {
+                SendPaymentInvoiceEmail::dispatch(SendPaymentInvoiceEmail::TYPE_COURSE_ENROLLMENT, $order->id);
+            } catch (\Throwable $e) {
+                Log::error('Failed to dispatch course enrollment invoice email', [
+                    'order_id' => $order->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         });
     }
 
@@ -220,6 +244,94 @@ final class CourseOrderService
         return CourseEnrollmentOrder::query()
             ->with(['course', 'profile'])
             ->findOrFail($orderId);
+    }
+
+    public function cancelPendingOrder(Profile $profile, CourseEnrollmentOrder $order): CourseEnrollmentOrder
+    {
+        if ($order->profile_id !== $profile->id) {
+            throw ValidationException::withMessages(['order' => ['Đơn hàng không thuộc hồ sơ hiện tại.']]);
+        }
+
+        return DB::transaction(function () use ($order): CourseEnrollmentOrder {
+            $locked = CourseEnrollmentOrder::query()
+                ->whereKey($order->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($locked->status === OrderStatus::Cancelled) {
+                return $locked;
+            }
+
+            if ($locked->status !== OrderStatus::Pending) {
+                throw ValidationException::withMessages([
+                    'order' => ["Đơn hàng ở trạng thái {$locked->status->value} không thể hủy."],
+                ]);
+            }
+
+            $locked->update(['status' => OrderStatus::Cancelled]);
+
+            return $locked;
+        });
+    }
+
+    public function refreshFromPaymentReturn(Profile $profile, string $paymentLinkId): CourseEnrollmentOrder
+    {
+        $gateway = $this->gateways->get(PaymentProvider::PayOs);
+        if (! $gateway instanceof PayOsGateway) {
+            throw new \RuntimeException('PayOS gateway is not configured.');
+        }
+
+        $status = $gateway->getPaymentLinkStatus($paymentLinkId);
+
+        return DB::transaction(function () use ($profile, $paymentLinkId, $status): CourseEnrollmentOrder {
+            $order = CourseEnrollmentOrder::query()
+                ->where(function ($query) use ($paymentLinkId, $status): void {
+                    $query->where('gateway_transaction_id', $paymentLinkId)
+                        ->orWhere('provider_ref', $paymentLinkId);
+
+                    if ($status['orderCode'] > 0) {
+                        $query->orWhere('order_code', $status['orderCode']);
+                    }
+                })
+                ->lockForUpdate()
+                ->first();
+
+            if ($order === null) {
+                throw ValidationException::withMessages(['order' => ['Không tìm thấy đơn thanh toán.']]);
+            }
+
+            if ($order->profile_id !== $profile->id) {
+                throw ValidationException::withMessages(['order' => ['Đơn hàng không thuộc hồ sơ hiện tại.']]);
+            }
+
+            $gatewayStatus = strtoupper($status['status']);
+
+            if ($gatewayStatus === 'PAID') {
+                return $this->confirmByOrderCode(
+                    (int) $order->order_code,
+                    (string) ($status['id'] ?: $paymentLinkId),
+                    $status['raw'],
+                );
+            }
+
+            if ($gatewayStatus === 'CANCELLED' && $order->status === OrderStatus::Pending) {
+                $order->update([
+                    'status' => OrderStatus::Cancelled,
+                    'gateway_response' => $status['raw'],
+                    'callback_received_at' => now(),
+                ]);
+            }
+
+            if ($gatewayStatus === 'EXPIRED' && $order->status === OrderStatus::Pending) {
+                $order->update([
+                    'status' => OrderStatus::Expired,
+                    'gateway_response' => $status['raw'],
+                    'callback_received_at' => now(),
+                ]);
+            }
+
+            return $order->refresh();
+        });
     }
 
     public function getProfileOrders(Profile $profile): Collection

@@ -76,20 +76,20 @@ export default function SpeakingExerciseScreen() {
             <GameIcon name="speaking" size={48} />
           </View>
           <Text style={[s.previewTitle, { color: c.foreground }]}>{detail.title}</Text>
-          <Text style={[s.previewMeta, { color: c.subtle }]}>
-            {detail.speakingSeconds}s Â· {detail.taskType}
+          <Text style={[s.previewMeta, { color: c.subtle }]}> 
+            {detail.speakingSeconds}s · {detail.taskType}
           </Text>
-          <Text style={[s.previewNote, { color: c.mutedForeground }]}>Ghi Ã¢m cÃ¢u tráº£ lá»i Â· AI cháº¥m phÃ¡t Ã¢m vÃ  ná»™i dung</Text>
+          <Text style={[s.previewNote, { color: c.mutedForeground }]}>Ghi âm câu trả lời · AI chấm phát âm và nội dung</Text>
           <DepthButton
             onPress={() => startMutation.mutate()}
             disabled={startMutation.isPending}
             style={{ marginTop: spacing.xl, minWidth: 200, backgroundColor: COLOR, borderColor: COLOR }}
           >
-            {startMutation.isPending ? "Äang báº¯t Ä‘áº§u..." : "Báº¯t Ä‘áº§u"}
+            {startMutation.isPending ? "Đang bắt đầu..." : "Bắt đầu"}
           </DepthButton>
           {startMutation.error ? (
             <Text style={[s.inlineError, { color: c.destructive }]}>
-              KhÃ´ng thá»ƒ báº¯t Ä‘áº§u bÃ i nÃ³i: {getApiErrorMessage(startMutation.error)}
+              Không thể bắt đầu bài nói: {getApiErrorMessage(startMutation.error)}
             </Text>
           ) : null}
         </View>
@@ -153,8 +153,8 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
     const started = await recorder.start();
     if (!started) {
       Alert.alert(
-        "Khong the ghi am",
-        recorder.error ?? "Hay kiem tra quyen truy cap micro trong cai dat thiet bi.",
+        "Không thể ghi âm",
+        recorder.error ?? "Hãy kiểm tra quyền truy cập micro trong cài đặt thiết bị.",
       );
     }
   }
@@ -168,7 +168,7 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
     mutationFn: async () => {
       if (!audioUri) throw new Error("No audio file");
 
-      const { audioKey } = await uploadSpeakingAudio(audioUri, "speaking");
+      const { audioKey } = await uploadSpeakingAudio(audioUri, "practice_speaking");
       return submitSpeakingSession(sessionId, audioKey, Math.max(1, Math.ceil(elapsedMs / 1000)));
     },
     onSuccess: (res) => {
@@ -202,14 +202,14 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
         {/* Prompt card */}
         <DepthCard style={s.promptCard}>
           <View style={[s.taskTypeBadge, { backgroundColor: COLOR + "25" }]}>
-            <Text style={[s.taskTypeText, { color: COLOR_TEXT }]}>Part {detail.part} Â· {detail.taskType}</Text>
+            <Text style={[s.taskTypeText, { color: COLOR_TEXT }]}>Part {detail.part} · {detail.taskType}</Text>
           </View>
           {detail.content?.topics?.map((topic) => (
             <View key={topic.name} style={s.topicBlock}>
               <Text style={[s.topicName, { color: c.foreground }]}>{topic.name}</Text>
-              {topic.questions.map((q) => (
+              {(topic.questions ?? []).map((q) => (
                 <View key={q} style={s.topicQRow}>
-                  <Text style={{ color: COLOR }}>â€¢</Text>
+                  <Text style={{ color: COLOR }}>•</Text>
                   <Text style={[s.topicQ, { color: c.subtle }]}>{q}</Text>
                 </View>
               ))}
@@ -227,7 +227,7 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
         >
           {/* Countdown */}
           <View style={s.countdownRow}>
-            <Text style={[s.countdownLabel, { color: c.mutedForeground }]}>Thá»i gian cÃ²n láº¡i</Text>
+            <Text style={[s.countdownLabel, { color: c.mutedForeground }]}>Thời gian còn lại</Text>
             <Text style={[s.countdown, { color: isRecording && countdown < 10 ? "#FF9B00" : COLOR_TEXT }]}>
               {fmt(countdown)}
             </Text>
@@ -255,7 +255,7 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
                   />
                 ))}
               </View>
-              <Text style={[s.waveHint, { color: c.mutedForeground }]}>Báº¥m Ä‘á»ƒ dá»«ng</Text>
+              <Text style={[s.waveHint, { color: c.mutedForeground }]}>Bấm để dừng</Text>
             </HapticTouchable>
           ) : (
             <View style={s.micBtnWrap}>
@@ -263,28 +263,28 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
                 <>
                   <HapticTouchable onPress={handlePlayback} style={[s.micBtn, { backgroundColor: c.muted, borderBottomColor: "#CACACA" }]}>
                     <Ionicons name="play" size={28} color={c.mutedForeground} />
-                    <Text style={[s.micBtnText, { color: c.mutedForeground }]}>Nghe láº¡i</Text>
+                    <Text style={[s.micBtnText, { color: c.mutedForeground }]}>Nghe lại</Text>
                   </HapticTouchable>
                   <HapticTouchable onPress={startRecording} style={[s.micBtn, { backgroundColor: COLOR, borderBottomColor: COLOR_DARK }]}>
                     <Ionicons name="refresh" size={28} color="#fff" />
-                    <Text style={[s.micBtnText, { color: "#fff" }]}>Ghi Ã¢m láº¡i</Text>
+                    <Text style={[s.micBtnText, { color: "#fff" }]}>Ghi âm lại</Text>
                   </HapticTouchable>
                 </>
               ) : (
                 <HapticTouchable onPress={startRecording} style={[s.micBtn, { backgroundColor: COLOR, borderBottomColor: COLOR_DARK }]}>
                   <Ionicons name="mic" size={28} color="#fff" />
-                  <Text style={[s.micBtnText, { color: "#fff" }]}>Báº¯t Ä‘áº§u nÃ³i</Text>
+                  <Text style={[s.micBtnText, { color: "#fff" }]}>Bắt đầu nói</Text>
                 </HapticTouchable>
               )}
             </View>
           )}
 
           {!isRecording && !audioUri && (
-            <Text style={[s.recHint, { color: c.subtle }]}>Äá»c Ä‘á» bÃ i, chuáº©n bá»‹ rá»“i báº¥m Ä‘á»ƒ ghi Ã¢m</Text>
+            <Text style={[s.recHint, { color: c.subtle }]}>Đọc đề bài, chuẩn bị rồi bấm để ghi âm</Text>
           )}
 
           {audioUri && !isRecording && (
-            <Text style={[s.recHint, { color: c.success }]}>ÄÃ£ ghi xong â€” sáºµn sÃ ng ná»™p bÃ i</Text>
+            <Text style={[s.recHint, { color: c.success }]}>Đã ghi xong — sẵn sàng nộp bài</Text>
           )}
         </DepthCard>
 
@@ -303,15 +303,15 @@ function RecordScreen({ detail, sessionId, onBack, insets, c, router }: RecordSc
             {submitMutation.isPending ? (
               <View style={s.submittingRow}>
                 <ActivityIndicator color="#fff" size="small" />
-                <Text style={[s.micBtnText, { color: "#fff" }]}>Äang upload...</Text>
+                <Text style={[s.micBtnText, { color: "#fff" }]}>Đang upload...</Text>
               </View>
             ) : (
-              "Ná»™p bÃ i"
+              "Nộp bài"
             )}
           </DepthButton>
           {submitMutation.error ? (
             <Text style={[s.inlineError, { color: c.destructive }]}>
-              KhÃ´ng thá»ƒ ná»™p bÃ i: {getApiErrorMessage(submitMutation.error)}
+              Không thể nộp bài: {getApiErrorMessage(submitMutation.error)}
             </Text>
           ) : null}
           </View>

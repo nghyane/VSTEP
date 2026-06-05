@@ -29,7 +29,7 @@ interface SpeakingPanelProps {
 export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClearSpeakingAnswer, onBusyChange, c, insets }: SpeakingPanelProps) {
   const [partIdx, setPartIdx] = useState(0);
   const part = parts[partIdx];
-  const maxSeconds = Math.max(1, (part?.durationMinutes ?? 1) * 60);
+  const maxSeconds = Math.max(1, part?.speakingSeconds ?? (part?.durationMinutes ?? 1) * 60);
   const maxMs = maxSeconds * 1000;
   const {
     audioUri,
@@ -180,9 +180,10 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
         </ScrollView>
       )}
 
-      <View style={[s.promptCard, { backgroundColor: c.card, borderColor: c.border }]}>
+      <View style={[s.promptCard, { backgroundColor: c.card, borderColor: c.border }]}> 
         <Text style={[s.promptLabel, { color: accentDark }]}>Part {part.part} - {part.type}</Text>
-        <Text style={[s.promptMeta, { color: c.mutedForeground }]}>{part.durationMinutes} phút - Ghi âm câu trả lời</Text>
+        <Text style={[s.promptMeta, { color: c.mutedForeground }]}>{part.durationMinutes} phút - Ghi âm tối đa {maxSeconds}s</Text>
+        <SpeakingPromptContent content={part.content} c={c} />
       </View>
 
       <View style={[s.recCard, { backgroundColor: c.card, borderColor: isRecording ? accentColor : c.border }]}>
@@ -245,6 +246,36 @@ export function SpeakingPanel({ parts, done, onDone, onSetSpeakingAnswer, onClea
   );
 }
 
+function SpeakingPromptContent({ content, c }: { content: Record<string, unknown>; c: ReturnType<typeof useThemeColors> }) {
+  const lines = flattenPromptContent(content);
+  if (lines.length === 0) return null;
+
+  return (
+    <View style={s.promptContent}>
+      {lines.map((line, index) => (
+        <Text key={`${index}-${line.slice(0, 12)}`} style={[s.promptText, { color: c.foreground }]}>
+          {line}
+        </Text>
+      ))}
+    </View>
+  );
+}
+
+function flattenPromptContent(value: unknown): string[] {
+  if (typeof value === "string") return value.trim() ? [value.trim()] : [];
+  if (Array.isArray(value)) return value.flatMap(flattenPromptContent);
+  if (value && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>).flatMap(([key, nested]) => {
+      if (key === "topics" && Array.isArray(nested)) return flattenPromptContent(nested);
+      const label = key.replace(/_/g, " ");
+      const lines = flattenPromptContent(nested);
+      if (lines.length === 0) return [];
+      return lines.map((line) => `${label}: ${line}`);
+    });
+  }
+  return [];
+}
+
 const s = StyleSheet.create({
   panelScroll: { padding: spacing.xl, gap: spacing.lg },
   sectionTabs: { borderBottomWidth: 1, flexGrow: 0, flexShrink: 0, maxHeight: 58 },
@@ -254,6 +285,8 @@ const s = StyleSheet.create({
   promptCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.lg, gap: spacing.sm },
   promptLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
   promptMeta: { fontSize: fontSize.xs },
+  promptContent: { gap: spacing.xs, marginTop: spacing.xs },
+  promptText: { fontSize: fontSize.sm, lineHeight: 20 },
   recCard: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.xl, alignItems: "center", gap: spacing.lg },
   recStatusPill: { flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full },
   recStatusText: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },

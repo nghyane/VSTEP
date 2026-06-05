@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import type { Exam, ExamDetail, ExamSessionResult } from "@/types/api";
+import type { Exam, ExamDetail } from "@/types/api";
 
 export type { Exam, ExamDetail };
 
@@ -37,13 +37,5 @@ export function useExam(id: string) {
     queryKey: ["exam", id],
     queryFn: () => api.get<ExamDetail>(`/api/v1/exams/${id}`),
     enabled: !!id,
-  });
-}
-
-export function useExamSessions(status?: string) {
-  const query = status && status !== "all" ? `?status=${encodeURIComponent(status)}` : "";
-  return useQuery({
-    queryKey: ["exam-sessions", "mine", status ?? "all"],
-    queryFn: () => api.get<ExamSessionResult[]>(`/api/v1/exam-sessions${query}`),
   });
 }

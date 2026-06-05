@@ -3,13 +3,13 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 import { AppState } from "react-native";
 import { api } from "@/lib/api";
 import { saveDraft, loadDraft, clearDraft, type ExamDraft } from "@/lib/exam-draft";
-import type { ExamVersionMcqItem, ExamVersionWritingTask, ExamVersionSpeakingPart } from "@/types/api";
+import type { ExamRoomData, ExamVersionMcqItem, ExamVersionWritingTask, ExamVersionSpeakingPart } from "@/types/api";
 
 // ── Types ──
 
 export interface ExamSessionData {
   id: string;
-  examId: string;
+  examId?: string | null;
   examVersionId: string;
   mode: "full" | "custom";
   selectedSkills: string[];
@@ -17,7 +17,7 @@ export interface ExamSessionData {
   startedAt?: string;
   serverDeadlineAt: string;
   submittedAt: string | null;
-  status: "active" | "submitted" | "graded";
+  status: "active" | "submitted" | "auto_submitted" | "grading" | "graded" | "abandoned";
   coinsCharged: number;
 }
 
@@ -97,23 +97,13 @@ export interface McqAnswerPayload {
 
 // ── Queries ──
 
-export function useExamSession(sessionId: string) {
+export function useExamRoom(sessionId: string) {
   return useQuery({
-    queryKey: ["exam-sessions", sessionId],
-    queryFn: () => api.get<ExamSessionData>(`/api/v1/exam-sessions/${sessionId}`),
+    queryKey: ["exam-sessions", sessionId, "room"],
+    queryFn: () => api.get<ExamRoomData>(`/api/v1/exam-sessions/${sessionId}/room`),
     enabled: !!sessionId,
     retry: false,
     staleTime: Infinity,
-  });
-}
-
-export function useExamDraft(sessionId: string) {
-  return useQuery({
-    queryKey: ["exam-sessions", sessionId, "draft"],
-    queryFn: () => api.get<ExamServerDraft | null>(`/api/v1/exam-sessions/${sessionId}/draft`),
-    enabled: !!sessionId,
-    retry: false,
-    staleTime: 0,
   });
 }
 
@@ -142,12 +132,29 @@ export function useStartExamSession() {
   });
 }
 
-export function useActiveExamSession() {
-  return useQuery({
-    queryKey: ["exam-sessions", "active"],
-    queryFn: () => api.get<ExamSessionData>("/api/v1/exam-sessions/active"),
-    retry: false,
-    staleTime: 0,
+export function useRestartExamSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      examId,
+      abandonSessionId,
+      mode,
+      selectedSkills,
+      timeExtensionFactor,
+    }: {
+      examId: string;
+      abandonSessionId: string;
+      mode: "full" | "custom";
+      selectedSkills?: string[];
+      timeExtensionFactor?: number;
+    }) =>
+      api.post<StartSessionResult>(`/api/v1/exams/${examId}/sessions/restart`, {
+        abandonSessionId,
+        mode,
+        selectedSkills: selectedSkills ?? [],
+        timeExtensionFactor: timeExtensionFactor ?? 1.0,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["exams"] }),
   });
 }
 
@@ -164,18 +171,6 @@ export function useSaveExamDraft(sessionId: string) {
     mutationFn: (payload: SaveExamDraftPayload) =>
       api.put<ExamServerDraft>(`/api/v1/exam-sessions/${sessionId}/draft`, payload),
     onSuccess: (draft) => qc.setQueryData(["exam-sessions", sessionId, "draft"], draft),
-  });
-}
-
-export function useAbandonExamSession() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (sessionId: string) =>
-      api.post<{ abandoned: boolean }>(`/api/v1/exam-sessions/${sessionId}/abandon`),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["exam-sessions"] });
-      void qc.invalidateQueries({ queryKey: ["exams"] });
-    },
   });
 }
 
@@ -389,13 +384,13 @@ export function useExamSessionState(
   readingItems: ExamVersionMcqItem[],
   writingTasks: ExamVersionWritingTask[],
   speakingParts: ExamVersionSpeakingPart[],
+  initialServerDraft: ExamServerDraft | null,
   onSubmitted: (result: SubmitSessionResult) => void,
 ) {
   const [state, dispatch] = useReducer(reducer, session, initialExamState);
 
   const submitMutation = useSubmitExamSession(session.id);
   const saveDraftMutation = useSaveExamDraft(session.id);
-  const serverDraft = useExamDraft(session.id);
   const restoredDraftRef = useRef(false);
   const localSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const serverSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -414,17 +409,17 @@ export function useExamSessionState(
   }, [state]);
 
   useEffect(() => {
-    if (restoredDraftRef.current || serverDraft.isLoading) return;
+    if (restoredDraftRef.current) return;
     restoredDraftRef.current = true;
     const restore = async () => {
       const fallbackDraft = await loadDraft(session.id);
-      const draft = serverDraft.data
-        ? toExamDraft(session, serverDraft.data)
+      const draft = initialServerDraft
+        ? toExamDraft(session, initialServerDraft)
         : fallbackDraft;
       if (draft) dispatch({ type: "RESTORE_DRAFT", draft });
     };
     void restore();
-  }, [serverDraft.isLoading, serverDraft.data, session]);
+  }, [initialServerDraft, session]);
 
   const scopedMcqTotal = (hasListening ? listeningItems.length : 0) + (hasReading ? readingItems.length : 0);
   const scopedAnsweredMcq = activeSkills.includes("listening")

@@ -42,6 +42,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/auth/google', [AuthController::class, 'googleLogin']);
         Route::post('/auth/refresh', [AuthController::class, 'refresh']);
         Route::post('/auth/email/check', [AuthController::class, 'checkEmail']);
+        Route::get('/auth/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+            ->middleware('signed')
+            ->name('verification.verify');
+        Route::post('/auth/email/verification-notification', [AuthController::class, 'resendEmailVerification']);
+        Route::post('/auth/forgot-password', [AuthController::class, 'forgotPassword']);
+        Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
     });
 
     // Auth (protected, no active profile required — admin/teacher fit here)
@@ -73,6 +79,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
         Route::get('/wallet/topup-packages', [WalletController::class, 'topupPackages']);
         Route::post('/wallet/topup', [WalletController::class, 'createTopup']);
+        Route::post('/wallet/topup/payment-return', [WalletController::class, 'handleTopupPaymentReturn']);
         Route::get('/wallet/topup/{order}/status', [WalletController::class, 'orderStatus']);
         Route::post('/wallet/promo-redeem', [WalletController::class, 'redeemPromo']);
 
@@ -104,6 +111,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/practice/writing/prompts', [WritingPracticeController::class, 'listPrompts']);
         Route::get('/practice/writing/prompts/{id}', [WritingPracticeController::class, 'showPrompt']);
         Route::get('/practice/writing/history', [WritingPracticeController::class, 'history']);
+        Route::post('/practice/writing/diagnostics', [WritingPracticeController::class, 'diagnostics'])
+            ->middleware('throttle:30,1');
         Route::post('/practice/writing/sessions', [WritingPracticeController::class, 'startSession']);
         Route::post('/practice/writing/sessions/{practice_session}/submit', [WritingPracticeController::class, 'submit']);
 
@@ -145,19 +154,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/exams', [ExamController::class, 'index']);
         Route::get('/exams/{id}', [ExamController::class, 'show']);
         Route::post('/exams/{examId}/sessions', [ExamController::class, 'startSession']);
-        Route::get('/exam-sessions/active', [ExamController::class, 'activeSession']);
-        Route::get('/exam-sessions', [ExamController::class, 'mySessions']);
-        Route::get('/exam-sessions/{exam_session}', [ExamController::class, 'showSession']);
+        Route::post('/exams/{examId}/sessions/restart', [ExamController::class, 'restartSession']);
+        Route::get('/exam-sessions/{exam_session}/room', [ExamController::class, 'showRoom']);
         Route::get('/exam-sessions/{exam_session}/results', [ExamController::class, 'sessionResults']);
         Route::post('/exam-sessions/{exam_session}/submit', [ExamController::class, 'submit']);
-        Route::post('/exam-sessions/{exam_session}/abandon', [ExamController::class, 'abandon']);
-        Route::get('/exam-sessions/{exam_session}/draft', [ExamController::class, 'getDraft']);
         Route::put('/exam-sessions/{exam_session}/draft', [ExamController::class, 'saveDraft'])
             ->middleware('throttle:120,1');
         Route::post('/exam-sessions/{exam_session}/listening-played', [ExamController::class, 'logListeningPlayed']);
-        Route::get('/exam-sessions/{exam_session}/listening-played', [ExamController::class, 'listeningPlaySummary']);
-        Route::get('/exam-sessions/{exam_session}/writing-results', [ExamController::class, 'writingResults']);
-        Route::get('/exam-sessions/{exam_session}/speaking-results', [ExamController::class, 'speakingResults']);
 
         // Audio presigned URLs (R2).
         Route::post('/audio/presign-upload', [AudioController::class, 'presignUpload']);
@@ -179,10 +182,12 @@ Route::prefix('v1')->group(function () {
 
         // Courses.
         Route::get('/courses', [CourseController::class, 'index']);
+        Route::get('/courses/enrollment-orders', [CourseController::class, 'enrollmentOrders']);
+        Route::post('/courses/enrollment-orders/payment-return', [CourseController::class, 'handleEnrollmentPaymentReturn']);
+        Route::post('/courses/enrollment-orders/{order}/cancel', [CourseController::class, 'cancelEnrollmentOrder'])->whereUuid('order');
         Route::get('/courses/{course}/risk-students', [CourseController::class, 'riskStudents']);
         Route::get('/courses/{course}', [CourseController::class, 'show']);
         Route::post('/courses/{course}/enrollment-orders', [CourseController::class, 'createEnrollmentOrder']);
-        Route::get('/courses/enrollment-orders', [CourseController::class, 'enrollmentOrders']);
         Route::get('/courses/{course}/bookings', [CourseController::class, 'bookings']);
         Route::post('/courses/{course}/bookings', [CourseController::class, 'bookSlot']);
 
@@ -201,6 +206,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/action-items', [Admin\DashboardController::class, 'actionItems']);
         Route::get('/content-status', [Admin\DashboardController::class, 'contentStatus']);
         Route::get('/recent-activity', [Admin\DashboardController::class, 'recentActivity']);
+        Route::get('/feedback', [Admin\FeedbackController::class, 'index']);
 
         // Audio upload (presigned PUT to R2) — staff only.
         Route::post('/audio/presign-upload', [Admin\AudioUploadController::class, 'presignUpload']);
@@ -220,6 +226,10 @@ Route::prefix('v1')->group(function () {
         Route::middleware('role:admin')->prefix('grading-rubrics')->group(function () {
             Route::get('/', [Admin\GradingRubricController::class, 'index']);
             Route::get('/{id}', [Admin\GradingRubricController::class, 'show'])->whereUuid('id');
+            Route::patch('/{id}', [Admin\GradingRubricController::class, 'update'])->whereUuid('id');
+            Route::post('/{id}/clone', [Admin\GradingRubricController::class, 'clone'])->whereUuid('id');
+            Route::post('/{id}/activate', [Admin\GradingRubricController::class, 'activate'])->whereUuid('id');
+            Route::post('/{id}/simulate', [Admin\GradingRubricController::class, 'simulate'])->whereUuid('id');
         });
 
         // System config — ADMIN ONLY (nested middleware role:admin overrides parent role:staff)
@@ -241,6 +251,13 @@ Route::prefix('v1')->group(function () {
             Route::get('/streak-distribution', [Admin\AnalyticsController::class, 'streakDistribution']);
             Route::get('/promo-stats', [Admin\AnalyticsController::class, 'promoStats']);
             Route::get('/top-content', [Admin\AnalyticsController::class, 'topContent']);
+        });
+
+        Route::middleware('role:admin')->prefix('finance')->group(function () {
+            Route::get('/summary', [Admin\FinanceController::class, 'summary']);
+            Route::get('/orders', [Admin\FinanceController::class, 'orders']);
+            Route::get('/orders/{type}/{id}', [Admin\FinanceController::class, 'show'])->whereIn('type', ['topup', 'course'])->whereUuid('id');
+            Route::get('/top-products', [Admin\FinanceController::class, 'topProducts']);
         });
 
         // Exam management

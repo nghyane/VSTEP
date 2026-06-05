@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   ScrollView,
   StyleSheet,
@@ -19,10 +18,9 @@ import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { SkillIcon } from "@/components/SkillIcon";
 import { CoinButton } from "@/features/coin/CoinButton";
-import { useAppConfig, useExamSessions, useExams, type Exam } from "@/hooks/use-exams";
-import { useAbandonExamSession, useActiveExamSession, type ExamSessionData } from "@/hooks/use-exam-session";
+import { useAppConfig, useExams, type Exam } from "@/hooks/use-exams";
 import { MascotEmpty } from "@/components/MascotStates";
-import { useThemeColors, useSkillColor, spacing, radius, fontSize, fontFamily } from "@/theme";
+import { useThemeColors, useSkillColor, useResponsiveLayout, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Skill } from "@/types/api";
 
 const SKILLS: { key: Skill; label: string }[] = [
@@ -43,14 +41,13 @@ const STATUS_FILTERS: { key: StatusFilter; label: string }[] = [
 
 export default function ExamsScreen() {
   const c = useThemeColors();
+  const layout = useResponsiveLayout();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data, isLoading, isError } = useExams();
   const { data: config } = useAppConfig();
-  const activeSession = useActiveExamSession();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const submittedSessions = useExamSessions(statusFilter === "submitted" ? "submitted" : undefined);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -66,21 +63,28 @@ export default function ExamsScreen() {
     const matchesSearch = exam.title.toLowerCase().includes(search.toLowerCase());
     if (!matchesSearch) return false;
     if (statusFilter === "all") return true;
-    if (statusFilter === "not_started") return !exam.status && !exam.attemptCount;
-    if (statusFilter === "submitted") return exam.status === "submitted" || exam.status === "completed";
-    return exam.status === statusFilter;
+    return exam.userState?.status === statusFilter;
   });
-  const showSubmittedSessions = statusFilter === "submitted";
+  const activeExam = (data ?? []).find((exam) => exam.userState?.activeSessionId);
 
   return (
     <ScrollView
       style={[styles.root, { backgroundColor: c.background }]}
-      contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.xl }]}
+      contentContainerStyle={[
+        styles.scroll,
+        {
+          paddingTop: insets.top + spacing.xl,
+          paddingBottom: insets.bottom + spacing.lg,
+          paddingLeft: layout.isTabletLandscape ? layout.contentInsetStart : layout.horizontalPadding,
+          paddingRight: layout.horizontalPadding,
+          alignItems: "center",
+        },
+      ]}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
-      <Animated.View style={{ opacity: fadeAnim }}>
-        <View style={styles.headerRow}>
+      <Animated.View style={[styles.sectionShell, { maxWidth: layout.contentMaxWidth, opacity: fadeAnim }]}>
+        <View style={[styles.headerRow, layout.isTablet ? styles.headerRowWide : null]}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.title, { color: c.foreground }]}>Thi thử</Text>
             <Text style={[styles.subtitle, { color: c.mutedForeground }]}>Chọn một đề thi, xem chi tiết rồi bắt đầu phiên thi hoàn chỉnh.</Text>
@@ -88,8 +92,8 @@ export default function ExamsScreen() {
           <CoinButton />
         </View>
 
-        {activeSession.data ? (
-          <ActiveSessionCard session={activeSession.data} />
+        {activeExam ? (
+          <ActiveSessionCard exam={activeExam} />
         ) : null}
 
         <View style={[styles.searchWrap, { backgroundColor: c.surface, borderColor: c.border }]}> 
@@ -133,13 +137,13 @@ export default function ExamsScreen() {
         </ScrollView>
       </Animated.View>
 
-      {(isLoading || (showSubmittedSessions && submittedSessions.isLoading)) ? (
+      {isLoading ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator color={c.primary} size="large" />
         </View>
       ) : null}
 
-      {isError && !showSubmittedSessions ? (
+      {isError ? (
         <View style={styles.loadingWrap}>
           <Text style={{ color: c.destructive, fontSize: fontSize.sm, textAlign: "center" }}>
             Không thể tải danh sách đề thi. Kiểm tra kết nối và thử lại.
@@ -147,7 +151,7 @@ export default function ExamsScreen() {
         </View>
       ) : null}
 
-      {!isLoading && !isError && !showSubmittedSessions && exams.length === 0 ? (
+      {!isLoading && !isError && exams.length === 0 ? (
         <MascotEmpty
           mascot="think"
           title="Không tìm thấy đề thi nào"
@@ -155,20 +159,8 @@ export default function ExamsScreen() {
         />
       ) : null}
 
-      {showSubmittedSessions && !submittedSessions.isLoading && (submittedSessions.data ?? []).length === 0 ? (
-        <MascotEmpty
-          mascot="think"
-          title="Chưa có bài đã nộp"
-          subtitle="Nộp xong bài thi, lịch sử sẽ xuất hiện tại đây."
-        />
-      ) : null}
-
-      <View style={styles.list}>
-        {showSubmittedSessions ? (
-          (submittedSessions.data ?? []).map((session) => (
-            <SubmittedSessionCard key={session.id} session={session} />
-          ))
-        ) : exams.map((exam, index) => (
+      <View style={[styles.sectionShell, styles.list, { maxWidth: layout.contentMaxWidth }]}> 
+        {exams.map((exam, index) => (
             <ExamCard
               key={exam.id}
               exam={exam}
@@ -178,60 +170,19 @@ export default function ExamsScreen() {
             />
         ))}
       </View>
-
-      <View style={{ height: insets.bottom + 40 }} />
     </ScrollView>
   );
 }
 
-function SubmittedSessionCard({ session }: { session: import("@/types/api").ExamSessionResult }) {
+function ActiveSessionCard({ exam }: { exam: Exam }) {
   const c = useThemeColors();
   const router = useRouter();
-  const submittedAt = session.submittedAt ? new Date(session.submittedAt).toLocaleDateString("vi-VN") : "Chưa rõ ngày";
-
-  return (
-    <DepthCard>
-      <View style={styles.activeHeader}>
-        <View style={[styles.activeIcon, { backgroundColor: c.primaryTint }]}> 
-          <Ionicons name="checkmark-circle" size={18} color={c.primary} />
-        </View>
-        <View style={styles.activeTextWrap}>
-          <Text style={[styles.activeEyebrow, { color: c.primary }]}>Đã nộp · {submittedAt}</Text>
-          <Text style={[styles.activeTitle, { color: c.foreground }]} numberOfLines={1}>Phiên thi #{session.id.slice(0, 8)}</Text>
-        </View>
-      </View>
-      <View style={styles.activeActions}>
-        <DepthButton size="sm" onPress={() => router.push(`/(app)/exam-result/${session.id}` as never)}>
-          Xem kết quả
-        </DepthButton>
-      </View>
-    </DepthCard>
-  );
-}
-
-function ActiveSessionCard({ session }: { session: ExamSessionData }) {
-  const c = useThemeColors();
-  const router = useRouter();
-  const abandon = useAbandonExamSession();
-  const title = session.examTitle ?? "Bài thi đang làm";
+  const sessionId = exam.userState?.activeSessionId;
+  const title = exam.title;
 
   const handleContinue = () => {
-    router.push(`/(app)/session/${session.id}?examId=${session.examId}&resume=1` as any);
-  };
-
-  const handleAbandon = () => {
-    Alert.alert(
-      "Bỏ phiên thi?",
-      "Phiên thi hiện tại sẽ được nộp tự động và bạn có thể bắt đầu lại từ danh sách đề.",
-      [
-        { text: "Giữ lại", style: "cancel" },
-        {
-          text: "Bỏ phiên",
-          style: "destructive",
-          onPress: () => abandon.mutate(session.id),
-        },
-      ],
-    );
+    if (!sessionId) return;
+    router.push(`/(app)/session/${sessionId}?resume=1` as any);
   };
 
   return (
@@ -246,9 +197,6 @@ function ActiveSessionCard({ session }: { session: ExamSessionData }) {
         </View>
       </View>
       <View style={styles.activeActions}>
-        <DepthButton variant="secondary" size="sm" onPress={handleAbandon} disabled={abandon.isPending}>
-          Bỏ phiên
-        </DepthButton>
         <DepthButton size="sm" onPress={handleContinue}>
           Tiếp tục
         </DepthButton>
@@ -308,16 +256,16 @@ function ExamCard({
                 <Text style={[styles.metaText, { color: c.coinDark }]}>{exam.bestScore.toFixed(1)}</Text>
               </>
             )}
-            {exam.attemptCount != null && exam.attemptCount > 0 && (
+            {getExamAttemptCount(exam) > 0 && (
               <>
                 <Text style={[styles.metaDot, { color: c.subtle }]}>·</Text>
-                <Text style={[styles.metaText, { color: c.subtle }]}>{exam.attemptCount} lần thi</Text>
+                <Text style={[styles.metaText, { color: c.subtle }]}>{getExamAttemptCount(exam)} lần thi</Text>
               </>
             )}
           </View>
 
           <View style={styles.skillRow}>
-            {(exam.skill === "mixed" ? SKILLS : SKILLS.filter((s) => s.key === exam.skill)).map((skill) => (
+            {getExamSkills(exam).map((skill) => (
               <SkillChip key={skill.key} skill={skill.key} label={skill.label} />
             ))}
           </View>
@@ -337,6 +285,15 @@ function ExamCard({
   );
 }
 
+function getExamAttemptCount(exam: Exam): number {
+  return exam.attemptsCount ?? exam.attemptCount ?? exam.userState?.sessionCount ?? 0;
+}
+
+function getExamSkills(exam: Exam): { key: Skill; label: string }[] {
+  if (!exam.skill || exam.skill === "mixed") return SKILLS;
+  return SKILLS.filter((skill) => skill.key === exam.skill);
+}
+
 function SkillChip({ skill, label }: { skill: Skill; label: string }) {
   const color = useSkillColor(skill);
   return (
@@ -349,8 +306,10 @@ function SkillChip({ skill, label }: { skill: Skill; label: string }) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  scroll: { paddingHorizontal: spacing.xl, paddingBottom: spacing["3xl"] },
+  scroll: { gap: spacing.base },
+  sectionShell: { width: "100%" },
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: spacing.base },
+  headerRowWide: { alignItems: "center" },
   title: { fontSize: fontSize["2xl"], fontFamily: fontFamily.extraBold },
   subtitle: { fontSize: fontSize.xs, marginTop: spacing.xs, lineHeight: 18 },
   searchWrap: { flexDirection: "row", alignItems: "center", gap: spacing.sm, borderWidth: 2, borderRadius: radius.xl, paddingHorizontal: spacing.base, paddingVertical: spacing.sm, marginBottom: spacing.xl },

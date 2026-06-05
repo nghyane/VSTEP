@@ -9,11 +9,14 @@ use App\Enums\IconKey;
 use App\Enums\NotificationType;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentProvider;
+use App\Jobs\SendPaymentInvoiceEmail;
 use App\Models\Profile;
+use App\Models\User;
 use App\Models\WalletTopupOrder;
 use App\Models\WalletTopupPackage;
 use App\Services\Payment\OrderNotFoundAfterValidation;
 use App\Services\Payment\PaymentGatewayRegistry;
+use App\Services\Payment\PayOsGateway;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -43,7 +46,8 @@ final class TopupService
         Profile $profile,
         WalletTopupPackage $package,
         PaymentProvider $provider,
-        ?string $returnUrl = null,
+        string $returnUrl,
+        string $cancelUrl,
     ): array {
         if (! $package->is_active) {
             throw ValidationException::withMessages([
@@ -54,12 +58,13 @@ final class TopupService
         $gateway = $this->gateways->get($provider);
         $expiryMinutes = (int) config('payment.order_expiry_minutes', 15);
 
-        return DB::transaction(function () use ($profile, $package, $provider, $gateway, $expiryMinutes, $returnUrl) {
+        return DB::transaction(function () use ($profile, $package, $provider, $gateway, $expiryMinutes, $returnUrl, $cancelUrl) {
             // Generate unique integer order_code for PayOS.
             $orderCode = $this->nextOrderCode();
 
             $order = WalletTopupOrder::create([
                 'order_code' => $orderCode,
+                'account_id' => $profile->account_id,
                 'profile_id' => $profile->id,
                 'package_id' => $package->id,
                 'amount_vnd' => $package->amount_vnd,
@@ -68,9 +73,6 @@ final class TopupService
                 'payment_provider' => $provider->value,
                 'expires_at' => now()->addMinutes($expiryMinutes),
             ]);
-
-            $returnUrl = $returnUrl ?? config('app.frontend_url')."/wallet/return?order={$order->id}";
-            $cancelUrl = config('app.frontend_url').'/wallet';
 
             $response = $gateway->createPayment($order, $returnUrl, $cancelUrl);
 
@@ -140,8 +142,11 @@ final class TopupService
                 );
             }
 
-            $this->walletService->credit(
-                profile: $order->profile,
+            $profile = $order->profile;
+
+            $this->walletService->creditToAccount(
+                account: $order->account,
+                profile: $profile,
                 amount: $order->coins_to_credit,
                 type: CoinTransactionType::Topup,
                 source: $order,
@@ -159,16 +164,93 @@ final class TopupService
                 'callback_received_at' => now(),
             ]);
 
-            DB::afterCommit(fn () => $this->notificationService->push(
-                profile: $order->profile,
-                type: NotificationType::TopupCompleted,
-                title: 'Nạp xu thành công',
-                body: "Bạn đã nhận {$order->coins_to_credit} xu.",
-                iconKey: IconKey::Coin,
-                dedupKey: "topup:{$order->id}",
-            ));
+            DB::afterCommit(function () use ($order, $profile): void {
+                if ($profile === null) {
+                    return;
+                }
+
+                $notification = $this->notificationService->push(
+                    profile: $profile,
+                    type: NotificationType::TopupCompleted,
+                    title: 'Nạp xu thành công',
+                    body: "Bạn đã nhận {$order->coins_to_credit} xu.",
+                    iconKey: IconKey::Coin,
+                    dedupKey: "topup:{$order->id}",
+                );
+
+                if ($notification !== null) {
+                    try {
+                        SendPaymentInvoiceEmail::dispatch(SendPaymentInvoiceEmail::TYPE_TOPUP, $order->id);
+                    } catch (\Throwable $e) {
+                        Log::error('Failed to dispatch topup invoice email', [
+                            'order_id' => $order->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            });
 
             return $order;
+        });
+    }
+
+    public function refreshFromPaymentReturn(User $account, string $paymentLinkId): WalletTopupOrder
+    {
+        $gateway = $this->gateways->get(PaymentProvider::PayOs);
+        if (! $gateway instanceof PayOsGateway) {
+            throw new \RuntimeException('PayOS gateway is not configured.');
+        }
+
+        $status = $gateway->getPaymentLinkStatus($paymentLinkId);
+
+        return DB::transaction(function () use ($account, $paymentLinkId, $status): WalletTopupOrder {
+            $order = WalletTopupOrder::query()
+                ->where(function ($query) use ($paymentLinkId, $status): void {
+                    $query->where('gateway_transaction_id', $paymentLinkId)
+                        ->orWhere('provider_ref', $paymentLinkId);
+
+                    if ($status['orderCode'] > 0) {
+                        $query->orWhere('order_code', $status['orderCode']);
+                    }
+                })
+                ->lockForUpdate()
+                ->first();
+
+            if (! $order) {
+                throw ValidationException::withMessages(['order' => ['Không tìm thấy đơn thanh toán.']]);
+            }
+
+            if ($order->account_id !== $account->id) {
+                throw ValidationException::withMessages(['order' => ['Đơn hàng không thuộc tài khoản hiện tại.']]);
+            }
+
+            $gatewayStatus = strtoupper($status['status']);
+
+            if ($gatewayStatus === 'PAID') {
+                return $this->confirmByOrderCode(
+                    (int) $order->order_code,
+                    (string) ($status['id'] ?: $paymentLinkId),
+                    $status['raw'],
+                );
+            }
+
+            if ($gatewayStatus === 'CANCELLED' && $order->status === OrderStatus::Pending) {
+                $order->update([
+                    'status' => OrderStatus::Cancelled,
+                    'gateway_response' => $status['raw'],
+                    'callback_received_at' => now(),
+                ]);
+            }
+
+            if ($gatewayStatus === 'EXPIRED' && $order->status === OrderStatus::Pending) {
+                $order->update([
+                    'status' => OrderStatus::Expired,
+                    'gateway_response' => $status['raw'],
+                    'callback_received_at' => now(),
+                ]);
+            }
+
+            return $order->refresh();
         });
     }
 

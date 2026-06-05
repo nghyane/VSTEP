@@ -76,15 +76,30 @@ export interface GoogleLoginResponse {
 
 export interface Exam {
   id: string;
+  slug?: string;
   title: string;
   description: string | null;
+  sourceSchool?: string | null;
   tags: string[];
   totalDurationMinutes: number;
-  type: ExamType;
-  skill: ExamSkill;
+  type?: ExamType;
+  skill?: ExamSkill;
   status?: ExamStatus;
   bestScore?: number | null;
   attemptCount?: number;
+  attemptsCount?: number;
+  userState?: {
+    status: "not_started" | "in_progress" | "submitted";
+    statusLabel: string;
+    statusTone: "primary" | "success" | "warning";
+    primaryAction: "start" | "continue" | "restart";
+    primaryActionLabel: string;
+    activeSessionId: string | null;
+    deadlineAt: string | null;
+    selectedSkills: Skill[] | null;
+    progressLabel: string | null;
+    sessionCount: number;
+  };
 }
 
 export interface ExamSession {
@@ -141,6 +156,8 @@ export interface ExamVersionSpeakingPart {
   part: number;
   type: string;
   durationMinutes: number;
+  speakingSeconds: number;
+  content: Record<string, unknown>;
   displayOrder: number;
 }
 
@@ -157,7 +174,69 @@ export interface ExamVersion {
 
 export interface ExamDetail {
   exam: Exam;
+  version: Pick<ExamVersion, "id" | "versionNumber" | "isActive" | "publishedAt">;
+  skillSummaries: Record<Skill, ExamSkillSummary>;
+  pricing: {
+    fullTestCostCoins: number;
+    customPerSkillCoins: number;
+  };
+  attemptState: {
+    activeSession: ExamSessionResult | null;
+    activeCurrentVersionSession: ExamSessionResult | null;
+    history: ExamSessionResult[];
+  };
+}
+
+export interface ExamSkillSummary {
+  skill: Skill;
+  durationMinutes: number;
+  itemCount: number;
+  partCount: number;
+}
+
+export interface ExamRoomData {
+  session: ExamSessionData;
+  exam: Exam;
   version: ExamVersion;
+  draft: ExamServerDraft | null;
+  listeningPlaySummary: ListeningPlaySummaryItem[];
+  actions: {
+    canAnswer: boolean;
+    canSubmit: boolean;
+    canViewResult: boolean;
+  };
+}
+
+export interface ExamSessionData {
+  id: string;
+  profileId?: string;
+  examVersionId: string;
+  mode: "full" | "custom";
+  selectedSkills: Skill[];
+  isFullTest: boolean;
+  timeExtensionFactor?: number;
+  startedAt: string;
+  serverDeadlineAt: string;
+  submittedAt: string | null;
+  status: "active" | "submitted" | "auto_submitted" | "grading" | "graded" | "abandoned";
+  coinsCharged: number;
+  remainingSeconds?: number;
+}
+
+export interface ListeningPlaySummaryItem {
+  sectionId: string;
+  part: number;
+  played: boolean;
+  playedAt: string | null;
+}
+
+export interface ExamServerDraft {
+  sessionId: string;
+  skillIdx: number;
+  mcqAnswers: { itemRefId: string; selectedIndex: number }[];
+  writingAnswers: { taskId: string; text: string }[];
+  speakingMarks: { partId: string; audioKey?: string | null; audioUrl?: string | null; durationSeconds?: number | null }[];
+  savedAt: string;
 }
 
 // ============================================================
@@ -230,6 +309,7 @@ export interface OverviewData {
   scores: {
     spider: ScoreSpider | null;
     timeline: ScoreTimelinePoint[];
+    quality?: ScoreQuality;
     growth: Record<Skill, ScoreGrowth>;
   };
   stats: {
@@ -244,6 +324,14 @@ export interface ScoreSpider {
   writing: number | null;
   speaking: number | null;
   sampleSize: number;
+  skillSampleSizes?: Record<Skill, number>;
+}
+
+export interface ScoreQuality {
+  status: "normal" | "single_outlier" | "consecutive_low";
+  hasOutlier: boolean;
+  consecutiveLow: boolean;
+  outlierSkills: Skill[];
 }
 
 export interface ScoreTimelinePoint {
