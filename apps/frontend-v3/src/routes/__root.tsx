@@ -9,7 +9,8 @@ interface RouterContext {
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
-	beforeLoad: async () => {
+	beforeLoad: async ({ location }) => {
+		if (location.pathname === "/wallet") return
 		if (useAuth.getState().status === "idle") {
 			await initAuth()
 		}
