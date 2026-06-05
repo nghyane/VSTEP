@@ -85,6 +85,7 @@ class AdminFinanceTest extends TestCase
         $course = Course::factory()->create(['title' => 'B2 Intensive', 'price_vnd' => 1_500_000]);
 
         $topupOrder = WalletTopupOrder::create([
+            'account_id' => $profile->account_id,
             'profile_id' => $profile->id,
             'package_id' => $package->id,
             'order_code' => 900001,

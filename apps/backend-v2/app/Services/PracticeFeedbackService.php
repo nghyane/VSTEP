@@ -65,7 +65,7 @@ final class PracticeFeedbackService
             return $this->payload($existing->refresh(), $cost, false, $this->resultFeedback($attempt));
         }
 
-        $request = DB::transaction(function () use ($profile, $submission, $submissionType, $cost, $attempt) {
+        $request = DB::transaction(function () use ($profile, $submission, $submissionType, $cost) {
             $existing = $this->existingRequest($submissionType, $submission->getKey(), true);
 
             if ($existing !== null) {

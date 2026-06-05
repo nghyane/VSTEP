@@ -2,26 +2,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
 import { ScrollArea } from "#/components/ScrollArea"
 import { logListeningPlayed } from "#/features/exam/actions"
+import {
+	ExamRoomProgressTabs,
+	ExamRoomQuestionNav,
+	ExamRoomSkillBadge,
+} from "#/features/exam/components/ExamRoomChrome"
+import { ExamRoomFooter, type ExamRoomFooterAction } from "#/features/exam/components/ExamRoomFooter"
 import { MCQQuestion } from "#/features/exam/components/MCQQuestion"
-import type { ExamVersionListeningSection } from "#/features/exam/types"
-import { cn } from "#/lib/utils"
-import { ListeningReadinessModal } from "./ListeningReadinessModal"
-
-interface FooterAction {
-	skillLabel: string
-	skillProgress: string
-	isLastSkill: boolean
-	isSubmitting: boolean
-	onSubmit: () => void
-	onNext: () => void
-}
+import type { ExamVersionListeningSection, ListeningPlaySummaryItem } from "#/features/exam/types"
+import { useToast } from "#/lib/toast"
 
 interface Props {
 	sections: ExamVersionListeningSection[]
 	sessionId: string
+	initialPlaySummary: ListeningPlaySummaryItem[]
 	mcqAnswers: Map<string, number>
 	onAnswer: (itemId: string, selectedIndex: number) => void
-	footer: FooterAction
+	footer: ExamRoomFooterAction
 }
 
 function formatTime(seconds: number): string {
@@ -30,7 +27,14 @@ function formatTime(seconds: number): string {
 	return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
 }
 
-export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, footer }: Props) {
+export function ListeningPanel({
+	sections,
+	sessionId,
+	initialPlaySummary,
+	mcqAnswers,
+	onAnswer,
+	footer,
+}: Props) {
 	// Sort by display_order then part
 	const sorted = useMemo(
 		() => [...sections].sort((a, b) => a.display_order - b.display_order || a.part - b.part),
@@ -50,13 +54,22 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 			.map(([part, secs]) => ({ part, sections: secs }))
 	}, [sorted])
 
-	const [isReady, setIsReady] = useState(false)
 	const [activePartIdx, setActivePartIdx] = useState(0) // index trong partGroups
 	const [playingIdx, setPlayingIdx] = useState(-1) // index trong sorted (toàn bộ)
 	const [currentTime, setCurrentTime] = useState(0)
 	const [duration, setDuration] = useState(0)
+	const [isPreparingAudio, setIsPreparingAudio] = useState(false)
+	const [audioMessage, setAudioMessage] = useState<string | null>(null)
+	const [playedSectionIds, setPlayedSectionIds] = useState<Set<string>>(
+		() => new Set(initialPlaySummary.filter((item) => item.played).map((item) => item.section_id)),
+	)
 	const audioRefs = useRef<(HTMLAudioElement | null)[]>([])
-	const loggedSections = useRef<Set<string>>(new Set())
+
+	useEffect(() => {
+		setPlayedSectionIds(
+			new Set(initialPlaySummary.filter((item) => item.played).map((item) => item.section_id)),
+		)
+	}, [initialPlaySummary])
 
 	const isPlaying = playingIdx >= 0
 
@@ -89,26 +102,83 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 		return () => clearInterval(id)
 	}, [playingIdx])
 
-	// Auto-advance sequential audio
+	const playSectionAtIndex = useCallback(
+		async (sectionIndex: number): Promise<boolean> => {
+			const section = sorted[sectionIndex]
+			if (!section) return false
+
+			if (playedSectionIds.has(section.id)) {
+				setAudioMessage(`Âm thanh phần ${section.part} đã phát. Bạn vẫn có thể tiếp tục trả lời câu hỏi.`)
+				return false
+			}
+
+			setIsPreparingAudio(true)
+			setAudioMessage(null)
+
+			let alreadyPlayed = false
+			try {
+				const result = await logListeningPlayed(sessionId, section.id)
+				alreadyPlayed = result.already_played
+				setPlayedSectionIds((current) => new Set(current).add(section.id))
+			} catch {
+				setAudioMessage("Không ghi nhận được lượt phát âm thanh. Vui lòng kiểm tra kết nối và thử lại.")
+				useToast.getState().add("Không ghi nhận được lượt phát âm thanh. Vui lòng thử lại.")
+				return false
+			} finally {
+				setIsPreparingAudio(false)
+			}
+
+			if (alreadyPlayed) {
+				setAudioMessage(`Âm thanh phần ${section.part} đã phát trước đó. Không thể phát lại.`)
+				return false
+			}
+
+			const audio = audioRefs.current[sectionIndex]
+			if (!audio) {
+				setAudioMessage(
+					"Không tìm thấy tệp âm thanh. Lượt phát đã được ghi nhận, vui lòng báo giám thị/hỗ trợ.",
+				)
+				return false
+			}
+
+			setPlayingIdx(sectionIndex)
+			const partIdx = partGroups.findIndex((group) => group.part === section.part)
+			if (partIdx >= 0) setActivePartIdx(partIdx)
+
+			try {
+				audio.currentTime = 0
+				await audio.play()
+				return true
+			} catch {
+				setPlayingIdx(-1)
+				setAudioMessage(
+					"Trình duyệt không phát được âm thanh. Lượt phát đã được ghi nhận, vui lòng báo giám thị/hỗ trợ.",
+				)
+				useToast.getState().add("Không phát được âm thanh. Vui lòng báo hỗ trợ.")
+				return false
+			}
+		},
+		[partGroups, playedSectionIds, sessionId, sorted],
+	)
+
 	useEffect(() => {
-		if (!isReady) return
 		const cleanups: Array<() => void> = []
 		for (let i = 0; i < sorted.length; i++) {
 			const audio = audioRefs.current[i]
 			if (!audio) continue
 			const onEnded = () => {
-				if (i < sorted.length - 1) {
-					setPlayingIdx(i + 1)
-					// Auto switch active part when audio crosses part boundary
-					const nextSec = sorted[i + 1]
-					if (nextSec) {
-						const nextPartIdx = partGroups.findIndex((g) => g.part === nextSec.part)
-						if (nextPartIdx >= 0) setActivePartIdx(nextPartIdx)
-					}
-					audioRefs.current[i + 1]?.play().catch(() => null)
-				} else {
-					setPlayingIdx(-1)
+				const current = sorted[i]
+				const nextIndex = sorted.findIndex(
+					(section, index) =>
+						index > i && section.part === current?.part && !playedSectionIds.has(section.id),
+				)
+
+				if (nextIndex >= 0) {
+					void playSectionAtIndex(nextIndex)
+					return
 				}
+
+				setPlayingIdx(-1)
 			}
 			audio.addEventListener("ended", onEnded)
 			cleanups.push(() => audio.removeEventListener("ended", onEnded))
@@ -116,33 +186,24 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 		return () => {
 			for (const fn of cleanups) fn()
 		}
-	}, [isReady, sorted, partGroups])
+	}, [playSectionAtIndex, playedSectionIds, sorted])
 
-	// Log played
-	const logPlayed = useCallback(
-		(sectionId: string) => {
-			if (loggedSections.current.has(sectionId)) return
-			loggedSections.current.add(sectionId)
-			logListeningPlayed(sessionId, sectionId).catch(() => null)
-		},
-		[sessionId],
+	const activeSectionIndexes = useMemo(
+		() =>
+			(activeGroup?.sections ?? [])
+				.map((section) => sorted.findIndex((candidate) => candidate.id === section.id))
+				.filter((index) => index >= 0),
+		[activeGroup, sorted],
 	)
+	const nextPlayableActiveIndex = activeSectionIndexes.find(
+		(index) => !playedSectionIds.has(sorted[index]?.id ?? ""),
+	)
+	const activePartAudioPlayed = activeSectionIndexes.length > 0 && nextPlayableActiveIndex === undefined
 
 	const handleStartAudio = useCallback(() => {
-		if (isPlaying) return
-		const firstSection = sorted[0]
-		if (!firstSection) return
-		setPlayingIdx(0)
-		setActivePartIdx(0)
-		logPlayed(firstSection.id)
-		audioRefs.current[0]?.play().catch(() => null)
-	}, [isPlaying, sorted, logPlayed])
-
-	useEffect(() => {
-		if (playingIdx < 0) return
-		const sec = sorted[playingIdx]
-		if (sec) logPlayed(sec.id)
-	}, [playingIdx, sorted, logPlayed])
+		if (isPlaying || isPreparingAudio || nextPlayableActiveIndex === undefined) return
+		void playSectionAtIndex(nextPlayableActiveIndex)
+	}, [isPlaying, isPreparingAudio, nextPlayableActiveIndex, playSectionAtIndex])
 
 	const handleNextPart = useCallback(() => {
 		setActivePartIdx((i) => Math.min(i + 1, partGroups.length - 1))
@@ -154,7 +215,6 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 			?.scrollIntoView({ behavior: "smooth", block: "center" })
 	}, [])
 
-	const totalQuestions = sorted.reduce((sum, sec) => sum + sec.items.length, 0)
 	const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0
 
 	// Per-part meta: answered / total
@@ -166,9 +226,11 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 					(s, sec) => s + sec.items.filter((it) => mcqAnswers.has(it.id)).length,
 					0,
 				)
-				return { part: g.part, total, answered }
+				const audioTotal = g.sections.length
+				const audioPlayed = g.sections.filter((section) => playedSectionIds.has(section.id)).length
+				return { part: g.part, total, answered, audioTotal, audioPlayed }
 			}),
-		[partGroups, mcqAnswers],
+		[partGroups, mcqAnswers, playedSectionIds],
 	)
 
 	// All items in active part (flattened, with global index offset)
@@ -203,220 +265,153 @@ export function ListeningPanel({ sections, sessionId, mcqAnswers, onAnswer, foot
 
 	const activePartAnswered = partsMeta[activePartIdx]?.answered ?? 0
 	const activePartTotal = partsMeta[activePartIdx]?.total ?? 0
+	const activePartUnanswered = Math.max(0, activePartTotal - activePartAnswered)
 
 	if (partGroups.length === 0) return null
 
+	const hasNextPart = activePartIdx < partGroups.length - 1
+	const activeFooter = hasNextPart
+		? {
+				...footer,
+				isLastSkill: false,
+				nextTone: "secondary" as const,
+				statusText:
+					activePartUnanswered > 0
+						? `Còn ${activePartUnanswered} câu chưa trả lời ở phần ${activeGroup?.part}`
+						: `Phần ${activeGroup?.part} đã trả lời đủ`,
+				nextLabel: `Tiếp: Phần ${partGroups[activePartIdx + 1]?.part}`,
+				onNext: handleNextPart,
+			}
+		: footer
+
 	return (
 		<div className="flex flex-1 flex-col overflow-hidden">
-			{!isReady && (
-				<ListeningReadinessModal
-					totalSections={partGroups.length}
-					totalQuestions={totalQuestions}
-					onReady={() => setIsReady(true)}
-				/>
-			)}
-
-			{/* Questions (scrollable) */}
 			<ScrollArea className="flex-1 bg-background">
-				<div className="mx-auto max-w-3xl space-y-6 p-6">
-					{/* Part header */}
-					<div className="flex items-center gap-3">
-						<span className="rounded-full border-2 border-b-4 border-skill-listening/30 bg-skill-listening/10 px-3 py-1 text-xs font-extrabold text-skill-listening">
-							Part {activeGroup?.part}
-						</span>
+				<div className="mx-auto grid w-full max-w-[1200px] grid-cols-1 gap-5 p-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+					<div className="order-2 min-w-0 lg:order-2">
+						<div className="sticky top-0 z-10 mb-5 border-b border-border-light bg-background/95 py-3 backdrop-blur">
+							<div className="flex items-center justify-between gap-3">
+								<div className="flex items-center gap-2">
+									<ExamRoomSkillBadge tone="listening">Phần {activeGroup?.part}</ExamRoomSkillBadge>
+									<p className="text-sm font-extrabold text-foreground">Câu hỏi phần {activeGroup?.part}</p>
+								</div>
+								<span
+									className={
+										activePartUnanswered > 0 ? "text-xs font-bold text-warning" : "text-xs text-primary"
+									}
+								>
+									{activePartUnanswered > 0
+										? `Còn ${activePartUnanswered} câu chưa trả lời`
+										: "Đã trả lời đủ"}
+								</span>
+							</div>
+							<div className="mt-3 flex items-center gap-3">
+								<ExamRoomQuestionNav
+									className="min-w-0"
+									items={activeItems.map(({ item, globalIdx }, localI) => ({
+										id: item.id,
+										label: localI + 1,
+										answered: mcqAnswers.has(item.id),
+										onClick: () => handleJumpToItem(globalIdx),
+									}))}
+								/>
+								<span className="hidden shrink-0 text-xs text-subtle sm:inline">
+									Âm thanh {partsMeta[activePartIdx]?.audioPlayed ?? 0}/
+									{partsMeta[activePartIdx]?.audioTotal ?? 0} đã phát
+								</span>
+							</div>
+							{audioMessage && <p className="mt-2 text-xs font-semibold text-warning">{audioMessage}</p>}
+						</div>
+
+						<div className="space-y-5">
+							{activeItems.map(({ item, globalIdx }) => (
+								<div key={item.id} id={`listening-item-${globalIdx}`}>
+									<MCQQuestion
+										item={item}
+										index={globalIdx - activePartGlobalOffset}
+										selectedIndex={mcqAnswers.get(item.id)}
+										onSelect={onAnswer}
+									/>
+								</div>
+							))}
+						</div>
 					</div>
 
-					{/* All items in this part */}
-					{activeItems.map(({ item, globalIdx }) => (
-						<div key={item.id} id={`listening-item-${globalIdx}`}>
-							<MCQQuestion
-								item={item}
-								index={globalIdx - activePartGlobalOffset}
-								selectedIndex={mcqAnswers.get(item.id)}
-								onSelect={onAnswer}
-							/>
+					<aside className="order-1 lg:sticky lg:top-6 lg:self-start">
+						<div className="rounded-(--radius-card) border border-border bg-surface p-4">
+							<p className="mb-3 text-sm font-extrabold text-foreground">Âm thanh</p>
+							<div className="space-y-3">
+								{!isPlaying ? (
+									<button
+										type="button"
+										onClick={handleStartAudio}
+										disabled={isPreparingAudio || activePartAudioPlayed}
+										className="btn btn-secondary w-full px-4 py-2 text-xs text-skill-listening disabled:opacity-60"
+									>
+										{isPreparingAudio
+											? "Đang mở âm thanh…"
+											: activePartAudioPlayed
+												? `Âm thanh phần ${activeGroup?.part} đã phát`
+												: `Phát âm thanh phần ${activeGroup?.part}`}
+									</button>
+								) : (
+									<div className="flex items-center gap-2 rounded-(--radius-button) bg-skill-listening/10 px-3 py-2 text-skill-listening">
+										<Icon name="volume" size="xs" />
+										<span className="font-mono text-xs font-extrabold tabular-nums">
+											{formatTime(currentTime)}
+										</span>
+										{playingPartIdx >= 0 && playingPartIdx !== activePartIdx && (
+											<span className="text-xs text-muted">phần {sorted[playingIdx]?.part}</span>
+										)}
+									</div>
+								)}
+								<div className="flex items-center gap-2">
+									<div className="relative h-2 flex-1 overflow-hidden rounded-full bg-border">
+										<div
+											className="absolute inset-y-0 left-0 rounded-full bg-skill-listening transition-[width] duration-300"
+											style={{ width: `${progressPct}%` }}
+										/>
+									</div>
+									<span className="font-mono text-xs tabular-nums text-muted">{formatTime(duration)}</span>
+								</div>
+								{!audioMessage && !activePartAudioPlayed && !isPlaying && (
+									<p className="text-xs text-subtle">Mỗi đoạn âm thanh chỉ phát một lần.</p>
+								)}
+							</div>
 						</div>
-					))}
+					</aside>
 				</div>
 			</ScrollArea>
 
-			{/* Audio bar */}
-			<div className="border-t-2 border-border bg-card px-4 py-2.5">
-				<div className="flex items-center gap-3">
-					{!isPlaying ? (
-						<button type="button" onClick={handleStartAudio} className="btn btn-primary px-4 py-1.5 text-xs">
-							<svg viewBox="0 0 16 16" className="size-3.5" fill="currentColor" aria-hidden="true">
-								<path d="M5 3L13 8L5 13V3Z" />
-							</svg>
-							Phát audio
-						</button>
-					) : (
-						<div className="flex items-center gap-2 rounded-full border-2 border-skill-listening/30 bg-skill-listening/10 px-3 py-1">
-							<Icon name="volume" size="xs" className="text-skill-listening" />
-							<span className="font-mono text-xs font-extrabold tabular-nums text-skill-listening">
-								{formatTime(currentTime)}
-							</span>
-							{playingPartIdx >= 0 && playingPartIdx !== activePartIdx && (
-								<span className="text-xs text-muted">(Part {sorted[playingIdx]?.part})</span>
-							)}
-						</div>
-					)}
-					<div className="relative h-2 flex-1 overflow-hidden rounded-full bg-border">
-						<div
-							className="absolute inset-y-0 left-0 rounded-full bg-skill-listening transition-[width] duration-300"
-							style={{ width: `${progressPct}%` }}
-						/>
-					</div>
-					<span className="font-mono text-xs tabular-nums text-muted">{formatTime(duration)}</span>
-				</div>
+			{sorted.map((sec, i) => (
+				<audio
+					key={sec.id}
+					ref={(el) => {
+						audioRefs.current[i] = el
+					}}
+					src={sec.audio_url}
+					preload="metadata"
+					className="hidden"
+				/>
+			))}
 
-				{/* Hidden audio per section */}
-				{sorted.map((sec, i) => (
-					<audio
-						key={sec.id}
-						ref={(el) => {
-							audioRefs.current[i] = el
-						}}
-						src={sec.audio_url}
-						preload="metadata"
-						className="hidden"
+			<ExamRoomFooter
+				{...activeFooter}
+				toneClass="text-skill-listening"
+				context={
+					<ExamRoomProgressTabs
+						items={partsMeta.map((meta, i) => ({
+							id: String(i),
+							label: `Phần ${meta.part}`,
+							meta: `${meta.answered}/${meta.total}`,
+							progressPct: meta.total > 0 ? (meta.answered / meta.total) * 100 : 0,
+							emphasis: i === playingPartIdx,
+						}))}
+						activeId={String(activePartIdx)}
+						onChange={(id) => setActivePartIdx(Number(id))}
 					/>
-				))}
-			</div>
-
-			{/* Jump buttons — items trong active part */}
-			<div className="flex flex-wrap justify-center gap-1.5 border-t-2 border-border/50 bg-card px-4 py-2.5">
-				{activeItems.map(({ item, globalIdx }, localI) => {
-					const isAnswered = mcqAnswers.has(item.id)
-					return (
-						<button
-							key={item.id}
-							type="button"
-							onClick={() => handleJumpToItem(globalIdx)}
-							className={cn(
-								"flex size-8 items-center justify-center rounded-(--radius-button) border-2 border-b-4 text-xs font-extrabold transition-all active:translate-y-[2px] active:border-b-2",
-								isAnswered
-									? "border-primary/70 bg-primary text-white"
-									: "border-border bg-surface text-muted hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
-							)}
-						>
-							{localI + 1}
-						</button>
-					)
-				})}
-			</div>
-
-			{/* Part tabs + next */}
-			<div className="flex items-center justify-between gap-3 border-t-2 border-border/50 bg-card px-4 py-2.5">
-				<div className="flex min-w-0 items-center gap-2">
-					<Icon name="volume" size="xs" className="text-skill-listening" />
-					<span className="text-sm font-extrabold text-foreground">Part {activeGroup?.part}</span>
-					<span className="text-xs text-muted">
-						đã làm {activePartAnswered}/{activePartTotal}
-					</span>
-				</div>
-
-				<div className="flex items-center gap-1.5">
-					{partsMeta.map((meta, i) => {
-						const isActive = i === activePartIdx
-						const isCurrentlyPlaying = i === playingPartIdx
-						const pct = meta.total > 0 ? (meta.answered / meta.total) * 100 : 0
-						return (
-							<button
-								key={meta.part}
-								type="button"
-								onClick={() => setActivePartIdx(i)}
-								className={cn(
-									"relative overflow-hidden rounded-(--radius-button) border-2 border-b-4 px-3 pb-2.5 pt-1.5 text-xs font-extrabold transition-all active:translate-y-[2px] active:border-b-2",
-									isActive
-										? "border-primary/70 bg-primary text-white"
-										: "border-border bg-surface text-muted hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
-								)}
-							>
-								<span className="inline-flex items-center gap-1.5">
-									Part {meta.part}
-									<span className="opacity-80">
-										{meta.answered}/{meta.total}
-									</span>
-								</span>
-								<span
-									className={cn(
-										"absolute inset-x-0 bottom-0 h-1 overflow-hidden transition-opacity",
-										isCurrentlyPlaying && "animate-pulse",
-										isActive ? "bg-white/20" : "bg-primary/10",
-									)}
-								>
-									<span
-										className={cn(
-											"block h-full transition-[width] duration-300",
-											isActive ? "bg-white" : "bg-primary/70",
-										)}
-										style={{ width: `${pct}%` }}
-									/>
-								</span>
-							</button>
-						)
-					})}
-				</div>
-
-				{activePartIdx < partGroups.length - 1 ? (
-					<button type="button" onClick={handleNextPart} className="btn btn-primary px-3 py-1.5 text-xs">
-						Part {partGroups[activePartIdx + 1]?.part}
-						<svg viewBox="0 0 16 16" className="size-3.5" fill="currentColor" aria-hidden="true">
-							<path d="M6 3l5 5-5 5V3z" />
-						</svg>
-					</button>
-				) : (
-					<div className="w-20" />
-				)}
-			</div>
-
-			{/* Global footer */}
-			<div className="z-40 flex h-14 shrink-0 items-center justify-between border-t-2 border-border/50 bg-card px-5">
-				<div className="w-24" />
-				<p className="text-sm font-extrabold text-skill-listening">
-					{footer.skillLabel}
-					<span className="ml-1 text-xs font-normal text-muted">({footer.skillProgress})</span>
-				</p>
-				{footer.isLastSkill ? (
-					<button
-						type="button"
-						onClick={footer.onSubmit}
-						disabled={footer.isSubmitting}
-						className="btn btn-primary disabled:opacity-60"
-					>
-						<svg
-							viewBox="0 0 16 16"
-							className="size-4"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2.5"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							aria-hidden="true"
-						>
-							<polyline points="2,8 6,12 14,4" />
-						</svg>
-						Nộp bài
-					</button>
-				) : (
-					<button type="button" onClick={footer.onNext} className="btn btn-secondary">
-						Phần tiếp
-						<svg
-							viewBox="0 0 16 16"
-							className="size-4"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							aria-hidden="true"
-						>
-							<path d="M6 3l5 5-5 5" />
-						</svg>
-					</button>
-				)}
-			</div>
+				}
+			/>
 		</div>
 	)
 }

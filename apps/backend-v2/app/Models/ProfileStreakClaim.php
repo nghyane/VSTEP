@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['profile_id', 'milestone_days', 'coins_granted', 'coin_transaction_id', 'claimed_at'])]
+#[Fillable(['account_id', 'profile_id', 'milestone_days', 'coins_granted', 'coin_transaction_id', 'claimed_at'])]
 class ProfileStreakClaim extends Model
 {
     protected $table = 'profile_streak_claims';
@@ -32,13 +32,13 @@ class ProfileStreakClaim extends Model
     }
 
     /**
-     * Composite primary key (profile_id, milestone_days) — Eloquent mặc định
+     * Composite primary key (account_id, milestone_days) — Eloquent mặc định
      * dùng `id`. Override để save()/refresh() match đúng row.
      */
     protected function setKeysForSaveQuery($query): Builder
     {
         return $query
-            ->where('profile_id', $this->original['profile_id'] ?? $this->profile_id)
+            ->where('account_id', $this->original['account_id'] ?? $this->account_id)
             ->where('milestone_days', $this->original['milestone_days'] ?? $this->milestone_days);
     }
 

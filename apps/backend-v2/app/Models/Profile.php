@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Learner's learning unit. 1 user có n profiles.
- * Wallet (xu), progress, streak, enrollments đều gắn vào profile.
+ * Wallet balance thuộc account; profile chỉ là context của giao dịch.
  */
 #[Fillable([
     'account_id',

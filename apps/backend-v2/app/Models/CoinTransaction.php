@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Bigint id vì lịch sử có thể lớn. Không dùng HasUuids.
  */
 #[Fillable([
+    'account_id',
     'profile_id',
     'type',
     'delta',
@@ -46,5 +47,10 @@ class CoinTransaction extends Model
     public function profile(): BelongsTo
     {
         return $this->belongsTo(Profile::class);
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'account_id');
     }
 }

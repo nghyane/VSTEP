@@ -62,6 +62,30 @@ class WalletServiceTest extends TestCase
         $this->assertSame(10, $this->wallet->getBalance($profile));
     }
 
+    public function test_balance_is_shared_across_profiles_for_same_account(): void
+    {
+        $user = User::factory()->create();
+        $profileA = Profile::factory()->forAccount($user)->create();
+        $profileB = Profile::factory()->forAccount($user)->create();
+
+        $this->wallet->credit($profileA, 100, CoinTransactionType::AdminGrant);
+        $this->wallet->spend($profileB, 40, CoinTransactionType::ExamCustom);
+
+        $this->assertSame(60, $this->wallet->getBalance($profileA));
+        $this->assertSame(60, $this->wallet->getBalance($profileB));
+    }
+
+    public function test_balance_is_separate_between_accounts(): void
+    {
+        $profileA = $this->profile();
+        $profileB = $this->profile();
+
+        $this->wallet->credit($profileA, 100, CoinTransactionType::AdminGrant);
+
+        $this->assertSame(100, $this->wallet->getBalance($profileA));
+        $this->assertSame(0, $this->wallet->getBalance($profileB));
+    }
+
     public function test_credit_rejects_negative_amount(): void
     {
         $profile = $this->profile();
@@ -100,6 +124,7 @@ class WalletServiceTest extends TestCase
             ->get();
 
         $this->assertCount(3, $txs);
+        $this->assertSame($profile->account_id, $txs->first()?->account_id);
         $this->assertSame([100, -25, 50], $txs->pluck('delta')->all());
         $this->assertSame([100, 75, 125], $txs->pluck('balance_after')->all());
     }

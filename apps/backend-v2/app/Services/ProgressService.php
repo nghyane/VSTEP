@@ -279,9 +279,11 @@ class ProgressService
             ->where('profile_id', $profile->id)
             ->whereIn('mode', ['custom', 'full'])
             ->whereIn('status', ExamSessionStatus::terminalValues())
-            ->orderBy('submitted_at')
+            ->orderByDesc('submitted_at')
             ->limit(20)
-            ->get();
+            ->get()
+            ->sortBy('submitted_at')
+            ->values();
 
         if ($sessions->isEmpty()) {
             return [];

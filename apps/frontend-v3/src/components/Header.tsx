@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { type CSSProperties, useEffect, useRef, useState } from "react"
 import { Icon, StaticIcon } from "#/components/Icon"
@@ -19,8 +19,9 @@ interface Props {
 }
 
 export function Header({ title, backTo }: Props) {
+	const queryClient = useQueryClient()
 	const { profile } = useSession()
-	const profileStreakQuery = { ...streakQuery, queryKey: ["streak", profile.id] as const }
+	const profileStreakQuery = { ...streakQuery, queryKey: ["streak", profile.id] }
 	const { data: walletData } = useQuery(walletBalanceQuery)
 	const { data: streakData } = useQuery(profileStreakQuery)
 	const { data: unreadData } = useQuery(unreadCountQuery)
@@ -30,6 +31,7 @@ export function Header({ title, backTo }: Props) {
 	const streak = streakInfo ? streakInfo.current : null
 	const [displayedStreak, setDisplayedStreak] = useState<number | null>(null)
 	const unread = unreadData ? unreadData.data.count : 0
+	const previousUnreadRef = useRef<number | null>(null)
 	const initial = profile.nickname.charAt(0).toUpperCase()
 	const [topupOpen, setTopupOpen] = useState(false)
 	const [streakOpen, setStreakOpen] = useState(false)
@@ -46,6 +48,12 @@ export function Header({ title, backTo }: Props) {
 		const t = setTimeout(() => setAnimKey(0), 1600)
 		return () => clearTimeout(t)
 	}, [pulse])
+	useEffect(() => {
+		const previous = previousUnreadRef.current
+		previousUnreadRef.current = unread
+		if (previous === null || unread <= previous) return
+		void queryClient.invalidateQueries({ queryKey: walletBalanceQuery.queryKey })
+	}, [queryClient, unread])
 
 	const [streakAnimKey, setStreakAnimKey] = useState(0)
 	const previousStreakRef = useRef<number | null>(null)

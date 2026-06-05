@@ -5,24 +5,20 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\NotificationResource;
 use App\Models\Notification;
 use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 final class NotificationController extends Controller
 {
     public function __construct(private readonly NotificationService $notificationService) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $profile = $request->profile();
-        $notifications = Notification::query()
-            ->where('profile_id', $profile->id)
-            ->orderByDesc('created_at')
-            ->paginate(20);
-
-        return response()->json($notifications);
+        return NotificationResource::collection($this->notificationService->list($request->profile()));
     }
 
     public function unreadCount(Request $request): JsonResponse
@@ -41,21 +37,14 @@ final class NotificationController extends Controller
 
     public function read(Request $request, Notification $notification): JsonResponse
     {
-        if ((string) $notification->profile_id !== $request->profile()->id) {
-            abort(403);
-        }
-
-        $ok = $this->notificationService->markRead($notification);
+        $ok = $this->notificationService->markRead($request->profile(), $notification);
 
         return response()->json(['data' => ['marked' => $ok]]);
     }
 
     public function destroy(Request $request, Notification $notification): JsonResponse
     {
-        if ((string) $notification->profile_id !== $request->profile()->id) {
-            abort(403);
-        }
-        $notification->delete();
+        $this->notificationService->delete($request->profile(), $notification);
 
         return response()->json(['data' => ['success' => true]]);
     }

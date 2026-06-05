@@ -40,7 +40,8 @@ final class CourseOrderService
         Course $course,
         PaymentProvider $provider,
         string $commitmentSignature,
-        ?string $returnUrl = null,
+        string $returnUrl,
+        string $cancelUrl,
     ): CourseEnrollmentOrder {
         if (! $course->is_published) {
             throw ValidationException::withMessages(['course' => ['Khóa học đang đóng ghi danh.']]);
@@ -75,7 +76,7 @@ final class CourseOrderService
         $expiryMinutes = (int) config('payment.order_expiry_minutes', 15);
 
         try {
-            return DB::transaction(function () use ($profile, $course, $provider, $amount, $gateway, $expiryMinutes, $returnUrl, $commitmentSignature) {
+            return DB::transaction(function () use ($profile, $course, $provider, $amount, $gateway, $expiryMinutes, $returnUrl, $cancelUrl, $commitmentSignature) {
                 CourseEnrollmentOrder::query()
                     ->where('profile_id', $profile->id)
                     ->where('course_id', $course->id)
@@ -93,9 +94,7 @@ final class CourseOrderService
                     'expires_at' => now()->addMinutes($expiryMinutes),
                 ]);
 
-                $paymentReturnUrl = $returnUrl ?? config('app.frontend_url')."/khoa-hoc/{$course->id}";
-                $cancelUrl = config('app.frontend_url')."/khoa-hoc/{$course->id}?cancel_order={$order->id}";
-                $response = $gateway->createPayment($order, $paymentReturnUrl, $cancelUrl);
+                $response = $gateway->createPayment($order, $returnUrl, $cancelUrl);
 
                 $order->update([
                     'payment_url' => $response->paymentUrl,

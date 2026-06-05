@@ -4,31 +4,40 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\ExamMcqAnswer;
+use App\Assessment\Enums\AssessmentJobStatus;
+use App\Models\ExamListeningPlayLog;
 use App\Models\ExamSession;
 use App\Models\ExamSpeakingSubmission;
 use App\Models\ExamVersionListeningSection;
-use App\Models\ExamVersionReadingPassage;
+use App\Models\ExamVersionSpeakingPart;
+use App\Models\ExamVersionWritingTask;
 use App\Models\ExamWritingSubmission;
+use App\Services\Contracts\ExamResultDisplayFormatterInterface;
+use App\Services\Contracts\ExamResultMcqBuilderInterface;
+use App\Services\Contracts\ExamResultReadModelInterface;
 use App\Services\Contracts\ExamSessionResultInterface;
-use Illuminate\Support\Collection;
+use App\Services\Exam\Results\ExamResultPerformanceRowBuilder;
 
 final class ExamSessionResultService implements ExamSessionResultInterface
 {
-    private const SCORE_TYPE_ACCURACY = 'accuracy';
+    private const STATUS_READY = 'ready';
 
-    private const SCORE_TYPE_BAND = 'band';
-
-    private const STATUS_GRADED = 'graded';
+    private const STATUS_NONE = 'none';
 
     private const STATUS_PENDING = 'pending';
 
     private const STATUS_NOT_SUBMITTED = 'not_submitted';
 
+    private const STATUS_FAILED = 'failed';
+
     public function __construct(
         private readonly ExamScoringService $scoringService,
+        private readonly ExamResultMcqBuilderInterface $mcqBuilder,
+        private readonly ExamResultDisplayFormatterInterface $resultFormatter,
+        private readonly ExamResultReadModelInterface $readModel,
         private readonly AssessmentResultDisplayService $displayService,
         private readonly AssessmentDiagnosticsService $diagnosticsService,
+        private readonly ExamResultPerformanceRowBuilder $performanceRowBuilder,
     ) {}
 
     /** @return array<string, mixed> */
@@ -38,14 +47,11 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             $session->loadMissing('examVersion.exam');
 
             return [
-                'session' => $this->formatSessionSummary($session),
+                'session' => $this->formatSessionSummary($session, null),
                 'exam' => $this->formatExam($session),
-                'scores' => null,
+                'version' => null,
                 'summary' => $this->emptySummary(),
-                'performance_rows' => [],
-                'overall_band' => null,
-                'level' => 'Chưa có điểm',
-                'mcq' => ['score' => 0, 'total' => 0],
+                'review' => ['skills' => [], 'sections' => []],
                 'mcq_detail' => [],
                 'writing_feedback' => [],
                 'speaking_feedback' => [],
@@ -57,8 +63,10 @@ final class ExamSessionResultService implements ExamSessionResultInterface
         $session->load([
             'mcqAnswers',
             'writingSubmissions.assessmentAttempt.evidence',
+            'writingSubmissions.assessmentAttempt.job',
             'writingSubmissions.assessmentAttempt.result',
             'speakingSubmissions.assessmentAttempt.evidence',
+            'speakingSubmissions.assessmentAttempt.job',
             'speakingSubmissions.assessmentAttempt.result',
             'examVersion.exam',
             'examVersion.listeningSections.items',
@@ -69,11 +77,11 @@ final class ExamSessionResultService implements ExamSessionResultInterface
         ]);
 
         $scores = $this->scoringService->getSessionScores($session);
-        $mcqDetail = $this->buildMcqDetail($session);
-        $mcqSummary = $this->buildMcqSummary($mcqDetail);
+        $mcqDetail = $this->mcqBuilder->detail($session);
+        $mcqSummary = $this->mcqBuilder->summary($mcqDetail);
         $writingFeedback = $this->buildWritingFeedback($session);
         $speakingFeedback = $this->buildSpeakingFeedback($session);
-        $performanceRows = $this->buildPerformanceRows(
+        $performanceRows = $this->performanceRowBuilder->build(
             $session,
             $scores,
             $mcqDetail,
@@ -81,17 +89,25 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             $speakingFeedback,
         );
         $overallBand = $this->scoringService->getOverallBand($scores);
-        $level = $this->scoringService->bandToLevel($overallBand);
+        $vstepLevel = $this->scoringService->bandToVstepLevel($overallBand);
+        $readModel = $this->readModel->build(
+            $session,
+            $mcqSummary,
+            $scores,
+            $mcqDetail,
+            $overallBand,
+            $vstepLevel,
+            $performanceRows,
+            $writingFeedback,
+            $speakingFeedback,
+        );
 
         return [
-            'session' => $this->formatSessionSummary($session),
+            'session' => $this->formatSessionSummary($session, $scores),
             'exam' => $this->formatExam($session),
-            'scores' => $scores,
-            'summary' => $this->buildSummary($mcqSummary, $overallBand, $level, $performanceRows),
-            'performance_rows' => $performanceRows,
-            'overall_band' => $overallBand,
-            'level' => $level,
-            'mcq' => $mcqSummary,
+            'version' => $session->examVersion,
+            'summary' => $readModel['summary'],
+            'review' => $readModel['review'],
             'mcq_detail' => $mcqDetail,
             'writing_feedback' => $writingFeedback,
             'speaking_feedback' => $speakingFeedback,
@@ -100,7 +116,8 @@ final class ExamSessionResultService implements ExamSessionResultInterface
     }
 
     /** @return array<string, mixed> */
-    private function formatSessionSummary(ExamSession $session): array
+    /** @param  array{listening: ?float, reading: ?float, writing: ?float, speaking: ?float}|null  $scores */
+    private function formatSessionSummary(ExamSession $session, ?array $scores): array
     {
         return [
             'id' => $session->id,
@@ -114,6 +131,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             'submitted_at' => $session->submitted_at,
             'server_deadline_at' => $session->server_deadline_at,
             'coins_charged' => $session->coins_charged,
+            'scores' => $scores,
         ];
     }
 
@@ -131,102 +149,83 @@ final class ExamSessionResultService implements ExamSessionResultInterface
         ];
     }
 
-    /**
-     * Per-item breakdown theo canonical order của đề. Unanswered items vẫn xuất hiện
-     * với selected_index=null để FE không phải tự merge version + answers.
-     *
-     * @return list<array{item_ref_type: string, item_ref_id: string, selected_index: int|null, correct_index: int, is_correct: bool, answered_at: mixed}>
-     */
-    private function buildMcqDetail(ExamSession $session): array
-    {
-        $answers = $session->mcqAnswers->keyBy(
-            fn (ExamMcqAnswer $answer): string => "{$answer->item_ref_type}:{$answer->item_ref_id}",
-        );
-        $skills = $session->selected_skills ?? [];
-        $rows = [];
-
-        if (in_array('listening', $skills, true)) {
-            foreach ($session->examVersion->listeningSections as $section) {
-                foreach ($section->items as $item) {
-                    $rows[] = $this->mcqDetailRow(
-                        'exam_listening_item',
-                        $item->id,
-                        $item->correct_index,
-                        $answers->get("exam_listening_item:{$item->id}"),
-                    );
-                }
-            }
-        }
-
-        if (in_array('reading', $skills, true)) {
-            foreach ($session->examVersion->readingPassages as $passage) {
-                foreach ($passage->items as $item) {
-                    $rows[] = $this->mcqDetailRow(
-                        'exam_reading_item',
-                        $item->id,
-                        $item->correct_index,
-                        $answers->get("exam_reading_item:{$item->id}"),
-                    );
-                }
-            }
-        }
-
-        return $rows;
-    }
-
-    /** @return array{item_ref_type: string, item_ref_id: string, selected_index: int|null, correct_index: int, is_correct: bool, answered_at: mixed} */
-    private function mcqDetailRow(string $itemRefType, string $itemRefId, int $correctIndex, ?ExamMcqAnswer $answer): array
-    {
-        $selectedIndex = $answer?->selected_index;
-
-        return [
-            'item_ref_type' => $itemRefType,
-            'item_ref_id' => $itemRefId,
-            'selected_index' => $selectedIndex,
-            'correct_index' => $correctIndex,
-            'is_correct' => $selectedIndex !== null && $selectedIndex === $correctIndex,
-            'answered_at' => $answer?->answered_at,
-        ];
-    }
-
-    /**
-     * @param  list<array{is_correct: bool}>  $mcqDetail
-     * @return array{score: int, total: int}
-     */
-    private function buildMcqSummary(array $mcqDetail): array
-    {
-        $score = 0;
-        foreach ($mcqDetail as $row) {
-            if ($row['is_correct']) {
-                $score++;
-            }
-        }
-
-        return ['score' => $score, 'total' => count($mcqDetail)];
-    }
-
     /** @return list<array<string, mixed>> */
     private function buildWritingFeedback(ExamSession $session): array
     {
-        return $session->writingSubmissions
-            ->map(function (ExamWritingSubmission $submission): array {
-                $result = $submission->assessmentAttempt?->result;
+        $skills = $session->selected_skills ?? [];
+        if (! in_array('writing', $skills, true)) {
+            return $this->buildLegacyWritingFeedback($session);
+        }
 
-                return [
-                    'submission_id' => $submission->id,
-                    'attempt_id' => $submission->assessmentAttempt?->id,
-                    'task_id' => $submission->task_id,
-                    'word_count' => $submission->word_count,
-                    'text' => $submission->text,
-                    'overall_band' => $result?->overall_band,
-                    'criterion_scores' => $result?->criterion_scores,
-                    'caps_applied' => $result?->caps_applied,
-                    'display' => $result === null ? null : $this->displayService->forResult($result),
-                    'diagnostics' => $result === null ? null : $this->diagnosticsService->forAttempt($submission->assessmentAttempt),
-                    'feedback' => $result?->feedback,
-                    'calculation_trace' => $result?->calculation_trace,
-                ];
+        $submissionsByTaskId = $session->writingSubmissions->keyBy('task_id');
+
+        return $session->examVersion->writingTasks
+            ->sortBy('part')
+            ->values()
+            ->map(function (ExamVersionWritingTask $task) use ($submissionsByTaskId): array {
+                /** @var ExamWritingSubmission|null $submission */
+                $submission = $submissionsByTaskId->get($task->id);
+                if ($submission === null || trim($submission->text) === '') {
+                    return $this->blankWritingFeedback($task, $submission);
+                }
+
+                return $this->writingFeedbackFromSubmission($submission);
             })
+            ->all();
+    }
+
+    /** @return array<string, mixed> */
+    private function writingFeedbackFromSubmission(ExamWritingSubmission $submission): array
+    {
+        $result = $submission->assessmentAttempt?->result;
+        $jobStatus = $submission->assessmentAttempt?->job?->status;
+
+        return [
+            'submission_id' => $submission->id,
+            'attempt_id' => $submission->assessmentAttempt?->id,
+            'job_status' => $jobStatus?->value,
+            'score_status' => $this->assessmentScoreStatus($result !== null, $jobStatus),
+            'feedback_status' => $this->assessmentFeedbackStatus($result?->feedback !== null, $result !== null, $jobStatus),
+            'task_id' => $submission->task_id,
+            'word_count' => $submission->word_count,
+            'text' => $submission->text,
+            'overall_band' => $result?->overall_band,
+            'criterion_scores' => $result?->criterion_scores,
+            'caps_applied' => $result?->caps_applied,
+            'display' => $result === null ? null : $this->displayService->forResult($result),
+            'diagnostics' => $result === null ? null : $this->diagnosticsService->forAttempt($submission->assessmentAttempt),
+            'feedback' => $result?->feedback,
+            'calculation_trace' => $result?->calculation_trace,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function blankWritingFeedback(ExamVersionWritingTask $task, ?ExamWritingSubmission $submission): array
+    {
+        return [
+            'submission_id' => $submission?->id,
+            'attempt_id' => null,
+            'job_status' => null,
+            'score_status' => self::STATUS_READY,
+            'feedback_status' => self::STATUS_NONE,
+            'task_id' => $task->id,
+            'word_count' => 0,
+            'text' => '',
+            'overall_band' => 0.0,
+            'criterion_scores' => [],
+            'caps_applied' => [],
+            'display' => null,
+            'diagnostics' => null,
+            'feedback' => null,
+            'calculation_trace' => ['source' => 'blank_submission'],
+        ];
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function buildLegacyWritingFeedback(ExamSession $session): array
+    {
+        return $session->writingSubmissions
+            ->map(fn (ExamWritingSubmission $submission): array => $this->writingFeedbackFromSubmission($submission))
             ->values()
             ->all();
     }
@@ -234,217 +233,168 @@ final class ExamSessionResultService implements ExamSessionResultInterface
     /** @return list<array<string, mixed>> */
     private function buildSpeakingFeedback(ExamSession $session): array
     {
-        return $session->speakingSubmissions
-            ->map(function (ExamSpeakingSubmission $submission): array {
-                $result = $submission->assessmentAttempt?->result;
-
-                return [
-                    'submission_id' => $submission->id,
-                    'attempt_id' => $submission->assessmentAttempt?->id,
-                    'part_id' => $submission->part_id,
-                    'audio_url' => $submission->audio_url,
-                    'transcript' => $submission->transcript,
-                    'overall_band' => $result?->overall_band,
-                    'criterion_scores' => $result?->criterion_scores,
-                    'caps_applied' => $result?->caps_applied,
-                    'display' => $result === null ? null : $this->displayService->forResult($result),
-                    'diagnostics' => $result === null ? null : $this->diagnosticsService->forAttempt($submission->assessmentAttempt),
-                    'feedback' => $result?->feedback,
-                    'calculation_trace' => $result?->calculation_trace,
-                ];
-            })
-            ->values()
-            ->all();
-    }
-
-    /**
-     * @param  array{listening: ?float, reading: ?float, writing: ?float, speaking: ?float}  $scores
-     * @param  list<array{item_ref_type: string, item_ref_id: string, is_correct: bool}>  $mcqDetail
-     * @param  list<array<string, mixed>>  $writingFeedback
-     * @param  list<array<string, mixed>>  $speakingFeedback
-     * @return list<array<string, mixed>>
-     */
-    private function buildPerformanceRows(
-        ExamSession $session,
-        array $scores,
-        array $mcqDetail,
-        array $writingFeedback,
-        array $speakingFeedback,
-    ): array {
         $skills = $session->selected_skills ?? [];
-        $correctByItemId = [];
-        foreach ($mcqDetail as $row) {
-            $correctByItemId[$row['item_ref_id']] = $row['is_correct'];
+        if (! in_array('speaking', $skills, true)) {
+            return $this->buildLegacySpeakingFeedback($session);
         }
 
-        $rows = [];
-        if (in_array('listening', $skills, true)) {
-            $rows = [...$rows, ...$this->listeningPerformanceRows($session, $correctByItemId)];
-        }
-        if (in_array('reading', $skills, true)) {
-            $rows = [...$rows, ...$this->readingPerformanceRows($session, $correctByItemId)];
-        }
-        if (in_array('writing', $skills, true)) {
-            $total = $session->examVersion->writingTasks->count();
-            $rows[] = $this->bandPerformanceRow(
-                'writing',
-                "Viết · {$total} bài",
-                $total,
-                $scores['writing'],
-                $this->bandStatus($writingFeedback, $scores['writing']),
-            );
-        }
-        if (in_array('speaking', $skills, true)) {
-            $total = $session->examVersion->speakingParts->count();
-            $rows[] = $this->bandPerformanceRow(
-                'speaking',
-                "Nói · {$total} phần",
-                $total,
-                $scores['speaking'],
-                $this->bandStatus($speakingFeedback, $scores['speaking']),
-            );
-        }
+        $submissionsByPartId = $session->speakingSubmissions->keyBy('part_id');
 
-        return $rows;
-    }
-
-    /**
-     * @param  array<string, bool>  $correctByItemId
-     * @return list<array<string, mixed>>
-     */
-    private function listeningPerformanceRows(ExamSession $session, array $correctByItemId): array
-    {
-        return $session->examVersion->listeningSections
-            ->groupBy('part')
-            ->sortKeys()
-            ->map(function (Collection $sections, int|string $part) use ($correctByItemId): array {
-                $items = $sections->flatMap(fn (ExamVersionListeningSection $section): Collection => $section->items);
-
-                return $this->accuracyPerformanceRow(
-                    'listening',
-                    "Nghe · Part {$part}",
-                    $items->count(),
-                    $items->sum(fn ($item): int => ($correctByItemId[$item->id] ?? false) ? 1 : 0),
-                );
-            })
+        return $session->examVersion->speakingParts
+            ->sortBy('part')
             ->values()
-            ->all();
-    }
+            ->map(function (ExamVersionSpeakingPart $part) use ($submissionsByPartId): array {
+                /** @var ExamSpeakingSubmission|null $submission */
+                $submission = $submissionsByPartId->get($part->id);
+                if ($submission === null) {
+                    return $this->blankSpeakingFeedback($part);
+                }
 
-    /**
-     * @param  array<string, bool>  $correctByItemId
-     * @return list<array<string, mixed>>
-     */
-    private function readingPerformanceRows(ExamSession $session, array $correctByItemId): array
-    {
-        return $session->examVersion->readingPassages
-            ->map(function (ExamVersionReadingPassage $passage) use ($correctByItemId): array {
-                $total = $passage->items->count();
-                $correct = $passage->items->sum(
-                    fn ($item): int => ($correctByItemId[$item->id] ?? false) ? 1 : 0,
-                );
-
-                return $this->accuracyPerformanceRow('reading', "Đọc · {$passage->title}", $total, $correct);
+                return $this->speakingFeedbackFromSubmission($submission);
             })
-            ->values()
             ->all();
     }
 
     /** @return array<string, mixed> */
-    private function accuracyPerformanceRow(string $skill, string $label, int $total, int $correct): array
+    private function speakingFeedbackFromSubmission(ExamSpeakingSubmission $submission): array
     {
-        $wrong = $total - $correct;
+        $result = $submission->assessmentAttempt?->result;
+        $jobStatus = $submission->assessmentAttempt?->job?->status;
 
         return [
-            'skill' => $skill,
-            'label' => $label,
-            'score_type' => self::SCORE_TYPE_ACCURACY,
-            'status' => self::STATUS_GRADED,
-            'total' => $total,
-            'correct' => $correct,
-            'wrong' => $wrong,
-            'accuracy_pct' => $total > 0 ? (int) round($correct / $total * 100) : 0,
-            'band' => null,
+            'submission_id' => $submission->id,
+            'attempt_id' => $submission->assessmentAttempt?->id,
+            'job_status' => $jobStatus?->value,
+            'score_status' => $this->assessmentScoreStatus($result !== null, $jobStatus),
+            'feedback_status' => $this->assessmentFeedbackStatus($result?->feedback !== null, $result !== null, $jobStatus),
+            'part_id' => $submission->part_id,
+            'audio_url' => $submission->audio_url,
+            'transcript' => $submission->transcript,
+            'overall_band' => $result?->overall_band,
+            'criterion_scores' => $result?->criterion_scores,
+            'caps_applied' => $result?->caps_applied,
+            'display' => $result === null ? null : $this->displayService->forResult($result),
+            'diagnostics' => $result === null ? null : $this->diagnosticsService->forAttempt($submission->assessmentAttempt),
+            'feedback' => $result?->feedback,
+            'calculation_trace' => $result?->calculation_trace,
         ];
     }
 
     /** @return array<string, mixed> */
-    private function bandPerformanceRow(string $skill, string $label, int $total, ?float $band, string $status): array
+    private function blankSpeakingFeedback(ExamVersionSpeakingPart $part): array
     {
         return [
-            'skill' => $skill,
-            'label' => $label,
-            'score_type' => self::SCORE_TYPE_BAND,
-            'status' => $status,
-            'total' => $total,
-            'correct' => null,
-            'wrong' => null,
-            'accuracy_pct' => null,
-            'band' => $band,
+            'submission_id' => null,
+            'attempt_id' => null,
+            'job_status' => null,
+            'score_status' => self::STATUS_READY,
+            'feedback_status' => self::STATUS_NONE,
+            'part_id' => $part->id,
+            'audio_url' => null,
+            'transcript' => null,
+            'overall_band' => 0.0,
+            'criterion_scores' => [],
+            'caps_applied' => [],
+            'display' => null,
+            'diagnostics' => null,
+            'feedback' => null,
+            'calculation_trace' => ['source' => 'blank_submission'],
         ];
     }
 
-    /** @param  list<array<string, mixed>>  $feedback */
-    private function bandStatus(array $feedback, ?float $band): string
+    /** @return list<array<string, mixed>> */
+    private function buildLegacySpeakingFeedback(ExamSession $session): array
     {
-        if ($band !== null) {
-            return self::STATUS_GRADED;
-        }
-
-        foreach ($feedback as $item) {
-            if (($item['overall_band'] ?? null) === null) {
-                return self::STATUS_PENDING;
-            }
-        }
-
-        return self::STATUS_NOT_SUBMITTED;
+        return $session->speakingSubmissions
+            ->map(fn (ExamSpeakingSubmission $submission): array => $this->speakingFeedbackFromSubmission($submission))
+            ->values()
+            ->all();
     }
 
-    /**
-     * @param  array{score: int, total: int}  $mcqSummary
-     * @param  list<array<string, mixed>>  $performanceRows
-     * @return array<string, mixed>
-     */
-    private function buildSummary(array $mcqSummary, ?float $overallBand, string $level, array $performanceRows): array
+    private function assessmentScoreStatus(bool $hasResult, ?AssessmentJobStatus $jobStatus): string
     {
-        $mcqTotal = $mcqSummary['total'];
+        if ($hasResult) {
+            return self::STATUS_READY;
+        }
 
-        return [
-            'mcq_score' => $mcqSummary['score'],
-            'mcq_total' => $mcqTotal,
-            'score_on_10' => $mcqTotal > 0 ? round($mcqSummary['score'] / $mcqTotal * 10, 1) : 0.0,
-            'overall_band' => $overallBand,
-            'level' => $level,
-            'has_pending_ai' => collect($performanceRows)->contains(
-                fn (array $row): bool => $row['status'] === self::STATUS_PENDING,
-            ),
-        ];
+        return match ($jobStatus) {
+            AssessmentJobStatus::Pending, AssessmentJobStatus::Processing => self::STATUS_PENDING,
+            AssessmentJobStatus::Failed => self::STATUS_FAILED,
+            default => self::STATUS_NOT_SUBMITTED,
+        };
+    }
+
+    private function assessmentFeedbackStatus(bool $hasFeedback, bool $hasResult, ?AssessmentJobStatus $jobStatus): string
+    {
+        if ($hasFeedback) {
+            return self::STATUS_READY;
+        }
+        if ($hasResult) {
+            return match ($jobStatus) {
+                AssessmentJobStatus::Pending, AssessmentJobStatus::Processing => self::STATUS_PENDING,
+                AssessmentJobStatus::Failed => self::STATUS_FAILED,
+                default => self::STATUS_NONE,
+            };
+        }
+
+        return match ($jobStatus) {
+            AssessmentJobStatus::Pending, AssessmentJobStatus::Processing => self::STATUS_PENDING,
+            AssessmentJobStatus::Failed => self::STATUS_FAILED,
+            default => self::STATUS_NOT_SUBMITTED,
+        };
     }
 
     /** @return array<string, mixed> */
     private function emptySummary(): array
     {
         return [
-            'mcq_score' => 0,
-            'mcq_total' => 0,
-            'score_on_10' => 0.0,
-            'overall_band' => null,
-            'level' => 'Chưa có điểm',
-            'has_pending_ai' => false,
+            'score_status' => 'none',
+            'feedback_status' => 'none',
+            'has_pending_jobs' => false,
+            'has_failed_jobs' => false,
+            'display' => [
+                'band_title' => 'Band VSTEP thi thử',
+                'band_value' => $this->resultFormatter->statusLabel(self::STATUS_NONE),
+                'total_score_title' => 'Điểm tổng theo công thức',
+                'total_score_value' => $this->resultFormatter->statusLabel(self::STATUS_NONE),
+                'pending_badge_label' => null,
+            ],
+            'overall' => [
+                'applicable' => false,
+                'reason' => null,
+                'band' => null,
+                'score_on_10' => null,
+                'cefr_level' => null,
+                'result_label' => null,
+            ],
+            'mcq' => [
+                'correct' => 0,
+                'total' => 0,
+                'answered' => 0,
+                'wrong' => 0,
+                'unanswered' => 0,
+                'score_on_10' => 0.0,
+            ],
         ];
     }
 
-    /** @return list<array{section_id: string, part: int, played: bool}> */
+    /** @return list<array{section_id: string, part: int, played: bool, played_at: mixed}> */
     private function buildListeningPlaySummary(ExamSession $session): array
     {
-        $playedSectionIds = $session->listeningPlayLogs->pluck('section_id')->all();
+        $logs = $session->listeningPlayLogs->keyBy('section_id');
 
         return $session->examVersion->listeningSections
-            ->map(fn (ExamVersionListeningSection $section): array => [
-                'section_id' => $section->id,
-                'part' => $section->part,
-                'played' => in_array($section->id, $playedSectionIds, true),
-            ])
+            ->map(function (ExamVersionListeningSection $section) use ($logs): array {
+                /** @var ExamListeningPlayLog|null $log */
+                $log = $logs->get($section->id);
+
+                return [
+                    'section_id' => $section->id,
+                    'part' => $section->part,
+                    'played' => $log !== null,
+                    'played_at' => $log?->played_at,
+                ];
+            })
             ->values()
             ->all();
     }

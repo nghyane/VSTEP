@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import Svg, { Circle, G, Line, Polyline, Rect, Text as SvgText } from "react-native-svg";
 
@@ -9,7 +9,7 @@ import { api } from "@/lib/api";
 import { useOverview } from "@/hooks/use-progress";
 import { getTargetBand } from "@/lib/vstep";
 import { useThemeColors, spacing, fontSize, fontFamily, radius, type ThemeColors } from "@/theme";
-import type { ExamSessionResult, Skill } from "@/types/api";
+import type { ExamSessionResult, ScoreQuality, Skill } from "@/types/api";
 
 const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
 const MAX_TESTS = 7;
@@ -55,16 +55,40 @@ function bandToY(value: number): number {
   return BASE - (Math.max(0, Math.min(10, value)) / 10) * PLOT_H;
 }
 
-function computeAvg(scores: Record<Skill, number | null>): number {
-  const vals = SKILLS.map((skill) => scores[skill]).filter((value): value is number => value !== null);
-  if (vals.length === 0) return 0;
+function computeAvg(scores: Record<Skill, number | null>, visibleSkills: readonly Skill[]): number | null {
+  const vals = visibleSkills.map((skill) => scores[skill]).filter((value): value is number => value !== null);
+  if (vals.length === 0) return null;
   return Math.round((vals.reduce((sum, value) => sum + value, 0) / vals.length) * 10) / 10;
+}
+
+function avgPoints(tests: ScoredSession[], centers: number[], visibleSkills: readonly Skill[]): string {
+  return tests
+    .map((test, index) => {
+      const avg = computeAvg(test.scores, visibleSkills);
+      return avg !== null ? `${centers[index]},${bandToY(avg)}` : null;
+    })
+    .filter((point): point is string => point !== null)
+    .join(" ");
+}
+
+function outlierNotice(quality: ScoreQuality | undefined): string | null {
+  if (!quality?.hasOutlier) return null;
+
+  const outlierLabels = SKILLS.filter((skill) => quality.outlierSkills.includes(skill)).map((skill) => SKILL_META[skill].vi);
+  const message = quality.status === "consecutive_low"
+    ? "Điểm thấp đã xuất hiện ở ít nhất 2 lượt liên tiếp. Hệ thống đã bắt đầu cập nhật năng lực hiện tại theo xu hướng mới."
+    : "Lượt thi mới nhất thấp bất thường so với phong độ gần đây. Hệ thống vẫn ghi nhận trong lịch sử, nhưng cần thêm 1 lượt xác nhận trước khi cập nhật năng lực hiện tại.";
+
+  if (outlierLabels.length === 0) return message;
+  return `${message} Kỹ năng bị ảnh hưởng: ${outlierLabels.join(", ")}.`;
 }
 
 export function ScoreTrend() {
   const c = useThemeColors();
+  const { width } = useWindowDimensions();
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [selectedSkills, setSelectedSkills] = useState<Skill[]>(SKILLS);
   const { data: overview } = useOverview();
   const { data, isLoading } = useQuery({
     queryKey: ["exam-sessions"],
@@ -77,6 +101,7 @@ export function ScoreTrend() {
       .slice(0, MAX_TESTS)
       .reverse();
   }, [data]);
+  const zoomChartWidth = Math.max(720, Math.min(1240, width + tests.length * 72));
 
   if (isLoading || !overview) {
     return (
@@ -97,8 +122,18 @@ export function ScoreTrend() {
 
   const targetLevel = overview.profile.targetLevel ?? "B2";
   const targetBand = getTargetBand(targetLevel);
+  const visibleSkills = SKILLS.filter((skill) => selectedSkills.includes(skill));
   const activeTest = activeIdx !== null ? tests[activeIdx] : null;
-  const activeAvg = activeTest ? computeAvg(activeTest.scores) : null;
+  const activeAvg = activeTest ? computeAvg(activeTest.scores, visibleSkills) : null;
+  const notice = outlierNotice(overview.scores.quality);
+
+  function toggleSkill(skill: Skill) {
+    setSelectedSkills((current) => {
+      if (!current.includes(skill)) return [...current, skill];
+      if (current.length === 1) return current;
+      return current.filter((item) => item !== skill);
+    });
+  }
 
   return (
     <DepthCard style={styles.root}>
@@ -108,13 +143,24 @@ export function ScoreTrend() {
           <Text style={[styles.subtitle, { color: c.subtle }]}>{tests.length} bài thi gần nhất</Text>
         </View>
         <View style={[styles.targetBadge, { backgroundColor: c.destructiveTint }]}>
-          <Text style={[styles.targetBadgeText, { color: c.destructive }]}>
-            {targetLevel} = {targetBand}
+          <Text style={[styles.targetBadgeText, { color: c.destructive }]}> 
+            {targetLevel} ≥ {targetBand}
           </Text>
         </View>
       </View>
 
-      <ScoreLegend colors={c} />
+      <ScoreLegend
+        colors={c}
+        selectedSkills={selectedSkills}
+        onToggleSkill={toggleSkill}
+        onShowAll={() => setSelectedSkills(SKILLS)}
+      />
+
+      {notice ? (
+        <View style={[styles.notice, { backgroundColor: c.warningTint, borderColor: c.warning + "35" }]}> 
+          <Text style={[styles.noticeText, { color: c.warning }]}>{notice}</Text>
+        </View>
+      ) : null}
 
       <Pressable style={styles.chartTapArea} onPress={() => setZoomOpen(true)}>
         <ScoreTrendChart
@@ -123,6 +169,7 @@ export function ScoreTrend() {
           activeIdx={activeIdx}
           onSelect={(index) => setActiveIdx(activeIdx === index ? null : index)}
           colors={c}
+          visibleSkills={visibleSkills}
           width="100%"
           height={244}
         />
@@ -132,9 +179,9 @@ export function ScoreTrend() {
         <View style={[styles.detailPanel, { backgroundColor: c.surface, borderColor: c.border }]}>
           <View>
             <Text style={[styles.detailDate, { color: c.foreground }]}>{formatShortDate(activeTest.submittedAt)}</Text>
-            <Text style={[styles.detailAvg, { color: c.primaryDark }]}>Trung bình {activeAvg?.toFixed(1)}</Text>
+            <Text style={[styles.detailAvg, { color: c.primaryDark }]}>TB có điểm {activeAvg?.toFixed(1) ?? "—"}</Text>
           </View>
-          <ScoreBreakdown test={activeTest} colors={c} />
+          <ScoreBreakdown test={activeTest} colors={c} visibleSkills={visibleSkills} />
         </View>
       ) : (
         <Text style={[styles.tapHint, { color: c.subtle }]}>Chạm biểu đồ để phóng to. Chạm cột để xem chi tiết.</Text>
@@ -148,23 +195,49 @@ export function ScoreTrend() {
         onSelect={(index) => setActiveIdx(activeIdx === index ? null : index)}
         onClose={() => setZoomOpen(false)}
         colors={c}
+        visibleSkills={visibleSkills}
+        chartWidth={zoomChartWidth}
       />
     </DepthCard>
   );
 }
 
-function ScoreLegend({ colors }: { colors: ThemeColors }) {
+function ScoreLegend({
+  colors,
+  selectedSkills,
+  onToggleSkill,
+  onShowAll,
+}: {
+  colors: ThemeColors;
+  selectedSkills: readonly Skill[];
+  onToggleSkill: (skill: Skill) => void;
+  onShowAll: () => void;
+}) {
   return (
     <View style={styles.legend}>
-      {SKILLS.map((skill) => (
-        <View key={skill} style={styles.legendItem}>
-          <SkillIcon skill={skill} size={14} bare />
-          <Text style={[styles.legendText, { color: getSkillColor(skill, colors) }]}>{SKILL_META[skill].vi}</Text>
-        </View>
-      ))}
+      {SKILLS.map((skill) => {
+        const selected = selectedSkills.includes(skill);
+        return (
+          <Pressable
+            key={skill}
+            onPress={() => onToggleSkill(skill)}
+            style={[
+              styles.legendButton,
+              { borderColor: selected ? getSkillColor(skill, colors) : colors.border, backgroundColor: selected ? colors.surface : colors.muted },
+              !selected && styles.legendButtonOff,
+            ]}
+          >
+            <SkillIcon skill={skill} size={14} bare />
+            <Text style={[styles.legendText, { color: getSkillColor(skill, colors) }]}>{SKILL_META[skill].vi}</Text>
+          </Pressable>
+        );
+      })}
+      <Pressable style={[styles.legendButton, { borderColor: colors.border, backgroundColor: colors.surface }]} onPress={onShowAll}>
+        <Text style={[styles.legendText, { color: colors.subtle }]}>Tất cả</Text>
+      </Pressable>
       <View style={styles.legendItem}>
         <View style={[styles.avgLegend, { backgroundColor: colors.primaryDark }]} />
-        <Text style={[styles.legendText, { color: colors.primaryDark }]}>Trung bình</Text>
+        <Text style={[styles.legendText, { color: colors.primaryDark }]}>TB kỹ năng có điểm</Text>
       </View>
       <View style={styles.legendItem}>
         <View style={[styles.targetLegend, { borderTopColor: colors.destructive }]} />
@@ -180,6 +253,7 @@ function ScoreTrendChart({
   activeIdx,
   onSelect,
   colors,
+  visibleSkills,
   width,
   height,
 }: {
@@ -188,12 +262,13 @@ function ScoreTrendChart({
   activeIdx: number | null;
   onSelect: (index: number) => void;
   colors: ThemeColors;
+  visibleSkills: readonly Skill[];
   width: number | `${number}%`;
   height: number;
 }) {
   const spacingX = tests.length > 1 ? (RIGHT - LEFT - 24) / (tests.length - 1) : 0;
   const centers = tests.map((_, index) => (tests.length === 1 ? (LEFT + RIGHT) / 2 : LEFT + 12 + index * spacingX));
-  const avgPoints = tests.map((test, index) => `${centers[index]},${bandToY(computeAvg(test.scores))}`).join(" ");
+  const averagePoints = avgPoints(tests, centers, visibleSkills);
 
   return (
     <Svg width={width} height={height} viewBox={`0 0 ${CHART_W} ${CHART_H}`}>
@@ -223,11 +298,12 @@ function ScoreTrendChart({
         const isActive = activeIdx === testIndex;
         const barW = 9;
         const barGap = 2;
-        const groupW = SKILLS.length * barW + (SKILLS.length - 1) * barGap;
+        const groupW = visibleSkills.length * barW + (visibleSkills.length - 1) * barGap;
         return (
           <G key={test.id}>
-            {SKILLS.map((skill, skillIndex) => {
-              const value = test.scores[skill] ?? 0;
+            {visibleSkills.map((skill, skillIndex) => {
+              const value = test.scores[skill];
+              if (value === null) return null;
               const y = bandToY(value);
               return (
                 <Rect
@@ -267,7 +343,7 @@ function ScoreTrendChart({
         strokeDasharray="6 6"
       />
       <Polyline
-        points={avgPoints}
+        points={averagePoints}
         fill="none"
         stroke={colors.primaryDark}
         strokeWidth={3}
@@ -275,7 +351,8 @@ function ScoreTrendChart({
         strokeLinejoin="round"
       />
       {tests.map((test, index) => {
-        const avg = computeAvg(test.scores);
+        const avg = computeAvg(test.scores, visibleSkills);
+        if (avg === null) return null;
         const x = centers[index];
         const y = bandToY(avg);
         const isActive = activeIdx === index;
@@ -302,6 +379,8 @@ function ScoreTrendZoomModal({
   onSelect,
   onClose,
   colors,
+  visibleSkills,
+  chartWidth,
 }: {
   visible: boolean;
   tests: ScoredSession[];
@@ -310,9 +389,11 @@ function ScoreTrendZoomModal({
   onSelect: (index: number) => void;
   onClose: () => void;
   colors: ThemeColors;
+  visibleSkills: readonly Skill[];
+  chartWidth: number;
 }) {
   const activeTest = activeIdx !== null ? tests[activeIdx] : null;
-  const activeAvg = activeTest ? computeAvg(activeTest.scores) : null;
+  const activeAvg = activeTest ? computeAvg(activeTest.scores, visibleSkills) : null;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -339,7 +420,8 @@ function ScoreTrendZoomModal({
                 activeIdx={activeIdx}
                 onSelect={onSelect}
                 colors={colors}
-                width={920}
+                visibleSkills={visibleSkills}
+                width={chartWidth}
                 height={368}
               />
             </View>
@@ -349,9 +431,9 @@ function ScoreTrendZoomModal({
             <View style={[styles.detailPanel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View>
                 <Text style={[styles.detailDate, { color: colors.foreground }]}>{formatShortDate(activeTest.submittedAt)}</Text>
-                <Text style={[styles.detailAvg, { color: colors.primaryDark }]}>Trung bình {activeAvg?.toFixed(1)}</Text>
+                <Text style={[styles.detailAvg, { color: colors.primaryDark }]}>TB có điểm {activeAvg?.toFixed(1) ?? "—"}</Text>
               </View>
-              <ScoreBreakdown test={activeTest} colors={colors} />
+              <ScoreBreakdown test={activeTest} colors={colors} visibleSkills={visibleSkills} />
             </View>
           ) : (
             <Text style={[styles.tapHint, { color: colors.subtle }]}>Chạm vào một cụm cột để xem chi tiết.</Text>
@@ -362,10 +444,10 @@ function ScoreTrendZoomModal({
   );
 }
 
-function ScoreBreakdown({ test, colors }: { test: ScoredSession; colors: ThemeColors }) {
+function ScoreBreakdown({ test, colors, visibleSkills }: { test: ScoredSession; colors: ThemeColors; visibleSkills: readonly Skill[] }) {
   return (
     <View style={styles.detailScores}>
-      {SKILLS.map((skill) => (
+      {visibleSkills.map((skill) => (
         <View key={skill} style={styles.detailScore}>
           <Text style={[styles.detailSkill, { color: getSkillColor(skill, colors) }]}>{SKILL_META[skill].vi}</Text>
           <Text style={[styles.detailValue, { color: colors.foreground }]}>
@@ -420,6 +502,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
   },
+  legendButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    borderWidth: 1.5,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+  },
+  legendButtonOff: {
+    opacity: 0.55,
+  },
   legendText: {
     fontSize: 10,
     fontFamily: fontFamily.bold,
@@ -437,6 +531,16 @@ const styles = StyleSheet.create({
   },
   chartTapArea: {
     borderRadius: radius.lg,
+  },
+  notice: {
+    borderWidth: 1.5,
+    borderRadius: radius.lg,
+    padding: spacing.sm,
+  },
+  noticeText: {
+    fontSize: fontSize.xs,
+    fontFamily: fontFamily.bold,
+    lineHeight: 18,
   },
   detailPanel: {
     borderWidth: 1,
@@ -513,6 +617,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   zoomChartCanvas: {
-    width: 920,
+    minWidth: 720,
   },
 });

@@ -39,10 +39,24 @@ use App\Services\Ai\LlmSpeakingFeedbackGenerator;
 use App\Services\Ai\LlmTaskFulfillmentAssessor;
 use App\Services\Ai\LlmWritingFeedbackGenerator;
 use App\Services\Contracts\ExamCatalogInterface;
+use App\Services\Contracts\ExamOverviewInterface;
+use App\Services\Contracts\ExamResultDisplayFormatterInterface;
+use App\Services\Contracts\ExamResultMcqBuilderInterface;
+use App\Services\Contracts\ExamResultReadModelInterface;
+use App\Services\Contracts\ExamResultReviewBuilderInterface;
+use App\Services\Contracts\ExamResultSummaryBuilderInterface;
+use App\Services\Contracts\ExamRoomInterface;
 use App\Services\Contracts\ExamSessionResultInterface;
 use App\Services\Contracts\LearningPathInterface;
 use App\Services\ConversationServiceInterface;
+use App\Services\Exam\Results\ExamResultDisplayFormatter;
+use App\Services\Exam\Results\ExamResultMcqBuilder;
+use App\Services\Exam\Results\ExamResultReadModelService;
+use App\Services\Exam\Results\ExamResultReviewBuilder;
+use App\Services\Exam\Results\ExamResultSummaryBuilder;
 use App\Services\ExamCatalogService;
+use App\Services\ExamOverviewService;
+use App\Services\ExamRoomService;
 use App\Services\ExamSessionResultService;
 use App\Services\Grading\RubricResolver;
 use App\Services\Grading\SpeakingScoringFormula;
@@ -113,6 +127,20 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(LearningPathInterface::class, LearningPathService::class);
 
         $this->app->bind(ExamCatalogInterface::class, ExamCatalogService::class);
+
+        $this->app->bind(ExamOverviewInterface::class, ExamOverviewService::class);
+
+        $this->app->bind(ExamRoomInterface::class, ExamRoomService::class);
+
+        $this->app->bind(ExamResultDisplayFormatterInterface::class, ExamResultDisplayFormatter::class);
+
+        $this->app->bind(ExamResultMcqBuilderInterface::class, ExamResultMcqBuilder::class);
+
+        $this->app->bind(ExamResultSummaryBuilderInterface::class, ExamResultSummaryBuilder::class);
+
+        $this->app->bind(ExamResultReviewBuilderInterface::class, ExamResultReviewBuilder::class);
+
+        $this->app->bind(ExamResultReadModelInterface::class, ExamResultReadModelService::class);
 
         $this->app->bind(ExamSessionResultInterface::class, ExamSessionResultService::class);
 

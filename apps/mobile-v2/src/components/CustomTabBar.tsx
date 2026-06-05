@@ -9,13 +9,14 @@ import {
   View,
 } from "react-native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
-import { useThemeColors, spacing, fontFamily, radius } from "@/theme";
+import { useThemeColors, useResponsiveLayout, spacing, fontFamily, radius } from "@/theme";
 import { useHaptics } from "@/contexts/HapticsContext";
 
 const HIDDEN_TABS = new Set(["notifications", "explore", "progress"]);
 
 export function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
   const c = useThemeColors();
+  const layout = useResponsiveLayout();
   const { trigger } = useHaptics();
   const visibleRoutes = state.routes.filter((r) => !HIDDEN_TABS.has(r.name));
   const count = visibleRoutes.length;
@@ -33,6 +34,7 @@ export function CustomTabBar({ state, descriptors, navigation, insets }: BottomT
 
   // Slide the active indicator pill
   const indicatorX = useRef(new Animated.Value(activeVisibleIdx)).current;
+  const indicatorY = useRef(new Animated.Value(activeVisibleIdx)).current;
 
   useEffect(() => {
     scales.forEach((scale, i) => {
@@ -49,18 +51,31 @@ export function CustomTabBar({ state, descriptors, navigation, insets }: BottomT
       stiffness: 220,
       useNativeDriver: false,
     }).start();
-  }, [activeVisibleIdx, scales, indicatorX]);
+    Animated.spring(indicatorY, {
+      toValue: activeVisibleIdx,
+      damping: 18,
+      stiffness: 220,
+      useNativeDriver: false,
+    }).start();
+  }, [activeVisibleIdx, scales, indicatorX, indicatorY]);
 
   const TAB_W = 100 / count;
+  const isRail = layout.isTabletLandscape;
+  const railWidth = layout.navRailWidth;
+  const railItemHeight = layout.isLargeTablet ? 72 : 66;
 
   return (
     <View
       style={[
         styles.outer,
+        isRail ? styles.outerRail : styles.outerBar,
         {
           backgroundColor: c.surface,
           borderTopColor: c.border,
-          paddingBottom: Math.max(insets.bottom, 8),
+          borderRightColor: c.border,
+          paddingBottom: isRail ? 0 : Math.max(insets.bottom, 8),
+          paddingTop: isRail ? insets.top + 12 : 0,
+          width: isRail ? railWidth : undefined,
         },
       ]}
     >
@@ -68,18 +83,25 @@ export function CustomTabBar({ state, descriptors, navigation, insets }: BottomT
       <Animated.View
         style={[
           styles.indicator,
+          isRail ? styles.indicatorRail : styles.indicatorBar,
           {
             backgroundColor: c.primaryTint,
-            width: `${TAB_W}%` as any,
-            left: indicatorX.interpolate({
+            width: isRail ? railWidth - 16 : (`${TAB_W}%` as any),
+            left: isRail
+              ? 8
+              : indicatorX.interpolate({
+                  inputRange: [0, count - 1],
+                  outputRange: ["0%", `${TAB_W * (count - 1)}%`],
+                }),
+            top: isRail ? indicatorY.interpolate({
               inputRange: [0, count - 1],
-              outputRange: ["0%", `${TAB_W * (count - 1)}%`],
-            }),
+              outputRange: Array.from({ length: count }, (_, i) => 8 + i * railItemHeight),
+            }) : 6,
           },
         ]}
       />
 
-      <View style={styles.row}>
+      <View style={[styles.row, isRail ? styles.column : styles.barRow]}>
         {visibleRoutes.map((route, visIdx) => {
           const { options } = descriptors[route.key];
           const focused = route.key === state.routes[state.index].key;
@@ -109,11 +131,12 @@ export function CustomTabBar({ state, descriptors, navigation, insets }: BottomT
               key={route.key}
               onPress={onPress}
               activeOpacity={0.8}
-              style={styles.tab}
+              style={[styles.tab, isRail ? styles.tabRail : styles.tabBar, isRail ? { height: railItemHeight } : null]}
             >
               <Animated.View
                 style={[
                   styles.iconWrap,
+                  isRail ? styles.iconWrapRail : null,
                   { transform: [{ scale: scales[visIdx] }] },
                 ]}
               >
@@ -127,6 +150,7 @@ export function CustomTabBar({ state, descriptors, navigation, insets }: BottomT
                     color,
                     fontFamily: focused ? fontFamily.bold : fontFamily.medium,
                   },
+                  isRail ? styles.labelRail : styles.labelBar,
                 ]}
               >
                 {label}
@@ -141,35 +165,73 @@ export function CustomTabBar({ state, descriptors, navigation, insets }: BottomT
 
 const styles = StyleSheet.create({
   outer: {
-    borderTopWidth: 1,
     position: "relative",
+  },
+  outerBar: {
+    borderTopWidth: 1,
+  },
+  outerRail: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    borderRightWidth: 1,
+    zIndex: 50,
   },
   indicator: {
     position: "absolute",
+    borderRadius: radius.xl,
+  },
+  indicatorBar: {
     top: 6,
     height: 48,
-    borderRadius: radius.xl,
     marginHorizontal: 4,
   },
+  indicatorRail: {
+    height: 58,
+  },
   row: {
+  },
+  barRow: {
     flexDirection: "row",
     paddingTop: spacing.xs,
     paddingBottom: spacing.xs,
   },
+  column: {
+    flexDirection: "column",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingBottom: spacing.base,
+  },
   tab: {
-    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 50,
     gap: 2,
     zIndex: 1,
+  },
+  tabBar: {
+    flex: 1,
+    minHeight: 50,
+  },
+  tabRail: {
+    width: "100%",
+    minHeight: 58,
+    gap: 6,
   },
   iconWrap: {
     alignItems: "center",
     justifyContent: "center",
   },
+  iconWrapRail: {
+    width: 28,
+    height: 28,
+  },
   label: {
     fontSize: 10,
     letterSpacing: 0.2,
+  },
+  labelBar: {},
+  labelRail: {
+    fontSize: 11,
   },
 });

@@ -8,8 +8,7 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Lưu trạng thái làm bài dở (autosave) để user resume sau khi đóng tab / refresh.
- * 1 row/session. Cascade delete khi session bị xóa. Row bị xóa thủ công khi submit/abandon
- * (xem ExamSessionService::submit/abandon).
+ * 1 row/session. Cascade delete khi session bị xóa. Row bị xóa thủ công khi submit/restart.
  */
 return new class extends Migration
 {

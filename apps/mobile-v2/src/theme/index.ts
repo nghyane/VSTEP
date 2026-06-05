@@ -3,6 +3,7 @@ import { colors, type ThemeColors } from "./colors";
 export { colors, spacing, radius, fontSize, fontFamily } from "./colors";
 export type { ThemeColors } from "./colors";
 export { depthNeutral, depthSemantic, depth } from "./depth";
+export { useResponsiveLayout } from "./responsive";
 
 export function useThemeColors(): ThemeColors {
   return colors.light;
