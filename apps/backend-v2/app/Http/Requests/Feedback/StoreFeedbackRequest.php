@@ -21,7 +21,7 @@ final class StoreFeedbackRequest extends FormRequest
                 'required',
                 'string',
                 'max:50',
-                Rule::in(['practice_listening_exercise', 'practice_reading_exercise']),
+                Rule::in(['practice_listening_exercise', 'practice_reading_exercise', 'practice_reading_question']),
             ],
             'content_id' => ['required', 'uuid'],
             'rating' => ['required', 'integer', 'between:1,5'],

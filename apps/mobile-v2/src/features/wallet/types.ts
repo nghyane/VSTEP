@@ -16,7 +16,8 @@ export interface TopupPackage {
 export interface TopupOrder {
   id: string;
   orderCode: number;
-  profileId: string;
+  accountId: string;
+  profileId: string | null;
   packageId: string;
   amountVnd: number;
   coinsToCredit: number;

@@ -4,33 +4,25 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Assessment\Enums\AssessmentSourceType;
+use App\Models\AssessmentAttempt;
 use App\Models\Exam;
 use App\Models\ExamSession;
 use App\Services\ExamImportService;
 use App\Services\ExamVersionValidator;
+use App\Support\ReferenceExamListeningAudio;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 final class ReferenceExamSeeder extends Seeder
 {
-    private const SOURCE_SCHOOL = 'VSTEP Simulation Bank';
+    private const SOURCE_SCHOOL = 'Capstone VSTEP · Biên soạn theo cấu trúc VSTEP 3-5';
 
     private const TOTAL_DURATION_MINUTES = 172;
 
     private const READING_TARGET_WORDS = [1 => 480, 2 => 500, 3 => 520, 4 => 540];
-
-    private const LEGACY_FIXTURE_SLUGS = ['vstep-demo-1', 'vstep-practice-2', 'vstep-practice-3'];
-
-    private const OLD_TEMPLATE_SLUGS = [
-        'vstep-practice-4',
-        'vstep-practice-5',
-        'vstep-practice-6',
-        'vstep-practice-7',
-        'vstep-practice-8',
-        'vstep-practice-9',
-        'vstep-practice-10',
-    ];
 
     public function run(ExamImportService $importer, ExamVersionValidator $validator): void
     {
@@ -49,81 +41,38 @@ final class ReferenceExamSeeder extends Seeder
             }
         }
 
-        $this->retireLegacyFixtureExams();
-
         $synced = 0;
-        foreach ($this->examPlans() as $plan) {
-            if (! $this->prepareForSync($plan['slug'])) {
-                continue;
+
+        DB::transaction(function () use ($importer, $validator, &$synced): void {
+            $this->resetExamData();
+
+            foreach ($this->examPlans() as $plan) {
+                $versionData = $this->versionData($plan);
+                $this->validateOfficialVersionData($validator, $versionData, $plan['slug']);
+
+                $importer->importExam([
+                    'slug' => $plan['slug'],
+                    'title' => $plan['title'],
+                    'source_school' => self::SOURCE_SCHOOL,
+                    'tags' => $plan['tags'],
+                    'total_duration_minutes' => self::TOTAL_DURATION_MINUTES,
+                    'is_published' => true,
+                ], $versionData);
+
+                $synced++;
             }
+        });
 
-            $versionData = $this->versionData($plan);
-            $this->validateOfficialVersionData($validator, $versionData, $plan['slug']);
-
-            $importer->importExam([
-                'slug' => $plan['slug'],
-                'title' => $plan['title'],
-                'source_school' => self::SOURCE_SCHOOL,
-                'tags' => $plan['tags'],
-                'total_duration_minutes' => self::TOTAL_DURATION_MINUTES,
-                'is_published' => true,
-            ], $versionData);
-
-            $synced++;
-        }
-
-        $this->command?->info("Curated reference full exams synced: {$synced} exams.");
+        $this->command?->info("Capstone VSTEP exams synced: {$synced} exams.");
     }
 
-    private function retireLegacyFixtureExams(): void
+    private function resetExamData(): void
     {
-        Exam::query()
-            ->whereIn('slug', self::LEGACY_FIXTURE_SLUGS)
-            ->update(['is_published' => false]);
-
-        foreach (self::OLD_TEMPLATE_SLUGS as $slug) {
-            $exam = Exam::query()->where('slug', $slug)->first();
-            if (! $exam) {
-                continue;
-            }
-
-            if ($this->hasSessions($exam)) {
-                $exam->update(['is_published' => false]);
-
-                continue;
-            }
-
-            $exam->delete();
-        }
-    }
-
-    private function prepareForSync(string $slug): bool
-    {
-        $exam = Exam::query()->where('slug', $slug)->first();
-        if (! $exam) {
-            return true;
-        }
-
-        if ($exam->source_school !== self::SOURCE_SCHOOL) {
-            return false;
-        }
-
-        if ($this->hasSessions($exam)) {
-            $exam->update(['is_published' => true]);
-
-            return false;
-        }
-
-        $exam->delete();
-
-        return true;
-    }
-
-    private function hasSessions(Exam $exam): bool
-    {
-        $versionIds = $exam->versions()->pluck('id');
-
-        return ExamSession::query()->whereIn('exam_version_id', $versionIds)->exists();
+        AssessmentAttempt::query()
+            ->where('source_type', AssessmentSourceType::Exam->value)
+            ->delete();
+        ExamSession::query()->delete();
+        Exam::query()->delete();
     }
 
     /** @param array<string, mixed> $versionData */
@@ -167,24 +116,26 @@ final class ReferenceExamSeeder extends Seeder
         $sections = [];
         $items = [];
 
-        foreach ($this->partOneListening($plan) as $notice) {
+        foreach ($this->partOneListening($plan) as $noticeIndex => $notice) {
             $sectionIndex = count($sections);
             $sections[] = [
                 'part' => 1,
                 'part_title' => 'Part 1 · '.$notice['title'],
                 'duration_minutes' => 1,
+                'audio_url' => $this->listeningAudioUrl($plan['slug'], 1, $noticeIndex + 1),
                 'transcript' => $notice['transcript'],
                 'display_order' => $sectionIndex + 1,
             ];
             $items[] = $this->listeningItem($sectionIndex, 1, $notice['stem'], $notice['options'], $notice['correct_index']);
         }
 
-        foreach ($this->partTwoListening($plan) as $dialogue) {
+        foreach ($this->partTwoListening($plan) as $dialogueIndex => $dialogue) {
             $sectionIndex = count($sections);
             $sections[] = [
                 'part' => 2,
                 'part_title' => 'Part 2 · '.$dialogue['title'],
                 'duration_minutes' => 4,
+                'audio_url' => $this->listeningAudioUrl($plan['slug'], 2, $dialogueIndex + 1),
                 'transcript' => $dialogue['transcript'],
                 'display_order' => $sectionIndex + 1,
             ];
@@ -200,6 +151,7 @@ final class ReferenceExamSeeder extends Seeder
                 'part' => 3,
                 'part_title' => 'Part 3 · '.$talk['title'],
                 'duration_minutes' => $talkIndex === 2 ? 6 : 7,
+                'audio_url' => $this->listeningAudioUrl($plan['slug'], 3, $talkIndex + 1),
                 'transcript' => $talk['transcript'],
                 'display_order' => $sectionIndex + 1,
             ];
@@ -210,6 +162,13 @@ final class ReferenceExamSeeder extends Seeder
         }
 
         return [$sections, $items];
+    }
+
+    private function listeningAudioUrl(string $slug, int $part, int $sectionNumber): ?string
+    {
+        return ReferenceExamListeningAudio::publicUrlIfStored(
+            ReferenceExamListeningAudio::key($slug, $part, $sectionNumber),
+        );
     }
 
     /** @return array<string, mixed> */
@@ -586,11 +545,11 @@ final class ReferenceExamSeeder extends Seeder
     {
         return [
             $this->plan(
-                'vstep-mock-test-01-campus-orientation',
-                'VSTEP Mock Test 01: Campus Orientation & Student Services',
+                'vstep-de-thi-thu-01-doi-song-sinh-vien',
+                'Đề 01 · Đời sống sinh viên',
                 1,
                 'campus orientation',
-                ['Full Mock', 'B1-C1', 'Campus Life', 'Student Services'],
+                ['Đời sống sinh viên', 'Dịch vụ sinh viên'],
                 [
                     ['title' => 'First-Year Advisory Desks', 'subject' => 'first-year advisory desks', 'setting' => 'large university campuses', 'people' => 'new students, advisers and faculty assistants', 'benefit' => 'help new students choose courses, solve timetable problems and find welfare support', 'challenge' => 'keeping advice consistent when several offices answer similar questions', 'example' => 'a university placed trained peer advisers beside the enrolment hall during the first two weeks'],
                     ['title' => 'Student ID Services', 'subject' => 'student ID services', 'setting' => 'student administration offices', 'people' => 'students, security staff and service clerks', 'benefit' => 'make borrowing, attendance checks and building access quicker', 'challenge' => 'replacing lost cards without creating long queues', 'example' => 'an office introduced an appointment window for students who needed replacement cards'],
@@ -599,24 +558,24 @@ final class ReferenceExamSeeder extends Seeder
                 ],
             ),
             $this->plan(
-                'vstep-mock-test-02-work-internships',
-                'VSTEP Mock Test 02: Internships & Workplace Communication',
+                'vstep-de-thi-thu-02-thuc-tap-cong-so',
+                'Đề 02 · Thực tập & công sở',
                 2,
                 'workplace preparation',
-                ['Full Mock', 'B1-C1', 'Workplace', 'Career Skills'],
+                ['Nghề nghiệp', 'Giao tiếp công sở'],
                 [
                     ['title' => 'Remote Internship Supervision', 'subject' => 'remote internship supervision', 'setting' => 'companies with hybrid teams', 'people' => 'interns, mentors and department managers', 'benefit' => 'give young workers professional experience without requiring daily travel', 'challenge' => 'helping interns ask quick questions when supervisors are busy online', 'example' => 'a marketing firm scheduled two short check-ins each day for remote interns'],
                     ['title' => 'Workplace Email Etiquette', 'subject' => 'workplace email etiquette', 'setting' => 'training departments', 'people' => 'new employees and team leaders', 'benefit' => 'reduce misunderstandings and make requests easier to answer', 'challenge' => 'teaching polite tone without making messages too long', 'example' => 'a company asked trainees to rewrite unclear emails from realistic office situations'],
-                    ['title' => 'Job Interview Practice', 'subject' => 'job interview practice', 'setting' => 'career centres', 'people' => 'graduates, recruiters and career advisers', 'benefit' => 'build confidence before applicants meet employers', 'challenge' => 'giving honest feedback without discouraging nervous candidates', 'example' => 'a career centre recorded mock interviews and reviewed the answers privately'],
+                    ['title' => 'Job Interview Practice', 'subject' => 'job interview practice', 'setting' => 'career centres', 'people' => 'graduates, recruiters and career advisers', 'benefit' => 'build confidence before applicants meet employers', 'challenge' => 'giving honest feedback without discouraging nervous candidates', 'example' => 'a career centre recorded practice interviews and reviewed the answers privately'],
                     ['title' => 'Professional Networking Events', 'subject' => 'professional networking events', 'setting' => 'business schools', 'people' => 'students, alumni and employers', 'benefit' => 'connect learners with people who can explain real career paths', 'challenge' => 'making the event useful for shy participants as well as confident speakers', 'example' => 'organizers gave students question cards before they met alumni guests'],
                 ],
             ),
             $this->plan(
-                'vstep-mock-test-03-city-life-housing',
-                'VSTEP Mock Test 03: Transport, Housing & City Life',
+                'vstep-de-thi-thu-03-doi-song-do-thi',
+                'Đề 03 · Đời sống đô thị',
                 3,
                 'urban living',
-                ['Full Mock', 'B1-C1', 'Urban Life', 'Public Services'],
+                ['Đời sống đô thị', 'Dịch vụ công'],
                 [
                     ['title' => 'Student Housing Advice', 'subject' => 'student housing advice', 'setting' => 'rental districts near universities', 'people' => 'students, landlords and housing officers', 'benefit' => 'help renters understand contracts, deposits and repair responsibilities', 'challenge' => 'checking unreliable advertisements before students pay fees', 'example' => 'a housing office created a checklist for viewing rooms safely'],
                     ['title' => 'Evening Bus Services', 'subject' => 'evening bus services', 'setting' => 'suburban transport routes', 'people' => 'shift workers, students and bus operators', 'benefit' => 'make late travel safer and cheaper for people without private vehicles', 'challenge' => 'running enough buses when passenger numbers change by season', 'example' => 'a transport company tested later buses during the university exam period'],
@@ -625,11 +584,11 @@ final class ReferenceExamSeeder extends Seeder
                 ],
             ),
             $this->plan(
-                'vstep-mock-test-04-campus-learning',
-                'VSTEP Mock Test 04: Campus Learning & Academic Support',
+                'vstep-de-thi-thu-04-hoc-tap-dai-hoc',
+                'Đề 04 · Học tập đại học',
                 4,
                 'campus learning',
-                ['Full Mock', 'B1-C1', 'Education', 'Academic Skills'],
+                ['Giáo dục', 'Kỹ năng học thuật'],
                 [
                     ['title' => 'Shared Study Rooms', 'subject' => 'shared study rooms', 'setting' => 'university towns', 'people' => 'students and tutors', 'benefit' => 'give learners access to quiet spaces, shared devices and peer support', 'challenge' => 'keeping rooms open at predictable times', 'example' => 'a college library tested evening study rooms during the exam period'],
                     ['title' => 'Digital Library Access', 'subject' => 'digital library access', 'setting' => 'large campuses', 'people' => 'students, librarians and lecturers', 'benefit' => 'reduce travel time and help users find academic sources more quickly', 'challenge' => 'training new users to search databases effectively', 'example' => 'an online guide helped first-year students compare reliable articles'],
@@ -638,11 +597,11 @@ final class ReferenceExamSeeder extends Seeder
                 ],
             ),
             $this->plan(
-                'vstep-mock-test-05-sustainable-cities',
-                'VSTEP Mock Test 05: Sustainable Cities & Public Services',
+                'vstep-de-thi-thu-05-thanh-pho-ben-vung',
+                'Đề 05 · Thành phố bền vững',
                 5,
                 'sustainable cities',
-                ['Full Mock', 'B1-C1', 'Environment', 'Public Services'],
+                ['Môi trường', 'Dịch vụ công'],
                 [
                     ['title' => 'Urban Tree Projects', 'subject' => 'urban tree projects', 'setting' => 'crowded city districts', 'people' => 'residents and local planners', 'benefit' => 'cool streets, absorb rainwater and make public spaces more pleasant', 'challenge' => 'choosing species that do not damage pavements', 'example' => 'a neighbourhood mapped hot streets before planting shade trees'],
                     ['title' => 'Public Bicycle Schemes', 'subject' => 'public bicycle schemes', 'setting' => 'busy transport corridors', 'people' => 'commuters and city visitors', 'benefit' => 'offer a low-cost option for short journeys', 'challenge' => 'balancing bicycle supply between popular stations', 'example' => 'a city used morning travel data to move bicycles before rush hour'],
@@ -651,11 +610,11 @@ final class ReferenceExamSeeder extends Seeder
                 ],
             ),
             $this->plan(
-                'vstep-mock-test-06-digital-workplace',
-                'VSTEP Mock Test 06: Digital Workplaces & Consumer Services',
+                'vstep-de-thi-thu-06-cong-so-so',
+                'Đề 06 · Công sở số',
                 6,
                 'digital workplace',
-                ['Full Mock', 'B1-C1', 'Technology', 'Workplace'],
+                ['Công nghệ', 'Giao tiếp công sở'],
                 [
                     ['title' => 'Remote Team Meetings', 'subject' => 'remote team meetings', 'setting' => 'international companies', 'people' => 'employees and project managers', 'benefit' => 'connect teams across locations without frequent travel', 'challenge' => 'preventing online meetings from becoming too long', 'example' => 'a design team used shorter agendas and shared notes after each call'],
                     ['title' => 'Online Training Portals', 'subject' => 'online training portals', 'setting' => 'growing businesses', 'people' => 'new employees and trainers', 'benefit' => 'let staff review essential skills at their own pace', 'challenge' => 'keeping learning materials current after procedures change', 'example' => 'a company updated safety videos after workers reported unclear steps'],
@@ -664,11 +623,11 @@ final class ReferenceExamSeeder extends Seeder
                 ],
             ),
             $this->plan(
-                'vstep-mock-test-07-public-health',
-                'VSTEP Mock Test 07: Public Health & Community Wellbeing',
+                'vstep-de-thi-thu-07-suc-khoe-cong-dong',
+                'Đề 07 · Sức khỏe cộng đồng',
                 7,
                 'public health',
-                ['Full Mock', 'B1-C1', 'Health', 'Community'],
+                ['Sức khỏe', 'Cộng đồng'],
                 [
                     ['title' => 'School Breakfast Clubs', 'subject' => 'school breakfast clubs', 'setting' => 'urban primary schools', 'people' => 'children, parents and teachers', 'benefit' => 'help pupils start lessons with more energy and attention', 'challenge' => 'finding volunteers who can arrive early every morning', 'example' => 'a local bakery donated bread while parents served fruit twice a week'],
                     ['title' => 'Walking Groups', 'subject' => 'walking groups', 'setting' => 'residential areas', 'people' => 'older adults and community nurses', 'benefit' => 'improve fitness while reducing social isolation', 'challenge' => 'choosing routes that are safe in different weather conditions', 'example' => 'a clinic organized short walks that ended at a public garden'],
@@ -677,11 +636,11 @@ final class ReferenceExamSeeder extends Seeder
                 ],
             ),
             $this->plan(
-                'vstep-mock-test-08-tourism-heritage',
-                'VSTEP Mock Test 08: Tourism, Heritage & Local Culture',
+                'vstep-de-thi-thu-08-du-lich-di-san',
+                'Đề 08 · Du lịch & di sản',
                 8,
                 'tourism and heritage',
-                ['Full Mock', 'B1-C1', 'Tourism', 'Culture'],
+                ['Du lịch', 'Văn hóa'],
                 [
                     ['title' => 'Local Heritage Trails', 'subject' => 'local heritage trails', 'setting' => 'historic towns', 'people' => 'visitors, guides and residents', 'benefit' => 'bring attention to small museums and traditional streets', 'challenge' => 'protecting quiet neighbourhoods from overcrowding', 'example' => 'a walking map encouraged tourists to visit less crowded workshops'],
                     ['title' => 'Homestay Standards', 'subject' => 'homestay standards', 'setting' => 'rural tourism areas', 'people' => 'hosts, guests and tourism officers', 'benefit' => 'raise service quality while keeping local character', 'challenge' => 'checking safety standards without creating too much paperwork', 'example' => 'families attended a short course on hygiene and guest communication'],
@@ -690,11 +649,11 @@ final class ReferenceExamSeeder extends Seeder
                 ],
             ),
             $this->plan(
-                'vstep-mock-test-09-education-technology',
-                'VSTEP Mock Test 09: Education Technology & Learning Support',
+                'vstep-de-thi-thu-09-cong-nghe-giao-duc',
+                'Đề 09 · Công nghệ giáo dục',
                 9,
                 'technology and education',
-                ['Full Mock', 'B1-C1', 'Education', 'Technology'],
+                ['Giáo dục', 'Công nghệ'],
                 [
                     ['title' => 'Learning Apps for Vocabulary', 'subject' => 'learning apps for vocabulary', 'setting' => 'language classrooms', 'people' => 'learners and teachers', 'benefit' => 'support regular review through short daily practice', 'challenge' => 'encouraging learners to use the app beyond the first week', 'example' => 'a teacher linked app practice with short classroom speaking tasks'],
                     ['title' => 'AI Feedback Tools', 'subject' => 'AI feedback tools', 'setting' => 'writing courses', 'people' => 'students and writing instructors', 'benefit' => 'give quick comments on grammar, organization and word choice', 'challenge' => 'helping learners understand that automated advice is not always complete', 'example' => 'one class compared machine feedback with teacher comments before revising essays'],
@@ -703,11 +662,11 @@ final class ReferenceExamSeeder extends Seeder
                 ],
             ),
             $this->plan(
-                'vstep-mock-test-10-environmental-action',
-                'VSTEP Mock Test 10: Environmental Action & Responsible Consumption',
+                'vstep-de-thi-thu-10-moi-truong-tieu-dung',
+                'Đề 10 · Môi trường & tiêu dùng',
                 10,
                 'environmental choices',
-                ['Full Mock', 'B1-C1', 'Environment', 'Consumption'],
+                ['Môi trường', 'Tiêu dùng bền vững'],
                 [
                     ['title' => 'Reusable Packaging', 'subject' => 'reusable packaging', 'setting' => 'cafes and food shops', 'people' => 'customers, shop owners and suppliers', 'benefit' => 'reduce single-use waste from everyday purchases', 'challenge' => 'cleaning and returning containers reliably', 'example' => 'a group of cafes tested a deposit system for takeaway cups'],
                     ['title' => 'Water Saving Campaigns', 'subject' => 'water saving campaigns', 'setting' => 'dry farming districts', 'people' => 'families, farmers and local officials', 'benefit' => 'reduce waste during months when rainfall is low', 'challenge' => 'changing habits before a serious shortage occurs', 'example' => 'local radio messages explained simple ways to reuse household water'],

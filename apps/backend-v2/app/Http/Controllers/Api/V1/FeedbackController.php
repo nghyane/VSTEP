@@ -5,40 +5,33 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Feedback\ListFeedbackRequest;
 use App\Http\Requests\Feedback\StoreFeedbackRequest;
-use App\Models\ExerciseFeedback;
-use App\Services\ExerciseFeedbackService;
+use App\Http\Resources\ExerciseFeedbackResource;
+use App\Services\FeedbackService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 final class FeedbackController extends Controller
 {
     public function __construct(
-        private readonly ExerciseFeedbackService $service,
+        private readonly FeedbackService $feedbackService,
     ) {}
 
     public function store(StoreFeedbackRequest $request): JsonResponse
     {
-        $feedback = $this->service->store($request->profile()->id, $request->validated());
+        $feedback = $this->feedbackService->create($request->profile(), $request->validated());
 
-        return response()->json(['data' => $feedback], 201);
+        return (new ExerciseFeedbackResource($feedback))->response()->setStatusCode(201);
     }
 
-    public function index(Request $request): JsonResponse
+    public function index(ListFeedbackRequest $request): AnonymousResourceCollection
     {
-        $request->validate([
-            'content_type' => ['required', 'string'],
-            'content_id' => ['required', 'uuid'],
-        ]);
-
-        $feedbacks = ExerciseFeedback::query()
-            ->where('content_type', $request->input('content_type'))
-            ->where('content_id', $request->input('content_id'))
-            ->with('profile:id,nickname')
-            ->latest()
-            ->limit(50)
-            ->get();
-
-        return response()->json(['data' => $feedbacks]);
+        return ExerciseFeedbackResource::collection(
+            $this->feedbackService->listForContent(
+                (string) $request->validated('content_type'),
+                (string) $request->validated('content_id'),
+            ),
+        );
     }
 }

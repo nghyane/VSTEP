@@ -211,6 +211,43 @@ class TopupFlowTest extends TestCase
         $this->assertSame(600, $balance);
     }
 
+    public function test_order_status_is_visible_after_switching_profile_in_same_account(): void
+    {
+        $user = User::factory()->create();
+        $profileA = Profile::factory()->initial()->forAccount($user)->create();
+        $profileB = Profile::factory()->forAccount($user)->create();
+        $package = WalletTopupPackage::factory()->create(['coins_base' => 500]);
+
+        $login = $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ]);
+        $tokenA = $login->json('data.access_token');
+        $refreshToken = $login->json('data.refresh_token');
+
+        $orderId = $this->withHeader('Authorization', "Bearer {$tokenA}")
+            ->postJson('/api/v1/wallet/topup', [
+                'package_id' => $package->id,
+                'payment_provider' => 'payos',
+                'return_url' => 'https://example.com/topup/success',
+                'cancel_url' => 'https://example.com/topup/cancel',
+            ])
+            ->json('data.id');
+
+        $tokenB = $this->withHeader('Authorization', "Bearer {$tokenA}")
+            ->postJson('/api/v1/auth/switch-profile', [
+                'profile_id' => $profileB->id,
+                'refresh_token' => $refreshToken,
+            ])
+            ->json('data.access_token');
+
+        $this->withHeader('Authorization', "Bearer {$tokenB}")
+            ->getJson("/api/v1/wallet/topup/{$orderId}/status")
+            ->assertOk()
+            ->assertJsonPath('data.profile_id', $profileA->id)
+            ->assertJsonPath('data.account_id', $user->id);
+    }
+
     public function test_confirm_is_idempotent(): void
     {
         $user = User::factory()->create();

@@ -16,6 +16,10 @@ use Illuminate\Support\Collection as SupportCollection;
 
 final class ExamCatalogService implements ExamCatalogInterface
 {
+    private const ACTIVE_SESSION_SORT_ATTRIBUTE = 'has_active_session';
+
+    private const ACTIVE_SESSION_STARTED_AT_SORT_ATTRIBUTE = 'active_session_started_at';
+
     /**
      * @param  array{q?: string, status?: string, sort?: string}  $filters
      */
@@ -28,6 +32,7 @@ final class ExamCatalogService implements ExamCatalogInterface
 
         $this->applySearch($query, $filters['q'] ?? null);
         $this->applyStatusFilter($query, $profile, $filters['status'] ?? null);
+        $this->prioritizeActiveSessions($query, $profile);
         $this->applySort($query, $filters['sort'] ?? 'newest');
 
         $paginator = $query->paginate($perPage);
@@ -41,6 +46,10 @@ final class ExamCatalogService implements ExamCatalogInterface
             ->groupBy(fn (ExamSession $session): ?string => $session->examVersion?->exam_id);
 
         foreach ($exams as $exam) {
+            $exam->makeHidden([
+                self::ACTIVE_SESSION_SORT_ATTRIBUTE,
+                self::ACTIVE_SESSION_STARTED_AT_SORT_ATTRIBUTE,
+            ]);
             $exam->setAttribute('user_state', $this->stateForExam($sessionsByExamId->get($exam->id)));
         }
 
@@ -84,6 +93,20 @@ final class ExamCatalogService implements ExamCatalogInterface
                 ->whereDoesntHave('sessions', $countableSession),
             default => null,
         };
+    }
+
+    private function prioritizeActiveSessions(Builder $query, Profile $profile): void
+    {
+        $activeSession = fn (Builder $q) => $q
+            ->where('profile_id', $profile->id)
+            ->where('status', ExamSessionStatus::Active->value)
+            ->where('server_deadline_at', '>', now());
+
+        $query
+            ->withExists(['sessions as '.self::ACTIVE_SESSION_SORT_ATTRIBUTE => $activeSession])
+            ->withMax(['sessions as '.self::ACTIVE_SESSION_STARTED_AT_SORT_ATTRIBUTE => $activeSession], 'started_at')
+            ->orderByDesc(self::ACTIVE_SESSION_SORT_ATTRIBUTE)
+            ->orderByDesc(self::ACTIVE_SESSION_STARTED_AT_SORT_ATTRIBUTE);
     }
 
     private function applySort(Builder $query, string $sort): void

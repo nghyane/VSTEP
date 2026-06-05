@@ -20,7 +20,6 @@ const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/dashboard";
 
 interface PendingTopupOrder {
   id: string;
-  profileId: string;
   coins: number;
 }
 
@@ -104,21 +103,11 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
     let mounted = true;
     loadPendingTopupOrder().then((order) => {
       if (!mounted || !order) return;
-      if (profile && order.profileId !== profile.id) {
-        void clearPendingTopupOrder();
-        return;
-      }
       setPendingOrder(order);
       void checkOrderPayment(order, false);
     }).catch(() => undefined);
     return () => { mounted = false; };
-  }, [checkOrderPayment, profile]);
-
-  useEffect(() => {
-    if (!pendingOrder || !profile || pendingOrder.profileId === profile.id) return;
-    setPendingOrder(null);
-    void clearPendingTopupOrder();
-  }, [pendingOrder, profile]);
+  }, [checkOrderPayment]);
 
   useEffect(() => {
     if (!pendingOrder) return;
@@ -147,7 +136,7 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
         return;
       }
 
-      const nextPendingOrder = { id: order.id, profileId: profile.id, coins: order.coinsToCredit || selected.totalCoins };
+      const nextPendingOrder = { id: order.id, coins: order.coinsToCredit || selected.totalCoins };
       await savePendingTopupOrder(nextPendingOrder);
       setPendingOrder(nextPendingOrder);
       await Linking.openURL(order.paymentUrl);
@@ -233,7 +222,7 @@ function createTopupReturnUrl(): string {
 function isPendingTopupOrder(value: unknown): value is PendingTopupOrder {
   if (!value || typeof value !== "object") return false;
   const record = value as Record<string, unknown>;
-  return typeof record.id === "string" && typeof record.profileId === "string" && typeof record.coins === "number";
+  return typeof record.id === "string" && typeof record.coins === "number";
 }
 
 async function loadPendingTopupOrder(): Promise<PendingTopupOrder | null> {

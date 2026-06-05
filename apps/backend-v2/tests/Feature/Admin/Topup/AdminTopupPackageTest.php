@@ -236,8 +236,10 @@ class AdminTopupPackageTest extends TestCase
     {
         $staff = User::factory()->create(['role' => Role::Admin]);
         $package = WalletTopupPackage::factory()->create();
+        $profile = Profile::factory()->create();
         WalletTopupOrder::create([
-            'profile_id' => Profile::factory()->create()->id,
+            'account_id' => $profile->account_id,
+            'profile_id' => $profile->id,
             'package_id' => $package->id,
             'amount_vnd' => $package->amount_vnd,
             'coins_to_credit' => $package->coins_base,

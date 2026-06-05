@@ -19,7 +19,7 @@ final class StartExamSessionRequest extends FormRequest
             'mode' => ['required', 'in:custom,full'],
             'selected_skills' => ['required_if:mode,custom', 'array'],
             'selected_skills.*' => ['string', 'in:listening,reading,writing,speaking'],
-            'time_extension_factor' => ['nullable', 'numeric', 'min:1', 'max:3'],
+            'time_extension_factor' => ['nullable', 'numeric', 'min:0.1', 'max:3'],
         ];
     }
 }

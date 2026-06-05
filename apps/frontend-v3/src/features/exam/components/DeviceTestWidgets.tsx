@@ -56,26 +56,24 @@ export function AudioTestPlayer() {
 	}, [])
 
 	const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+	const playLabel = playing ? "Tạm dừng" : passed ? "Phát lại" : "Phát thử"
 
 	return (
 		<div className="space-y-3">
 			<div
 				className={cn(
-					"flex items-center gap-4 rounded-(--radius-card) border-2 border-b-4 bg-surface px-4 py-3 transition-colors",
-					passed ? "border-skill-listening/40 border-b-skill-listening/60" : "border-border",
+					"flex items-center gap-4 rounded-(--radius-card) border bg-surface px-4 py-3 transition-colors",
+					passed ? "border-skill-listening/40" : "border-border",
 				)}
 			>
 				<button
 					type="button"
 					onClick={handleToggle}
-					aria-label={playing ? "Tạm dừng" : "Phát"}
-					className={cn(
-						"relative flex size-11 shrink-0 items-center justify-center rounded-full border-2 border-b-4 text-white transition-all active:translate-y-[2px] active:border-b-2",
-						"border-skill-listening-dark bg-skill-listening hover:brightness-110",
-					)}
+					aria-label={playLabel}
+					className="btn btn-secondary shrink-0 px-3 py-2 text-xs text-skill-listening"
 				>
-					{!passed && <span className="absolute inset-0 animate-ping rounded-full bg-skill-listening/40" />}
-					<Icon name={playing ? "timer" : "volume"} size="sm" className="relative text-white" />
+					<Icon name={playing ? "timer" : "volume"} size="xs" />
+					{playLabel}
 				</button>
 
 				<div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -97,7 +95,7 @@ export function AudioTestPlayer() {
 			</div>
 
 			{passed && (
-				<div className="flex items-center gap-2 rounded-full border-2 border-success/30 bg-success/10 px-3 py-1.5 text-xs font-extrabold text-success">
+				<div className="flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-xs font-extrabold text-success">
 					<Icon name="check" size="xs" />
 					Âm thanh hoạt động tốt
 				</div>
@@ -124,9 +122,9 @@ export function MicTest() {
 		<div className="space-y-3">
 			<div
 				className={cn(
-					"flex min-h-16 items-center justify-center rounded-(--radius-card) border-2 border-b-4 px-4 py-3 transition-colors",
-					isRecording && "border-destructive/40 border-b-destructive/60 bg-destructive-tint",
-					isDone && "border-success/40 border-b-success/60 bg-success/5",
+					"flex min-h-16 items-center justify-center rounded-(--radius-card) border px-4 py-3 transition-colors",
+					isRecording && "border-destructive/40 bg-destructive-tint",
+					isDone && "border-success/40 bg-success/5",
 					!isRecording && !isDone && "border-border bg-surface",
 				)}
 			>
@@ -150,7 +148,7 @@ export function MicTest() {
 				{isDone && (
 					<div className="flex items-center gap-2 text-success">
 						<Icon name="check" size="sm" />
-						<span className="text-xs font-extrabold">Đã thu xong — microphone hoạt động</span>
+						<span className="text-xs font-extrabold">Đã thu xong — micrô hoạt động</span>
 					</div>
 				)}
 			</div>
@@ -174,7 +172,7 @@ export function MicTest() {
 			</div>
 
 			{recorder.error && (
-				<div className="flex items-center gap-2 rounded-(--radius-button) border-2 border-destructive/30 bg-destructive-tint px-3 py-2 text-xs font-bold text-destructive">
+				<div className="flex items-center gap-2 rounded-(--radius-button) border border-destructive/30 bg-destructive-tint px-3 py-2 text-xs font-bold text-destructive">
 					<span
 						aria-hidden="true"
 						className="flex size-4 shrink-0 items-center justify-center rounded-full bg-destructive text-[10px] font-black text-white"
@@ -186,7 +184,7 @@ export function MicTest() {
 			)}
 
 			{recorder.audioUrl && (
-				<div className="space-y-2 rounded-(--radius-card) border-2 border-b-4 border-border bg-surface p-3">
+				<div className="space-y-2 rounded-(--radius-card) border border-border bg-surface p-3">
 					<p className="flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wide text-muted">
 						<Icon name="volume" size="xs" />
 						Nghe lại bản ghi

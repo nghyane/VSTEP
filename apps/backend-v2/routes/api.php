@@ -154,19 +154,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/exams', [ExamController::class, 'index']);
         Route::get('/exams/{id}', [ExamController::class, 'show']);
         Route::post('/exams/{examId}/sessions', [ExamController::class, 'startSession']);
-        Route::get('/exam-sessions/active', [ExamController::class, 'activeSession']);
-        Route::get('/exam-sessions', [ExamController::class, 'mySessions']);
-        Route::get('/exam-sessions/{exam_session}', [ExamController::class, 'showSession']);
+        Route::post('/exams/{examId}/sessions/restart', [ExamController::class, 'restartSession']);
+        Route::get('/exam-sessions/{exam_session}/room', [ExamController::class, 'showRoom']);
         Route::get('/exam-sessions/{exam_session}/results', [ExamController::class, 'sessionResults']);
         Route::post('/exam-sessions/{exam_session}/submit', [ExamController::class, 'submit']);
-        Route::post('/exam-sessions/{exam_session}/abandon', [ExamController::class, 'abandon']);
-        Route::get('/exam-sessions/{exam_session}/draft', [ExamController::class, 'getDraft']);
         Route::put('/exam-sessions/{exam_session}/draft', [ExamController::class, 'saveDraft'])
             ->middleware('throttle:120,1');
         Route::post('/exam-sessions/{exam_session}/listening-played', [ExamController::class, 'logListeningPlayed']);
-        Route::get('/exam-sessions/{exam_session}/listening-played', [ExamController::class, 'listeningPlaySummary']);
-        Route::get('/exam-sessions/{exam_session}/writing-results', [ExamController::class, 'writingResults']);
-        Route::get('/exam-sessions/{exam_session}/speaking-results', [ExamController::class, 'speakingResults']);
 
         // Audio presigned URLs (R2).
         Route::post('/audio/presign-upload', [AudioController::class, 'presignUpload']);

@@ -56,6 +56,41 @@ final class ExamCatalogTest extends TestCase
             ->assertJsonPath('data.1.id', $quietExam->id);
     }
 
+    public function test_learner_exam_catalog_prioritizes_active_exam_before_requested_sort(): void
+    {
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+        $otherProfile = Profile::factory()->create();
+
+        [$activeExam, $activeVersion] = $this->createPublishedExam('Older Active Mock', [
+            'created_at' => now()->subDay(),
+        ]);
+        [$popularExam, $popularVersion] = $this->createPublishedExam('Newer Popular Mock');
+
+        $this->createSession($profile, $activeVersion, ExamSessionStatus::Active);
+        for ($i = 0; $i < 3; $i++) {
+            $this->createSession($otherProfile, $popularVersion, ExamSessionStatus::Submitted);
+        }
+
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/v1/exams?per_page=2')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $activeExam->id)
+            ->assertJsonPath('data.0.user_state.status', 'in_progress')
+            ->assertJsonMissingPath('data.0.has_active_session')
+            ->assertJsonMissingPath('data.0.active_session_started_at')
+            ->assertJsonPath('data.1.id', $popularExam->id);
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->getJson('/api/v1/exams?sort=popular&per_page=2')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $activeExam->id)
+            ->assertJsonPath('data.0.user_state.status', 'in_progress')
+            ->assertJsonPath('data.1.id', $popularExam->id);
+    }
+
     public function test_learner_exam_catalog_filters_by_user_state(): void
     {
         $user = User::factory()->create();
@@ -92,11 +127,12 @@ final class ExamCatalogTest extends TestCase
             ->assertJsonPath('data.0.user_state.status', 'not_started');
     }
 
-    private function createPublishedExam(string $title): array
+    private function createPublishedExam(string $title, array $attributes = []): array
     {
         $exam = Exam::factory()->create([
             'title' => $title,
             'is_published' => true,
+            ...$attributes,
         ]);
 
         $version = ExamVersion::factory()->create([

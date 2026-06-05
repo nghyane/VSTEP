@@ -153,10 +153,12 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (status === "initializing" || !fontsLoaded) return;
+    const currentPath = segments.join("/");
     const inAuthGroup = segments[0] === "(auth)";
+    const inOnboarding = currentPath.includes("onboarding");
     if (status !== "authenticated" && !inAuthGroup) {
       router.replace("/(auth)/login");
-    } else if (status === "authenticated" && !profile && segments[1] !== "onboarding") {
+    } else if (status === "authenticated" && !profile && !inOnboarding) {
       router.replace("/(app)/onboarding");
     } else if (status === "authenticated" && inAuthGroup) {
       router.replace("/(app)/(tabs)");

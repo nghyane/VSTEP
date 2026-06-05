@@ -14,6 +14,27 @@ final class SaveExamDraftRequest extends FormRequest
         return Gate::allows('update', $this->route('exam_session'));
     }
 
+    protected function prepareForValidation(): void
+    {
+        $writingAnswers = $this->input('writing_answers');
+        if (! is_array($writingAnswers)) {
+            return;
+        }
+
+        $this->merge([
+            'writing_answers' => array_map(function ($answer) {
+                if (! is_array($answer)) {
+                    return $answer;
+                }
+
+                $text = $answer['text'] ?? '';
+                $answer['text'] = is_string($text) ? $text : '';
+
+                return $answer;
+            }, $writingAnswers),
+        ]);
+    }
+
     public function rules(): array
     {
         return [
