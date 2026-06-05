@@ -28,6 +28,7 @@ function PaymentReturnPage() {
 	const state = getPaymentReturnState(search)
 	const isPaid = state === "paid"
 	const isConfirming = state === "confirming"
+	const appReturnUrl = buildAppReturnUrl(search)
 	const closeTab = () => window.close()
 
 	useEffect(() => {
@@ -75,6 +76,9 @@ function PaymentReturnPage() {
 				</dl>
 
 				<div className="mt-7 space-y-3">
+					<a href={appReturnUrl} className="btn btn-primary w-full sm:w-auto">
+						Mở VSTEP GO
+					</a>
 					<button type="button" onClick={closeTab} className="btn btn-primary w-full sm:w-auto">
 						Đóng tab này
 					</button>
@@ -101,4 +105,14 @@ function getPaymentReturnState(search: { cancel?: boolean; status?: string }): P
 	if (search.cancel || status === "CANCELLED" || status === "FAILED") return "cancelled"
 	if (status === "PAID") return "paid"
 	return "confirming"
+}
+
+function buildAppReturnUrl(search: { id?: string; status?: string; orderCode?: string; cancel?: boolean }) {
+	const params = new URLSearchParams()
+	if (search.id) params.set("id", search.id)
+	if (search.status) params.set("status", search.status)
+	if (search.orderCode) params.set("orderCode", search.orderCode)
+	if (search.cancel) params.set("cancel", "true")
+	const query = params.toString()
+	return `vstep://topup${query ? `?${query}` : ""}`
 }
