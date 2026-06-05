@@ -41,7 +41,8 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 		},
 		onSuccess: (order) => {
 			if (order.payment_url) {
-				window.location.href = order.payment_url
+				const paymentWindow = window.open(order.payment_url, "_blank", "noopener,noreferrer")
+				if (!paymentWindow) window.location.href = order.payment_url
 				return
 			}
 			setErrorMessage("Không tạo được liên kết thanh toán. Vui lòng thử lại.")
