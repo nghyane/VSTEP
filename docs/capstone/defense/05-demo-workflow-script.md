@@ -19,14 +19,54 @@ File này dùng cho **phần của bạn: nói slide preview (Slide 18-21) + dem
 
 > Nếu cháy giờ: giữ Workflow 2 đầy đủ, rút Workflow 1 còn 1 màn, Workflow 3 chỉ mở màn rubric list nói 1 câu.
 
-## Script nói trên Slide 18-21 (gọn, ~1 phút)
+## Lời thoại nói trên Slide 18-21 (văn nói, xưng "em", ~1 phút)
+
+Đây là phần nói trên slide preview, TRƯỚC khi demo web. Đọc trực tiếp, không cần thao tác.
+
+### Slide 18 — Demo Overview
 
 ```text
-Phần demo, nhóm em xin trình bày ba luồng chính của hệ thống:
-một là learner luyện tập có phản hồi, hai là thi thử và xem kết quả theo từng kỹ năng,
-ba là admin quản lý nội dung và bộ tiêu chí chấm điểm.
-Ba slide này là kịch bản để hội đồng nắm trước thao tác. Sau đây nhóm em xin demo trực tiếp trên sản phẩm.
+Dạ thưa hội đồng, sau phần công thức tính điểm, em xin chuyển sang phần demo sản phẩm.
+Để hội đồng tiện theo dõi, em xin giới thiệu trước ba luồng chính mà nhóm em sẽ demo.
+Luồng thứ nhất là learner luyện tập và nhận phản hồi.
+Luồng thứ hai là làm bài thi thử và xem kết quả theo từng kỹ năng.
+Luồng thứ ba là phần admin quản lý nội dung và bộ tiêu chí chấm điểm.
+Ba slide tiếp theo là kịch bản thao tác, để hội đồng nắm trước luồng đi trước khi em demo trực tiếp.
 ```
+
+### Slide 19 — Demo Workflow 1: Learner Practice
+
+```text
+Luồng đầu tiên là luồng luyện tập của learner.
+Sau khi đăng nhập, learner vào trang tổng quan, rồi vào khu luyện tập.
+Tại đây hệ thống gợi ý kỹ năng nên ưu tiên dựa trên kết quả học trước đó.
+Learner chọn một kỹ năng, làm bài, và nhận phản hồi ngay sau khi nộp.
+Với kỹ năng trắc nghiệm thì có giải thích từng câu. Với kỹ năng Viết và Nói thì có điểm theo tiêu chí và nhận xét cải thiện.
+Điểm em muốn nhấn mạnh ở luồng này là learner không chỉ làm bài rồi thôi, mà có một vòng học khép kín: làm bài, nhận phản hồi, biết điểm yếu, rồi luyện tiếp.
+```
+
+### Slide 20 — Demo Workflow 2: Mock Test & Result
+
+```text
+Luồng thứ hai là làm bài thi thử và xem kết quả. Đây là luồng trọng tâm em sẽ demo kỹ.
+Learner chọn một đề, có thể thi đủ bốn kỹ năng hoặc chọn một số kỹ năng.
+Bài thi đi tuần tự qua bốn kỹ năng Nghe, Đọc, Viết, Nói, và bài được tự động lưu trong lúc làm.
+Sau khi nộp, learner xem được kết quả: điểm tổng, điểm từng kỹ năng, và phần nhận xét chi tiết cho từng bài.
+Phần Nghe và Đọc có điểm ngay. Phần Viết và Nói được chấm ở phía sau và kết quả tự cập nhật khi hoàn tất.
+Em xin nhấn mạnh: điểm Viết và Nói do hệ thống tính bằng công thức cố định trên các chỉ số đầu vào, không phải do AI tự quyết, và đây là điểm tham khảo cho luyện tập.
+```
+
+### Slide 21 — Demo Workflow 3: Admin Management
+
+```text
+Luồng thứ ba là phần quản trị.
+Admin quản lý được nội dung học, đề thi, người dùng và khóa học qua giao diện, thay vì phải sửa thủ công trong code.
+Phần em muốn nhấn mạnh là bộ tiêu chí chấm điểm. Mỗi bộ tiêu chí có nhiều phiên bản, với các trạng thái nháp, đang dùng, và lưu trữ.
+Admin có thể tạo bản nháp, chỉnh sửa, chạy mô phỏng để xem thử kết quả chấm, rồi mới kích hoạt.
+Nhờ vậy, công thức và ngưỡng điểm được quản lý có phiên bản, minh bạch, và backend dùng đúng bộ tiêu chí đang kích hoạt để chấm bài.
+Dạ trên đây là ba luồng chính. Sau đây em xin demo trực tiếp trên sản phẩm.
+```
+
 
 ## Chuẩn bị trước demo (bắt buộc)
 
