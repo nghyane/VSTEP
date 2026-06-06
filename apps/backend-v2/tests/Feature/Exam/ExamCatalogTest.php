@@ -127,6 +127,47 @@ final class ExamCatalogTest extends TestCase
             ->assertJsonPath('data.0.user_state.status', 'not_started');
     }
 
+    public function test_learner_exam_catalog_auto_submits_expired_active_sessions_before_state_resolution(): void
+    {
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+        [$exam, $version] = $this->createPublishedExam('Expired Active Mock');
+        $session = $this->createSession($profile, $version, ExamSessionStatus::Active, [
+            'started_at' => now()->subHours(3),
+            'server_deadline_at' => now()->subHour(),
+        ]);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->getJson('/api/v1/exams?per_page=1')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $exam->id)
+            ->assertJsonPath('data.0.user_state.status', 'submitted')
+            ->assertJsonPath('data.0.user_state.session_count', 1);
+
+        $this->assertDatabaseHas('exam_sessions', [
+            'id' => $session->id,
+            'status' => ExamSessionStatus::AutoSubmitted->value,
+        ]);
+    }
+
+    public function test_exam_overview_includes_expired_active_sessions_after_auto_submit(): void
+    {
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+        [$exam, $version] = $this->createPublishedExam('Expired Detail Mock');
+        $session = $this->createSession($profile, $version, ExamSessionStatus::Active, [
+            'started_at' => now()->subHours(3),
+            'server_deadline_at' => now()->subHour(),
+        ]);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->getJson("/api/v1/exams/{$exam->id}")
+            ->assertOk()
+            ->assertJsonPath('data.attempt_state.active_session', null)
+            ->assertJsonPath('data.attempt_state.history.0.id', $session->id)
+            ->assertJsonPath('data.attempt_state.history.0.status', ExamSessionStatus::AutoSubmitted->value);
+    }
+
     private function createPublishedExam(string $title, array $attributes = []): array
     {
         $exam = Exam::factory()->create([
@@ -144,7 +185,7 @@ final class ExamCatalogTest extends TestCase
         return [$exam, $version];
     }
 
-    private function createSession(Profile $profile, ExamVersion $version, ExamSessionStatus $status): ExamSession
+    private function createSession(Profile $profile, ExamVersion $version, ExamSessionStatus $status, array $attributes = []): ExamSession
     {
         return ExamSession::create([
             'profile_id' => $profile->id,
@@ -157,6 +198,7 @@ final class ExamCatalogTest extends TestCase
             'submitted_at' => $status === ExamSessionStatus::Active ? null : now(),
             'status' => $status,
             'coins_charged' => 0,
+            ...$attributes,
         ]);
     }
 

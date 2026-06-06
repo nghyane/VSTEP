@@ -283,6 +283,7 @@ export function useSpeechTranscriber(maxSeconds: number) {
 
 		const recognition = recognitionRef.current
 		if (recognition) {
+			callbacksRef.current?.onProcessing?.()
 			recognition.stop()
 			return
 		}
@@ -411,6 +412,7 @@ export function useSpeechTranscriber(maxSeconds: number) {
 				startTimer(() => {
 					stoppedRef.current = true
 					clearTimer()
+					callbacksRef.current?.onProcessing?.()
 					recognition.stop()
 				})
 			} catch {

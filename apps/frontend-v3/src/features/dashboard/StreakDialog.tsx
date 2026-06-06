@@ -148,24 +148,6 @@ export function StreakDialog({ open, onClose, streak }: Props) {
 								))}
 							</div>
 						</div>
-
-						<div className="rounded-(--radius-card) border-2 border-dashed border-border bg-background p-4 space-y-2">
-							<p className="text-xs font-bold uppercase tracking-wider text-subtle">Cách tham gia</p>
-							<ol className="space-y-1.5 text-xs text-foreground">
-								{[
-									"Luyện tập bất kỳ kỹ năng nào mỗi ngày",
-									"Không bỏ ngày nào để giữ streak",
-									...streak.milestones.map((m) => `Đạt mốc ${m.days} ngày → nhận ${m.coins} xu`),
-								].map((note, i) => (
-									<li key={note} className="flex gap-2">
-										<span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-info-tint text-[10px] font-extrabold text-info">
-											{i + 1}
-										</span>
-										<span className="flex-1">{note}</span>
-									</li>
-								))}
-							</ol>
-						</div>
 					</div>
 				</ScrollArea>
 			</div>

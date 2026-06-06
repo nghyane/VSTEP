@@ -210,6 +210,7 @@ final class AuthController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
+        $user = $user->fresh() ?? $user;
         $payload = JWTAuth::parseToken()->getPayload();
         $profileId = $payload->get('active_profile_id');
 

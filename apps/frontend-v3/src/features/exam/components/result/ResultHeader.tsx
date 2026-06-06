@@ -1,14 +1,10 @@
 import { Link } from "@tanstack/react-router"
 import { Icon } from "#/components/Icon"
-import { modeLabel, statusLabel, statusTone } from "#/features/exam/components/result/helpers"
 import type { SessionResultsData } from "#/features/exam/types"
-import { cn } from "#/lib/utils"
 
 export function ResultHeader({ result }: { readonly result: SessionResultsData }) {
-	const tone = statusTone(result.summary.score_status)
-
 	return (
-		<header className="shrink-0 border-b border-border bg-surface/95 px-3 py-3 sm:px-5">
+		<header className="sticky top-0 z-10 shrink-0 bg-background px-4 pb-4 pt-6 sm:px-6 lg:px-10">
 			<div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
 				<div className="flex min-w-0 flex-1 items-center gap-3">
 					<BackLink result={result} />
@@ -17,14 +13,8 @@ export function ResultHeader({ result }: { readonly result: SessionResultsData }
 						<h1 className="mt-0.5 truncate text-base font-black text-foreground sm:text-lg">
 							{result.exam?.title ?? "Đề thi thử không xác định"}
 						</h1>
-						<p className="text-xs font-bold text-muted">{modeLabel(result)}</p>
 					</div>
 				</div>
-				<span
-					className={cn("shrink-0 rounded-full border px-3 py-1 text-xs font-extrabold", toneClass(tone))}
-				>
-					{statusLabel(result.summary.score_status)}
-				</span>
 			</div>
 		</header>
 	)
@@ -32,7 +22,7 @@ export function ResultHeader({ result }: { readonly result: SessionResultsData }
 
 function BackLink({ result }: { readonly result: SessionResultsData }) {
 	const className =
-		"inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-muted transition-colors hover:border-primary hover:text-primary"
+		"-ml-2 inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:text-primary"
 
 	if (!result.exam) {
 		return (
@@ -52,11 +42,4 @@ function BackLink({ result }: { readonly result: SessionResultsData }) {
 			<Icon name="back" size="xs" />
 		</Link>
 	)
-}
-
-function toneClass(tone: ReturnType<typeof statusTone>): string {
-	if (tone === "success") return "border-success/35 bg-success/10 text-success"
-	if (tone === "warning") return "border-warning/35 bg-warning/10 text-warning"
-	if (tone === "danger") return "border-destructive/35 bg-destructive-tint text-destructive"
-	return "border-border bg-background text-muted"
 }

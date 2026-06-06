@@ -190,9 +190,10 @@ function NotificationsTab({
 					</Button>
 				</div>
 			)}
-			<Space direction="vertical" size={6} style={{ width: "100%" }}>
+			<Space orientation="vertical" size={6} style={{ width: "100%" }}>
 				{notifications.map((n) => {
 					const courseId = n.payload?.course_id
+					const route = n.payload?.route
 					return (
 						<div
 							key={n.id}
@@ -223,7 +224,17 @@ function NotificationsTab({
 								}}
 							>
 								<span style={{ fontSize: 11, color: "rgba(0,0,0,0.35)" }}>{formatTimeAgo(n.created_at)}</span>
-								{courseId && (
+								{route ? (
+									<Button
+										type="primary"
+										size="small"
+										icon={<LinkOutlined />}
+										onClick={() => openNotificationRoute(route, navigate)}
+										style={{ fontSize: 11 }}
+									>
+										Mở
+									</Button>
+								) : courseId ? (
 									<Button
 										type="primary"
 										size="small"
@@ -233,7 +244,7 @@ function NotificationsTab({
 									>
 										Xem khóa học
 									</Button>
-								)}
+								) : null}
 							</div>
 						</div>
 					)
@@ -241,6 +252,27 @@ function NotificationsTab({
 			</Space>
 		</div>
 	)
+}
+
+type NavigateFn = ReturnType<typeof useNavigate>
+
+function openNotificationRoute(route: string, navigate: NavigateFn): void {
+	const teacherRequestId = routeSegment(route, "/teacher/grading-requests/")
+	if (teacherRequestId) {
+		navigate({ to: "/teacher/grading-requests/$requestId", params: { requestId: teacherRequestId } })
+		return
+	}
+
+	const staffRequestId = routeSegment(route, "/grading-requests/")
+	if (staffRequestId) {
+		navigate({ to: "/grading-requests/$requestId", params: { requestId: staffRequestId } })
+	}
+}
+
+function routeSegment(route: string, prefix: string): string | null {
+	if (!route.startsWith(prefix)) return null
+	const id = route.slice(prefix.length)
+	return id.length > 0 ? id : null
 }
 
 function AlertsTab({ alerts, isLoading }: { alerts: AlertItem[] | undefined; isLoading: boolean }) {
@@ -255,7 +287,7 @@ function AlertsTab({ alerts, isLoading }: { alerts: AlertItem[] | undefined; isL
 		return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không có cảnh báo" />
 	}
 	return (
-		<Space direction="vertical" size={8} style={{ width: "100%" }}>
+		<Space orientation="vertical" size={8} style={{ width: "100%" }}>
 			{alerts.map((a, idx) => (
 				<div
 					key={`${a.message}-${idx}`}

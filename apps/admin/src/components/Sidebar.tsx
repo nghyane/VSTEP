@@ -43,6 +43,11 @@ function buildTeacherItems(): ItemType[] {
 					label: <Link to={t("/teacher/schedule")}>Lịch dạy</Link>,
 				},
 				{
+					key: "/teacher/grading-requests",
+					icon: <CheckSquareOutlined />,
+					label: <Link to={t("/teacher/grading-requests")}>Bài cần chấm</Link>,
+				},
+				{
 					key: "/teacher/bookings",
 					icon: <ScheduleOutlined />,
 					label: <Link to={t("/teacher/bookings")}>Buổi học</Link>,
@@ -116,6 +121,11 @@ function buildStaffItems(isAdmin: boolean): ItemType[] {
 				{ key: "/courses", icon: <DatabaseOutlined />, label: <Link to={t("/courses")}>Khóa học</Link> },
 				{ key: "/feedback", icon: <MessageOutlined />, label: <Link to={t("/feedback")}>Phản hồi</Link> },
 				{
+					key: "/grading-requests",
+					icon: <CheckSquareOutlined />,
+					label: <Link to={t("/grading-requests")}>Yêu cầu chấm</Link>,
+				},
+				{
 					key: "/leave-requests",
 					icon: <SolutionOutlined />,
 					label: <Link to={t("/leave-requests")}>Đơn nghỉ</Link>,
@@ -171,6 +181,7 @@ const STAFF_KEYS = [
 	"/practice/speaking-scenarios",
 	"/courses",
 	"/feedback",
+	"/grading-requests",
 	"/finance",
 	"/leave-requests",
 	"/grading",
@@ -180,7 +191,13 @@ const STAFF_KEYS = [
 	"/settings",
 ]
 
-const TEACHER_KEYS = ["/teacher", "/teacher/schedule", "/teacher/bookings", "/teacher/leave-requests"]
+const TEACHER_KEYS = [
+	"/teacher",
+	"/teacher/schedule",
+	"/teacher/grading-requests",
+	"/teacher/bookings",
+	"/teacher/leave-requests",
+]
 
 export function Sidebar() {
 	const { pathname } = useLocation()

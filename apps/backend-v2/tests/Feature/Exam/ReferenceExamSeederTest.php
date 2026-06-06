@@ -41,9 +41,12 @@ final class ReferenceExamSeederTest extends TestCase
         $this->seed(ContentSeeder::class);
         $this->seed(ReferenceExamSeeder::class);
 
-        $this->assertSame(10, Exam::query()->count());
         $this->assertSame(10, Exam::query()->where('is_published', true)->count());
         $this->assertSame(10, Exam::query()->whereIn('slug', self::REFERENCE_SLUGS)->count());
+        $this->assertSame(0, Exam::query()
+            ->whereIn('slug', ['vstep-demo-1', 'vstep-practice-2', 'vstep-practice-3'])
+            ->where('is_published', true)
+            ->count());
         $this->assertSame(10, ExamVersion::query()
             ->where('is_active', true)
             ->whereHas('exam', fn ($query) => $query->where('is_published', true))
@@ -101,13 +104,26 @@ final class ReferenceExamSeederTest extends TestCase
         }
     }
 
-    public function test_reference_exam_seeder_links_existing_r2_listening_audio(): void
+    public function test_reference_exam_seeder_is_idempotent_when_content_is_unchanged(): void
+    {
+        config()->set('filesystems.disks.s3.bucket', '');
+
+        $this->seed(ReferenceExamSeeder::class);
+        $firstVersionIds = ExamVersion::query()->orderBy('exam_id')->orderBy('version_number')->pluck('id')->all();
+
+        $this->seed(ReferenceExamSeeder::class);
+
+        $this->assertSame(10, Exam::query()->whereIn('slug', self::REFERENCE_SLUGS)->count());
+        $this->assertSame(10, ExamVersion::query()->count());
+        $this->assertSame($firstVersionIds, ExamVersion::query()->orderBy('exam_id')->orderBy('version_number')->pluck('id')->all());
+    }
+
+    public function test_reference_exam_seeder_links_configured_r2_listening_audio_url(): void
     {
         config()->set('filesystems.disks.s3.bucket', 'test-bucket');
         Storage::fake('s3');
 
         $key = ReferenceExamListeningAudio::key('vstep-de-thi-thu-01-doi-song-sinh-vien', 1, 1);
-        Storage::disk('s3')->put($key, 'audio');
 
         $this->seed(ReferenceExamSeeder::class);
 
@@ -125,7 +141,7 @@ final class ReferenceExamSeederTest extends TestCase
         $this->assertSame(ReferenceExamListeningAudio::publicUrl($key), $section->audio_url);
     }
 
-    public function test_reference_exam_seeder_recreates_seed_exam_even_when_sessions_exist(): void
+    public function test_reference_exam_seeder_preserves_existing_sessions_when_syncing_exam(): void
     {
         config()->set('filesystems.disks.s3.bucket', '');
 
@@ -154,8 +170,10 @@ final class ReferenceExamSeederTest extends TestCase
         $this->seed(ReferenceExamSeeder::class);
 
         $freshExam = Exam::query()->where('slug', 'vstep-de-thi-thu-01-doi-song-sinh-vien')->firstOrFail();
-        $this->assertNotSame($exam->id, $freshExam->id);
+        $this->assertSame($exam->id, $freshExam->id);
         $this->assertSame('Đề 01 · Đời sống sinh viên', $freshExam->title);
-        $this->assertDatabaseMissing('exam_sessions', ['id' => $session->id]);
+        $this->assertDatabaseHas('exam_sessions', ['id' => $session->id]);
+        $this->assertSame(2, $freshExam->versions()->count());
+        $this->assertFalse((bool) $version->fresh()->is_active);
     }
 }

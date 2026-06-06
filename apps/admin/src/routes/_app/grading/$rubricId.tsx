@@ -509,7 +509,7 @@ function PolicyControlTab({ rubric }: { rubric: GradingRubric }) {
 				</Card>
 				<Card size="small" title="Điều kiện rubric" style={{ flex: 1, minWidth: 280 }}>
 					{gates ? (
-						<Space direction="vertical">
+						<Space orientation="vertical">
 							<Typography.Text>
 								Task 1 dưới {gates.severe_minimum_words_task1} từ → không chấm
 							</Typography.Text>
@@ -524,7 +524,7 @@ function PolicyControlTab({ rubric }: { rubric: GradingRubric }) {
 				</Card>
 				<Card size="small" title="Mốc số từ khuyến nghị" style={{ flex: 1, minWidth: 240 }}>
 					{rules ? (
-						<Space direction="vertical">
+						<Space orientation="vertical">
 							<Typography.Text>Task 1: {rules.official_minimum_task1} từ</Typography.Text>
 							<Typography.Text>Task 2: {rules.official_minimum_task2} từ</Typography.Text>
 							<Typography.Text type="secondary">
@@ -551,7 +551,7 @@ function PolicyControlTab({ rubric }: { rubric: GradingRubric }) {
 
 function SystemGatesList({ gates }: { gates: NonNullable<GradingRubric["policy_summary"]["system_gates"]> }) {
 	return (
-		<Space direction="vertical">
+		<Space orientation="vertical">
 			{Object.entries(gates).map(([key, gate]) => (
 				<Typography.Text key={key}>
 					<Tag color={gate.enabled ? "red" : "default"}>{gate.enabled ? "Bật" : "Tắt"}</Tag>
@@ -566,7 +566,7 @@ function CapRulesCard({ title, rules }: { title: string; rules: Array<{ max_word
 	return (
 		<Card size="small" title={title} style={{ flex: 1, minWidth: 280 }}>
 			{rules.length > 0 ? (
-				<Space direction="vertical">
+				<Space orientation="vertical">
 					{rules.map((rule) => (
 						<Typography.Text key={`${rule.max_words}-${rule.cap}`}>
 							≤ {rule.max_words} từ → tối đa {rule.cap.toFixed(1)} điểm
@@ -726,7 +726,7 @@ function SimulatorSection({ rubric }: { rubric: GradingRubric }) {
 		<Card title="Mô phỏng tác động chính sách">
 			<Flex gap={16} align="flex-start" wrap="wrap">
 				<Card size="small" title="Nhập tình huống thử" style={{ width: 340 }}>
-					<Space direction="vertical" style={{ width: "100%" }}>
+					<Space orientation="vertical" style={{ width: "100%" }}>
 						<Space>
 							<Button type={part === 1 ? "primary" : "default"} onClick={() => setPart(1)}>
 								Task 1
@@ -803,7 +803,7 @@ function SimulatorSection({ rubric }: { rubric: GradingRubric }) {
 							}
 						/>
 
-						<Space direction="vertical" style={{ marginTop: 12, width: "100%" }}>
+						<Space orientation="vertical" style={{ marginTop: 12, width: "100%" }}>
 							<Typography.Text type={result.details.word_check.passed ? "success" : "danger"}>
 								{result.details.word_check.passed ? "✓" : "✕"} Số từ: {result.details.word_check.actual}/
 								{result.details.word_check.required}
@@ -915,7 +915,7 @@ function DerivedValues({ rubric }: { rubric: GradingRubric }) {
 
 	return (
 		<Card size="small" title="Thông số được sinh từ preset" style={{ marginTop: 12 }}>
-			<Space direction="vertical">
+			<Space orientation="vertical">
 				<Typography.Text type="secondary" style={{ fontSize: 12 }}>
 					Không chấm: Task 1 &lt; {derived.gates.task1} từ · Task 2 &lt; {derived.gates.task2} từ
 				</Typography.Text>

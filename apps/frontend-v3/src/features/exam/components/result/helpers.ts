@@ -2,6 +2,7 @@ import type {
 	ExamResultReviewSkill,
 	ExamResultStatus,
 	ExamResultSummary,
+	ExamSkillScoreSummary,
 	McqDetailItem,
 	SessionResultsData,
 	SkillKey,
@@ -32,8 +33,9 @@ export function statusLabel(status: ExamResultStatus): string {
 	if (status === "partial") return "Còn đang chấm"
 	if (status === "failed") return "Lỗi chấm điểm"
 	if (status === "not_submitted") return "Chưa nộp"
+	if (status === "not_applicable") return "Không xếp bậc"
 	if (status === "none") return "Chưa có dữ liệu"
-	return "Không áp dụng"
+	return "Chưa có dữ liệu"
 }
 
 export function modeLabel(result: SessionResultsData): string {
@@ -62,15 +64,14 @@ export function reviewSkills(result: SessionResultsData): ExamResultReviewSkill[
 	if (result.review.skills.length > 0) return orderedSkills(result.review.skills)
 
 	return orderedSkills(
-		result.session.selected_skills.map((key) => {
-			const score = result.session.scores?.[key] ?? null
-			const status: ExamResultStatus = score === null ? "not_submitted" : "ready"
+		resultSkillSummaries(result).map((skill) => {
+			const status: ExamResultStatus = skill.score_on_10 === null ? skill.status : "ready"
 			return {
-				key,
-				label: SKILL_LABEL[key],
+				key: skill.key,
+				label: skill.label,
 				status,
-				status_label: score === null ? "Chưa có điểm" : "Đã chấm",
-				score_label: scoreLabel(score),
+				status_label: statusLabel(status),
+				score_label: scoreLabel(skill.score_on_10),
 				issue_count: 0,
 				section_ids: [],
 			}
@@ -82,9 +83,35 @@ export function defaultSkill(result: SessionResultsData): SkillKey {
 	const skills = reviewSkills(result)
 	const withIssues = skills.find((skill) => skill.issue_count > 0)
 	if (withIssues) return withIssues.key
-	const withScore = skills.find((skill) => (result.session.scores?.[skill.key] ?? null) !== null)
+	const withScore = skills.find((skill) => skillScore(result, skill.key) !== null)
 	if (withScore) return withScore.key
 	return skills[0]?.key ?? "listening"
+}
+
+export function resultSkillSummaries(result: SessionResultsData): ExamSkillScoreSummary[] {
+	if (result.summary.skills.length > 0) return [...result.summary.skills].sort(skillSummaryOrder)
+
+	return result.session.selected_skills.map((key) => {
+		const score = result.session.scores?.[key] ?? null
+		return {
+			key,
+			label: SKILL_LABEL[key],
+			status: score === null ? "not_submitted" : "ready",
+			score_on_10: score,
+			max_score: 10,
+			weight_percent: 25,
+			contributes_to_overall: false,
+			raw: null,
+		}
+	})
+}
+
+export function skillScore(result: SessionResultsData, key: SkillKey): number | null {
+	return resultSkillSummaries(result).find((skill) => skill.key === key)?.score_on_10 ?? null
+}
+
+function skillSummaryOrder(a: ExamSkillScoreSummary, b: ExamSkillScoreSummary): number {
+	return SKILL_ORDER.indexOf(a.key) - SKILL_ORDER.indexOf(b.key)
 }
 
 export function scorePercent(value: number | null | undefined): number {

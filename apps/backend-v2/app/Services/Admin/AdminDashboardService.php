@@ -20,6 +20,7 @@ use App\Models\PracticeWritingPrompt;
 use App\Models\User;
 use App\Models\VocabTopic;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Dashboard summary — aggregate counts for admin overview.
@@ -83,8 +84,14 @@ final class AdminDashboardService
         }
 
         $examListeningSectionsMissingAudio = ExamVersionListeningSection::query()
-            ->whereNull('audio_url')
-            ->orWhere('audio_url', '')
+            ->whereHas('version', function (Builder $version): void {
+                $version->where('is_active', true)
+                    ->whereHas('exam', fn (Builder $exam) => $exam->where('is_published', true));
+            })
+            ->where(function (Builder $query): void {
+                $query->whereNull('audio_url')
+                    ->orWhere('audio_url', '');
+            })
             ->count();
         if ($examListeningSectionsMissingAudio > 0) {
             $alerts[] = [

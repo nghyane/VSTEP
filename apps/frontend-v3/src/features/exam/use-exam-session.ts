@@ -14,6 +14,7 @@ import type {
 	ExamVersionWritingTask,
 	SkillKey,
 	SubmitSessionPayload,
+	SubmitSessionResult,
 } from "#/features/exam/types"
 import type { ApiResponse } from "#/lib/api"
 import { useToast } from "#/lib/toast"
@@ -253,10 +254,33 @@ export function useExamSession({
 	const canAnswerRef = useRef(canAnswer)
 	canAnswerRef.current = canAnswer
 
-	function finishSubmitted() {
+	function finishSubmitted(result?: SubmitSessionResult) {
 		dispatch({ type: "SUBMITTED" })
-		qc.invalidateQueries({ queryKey: ["exam-sessions"] })
-		qc.invalidateQueries({ queryKey: ["exams"] })
+		if (result) {
+			qc.setQueryData<ApiResponse<ExamRoomData>>(["exam-sessions", session.id, "room"], (current) => {
+				if (!current) return current
+				return {
+					...current,
+					data: {
+						...current.data,
+						draft: null,
+						session: {
+							...current.data.session,
+							status: "submitted",
+							submitted_at: result.submitted_at,
+						},
+						actions: {
+							...current.data.actions,
+							can_answer: false,
+							can_submit: false,
+							can_view_result: true,
+						},
+					},
+				}
+			})
+		}
+		qc.invalidateQueries({ queryKey: ["exam-sessions"], refetchType: "all" })
+		qc.invalidateQueries({ queryKey: ["exams"], refetchType: "all" })
 		qc.invalidateQueries({ queryKey: ["streak"] })
 		qc.invalidateQueries({ queryKey: ["activity-heatmap"] })
 		qc.invalidateQueries({ queryKey: ["overview"] })
@@ -324,8 +348,8 @@ export function useExamSession({
 
 	const submitMutation = useMutation({
 		mutationFn: (payload: SubmitSessionPayload) => submitExamSession(session.id, payload),
-		onSuccess: () => {
-			finishSubmitted()
+		onSuccess: (result) => {
+			finishSubmitted(result)
 		},
 		onError: async () => {
 			if (autoSubmitFired.current) {

@@ -4,17 +4,12 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
-use App\Enums\ExamSessionStatus;
-use App\Models\ExamMcqAnswer;
-use App\Models\ExamSession;
-use App\Models\ExamSessionDraft;
-use App\Services\ProgressService;
+use App\Services\Contracts\ExamSessionExpiryInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -29,82 +24,11 @@ final class ForceSubmitExpiredExams implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function handle(ProgressService $progressService): void
+    public function handle(ExamSessionExpiryInterface $expiry): void
     {
-        $expired = ExamSession::query()
-            ->where('status', ExamSessionStatus::Active)
-            ->where('server_deadline_at', '<', now())
-            ->get();
-
-        foreach ($expired as $session) {
-            try {
-                $this->forceSubmit($session, $progressService);
-            } catch (\Throwable $e) {
-                Log::error('Force-submit failed for expired exam session', [
-                    'session_id' => $session->id,
-                    'error' => $e->getMessage(),
-                ]);
-            }
+        $processed = $expiry->forceSubmitExpired();
+        if ($processed > 0) {
+            Log::info("ForceSubmitExpiredExams: processed {$processed} sessions.");
         }
-
-        if ($expired->isNotEmpty()) {
-            Log::info("ForceSubmitExpiredExams: processed {$expired->count()} sessions.");
-        }
-    }
-
-    private function forceSubmit(ExamSession $session, ProgressService $progressService): void
-    {
-        $version = $session->examVersion;
-        $version->load(['listeningSections.items', 'readingPassages.items', 'writingTasks', 'speakingParts']);
-
-        // Build MCQ item map for grading
-        $itemMap = [];
-        foreach ($version->listeningSections as $section) {
-            foreach ($section->items as $item) {
-                $itemMap["exam_listening_item:{$item->id}"] = $item->correct_index;
-            }
-        }
-        foreach ($version->readingPassages as $passage) {
-            foreach ($passage->items as $item) {
-                $itemMap["exam_reading_item:{$item->id}"] = $item->correct_index;
-            }
-        }
-
-        // Grade existing MCQ answers (may have been saved via auto-save)
-        $existingAnswers = ExamMcqAnswer::query()->where('session_id', $session->id)->get();
-        $mcqScore = 0;
-        foreach ($existingAnswers as $answer) {
-            $key = "{$answer->item_ref_type}:{$answer->item_ref_id}";
-            $correctIndex = $itemMap[$key] ?? null;
-            if ($correctIndex !== null) {
-                $isCorrect = $answer->selected_index === $correctIndex;
-                if (! $answer->is_correct) {
-                    $answer->update(['is_correct' => $isCorrect]);
-                }
-                if ($isCorrect) {
-                    $mcqScore++;
-                }
-            }
-        }
-
-        // Update session status
-        $session->update([
-            'status' => ExamSessionStatus::AutoSubmitted,
-            'submitted_at' => $session->server_deadline_at,
-        ]);
-
-        // Xóa draft autosave — cùng pattern submit().
-        ExamSessionDraft::query()->where('session_id', $session->id)->delete();
-
-        // Streak: chỉ tính full test. RFC 0017 — defer ngoài transaction để rollback an toàn.
-        DB::afterCommit(fn () => $progressService->recordExamCompletion($session->fresh()));
-
-        Log::info('Force-submitted expired exam session', [
-            'session_id' => $session->id,
-            'profile_id' => $session->profile_id,
-            'deadline' => $session->server_deadline_at,
-            'mcq_score' => $mcqScore,
-            'mcq_total' => $existingAnswers->count(),
-        ]);
     }
 }
