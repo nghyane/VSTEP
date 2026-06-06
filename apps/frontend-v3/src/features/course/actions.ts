@@ -6,17 +6,26 @@ export async function createEnrollmentOrder(
 	commitmentSignature: string,
 	provider: PaymentProvider = "payos",
 ): Promise<EnrollmentOrder> {
+	const returnUrl = buildPaymentReturnUrl("course", courseId)
 	const res = await api
 		.post(`courses/${courseId}/enrollment-orders`, {
 			json: {
 				payment_provider: provider,
 				commitment_signature: commitmentSignature,
-				return_url: `${window.location.origin}/wallet`,
-				cancel_url: `${window.location.origin}/wallet`,
+				return_url: returnUrl,
+				cancel_url: returnUrl,
 			},
 		})
 		.json<ApiResponse<EnrollmentOrder>>()
 	return res.data
+}
+
+function buildPaymentReturnUrl(flow: "course", courseId: string) {
+	const url = new URL("/wallet", window.location.origin)
+	url.searchParams.set("client", "web")
+	url.searchParams.set("flow", flow)
+	url.searchParams.set("courseId", courseId)
+	return url.toString()
 }
 
 export async function cancelEnrollmentOrder(orderId: string): Promise<EnrollmentOrder> {

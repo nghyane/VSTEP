@@ -17,7 +17,6 @@ use App\Models\ExamSpeakingSubmission;
 use App\Models\ExamVersion;
 use App\Models\ExamWritingSubmission;
 use App\Models\Profile;
-use App\Models\ProfileDailyActivity;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -261,9 +260,6 @@ final class ExamSessionService
                 ];
             }
 
-            // Record daily activity
-            ProfileDailyActivity::addActivity($session->profile_id, 'exam_session');
-
             $session->update([
                 'status' => ExamSessionStatus::Submitted,
                 'submitted_at' => now(),
@@ -272,7 +268,7 @@ final class ExamSessionService
             // Submit thành công — xóa draft autosave (FE đã gửi state cuối cùng).
             ExamSessionDraft::query()->where('session_id', $session->id)->delete();
 
-            // Streak: chỉ tính full test. RFC 0017 — defer khỏi transaction để rollback an toàn.
+            // Defer activity/streak outside transaction so rollback cannot create a false streak.
             DB::afterCommit(fn () => $this->progressService->recordExamCompletion($session->fresh()));
 
             // ── 2. Writing submissions + grading jobs ──

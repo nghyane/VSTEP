@@ -155,8 +155,8 @@ export default function CourseDetailScreen() {
         courseId,
         commitmentSignature: signatureSvg,
         paymentProvider: "payos",
-        returnUrl: createCourseReturnUrl(),
-        cancelUrl: createCourseReturnUrl(),
+        returnUrl: createCourseReturnUrl(courseId),
+        cancelUrl: createCourseReturnUrl(courseId),
       });
       if (!order.paymentUrl) {
         Alert.alert("Chưa tạo được thanh toán", "Cổng thanh toán chưa trả về đường dẫn thanh toán. Vui lòng thử lại.");
@@ -509,10 +509,16 @@ function diffDays(iso: string): number {
   return Math.ceil((end.getTime() - start.getTime()) / 86_400_000);
 }
 
-function createCourseReturnUrl(): string {
+function createCourseReturnUrl(courseId: string): string {
   const configured = process.env.EXPO_PUBLIC_PAYOS_RETURN_URL?.trim();
-  if (configured) return configured;
-  return DEFAULT_PAYOS_RETURN_URL;
+  return appendPaymentReturnParams(configured || DEFAULT_PAYOS_RETURN_URL, { flow: "course", courseId });
+}
+
+function appendPaymentReturnParams(baseUrl: string, params: Record<string, string>): string {
+  const url = new URL(baseUrl);
+  url.searchParams.set("client", "mobile");
+  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  return url.toString();
 }
 
 function getPaymentReturnIds(pendingOrder: PendingCourseOrder): string[] {
