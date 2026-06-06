@@ -17,7 +17,6 @@ use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
 use App\Models\ProfileGrammarMastery;
 use App\Models\ProfileVocabSrsState;
-use App\Models\SystemConfig;
 use App\Models\VocabWord;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -34,12 +33,11 @@ use Illuminate\Support\Facades\DB;
  */
 class ProgressService
 {
-    private const ROBUST_MIN_SAMPLES = 5;
-
-    private const OUTLIER_DROP_THRESHOLD = 3.0;
+    private const DEFAULT_TIMELINE_LIMIT = 20;
 
     public function __construct(
         private readonly StreakMilestoneService $streakMilestoneService,
+        private readonly ProgressConfigService $progressConfig,
     ) {}
 
     // ═══════════════════════════════════════════════════════════════
@@ -107,7 +105,8 @@ class ProgressService
 
     public function getOverview(Profile $profile): array
     {
-        $chart = $this->computeChart($profile, 10);
+        $chartConfig = $this->progressConfig->chartConfig();
+        $chart = $this->computeChart($profile, $chartConfig);
         $predictedLevel = $this->predictLevel($chart, $profile->entry_level);
 
         return [
@@ -125,9 +124,13 @@ class ProgressService
             'heatmap' => $this->computeHeatmap($profile),
             'scores' => [
                 'spider' => $chart,
-                'timeline' => $this->computeScoreTimeline($profile),
-                'quality' => $this->computeScoreQuality($profile),
+                'timeline' => $this->computeScoreTimeline(
+                    $profile,
+                    max(self::DEFAULT_TIMELINE_LIMIT, $chartConfig['sliding_window_size']),
+                ),
+                'quality' => $this->computeScoreQuality($profile, $chartConfig),
                 'growth' => $this->computeGrowth($profile),
+                'chart_config' => $chartConfig,
             ],
             'stats' => [
                 'total_study_minutes' => (int) round(ProfileDailyActivity::query()
@@ -148,17 +151,32 @@ class ProgressService
 
     private function computeStreak(Profile $profile): array
     {
-        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
+        $tz = $this->progressConfig->streakTimezone();
+        $dailyGoal = $this->progressConfig->streakDailyGoal();
         $today = Carbon::now($tz)->toDateString();
         $yesterday = Carbon::now($tz)->subDay()->toDateString();
 
-        // Get all active dates sorted DESC
-        $dates = ProfileDailyActivity::query()
+        $rows = ProfileDailyActivity::query()
             ->where('profile_id', $profile->id)
             ->orderByDesc('date_local')
-            ->pluck('date_local')
-            ->map(fn ($d) => $d instanceof \DateTimeInterface ? $d->format('Y-m-d') : $d)
-            ->toArray();
+            ->get();
+
+        $todayCount = 0;
+        $dates = [];
+        foreach ($rows as $row) {
+            $date = $row->date_local instanceof \DateTimeInterface
+                ? $row->date_local->format('Y-m-d')
+                : (string) $row->date_local;
+            $activityCount = $row->activityCount();
+
+            if ($date === $today) {
+                $todayCount = $activityCount;
+            }
+
+            if ($activityCount >= $dailyGoal) {
+                $dates[] = $date;
+            }
+        }
 
         if ($dates === []) {
             return [
@@ -166,6 +184,8 @@ class ProgressService
                 'longest' => 0,
                 'last_active_date' => null,
                 'today_active' => false,
+                'daily_goal' => $dailyGoal,
+                'today_count' => $todayCount,
             ];
         }
 
@@ -212,6 +232,8 @@ class ProgressService
             'longest' => $longest,
             'last_active_date' => $dates[0],
             'today_active' => $todayActive,
+            'daily_goal' => $dailyGoal,
+            'today_count' => $todayCount,
         ];
     }
 
@@ -224,7 +246,6 @@ class ProgressService
     {
         return [
             ...$this->computeStreak($profile),
-            'daily_goal' => (int) (SystemConfig::get('streak.daily_goal') ?? 1),
             'milestones' => $this->streakMilestoneService->listForProfile($profile),
         ];
     }
@@ -235,7 +256,7 @@ class ProgressService
 
     public function getActivityHeatmap(Profile $profile, int $weeks = 12): array
     {
-        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
+        $tz = $this->progressConfig->streakTimezone();
         $endDate = Carbon::now($tz)->toDateString();
         $startDate = Carbon::now($tz)->subWeeks($weeks)->startOfWeek(Carbon::MONDAY)->toDateString();
 
@@ -273,14 +294,14 @@ class ProgressService
      *
      * @return list<array{date: string, listening: float|null, reading: float|null, writing: float|null, speaking: float|null}>
      */
-    private function computeScoreTimeline(Profile $profile): array
+    private function computeScoreTimeline(Profile $profile, int $limit = self::DEFAULT_TIMELINE_LIMIT): array
     {
         $sessions = ExamSession::query()
             ->where('profile_id', $profile->id)
             ->whereIn('mode', ['custom', 'full'])
             ->whereIn('status', ExamSessionStatus::terminalValues())
             ->orderByDesc('submitted_at')
-            ->limit(20)
+            ->limit($limit)
             ->get()
             ->sortBy('submitted_at')
             ->values();
@@ -495,20 +516,21 @@ class ProgressService
 
     public function chart(Profile $profile): ?array
     {
-        return $this->computeChart($profile, 10);
+        return $this->computeChart($profile, $this->progressConfig->chartConfig());
     }
 
     /**
+     * @param  array{min_tests:int, sliding_window_size:int, std_dev_threshold:float}  $config
      * @return array{listening: float|null, reading: float|null, writing: float|null, speaking: float|null, sample_size: int, skill_sample_sizes: array<string, int>}|null
      */
-    private function computeChart(Profile $profile, int $windowSize): ?array
+    private function computeChart(Profile $profile, array $config): ?array
     {
         $sessions = ExamSession::query()
             ->where('profile_id', $profile->id)
             ->whereIn('mode', ['custom', 'full'])
             ->whereIn('status', ExamSessionStatus::terminalValues())
             ->orderByDesc('submitted_at')
-            ->limit($windowSize)
+            ->limit($config['sliding_window_size'])
             ->pluck('id');
 
         if ($sessions->isEmpty()) {
@@ -538,10 +560,10 @@ class ProgressService
         $readingBands = $this->mcqBands($sessions, 'exam_reading_item');
 
         return [
-            'listening' => $this->robustAvgBand($listeningBands),
-            'reading' => $this->robustAvgBand($readingBands),
-            'writing' => $this->robustAvgBand($writingBands),
-            'speaking' => $this->robustAvgBand($speakingBands),
+            'listening' => $this->robustAvgBand($listeningBands, $config),
+            'reading' => $this->robustAvgBand($readingBands, $config),
+            'writing' => $this->robustAvgBand($writingBands, $config),
+            'speaking' => $this->robustAvgBand($speakingBands, $config),
             'sample_size' => $sessions->count(),
             'skill_sample_sizes' => [
                 'listening' => $listeningBands->count(),
@@ -567,57 +589,46 @@ class ProgressService
             ->values();
     }
 
-    /** @param Collection<int, float> $bands Latest first. */
-    private function robustAvgBand(Collection $bands): ?float
+    /**
+     * @param  Collection<int, float>  $bands  Latest first.
+     * @param  array{min_tests:int, sliding_window_size:int, std_dev_threshold:float}  $config
+     */
+    private function robustAvgBand(Collection $bands, array $config): ?float
     {
         if ($bands->isEmpty()) {
             return null;
         }
 
-        return round((float) $this->dropIsolatedOutliers($bands)->avg(), 1);
+        return round((float) $this->dropIsolatedOutliers($bands, $config)->avg(), 1);
     }
 
-    /** @param Collection<int, float> $bands Latest first. */
-    private function dropIsolatedOutliers(Collection $bands): Collection
+    /**
+     * @param  Collection<int, float>  $bands  Latest first.
+     * @param  array{min_tests:int, sliding_window_size:int, std_dev_threshold:float}  $config
+     */
+    private function dropIsolatedOutliers(Collection $bands, array $config): Collection
     {
-        if ($bands->count() < self::ROBUST_MIN_SAMPLES) {
+        if ($bands->count() < $config['min_tests']) {
             return $bands;
         }
 
         return $bands
-            ->reject(fn (float $band, int $index): bool => $this->isIsolatedLowOutlier($bands, $index, $band))
+            ->reject(fn (float $band, int $index): bool => $this->isIsolatedLowOutlier($bands, $index, $band, $config))
             ->values();
     }
 
-    /** @param Collection<int, float> $values */
-    private function median(Collection $values): ?float
-    {
-        if ($values->isEmpty()) {
-            return null;
-        }
-
-        $sorted = $values->sort()->values();
-        $count = $sorted->count();
-        $middle = intdiv($count, 2);
-
-        if ($count % 2 === 1) {
-            return (float) $sorted->get($middle);
-        }
-
-        return ((float) $sorted->get($middle - 1) + (float) $sorted->get($middle)) / 2;
-    }
-
     /**
+     * @param  array{min_tests:int, sliding_window_size:int, std_dev_threshold:float}  $config
      * @return array{status: string, has_outlier: bool, consecutive_low: bool, outlier_skills: list<string>}
      */
-    private function computeScoreQuality(Profile $profile): array
+    private function computeScoreQuality(Profile $profile, array $config): array
     {
         $sessions = ExamSession::query()
             ->where('profile_id', $profile->id)
             ->whereIn('mode', ['custom', 'full'])
             ->whereIn('status', ExamSessionStatus::terminalValues())
             ->orderByDesc('submitted_at')
-            ->limit(10)
+            ->limit($config['sliding_window_size'])
             ->pluck('id');
 
         if ($sessions->isEmpty()) {
@@ -650,7 +661,7 @@ class ProgressService
         $outlierSkills = [];
         $consecutiveLow = false;
         foreach ($skillBands as $skill => $bands) {
-            $status = $this->latestOutlierStatus($bands);
+            $status = $this->latestOutlierStatus($bands, $config);
             if (! $status['is_outlier']) {
                 continue;
             }
@@ -684,21 +695,21 @@ class ProgressService
 
     /**
      * @param  Collection<int, float>  $bands Latest first.
+     * @param  array{min_tests:int, sliding_window_size:int, std_dev_threshold:float}  $config
      * @return array{is_outlier: bool, consecutive_low: bool}
      */
-    private function latestOutlierStatus(Collection $bands): array
+    private function latestOutlierStatus(Collection $bands, array $config): array
     {
-        if ($bands->count() < self::ROBUST_MIN_SAMPLES) {
+        if ($bands->count() < $config['min_tests']) {
             return ['is_outlier' => false, 'consecutive_low' => false];
         }
 
         $latest = (float) $bands->first();
-        $historyMedian = $this->median($bands->slice(1)->values());
-        if ($historyMedian === null) {
+        $outlierLimit = $this->lowOutlierLimit($bands->slice(1)->values(), $config['std_dev_threshold']);
+        if ($outlierLimit === null) {
             return ['is_outlier' => false, 'consecutive_low' => false];
         }
 
-        $outlierLimit = $historyMedian - self::OUTLIER_DROP_THRESHOLD;
         if ($latest >= $outlierLimit) {
             return ['is_outlier' => false, 'consecutive_low' => false];
         }
@@ -711,29 +722,59 @@ class ProgressService
         ];
     }
 
-    /** @param Collection<int, float> $bands Latest first. */
-    private function isIsolatedLowOutlier(Collection $bands, int $index, float $band): bool
+    /**
+     * @param  Collection<int, float>  $bands  Latest first.
+     * @param  array{min_tests:int, sliding_window_size:int, std_dev_threshold:float}  $config
+     */
+    private function isIsolatedLowOutlier(Collection $bands, int $index, float $band, array $config): bool
     {
         $comparison = $bands->except([$index])->values();
-        if ($comparison->count() < self::ROBUST_MIN_SAMPLES - 1) {
+        if ($comparison->count() < $config['min_tests'] - 1) {
             return false;
         }
 
-        $median = $this->median($comparison);
-        if ($median === null || $band >= $median - self::OUTLIER_DROP_THRESHOLD) {
+        $outlierLimit = $this->lowOutlierLimit($comparison, $config['std_dev_threshold']);
+        if ($outlierLimit === null || $band >= $outlierLimit) {
             return false;
         }
 
         $previous = $bands->get($index + 1);
         $next = $bands->get($index - 1);
 
-        return ! $this->isLowAgainstMedian($previous, $median)
-            && ! $this->isLowAgainstMedian($next, $median);
+        return ! $this->isLowAgainstLimit($previous, $outlierLimit)
+            && ! $this->isLowAgainstLimit($next, $outlierLimit);
     }
 
-    private function isLowAgainstMedian(mixed $value, float $median): bool
+    /** @param Collection<int, float> $comparison */
+    private function lowOutlierLimit(Collection $comparison, float $threshold): ?float
     {
-        return $value !== null && (float) $value < $median - self::OUTLIER_DROP_THRESHOLD;
+        if ($comparison->isEmpty()) {
+            return null;
+        }
+
+        $mean = (float) $comparison->avg();
+        $stdDev = $this->standardDeviation($comparison, $mean);
+
+        return $mean - ($stdDev > 0.0 ? $threshold * $stdDev : $threshold);
+    }
+
+    /** @param Collection<int, float> $values */
+    private function standardDeviation(Collection $values, float $mean): float
+    {
+        if ($values->isEmpty()) {
+            return 0.0;
+        }
+
+        $variance = $values
+            ->map(fn (float $value): float => ((float) $value - $mean) ** 2)
+            ->avg();
+
+        return sqrt((float) $variance);
+    }
+
+    private function isLowAgainstLimit(mixed $value, float $limit): bool
+    {
+        return $value !== null && (float) $value < $limit;
     }
 
     public function predictLevel(?array $chart, ?string $entryLevel): ?string
@@ -762,17 +803,6 @@ class ProgressService
             $avg >= 3.5 => 'A2',
             default => 'A1',
         };
-    }
-
-    private function mcqAvgBand(Collection $sessionIds, string $itemRefType): ?float
-    {
-        if ($sessionIds->isEmpty()) {
-            return null;
-        }
-
-        $bands = $this->mcqBands($sessionIds, $itemRefType);
-
-        return $this->robustAvgBand($bands);
     }
 
     /** @param Collection<int, string> $sessionIds */

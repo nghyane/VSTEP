@@ -39,16 +39,30 @@ export function SpiderCard() {
 	const { data } = useQuery({ ...overviewQuery, select: selectSpider })
 	if (!data) return null
 
-	const { chart, targetBand, minTests, totalTests } = data
-	const values = skills.map((s) => chart?.[s.key] ?? 0)
-	const hasData = chart !== null && values.some((v) => v > 0)
+	const { chart, targetBand, minTests, slidingWindowSize, totalTests } = data
+	if (minTests === null || slidingWindowSize === null) {
+		return (
+			<div className="card p-6 flex flex-col">
+				<h3 className="font-extrabold text-lg text-foreground">Năng lực 4 kỹ năng</h3>
+				<p className="text-sm text-subtle mt-1">Đang đồng bộ cấu hình dashboard</p>
+			</div>
+		)
+	}
+
+	const chartValues = skills.map((s) => chart?.[s.key] ?? 0)
+	const hasEnoughTests = totalTests >= minTests
+	const hasData = hasEnoughTests && chart !== null && chartValues.some((v) => v > 0)
+	const values = hasData ? chartValues : skills.map(() => 0)
 	const skillSampleSizes = chart?.skill_sample_sizes
 	const sampleRange = skillSampleSizes
 		? `${Math.min(...Object.values(skillSampleSizes))}-${Math.max(...Object.values(skillSampleSizes))}`
 		: chart?.sample_size
-	const subtitle = hasData
-		? `Trung bình gần đây · ${sampleRange} lượt theo từng kỹ năng`
-		: `Cần thêm ${Math.max(0, minTests - totalTests)} bài thi để hiện biểu đồ`
+	const remainingTests = Math.max(0, minTests - totalTests)
+	const subtitle = !hasEnoughTests
+		? `Cần thêm ${remainingTests} bài thi để hiện biểu đồ`
+		: hasData
+			? `Trung bình ${slidingWindowSize} bài gần nhất · ${sampleRange} lượt theo từng kỹ năng`
+			: "Chưa có điểm kỹ năng đủ để vẽ biểu đồ"
 
 	return (
 		<div className="card p-6 flex flex-col">

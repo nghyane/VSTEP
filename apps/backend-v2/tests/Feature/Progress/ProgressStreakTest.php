@@ -159,6 +159,28 @@ class ProgressStreakTest extends TestCase
             ->assertJsonPath('data.daily_goal', 1);
     }
 
+    public function test_streak_respects_configured_daily_goal(): void
+    {
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+        SystemConfig::set('streak.daily_goal', 2);
+
+        ProfileDailyActivity::addActivity($profile->id, 'listening');
+
+        $streak = $this->app->make(ProgressService::class)->getStreak($profile);
+        $this->assertSame(0, $streak['current']);
+        $this->assertFalse($streak['today_active']);
+        $this->assertSame(2, $streak['daily_goal']);
+        $this->assertSame(1, $streak['today_count']);
+
+        ProfileDailyActivity::addActivity($profile->id, 'reading');
+
+        $streak = $this->app->make(ProgressService::class)->getStreak($profile);
+        $this->assertSame(1, $streak['current']);
+        $this->assertTrue($streak['today_active']);
+        $this->assertSame(2, $streak['today_count']);
+    }
+
     public function test_overview_endpoint(): void
     {
         $user = User::factory()->create();
@@ -180,6 +202,28 @@ class ProgressStreakTest extends TestCase
             'stats' => ['total_tests', 'total_study_minutes'],
         ]]);
         $response->assertJsonPath('data.scores.spider', null);
+    }
+
+    public function test_overview_uses_configured_chart_window(): void
+    {
+        [$profile, $version] = $this->seedExamVersion();
+        $base = Carbon::parse('2026-01-01 12:00:00', 'Asia/Ho_Chi_Minh');
+        SystemConfig::set('chart.min_tests', 4);
+        SystemConfig::set('chart.sliding_window_size', 3);
+        SystemConfig::set('chart.std_dev_threshold', 1.5);
+
+        for ($i = 0; $i < 6; $i++) {
+            $this->createFullTestSession($profile, $version, $base->copy()->addDays($i));
+        }
+
+        $overview = $this->app->make(ProgressService::class)->getOverview($profile);
+
+        $this->assertSame([
+            'min_tests' => 4,
+            'sliding_window_size' => 3,
+            'std_dev_threshold' => 1.5,
+        ], $overview['scores']['chart_config']);
+        $this->assertSame(3, $overview['scores']['spider']['sample_size']);
     }
 
     public function test_overview_score_timeline_keeps_latest_twenty_sessions_in_chronological_order(): void

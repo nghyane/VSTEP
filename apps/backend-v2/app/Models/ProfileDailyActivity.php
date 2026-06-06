@@ -91,8 +91,23 @@ class ProfileDailyActivity extends Model
 
     private static function todayLocalDate(): string
     {
-        $timezone = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
+        $timezone = SystemConfig::get('streak.timezone');
+        if (! is_string($timezone) || trim($timezone) === '') {
+            throw new \RuntimeException('Missing or invalid system config: streak.timezone.');
+        }
 
-        return Carbon::now($timezone)->toDateString();
+        return Carbon::now(trim($timezone))->toDateString();
+    }
+
+    public function activityCount(): int
+    {
+        return (int) $this->mcq_count
+            + (int) $this->reading_exercise_count
+            + (int) $this->listening_exercise_count
+            + (int) $this->writing_submission_count
+            + (int) $this->speaking_submission_count
+            + (int) $this->drill_session_count
+            + (int) $this->vocab_review_count
+            + (int) $this->exam_session_count;
     }
 }

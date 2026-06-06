@@ -14,6 +14,8 @@ export interface OverviewStreak {
 	longest: number
 	last_active_date: string | null
 	today_active: boolean
+	daily_goal: number
+	today_count: number
 }
 
 export interface ScoreSpider {
@@ -47,6 +49,12 @@ export interface ScoreQuality {
 	outlier_skills: SkillKey[]
 }
 
+export interface OverviewChartConfig {
+	min_tests: number
+	sliding_window_size: number
+	std_dev_threshold: number
+}
+
 export interface OverviewHeatmap {
 	weeks: number
 	days: SkillActivityDay[]
@@ -66,6 +74,7 @@ export interface OverviewData {
 		timeline: ScoreTimelinePoint[]
 		quality?: ScoreQuality
 		growth: Record<SkillKey, ScoreGrowth>
+		chart_config?: OverviewChartConfig
 	}
 	stats: OverviewStats
 }
@@ -83,6 +92,7 @@ export interface StreakData {
 	last_active_date: string | null
 	today_active: boolean
 	daily_goal: number
+	today_count: number
 	milestones: StreakMilestone[]
 }
 

@@ -50,10 +50,12 @@ export function selectProfile(raw: ApiResponse<OverviewData>) {
 
 export function selectSpider(raw: ApiResponse<OverviewData>) {
 	const { scores, profile } = raw.data
+	const config = scores.chart_config
 	return {
 		chart: scores.spider,
 		targetBand: getTargetBand(profile.target_level),
-		minTests: 5,
+		minTests: config?.min_tests ?? null,
+		slidingWindowSize: config?.sliding_window_size ?? null,
 		totalTests: raw.data.stats.total_tests,
 	}
 }
@@ -76,11 +78,11 @@ export function selectNextAction(raw: ApiResponse<OverviewData>) {
 
 	let weakest = skills[0]
 	const chart = scores.spider
-	if (chart) {
+	if (chart && scores.chart_config && raw.data.stats.total_tests >= scores.chart_config.min_tests) {
 		let minGap = Number.POSITIVE_INFINITY
 		for (const s of skills) {
 			const score = chart[s.key] ?? 0
-			const gap = (score ?? 0) - targetBand
+			const gap = score - targetBand
 			if (gap < minGap) {
 				minGap = gap
 				weakest = s
