@@ -710,7 +710,7 @@ final class DemoProgressSeeder extends Seeder
             ->exists();
 
         if (! $hasTopup) {
-            $walletService->credit($profile, 300, CoinTransactionType::AdminGrant);
+            $walletService->credit($profile, 300, CoinTransactionType::OnboardingBonus);
         }
     }
 

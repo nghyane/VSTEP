@@ -98,20 +98,15 @@ function PaymentReturnPage() {
 								</button>
 							</>
 						) : (
-							<>
-								<a href={buildWebReturnUrl(search)} className="btn btn-primary w-full sm:w-auto">
-									{flow === "course" ? "Về khóa học" : "Về ví"}
-								</a>
-								<a href="/dashboard" className="btn btn-ghost w-full sm:w-auto">
-									Về trang chủ
-								</a>
-							</>
+							<button type="button" onClick={closeTab} className="btn btn-primary w-full sm:w-auto">
+								Đóng tab này
+							</button>
 						)}
 					</div>
 					<p className="text-xs text-subtle">
 						{isMobileReturn
 							? "Nếu trình duyệt không cho đóng tự động, hãy đóng tab này thủ công và quay lại ứng dụng."
-							: "Bạn có thể quay lại trang web để tiếp tục học sau khi hệ thống cập nhật thanh toán."}
+							: "Nếu trình duyệt không cho đóng tự động, hãy đóng tab này thủ công và quay lại tab VSTEP GO."}
 					</p>
 				</div>
 			</section>
@@ -151,11 +146,6 @@ function buildAppReturnUrl(search: {
 	if (search.courseId) params.set("courseId", search.courseId)
 	const query = params.toString()
 	return `vstep://${search.flow === "course" ? "course-payment" : "topup"}${query ? `?${query}` : ""}`
-}
-
-function buildWebReturnUrl(search: { flow?: PaymentReturnFlow; courseId?: string }) {
-	if (search.flow === "course") return search.courseId ? `/khoa-hoc/${search.courseId}` : "/khoa-hoc"
-	return "/dashboard"
 }
 
 function getPaidMessage(flow: PaymentReturnFlow, isMobileReturn: boolean) {
