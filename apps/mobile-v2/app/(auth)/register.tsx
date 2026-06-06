@@ -23,9 +23,28 @@ import { getGoogleAuthUnavailableReason, signInWithGoogle } from "@/lib/google-a
 import { showWelcomeGift } from "@/features/onboarding/welcome-gift-store";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
-function targetDeadlineFromNow(): string {
+type EntryLevel = "A1" | "A2" | "B1" | "B2" | "C1";
+type TargetLevel = "B1" | "B2" | "C1";
+type Deadline = "3m" | "6m" | "1y";
+
+const ENTRY_LEVELS: EntryLevel[] = ["A1", "A2", "B1", "B2", "C1"];
+const TARGET_LEVELS: TargetLevel[] = ["B1", "B2", "C1"];
+const LEVEL_RANK: Record<EntryLevel, number> = { A1: 0, A2: 1, B1: 2, B2: 3, C1: 4 };
+const DEADLINES: { key: Deadline; label: string }[] = [
+  { key: "3m", label: "3 tháng" },
+  { key: "6m", label: "6 tháng" },
+  { key: "1y", label: "1 năm" },
+];
+
+function availableTargets(entryLevel: EntryLevel): TargetLevel[] {
+  return TARGET_LEVELS.filter((level) => LEVEL_RANK[level] >= LEVEL_RANK[entryLevel]);
+}
+
+function deadlineToDate(value: Deadline): string {
   const date = new Date();
-  date.setMonth(date.getMonth() + 6);
+  if (value === "3m") date.setMonth(date.getMonth() + 3);
+  if (value === "6m") date.setMonth(date.getMonth() + 6);
+  if (value === "1y") date.setFullYear(date.getFullYear() + 1);
   return date.toISOString().slice(0, 10);
 }
 
@@ -43,6 +62,9 @@ export default function RegisterScreen() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [entryLevel, setEntryLevel] = useState<EntryLevel>("A2");
+  const [targetLevel, setTargetLevel] = useState<TargetLevel>("B2");
+  const [deadline, setDeadline] = useState<Deadline>("6m");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -52,6 +74,13 @@ export default function RegisterScreen() {
     password?: string;
     general?: string;
   }>({});
+  const targetOptions = availableTargets(entryLevel);
+
+  function pickEntry(next: EntryLevel) {
+    setEntryLevel(next);
+    const nextTargets = availableTargets(next);
+    if (!nextTargets.includes(targetLevel)) setTargetLevel(nextTargets[0] ?? "C1");
+  }
 
   const validate = useCallback(() => {
     const e: typeof errors = {};
@@ -83,7 +112,7 @@ export default function RegisterScreen() {
         setErrors({ email: "Email này đã được sử dụng" });
         return;
       }
-      const res = await registerApi(email.trim(), password, fullName.trim(), "B2", targetDeadlineFromNow());
+      const res = await registerApi(email.trim(), password, fullName.trim(), entryLevel, targetLevel, deadlineToDate(deadline));
       await signIn(res.accessToken, res.refreshToken, res.user, res.profile);
       if (res.onboardingBonus?.granted) {
         showWelcomeGift(res.onboardingBonus.amount);
@@ -265,6 +294,60 @@ export default function RegisterScreen() {
             )}
           </View>
 
+          <View style={s.fieldGroup}>
+            <Text style={[s.label, { color: c.foreground }]}>Trình độ hiện tại</Text>
+            <View style={s.chipRow}>
+              {ENTRY_LEVELS.map((level) => {
+                const selected = entryLevel === level;
+                return (
+                  <HapticTouchable
+                    key={level}
+                    onPress={() => pickEntry(level)}
+                    style={[s.levelChip, { borderColor: selected ? c.primary : c.border, backgroundColor: selected ? c.primaryTint : c.surface }]}
+                  >
+                    <Text style={[s.levelChipText, { color: selected ? c.primaryDark : c.foreground }]}>{level}</Text>
+                  </HapticTouchable>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={s.fieldGroup}>
+            <Text style={[s.label, { color: c.foreground }]}>Mục tiêu VSTEP</Text>
+            <View style={s.chipRow}>
+              {targetOptions.map((level) => {
+                const selected = targetLevel === level;
+                return (
+                  <HapticTouchable
+                    key={level}
+                    onPress={() => setTargetLevel(level)}
+                    style={[s.targetChip, { borderColor: selected ? c.primary : c.border, backgroundColor: selected ? c.primaryTint : c.surface }]}
+                  >
+                    <Text style={[s.levelChipText, { color: selected ? c.primaryDark : c.foreground }]}>{level}</Text>
+                  </HapticTouchable>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={s.fieldGroup}>
+            <Text style={[s.label, { color: c.foreground }]}>Ngày thi dự kiến</Text>
+            <View style={s.chipRow}>
+              {DEADLINES.map((item) => {
+                const selected = deadline === item.key;
+                return (
+                  <HapticTouchable
+                    key={item.key}
+                    onPress={() => setDeadline(item.key)}
+                    style={[s.deadlineChip, { borderColor: selected ? c.primary : c.border, backgroundColor: selected ? c.primaryTint : c.surface }]}
+                  >
+                    <Text style={[s.deadlineChipText, { color: selected ? c.primaryDark : c.foreground }]}>{item.label}</Text>
+                  </HapticTouchable>
+                );
+              })}
+            </View>
+          </View>
+
           <DepthButton onPress={handleRegister} fullWidth disabled={loading || googleLoading}>
             {loading ? <ActivityIndicator color="#FFF" size="small" /> : "Đăng ký"}
           </DepthButton>
@@ -338,6 +421,12 @@ const s = StyleSheet.create({
   input: { flex: 1, fontSize: fontSize.base, fontFamily: fontFamily.regular, minHeight: 28 },
   fieldError: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   fieldHint: { fontSize: fontSize.xs, fontFamily: fontFamily.regular },
+  chipRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm },
+  levelChip: { minWidth: 54, alignItems: "center", borderWidth: 2, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  targetChip: { minWidth: 70, alignItems: "center", borderWidth: 2, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  deadlineChip: { flexGrow: 1, alignItems: "center", borderWidth: 2, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  levelChipText: { fontSize: fontSize.sm, fontFamily: fontFamily.extraBold },
+  deadlineChipText: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold },
   footer: { flexDirection: "row", justifyContent: "center", alignItems: "center" },
   footerText: { fontSize: fontSize.sm },
   footerLink: { fontSize: fontSize.sm, fontFamily: fontFamily.bold },
