@@ -31,6 +31,7 @@ final readonly class ExamResultReadModelService implements ExamResultReadModelIn
             'summary' => $this->summaryBuilder->build(
                 $session,
                 $mcqSummary,
+                $scores,
                 $overallBand,
                 $vstepLevel,
                 $performanceRows,

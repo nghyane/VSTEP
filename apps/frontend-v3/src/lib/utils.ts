@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import type { SkillKey } from "#/lib/skills"
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs))
@@ -591,28 +590,4 @@ export function compareWords(
 		return { word: w, accuracy: "wrong", userSaid: uw }
 	})
 	return { results, correct }
-}
-
-/* ───── Exam scoring ───── */
-
-/**
- * Average of non-null skill scores → 0–10 band. Returns null if no scores.
- * Skill scores are per-skill VSTEP bands (0–10), e.g. { listening: 7, reading: 8, writing: null, speaking: 6 }.
- */
-export function avgSkillScores(scores: Record<SkillKey, number | null> | null): number | null {
-	if (!scores) return null
-	const vals = Object.values(scores).filter((v): v is number => v !== null)
-	if (vals.length === 0) return null
-	return vals.reduce((a, b) => a + b, 0) / vals.length
-}
-
-/** Map VSTEP band (0–10) → "7.5 · B2". Returns "Đang chấm..." if null. */
-export function formatVstepBand(band: number | null): string {
-	if (band === null) return "Đang chấm..."
-	const r = round(band)
-	if (band >= 8.5) return `${r} · C1`
-	if (band >= 6.0) return `${r} · B2`
-	if (band >= 4.0) return `${r} · B1`
-	if (band >= 3.5) return `${r} · A2`
-	return `${r} · A1`
 }

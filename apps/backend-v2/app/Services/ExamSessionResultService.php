@@ -132,6 +132,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             'server_deadline_at' => $session->server_deadline_at,
             'coins_charged' => $session->coins_charged,
             'scores' => $scores,
+            'result_summary' => $scores === null ? null : $this->scoringService->sessionScoreSummary($session, $scores),
         ];
     }
 
@@ -179,13 +180,15 @@ final class ExamSessionResultService implements ExamSessionResultInterface
     {
         $result = $submission->assessmentAttempt?->result;
         $jobStatus = $submission->assessmentAttempt?->job?->status;
+        $feedback = $this->coachFeedback($result?->feedback);
+        $scoreInsights = $this->scoreInsights($result?->feedback);
 
         return [
             'submission_id' => $submission->id,
             'attempt_id' => $submission->assessmentAttempt?->id,
             'job_status' => $jobStatus?->value,
             'score_status' => $this->assessmentScoreStatus($result !== null, $jobStatus),
-            'feedback_status' => $this->assessmentFeedbackStatus($result?->feedback !== null, $result !== null, $jobStatus),
+            'feedback_status' => $this->assessmentFeedbackStatus($feedback !== null, $result !== null, $jobStatus),
             'task_id' => $submission->task_id,
             'word_count' => $submission->word_count,
             'text' => $submission->text,
@@ -194,7 +197,8 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             'caps_applied' => $result?->caps_applied,
             'display' => $result === null ? null : $this->displayService->forResult($result),
             'diagnostics' => $result === null ? null : $this->diagnosticsService->forAttempt($submission->assessmentAttempt),
-            'feedback' => $result?->feedback,
+            'score_insights' => $scoreInsights,
+            'feedback' => $feedback,
             'calculation_trace' => $result?->calculation_trace,
         ];
     }
@@ -216,6 +220,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             'caps_applied' => [],
             'display' => null,
             'diagnostics' => null,
+            'score_insights' => [],
             'feedback' => null,
             'calculation_trace' => ['source' => 'blank_submission'],
         ];
@@ -260,13 +265,15 @@ final class ExamSessionResultService implements ExamSessionResultInterface
     {
         $result = $submission->assessmentAttempt?->result;
         $jobStatus = $submission->assessmentAttempt?->job?->status;
+        $feedback = $this->coachFeedback($result?->feedback);
+        $scoreInsights = $this->scoreInsights($result?->feedback);
 
         return [
             'submission_id' => $submission->id,
             'attempt_id' => $submission->assessmentAttempt?->id,
             'job_status' => $jobStatus?->value,
             'score_status' => $this->assessmentScoreStatus($result !== null, $jobStatus),
-            'feedback_status' => $this->assessmentFeedbackStatus($result?->feedback !== null, $result !== null, $jobStatus),
+            'feedback_status' => $this->assessmentFeedbackStatus($feedback !== null, $result !== null, $jobStatus),
             'part_id' => $submission->part_id,
             'audio_url' => $submission->audio_url,
             'transcript' => $submission->transcript,
@@ -275,8 +282,146 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             'caps_applied' => $result?->caps_applied,
             'display' => $result === null ? null : $this->displayService->forResult($result),
             'diagnostics' => $result === null ? null : $this->diagnosticsService->forAttempt($submission->assessmentAttempt),
-            'feedback' => $result?->feedback,
+            'score_insights' => $scoreInsights,
+            'feedback' => $feedback,
             'calculation_trace' => $result?->calculation_trace,
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $feedback
+     * @return list<array{key: string, label: string, detail: string}>
+     */
+    private function scoreInsights(?array $feedback): array
+    {
+        $notes = $feedback['evidenceNotes'] ?? null;
+        if (! is_array($notes)) {
+            return [];
+        }
+
+        $rows = [];
+        foreach ($notes as $key => $note) {
+            if (is_string($note) && trim($note) !== '') {
+                $rows[] = ['key' => (string) $key, 'label' => 'Phân tích', 'detail' => $note];
+
+                continue;
+            }
+
+            if (! is_array($note)) {
+                continue;
+            }
+
+            $label = $note['label'] ?? null;
+            $detail = $note['detail'] ?? null;
+            if (! is_string($label) || trim($label) === '' || ! is_string($detail) || trim($detail) === '') {
+                continue;
+            }
+
+            $rows[] = ['key' => (string) $key, 'label' => $label, 'detail' => $detail];
+        }
+
+        return $rows;
+    }
+
+    /** @param  array<string, mixed>|null  $feedback */
+    private function coachFeedback(?array $feedback): ?array
+    {
+        if ($feedback === null) {
+            return null;
+        }
+
+        $payload = [
+            'strengths' => $this->stringList($feedback['strengths'] ?? []),
+            'improvements' => $this->feedbackItems($feedback['improvements'] ?? []),
+            'warnings' => $this->stringList($feedback['warnings'] ?? []),
+            'rewrites' => $this->rewriteItems($feedback['rewrites'] ?? []),
+        ];
+
+        foreach (['strengths', 'improvements', 'rewrites'] as $key) {
+            if ($payload[$key] !== []) {
+                return $payload;
+            }
+        }
+
+        return null;
+    }
+
+    /** @return list<string> */
+    private function stringList(mixed $items): array
+    {
+        if (! is_array($items)) {
+            return [];
+        }
+
+        return array_values(array_filter($items, fn (mixed $item): bool => is_string($item) && trim($item) !== ''));
+    }
+
+    /** @return list<string|array{message: string, explanation?: string}> */
+    private function feedbackItems(mixed $items): array
+    {
+        if (! is_array($items)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(function (mixed $item): string|array|null {
+            if (is_string($item)) {
+                return trim($item) === '' ? null : $item;
+            }
+            if (! is_array($item) || ! is_string($item['message'] ?? null) || trim($item['message']) === '') {
+                return null;
+            }
+
+            $normalized = ['message' => $item['message']];
+            if (is_string($item['explanation'] ?? null) && trim($item['explanation']) !== '') {
+                $normalized['explanation'] = $item['explanation'];
+            }
+
+            return $normalized;
+        }, $items)));
+    }
+
+    /** @return list<string|array{original: string, improved: string, reason?: string}> */
+    private function rewriteItems(mixed $items): array
+    {
+        if (! is_array($items)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(function (mixed $item): string|array|null {
+            if (is_string($item)) {
+                return trim($item) === '' ? null : $this->normalizeRewriteString($item);
+            }
+            if (
+                ! is_array($item)
+                || ! is_string($item['original'] ?? null)
+                || ! is_string($item['improved'] ?? null)
+                || trim($item['original']) === ''
+                || trim($item['improved']) === ''
+            ) {
+                return null;
+            }
+
+            $normalized = [
+                'original' => $item['original'],
+                'improved' => $item['improved'],
+            ];
+            if (is_string($item['reason'] ?? null) && trim($item['reason']) !== '') {
+                $normalized['reason'] = $item['reason'];
+            }
+
+            return $normalized;
+        }, $items)));
+    }
+
+    private function normalizeRewriteString(string $rewrite): string|array
+    {
+        if (! preg_match('/Original:\s*(.*?)\s*→\s*Improved:\s*(.*)/i', $rewrite, $matches)) {
+            return $rewrite;
+        }
+
+        return [
+            'original' => trim($matches[1]),
+            'improved' => trim($matches[2]),
         ];
     }
 
@@ -297,6 +442,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             'caps_applied' => [],
             'display' => null,
             'diagnostics' => null,
+            'score_insights' => [],
             'feedback' => null,
             'calculation_trace' => ['source' => 'blank_submission'],
         ];
@@ -352,6 +498,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             'feedback_status' => 'none',
             'has_pending_jobs' => false,
             'has_failed_jobs' => false,
+            'scoring' => $this->scoringService->scoringRules(),
             'display' => [
                 'band_title' => 'Band VSTEP thi thử',
                 'band_value' => $this->resultFormatter->statusLabel(self::STATUS_NONE),
@@ -364,9 +511,13 @@ final class ExamSessionResultService implements ExamSessionResultInterface
                 'reason' => null,
                 'band' => null,
                 'score_on_10' => null,
+                'max_score' => 10.0,
+                'vstep_level' => null,
                 'cefr_level' => null,
+                'level' => null,
                 'result_label' => null,
             ],
+            'skills' => [],
             'mcq' => [
                 'correct' => 0,
                 'total' => 0,

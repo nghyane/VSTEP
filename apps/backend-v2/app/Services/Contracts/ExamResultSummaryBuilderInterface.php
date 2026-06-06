@@ -10,6 +10,7 @@ interface ExamResultSummaryBuilderInterface
 {
     /**
      * @param  array{score: int, total: int, answered: int, wrong: int, unanswered: int, score_on_10: float}  $mcqSummary
+     * @param  array{listening: ?float, reading: ?float, writing: ?float, speaking: ?float}  $scores
      * @param  list<array<string, mixed>>  $performanceRows
      * @param  list<array<string, mixed>>  $writingFeedback
      * @param  list<array<string, mixed>>  $speakingFeedback
@@ -18,6 +19,7 @@ interface ExamResultSummaryBuilderInterface
     public function build(
         ExamSession $session,
         array $mcqSummary,
+        array $scores,
         ?float $overallBand,
         string $vstepLevel,
         array $performanceRows,
