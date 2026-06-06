@@ -12,14 +12,24 @@ use App\Models\ExamSessionDraft;
 use App\Models\ExamVersionListeningSection;
 use App\Models\Profile;
 use App\Services\Contracts\ExamRoomInterface;
+use App\Services\Contracts\ExamSessionExpiryInterface;
 use Illuminate\Validation\ValidationException;
 
 final class ExamRoomService implements ExamRoomInterface
 {
+    public function __construct(
+        private readonly ExamSessionExpiryInterface $expiry,
+    ) {}
+
     public function open(Profile $profile, ExamSession $session): array
     {
         if ($session->profile_id !== $profile->id) {
             throw new NotOwnerException;
+        }
+
+        if ($session->status === ExamSessionStatus::Active && $session->server_deadline_at->isPast()) {
+            $this->expiry->forceSubmitIfExpired($session);
+            $session->refresh();
         }
 
         $session->loadMissing([
@@ -67,6 +77,10 @@ final class ExamRoomService implements ExamRoomInterface
     public function markListeningPlayed(Profile $profile, ExamSession $session, string $sectionId, ?string $clientIp): array
     {
         $this->assertOwner($profile, $session);
+
+        if ($session->status === ExamSessionStatus::Active && $session->server_deadline_at->isPast()) {
+            $this->expiry->forceSubmitIfExpired($session);
+        }
 
         if ($session->status !== ExamSessionStatus::Active || $session->server_deadline_at->isPast()) {
             throw ValidationException::withMessages(['session' => ['Session not active.']]);

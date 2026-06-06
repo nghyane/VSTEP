@@ -9,6 +9,7 @@ use App\Models\Exam;
 use App\Models\ExamSession;
 use App\Models\Profile;
 use App\Services\Contracts\ExamCatalogInterface;
+use App\Services\Contracts\ExamSessionExpiryInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -20,11 +21,17 @@ final class ExamCatalogService implements ExamCatalogInterface
 
     private const ACTIVE_SESSION_STARTED_AT_SORT_ATTRIBUTE = 'active_session_started_at';
 
+    public function __construct(
+        private readonly ExamSessionExpiryInterface $expiry,
+    ) {}
+
     /**
      * @param  array{q?: string, status?: string, sort?: string}  $filters
      */
     public function listForProfile(Profile $profile, array $filters = [], int $perPage = 12): LengthAwarePaginator
     {
+        $this->expiry->forceSubmitExpired($profile);
+
         $query = Exam::query()
             ->where('is_published', true)
             ->whereHas('versions', fn ($q) => $q->where('is_active', true))
