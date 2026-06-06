@@ -134,6 +134,8 @@ export interface WritingGradingResult {
   annotations: unknown[];
   paragraphFeedback: Record<string, string>[];
   teacherGradingRequest: TeacherGradingRequestState | null;
+  feedbackRequest: FeedbackRequestState | null;
+  feedbackGenerated: AssessmentFeedback | null;
 }
 
 export interface SpeakingTopic {
@@ -280,6 +282,8 @@ export interface SpeakingGradingResult {
   pronunciationReport: { accuracyScore: number } | null;
   transcript: string | null;
   teacherGradingRequest: TeacherGradingRequestState | null;
+  feedbackRequest: FeedbackRequestState | null;
+  feedbackGenerated: AssessmentFeedback | null;
 }
 
 export interface CriterionScore {
@@ -298,6 +302,8 @@ interface AssessmentFeedback {
   evidenceNotes?: string[];
   rewrites?: FeedbackRewriteItem[];
 }
+
+export type { AssessmentFeedback };
 
 interface AssessmentResultPayload {
   criterionScores?: CriterionScore[];
@@ -337,10 +343,28 @@ export interface TeacherGradingRequestResponse {
   status: TeacherGradingRequestStatus;
 }
 
+// ── AI Coaching feedback ──
+
+export interface FeedbackRequestState {
+  canRequest: boolean;
+  requested: boolean;
+  costCoins: number;
+  status: string;
+}
+
+export interface RequestFeedbackResponse {
+  submissionId: string;
+  status: string;
+  costCoins: number;
+  charged: boolean;
+  feedback: AssessmentFeedback | null;
+}
+
 interface PracticeGradingResultResponse {
   attemptId?: string;
   data: AssessmentResultPayload | null;
   teacherGradingRequest?: TeacherGradingRequestState;
+  feedbackRequest?: FeedbackRequestState;
 }
 
 interface AssessmentViewResponse {
@@ -348,6 +372,7 @@ interface AssessmentViewResponse {
   status: "pending" | "processing" | "ready" | "failed";
   result: AssessmentResultPayload | null;
   teacherGradingRequest: TeacherGradingRequestState;
+  feedbackRequest?: FeedbackRequestState;
 }
 
 export interface PresignUploadResponse {
@@ -818,6 +843,10 @@ export async function requestTeacherGrading(attemptId: string) {
   return api.post<TeacherGradingRequestResponse>(`/api/v1/assessment-attempts/${attemptId}/teacher-grading-request`, {});
 }
 
+export async function requestWritingFeedback(attemptId: string) {
+  return api.post<RequestFeedbackResponse>(`/api/v1/assessment-attempts/${attemptId}/feedback`, {});
+}
+
 async function getSpeakingGradingResponse(id: string, source: "submission" | "attempt") {
   if (source === "attempt") {
     return api.get<AssessmentViewResponse>(`/api/v1/assessment-attempts/${id}/view`);
@@ -852,6 +881,8 @@ function normalizeWritingGradingResult(response: PracticeGradingResultResponse |
     annotations: result.annotations ?? [],
     paragraphFeedback: result.paragraphFeedback ?? [],
     teacherGradingRequest: response.teacherGradingRequest ?? null,
+    feedbackRequest: response.feedbackRequest ?? null,
+    feedbackGenerated: null,
   };
 }
 
@@ -873,6 +904,8 @@ function normalizeSpeakingGradingResult(response: PracticeGradingResultResponse 
     pronunciationReport: normalizePronunciationReport(result),
     transcript: result.transcript ?? null,
     teacherGradingRequest: response.teacherGradingRequest ?? null,
+    feedbackRequest: response.feedbackRequest ?? null,
+    feedbackGenerated: null,
   };
 }
 
