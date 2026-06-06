@@ -90,6 +90,17 @@ final class CourseController extends Controller
         return response()->json(['data' => EnrollmentOrderResource::make($cancelled)]);
     }
 
+    public function handleEnrollmentPaymentReturn(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'id' => ['required', 'string'],
+        ]);
+
+        $order = $this->courseOrderService->refreshFromPaymentReturn($request->profile(), $validated['id']);
+
+        return response()->json(['data' => EnrollmentOrderResource::make($order)]);
+    }
+
     /**
      * Booking page payload (teacher + slots + my_bookings_count) cho FE 1-1 booking flow.
      */

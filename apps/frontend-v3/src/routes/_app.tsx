@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useNavigate, useRouter } from "@tanstack/react
 import { useEffect } from "react"
 import { ErrorBoundary } from "#/components/ErrorBoundary"
 import { Sidebar } from "#/components/Sidebar"
+import { EnrollReturnWatcher } from "#/features/course/components/EnrollReturnWatcher"
 import { LandingMobileAppNotice } from "#/features/landing/components/LandingMobileAppNotice"
 import { WelcomeGiftModal } from "#/features/onboarding/WelcomeGiftModal"
 import { useAuth } from "#/lib/auth"
@@ -38,6 +39,7 @@ function AppLayout() {
 				</ErrorBoundary>
 			</main>
 			<WelcomeGiftModal />
+			<EnrollReturnWatcher />
 		</div>
 	)
 }

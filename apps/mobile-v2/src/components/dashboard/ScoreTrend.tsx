@@ -1,15 +1,13 @@
 import { useMemo, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { useQuery } from "@tanstack/react-query";
 import Svg, { Circle, G, Line, Polyline, Rect, Text as SvgText } from "react-native-svg";
 
 import { DepthCard } from "@/components/DepthCard";
 import { SkillIcon } from "@/components/SkillIcon";
-import { api } from "@/lib/api";
 import { useOverview } from "@/hooks/use-progress";
 import { getTargetBand } from "@/lib/vstep";
 import { useThemeColors, spacing, fontSize, fontFamily, radius, type ThemeColors } from "@/theme";
-import type { ExamSessionResult, ScoreQuality, Skill } from "@/types/api";
+import type { ScoreQuality, ScoreTimelinePoint, Skill } from "@/types/api";
 
 const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
 const MAX_TESTS = 7;
@@ -29,7 +27,8 @@ const SKILL_META: Record<Skill, { vi: string }> = {
   speaking: { vi: "Nói" },
 };
 
-type ScoredSession = ExamSessionResult & {
+type ScoredSession = ScoreTimelinePoint & {
+  id: string;
   scores: Record<Skill, number | null>;
   submittedAt: string;
 };
@@ -89,18 +88,23 @@ export function ScoreTrend() {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
   const [zoomOpen, setZoomOpen] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<Skill[]>(SKILLS);
-  const { data: overview } = useOverview();
-  const { data, isLoading } = useQuery({
-    queryKey: ["exam-sessions"],
-    queryFn: () => api.get<ExamSessionResult[]>("/api/v1/exam-sessions"),
-  });
+  const { data: overview, isLoading } = useOverview();
 
   const tests = useMemo(() => {
-    return (data ?? [])
-      .filter((session): session is ScoredSession => session.submittedAt !== null && session.scores !== null)
-      .slice(0, MAX_TESTS)
-      .reverse();
-  }, [data]);
+    return (overview?.scores.timeline ?? [])
+      .slice(-MAX_TESTS)
+      .map((point, index): ScoredSession => ({
+        ...point,
+        id: `${point.date}-${index}`,
+        submittedAt: point.date,
+        scores: {
+          listening: point.listening,
+          reading: point.reading,
+          writing: point.writing,
+          speaking: point.speaking,
+        },
+      }));
+  }, [overview?.scores.timeline]);
   const zoomChartWidth = Math.max(720, Math.min(1240, width + tests.length * 72));
 
   if (isLoading || !overview) {

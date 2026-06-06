@@ -26,7 +26,7 @@ export async function uploadLocalAudioToPresignedUrl(
 
 export async function uploadSpeakingAudio(
   audioUri: string,
-  context: "speaking" | "exam_speaking" = "speaking",
+  context: "practice_speaking" | "exam_speaking" = "practice_speaking",
 ) {
   const meta = audioMetaFromUri(audioUri);
   const presign = await presignUpload(context, meta);

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   ScrollView,
   StyleSheet,
@@ -19,8 +18,7 @@ import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { SkillIcon } from "@/components/SkillIcon";
 import { CoinButton } from "@/features/coin/CoinButton";
-import { useAppConfig, useExamSessions, useExams, type Exam } from "@/hooks/use-exams";
-import { useAbandonExamSession, useActiveExamSession, type ExamSessionData } from "@/hooks/use-exam-session";
+import { useAppConfig, useExams, type Exam } from "@/hooks/use-exams";
 import { MascotEmpty } from "@/components/MascotStates";
 import { useThemeColors, useSkillColor, useResponsiveLayout, spacing, radius, fontSize, fontFamily } from "@/theme";
 import type { Skill } from "@/types/api";
@@ -48,10 +46,8 @@ export default function ExamsScreen() {
   const insets = useSafeAreaInsets();
   const { data, isLoading, isError } = useExams();
   const { data: config } = useAppConfig();
-  const activeSession = useActiveExamSession();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const submittedSessions = useExamSessions(statusFilter === "submitted" ? "submitted" : undefined);
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -69,7 +65,7 @@ export default function ExamsScreen() {
     if (statusFilter === "all") return true;
     return exam.userState?.status === statusFilter;
   });
-  const showSubmittedSessions = statusFilter === "submitted";
+  const activeExam = (data ?? []).find((exam) => exam.userState?.activeSessionId);
 
   return (
     <ScrollView
@@ -96,8 +92,8 @@ export default function ExamsScreen() {
           <CoinButton />
         </View>
 
-        {activeSession.data ? (
-          <ActiveSessionCard session={activeSession.data} />
+        {activeExam ? (
+          <ActiveSessionCard exam={activeExam} />
         ) : null}
 
         <View style={[styles.searchWrap, { backgroundColor: c.surface, borderColor: c.border }]}> 
@@ -141,13 +137,13 @@ export default function ExamsScreen() {
         </ScrollView>
       </Animated.View>
 
-      {(isLoading || (showSubmittedSessions && submittedSessions.isLoading)) ? (
+      {isLoading ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator color={c.primary} size="large" />
         </View>
       ) : null}
 
-      {isError && !showSubmittedSessions ? (
+      {isError ? (
         <View style={styles.loadingWrap}>
           <Text style={{ color: c.destructive, fontSize: fontSize.sm, textAlign: "center" }}>
             Không thể tải danh sách đề thi. Kiểm tra kết nối và thử lại.
@@ -155,7 +151,7 @@ export default function ExamsScreen() {
         </View>
       ) : null}
 
-      {!isLoading && !isError && !showSubmittedSessions && exams.length === 0 ? (
+      {!isLoading && !isError && exams.length === 0 ? (
         <MascotEmpty
           mascot="think"
           title="Không tìm thấy đề thi nào"
@@ -163,20 +159,8 @@ export default function ExamsScreen() {
         />
       ) : null}
 
-      {showSubmittedSessions && !submittedSessions.isLoading && (submittedSessions.data ?? []).length === 0 ? (
-        <MascotEmpty
-          mascot="think"
-          title="Chưa có bài đã nộp"
-          subtitle="Nộp xong bài thi, lịch sử sẽ xuất hiện tại đây."
-        />
-      ) : null}
-
-      <View style={[styles.sectionShell, styles.list, { maxWidth: layout.contentMaxWidth }]}>
-        {showSubmittedSessions ? (
-          (submittedSessions.data ?? []).map((session) => (
-            <SubmittedSessionCard key={session.id} session={session} />
-          ))
-        ) : exams.map((exam, index) => (
+      <View style={[styles.sectionShell, styles.list, { maxWidth: layout.contentMaxWidth }]}> 
+        {exams.map((exam, index) => (
             <ExamCard
               key={exam.id}
               exam={exam}
@@ -190,54 +174,15 @@ export default function ExamsScreen() {
   );
 }
 
-function SubmittedSessionCard({ session }: { session: import("@/types/api").ExamSessionResult }) {
+function ActiveSessionCard({ exam }: { exam: Exam }) {
   const c = useThemeColors();
   const router = useRouter();
-  const submittedAt = session.submittedAt ? new Date(session.submittedAt).toLocaleDateString("vi-VN") : "Chưa rõ ngày";
-
-  return (
-    <DepthCard>
-      <View style={styles.activeHeader}>
-        <View style={[styles.activeIcon, { backgroundColor: c.primaryTint }]}> 
-          <Ionicons name="checkmark-circle" size={18} color={c.primary} />
-        </View>
-        <View style={styles.activeTextWrap}>
-          <Text style={[styles.activeEyebrow, { color: c.primary }]}>Đã nộp · {submittedAt}</Text>
-          <Text style={[styles.activeTitle, { color: c.foreground }]} numberOfLines={1}>Phiên thi #{session.id.slice(0, 8)}</Text>
-        </View>
-      </View>
-      <View style={styles.activeActions}>
-        <DepthButton size="sm" onPress={() => router.push(`/(app)/exam-result/${session.id}` as never)}>
-          Xem kết quả
-        </DepthButton>
-      </View>
-    </DepthCard>
-  );
-}
-
-function ActiveSessionCard({ session }: { session: ExamSessionData }) {
-  const c = useThemeColors();
-  const router = useRouter();
-  const abandon = useAbandonExamSession();
-  const title = session.examTitle ?? "Bài thi đang làm";
+  const sessionId = exam.userState?.activeSessionId;
+  const title = exam.title;
 
   const handleContinue = () => {
-    router.push(`/(app)/session/${session.id}?examId=${session.examId}&resume=1` as any);
-  };
-
-  const handleAbandon = () => {
-    Alert.alert(
-      "Bỏ phiên thi?",
-      "Phiên thi hiện tại sẽ được nộp tự động và bạn có thể bắt đầu lại từ danh sách đề.",
-      [
-        { text: "Giữ lại", style: "cancel" },
-        {
-          text: "Bỏ phiên",
-          style: "destructive",
-          onPress: () => abandon.mutate(session.id),
-        },
-      ],
-    );
+    if (!sessionId) return;
+    router.push(`/(app)/session/${sessionId}?resume=1` as any);
   };
 
   return (
@@ -252,9 +197,6 @@ function ActiveSessionCard({ session }: { session: ExamSessionData }) {
         </View>
       </View>
       <View style={styles.activeActions}>
-        <DepthButton variant="secondary" size="sm" onPress={handleAbandon} disabled={abandon.isPending}>
-          Bỏ phiên
-        </DepthButton>
         <DepthButton size="sm" onPress={handleContinue}>
           Tiếp tục
         </DepthButton>

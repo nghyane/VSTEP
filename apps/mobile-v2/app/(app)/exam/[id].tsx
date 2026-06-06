@@ -4,8 +4,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
-import { useAppConfig, useExam, useExamSessions } from "@/hooks/use-exams";
-import { useAbandonExamSession, useStartExamSession } from "@/hooks/use-exam-session";
+import { useExam } from "@/hooks/use-exams";
+import { useRestartExamSession, useStartExamSession } from "@/hooks/use-exam-session";
 import { DepthButton } from "@/components/DepthButton";
 import { DepthCard } from "@/components/DepthCard";
 import { HapticTouchable } from "@/components/HapticTouchable";
@@ -39,48 +39,43 @@ export default function ExamDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data: detail, isLoading } = useExam(id ?? "");
-  const { data: config } = useAppConfig();
-  const { data: activeSessions } = useExamSessions("active");
   const { data: wallet } = useWalletBalance();
   const startMutation = useStartExamSession();
-  const abandonMutation = useAbandonExamSession();
+  const restartMutation = useRestartExamSession();
 
   const [selectedSkills, setSelectedSkills] = useState<Set<SkillKey>>(new Set(SKILL_ORDER));
   const [expanded, setExpanded] = useState<Set<SkillKey>>(new Set());
   const [durationMode, setDurationMode] = useState<"standard" | "slow" | "fast">("standard");
 
-  const version = detail?.version;
   const availableSkills = SKILL_ORDER.filter((sk) => {
-    if (!version) return false;
-    if (sk === "listening") return version.listeningSections.length > 0;
-    if (sk === "reading") return version.readingPassages.length > 0;
-    if (sk === "writing") return version.writingTasks.length > 0;
-    if (sk === "speaking") return version.speakingParts.length > 0;
-    return false;
+    const summary = detail?.skillSummaries?.[sk];
+    return !!summary && (summary.durationMinutes > 0 || summary.itemCount > 0 || summary.partCount > 0);
   });
 
   if (isLoading) {
     return <View style={[s.center, { backgroundColor: c.background }]}><ActivityIndicator color={c.primary} size="large" /></View>;
   }
-  if (!detail || !version) {
+  if (!detail) {
     return <MascotEmpty mascot="think" title="Không tìm thấy đề thi" subtitle="" />;
   }
 
   const { exam } = detail;
-  const activeSameExam = (activeSessions ?? []).find(
-    (session) => session.examId === exam.id && new Date(session.serverDeadlineAt).getTime() > Date.now(),
-  );
-  const isFull = selectedSkills.size === 0 || selectedSkills.size === availableSkills.length;
-  const fullCost = config?.pricing.exam.fullTestCostCoins ?? 25;
-  const perSkillCost = config?.pricing.exam.customPerSkillCoins ?? 8;
-  const coinCost = isFull ? fullCost : Math.min(fullCost, perSkillCost * selectedSkills.size);
+  const activeSameExam = detail.attemptState.activeCurrentVersionSession && new Date(detail.attemptState.activeCurrentVersionSession.serverDeadlineAt).getTime() > Date.now()
+    ? detail.attemptState.activeCurrentVersionSession
+    : null;
+  const isFull = availableSkills.length > 0 && availableSkills.every((skill) => selectedSkills.has(skill));
+  const selectedAvailableSkills = availableSkills.filter((skill) => selectedSkills.has(skill));
+  const finalSelectedSkills = isFull ? availableSkills : selectedAvailableSkills;
+  const fullCost = detail.pricing.fullTestCostCoins;
+  const perSkillCost = detail.pricing.customPerSkillCoins;
+  const coinCost = isFull ? fullCost : Math.min(fullCost, perSkillCost * selectedAvailableSkills.length);
   const balance = wallet?.balance ?? null;
   const insufficient = balance != null && balance < coinCost;
 
-  const skillTotals = getSkillTotals(version);
-  const totalMinutes = availableSkills.reduce((sum, sk) => sum + skillTotals[sk].minutes, 0);
+  const skillTotals = getSkillTotals(detail.skillSummaries);
+  const totalMinutes = finalSelectedSkills.reduce((sum, sk) => sum + skillTotals[sk].minutes, 0);
   const totalMcq = skillTotals.listening.count + skillTotals.reading.count;
-  const totalFreeResponse = version.writingTasks.length + version.speakingParts.length;
+  const totalFreeResponse = skillTotals.writing.count + skillTotals.speaking.count;
   const displayMinutes = durationMode === "slow" ? totalMinutes + 20 : durationMode === "fast" ? Math.max(1, totalMinutes - 10) : totalMinutes;
 
   function toggleSkill(sk: SkillKey) {
@@ -118,14 +113,14 @@ export default function ExamDetailScreen() {
   }
 
   function startFreshSession() {
-    const finalSkills = isFull ? availableSkills : Array.from(selectedSkills).sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b));
-    const factor = totalMinutes > 0 ? Math.max(1, displayMinutes / totalMinutes) : 1.0;
-    const start = () => startMutation.mutate(
-      { examId: id ?? "", mode: isFull ? "full" : "custom", selectedSkills: finalSkills, timeExtensionFactor: factor },
-      { onSuccess: (res) => router.push(`/(app)/session/${res.sessionId}?examId=${id}` as never) },
-    );
-    if (activeSameExam) abandonMutation.mutate(activeSameExam.id, { onSuccess: start });
-    else start();
+    if (!isFull && finalSelectedSkills.length === 0) return;
+    const finalSkills = finalSelectedSkills.sort((a, b) => SKILL_ORDER.indexOf(a) - SKILL_ORDER.indexOf(b));
+    const baseMinutes = finalSkills.reduce((sum, sk) => sum + skillTotals[sk].minutes, 0);
+    const factor = baseMinutes > 0 ? displayMinutes / baseMinutes : 1.0;
+    const payload = { examId: id ?? "", mode: isFull ? "full" as const : "custom" as const, selectedSkills: finalSkills, timeExtensionFactor: factor };
+    const onSuccess = (res: { sessionId: string }) => router.push(`/(app)/session/${res.sessionId}` as never);
+    if (activeSameExam) restartMutation.mutate({ ...payload, abandonSessionId: activeSameExam.id }, { onSuccess });
+    else startMutation.mutate(payload, { onSuccess });
   }
 
   function handleContinue() {
@@ -163,7 +158,13 @@ export default function ExamDetailScreen() {
 
           {/* 3 stat cards */}
           <View style={s.statRow}>
-            <StatCard icon="time-outline" value={`${totalMinutes}`} label="phút" color={c.info} c={c} />
+            <StatCard
+              icon="time-outline"
+              value={`${availableSkills.reduce((sum, sk) => sum + skillTotals[sk].minutes, 0)}`}
+              label="phút"
+              color={c.info}
+              c={c}
+            />
             <StatCard icon="clipboard-outline" value={`${totalMcq}`} label="câu trắc nghiệm" color={c.primary} c={c} />
             <StatCard icon="create-outline" value={`${totalFreeResponse}`} label="phần tự luận" color={c.warning} c={c} />
           </View>
@@ -199,7 +200,6 @@ export default function ExamDetailScreen() {
             const isSelected = selectedSkills.has(sk);
             const isExp = expanded.has(sk);
             const totals = skillTotals[sk];
-            const parts = getPartRows(sk, version);
 
             return (
               <View key={sk} style={[s.skillCard, { borderColor: isSelected ? meta.color : c.border, borderLeftColor: isSelected ? meta.color : c.border, borderLeftWidth: isSelected ? 4 : 2 }]}>
@@ -217,12 +217,12 @@ export default function ExamDetailScreen() {
                   </HapticTouchable>
                 </HapticTouchable>
 
-                {isExp && parts.map((part, idx) => (
-                  <View key={part.id} style={[s.partRow, idx > 0 && { borderTopWidth: 1, borderTopColor: c.borderLight }]}>
-                    <Text style={[s.partLabel, { color: c.foreground }]}>{part.label}</Text>
-                    <Text style={[s.partMeta, { color: c.mutedForeground }]}>{part.itemCount} {part.itemUnit} · {part.durationMinutes} phút</Text>
+                {isExp ? (
+                  <View style={[s.partRow, { borderTopWidth: 1, borderTopColor: c.borderLight }]}> 
+                    <Text style={[s.partLabel, { color: c.foreground }]}>Tổng quan</Text>
+                    <Text style={[s.partMeta, { color: c.mutedForeground }]}>{totals.count} {totals.unit} · {totals.minutes} phút</Text>
                   </View>
-                ))}
+                ) : null}
               </View>
             );
           })}
@@ -273,15 +273,15 @@ export default function ExamDetailScreen() {
           fullWidth
           size="lg"
           onPress={handleStart}
-          disabled={startMutation.isPending || abandonMutation.isPending}
+          disabled={startMutation.isPending || restartMutation.isPending || (!isFull && finalSelectedSkills.length === 0)}
         >
-          {startMutation.isPending || abandonMutation.isPending
+          {startMutation.isPending || restartMutation.isPending
             ? "Đang tạo phiên thi..."
             : getStartLabel(insufficient, activeSameExam != null, isFull, coinCost)}
         </DepthButton>
-        {startMutation.error ? (
-          <Text style={[s.startError, { color: c.destructive }]}>
-            Không tạo được phiên thi: {getApiErrorMessage(startMutation.error)}
+        {startMutation.error || restartMutation.error ? (
+          <Text style={[s.startError, { color: c.destructive }]}> 
+            Không tạo được phiên thi: {getApiErrorMessage(startMutation.error ?? restartMutation.error)}
           </Text>
         ) : null}
       </View>
@@ -291,54 +291,13 @@ export default function ExamDetailScreen() {
 
 // ── Helpers ──
 
-interface PartRow { id: string; label: string; itemCount: number; itemUnit: string; durationMinutes: number }
-
-function getPartRows(skill: SkillKey, version: any): PartRow[] {
-  if (skill === "listening") {
-    const byPart = new Map<number, any[]>();
-    for (const sec of version.listeningSections) {
-      const arr = byPart.get(sec.part) ?? [];
-      arr.push(sec);
-      byPart.set(sec.part, arr);
-    }
-    return [...byPart.entries()].sort(([a], [b]) => a - b).map(([part, secs]) => ({
-      id: `listening-part-${part}`,
-      label: `Phần ${part}`,
-      itemCount: secs.reduce((s: number, x: any) => s + x.items.length, 0),
-      itemUnit: "câu",
-      durationMinutes: secs.reduce((s: number, x: any) => s + x.durationMinutes, 0),
-    }));
-  }
-  if (skill === "reading") {
-    return version.readingPassages.map((p: any) => ({
-      id: p.id, label: `Phần ${p.part}`, itemCount: p.items.length, itemUnit: "câu", durationMinutes: p.durationMinutes,
-    }));
-  }
-  if (skill === "writing") {
-    return version.writingTasks.map((t: any) => ({
-      id: t.id, label: t.taskType === "letter" ? `Viết thư (${t.minWords} từ)` : `Viết luận (${t.minWords} từ)`,
-      itemCount: 1, itemUnit: "bài", durationMinutes: t.durationMinutes,
-    }));
-  }
-  return version.speakingParts.map((p: any) => ({
-    id: p.id, label: getSpeakingTypeLabel(p.type), itemCount: p.durationMinutes, itemUnit: "phút", durationMinutes: p.durationMinutes,
-  }));
-}
-
-function getSkillTotals(version: any): Record<SkillKey, { minutes: number; count: number; unit: string }> {
-  const listeningParts = getPartRows("listening", version);
-  const readingParts = getPartRows("reading", version);
+function getSkillTotals(summaries: NonNullable<ReturnType<typeof useExam>["data"]>["skillSummaries"]): Record<SkillKey, { minutes: number; count: number; unit: string }> {
   return {
-    listening: { minutes: listeningParts.reduce((s, p) => s + p.durationMinutes, 0), count: listeningParts.reduce((s, p) => s + p.itemCount, 0), unit: "câu" },
-    reading: { minutes: readingParts.reduce((s, p) => s + p.durationMinutes, 0), count: readingParts.reduce((s, p) => s + p.itemCount, 0), unit: "câu" },
-    writing: { minutes: version.writingTasks.reduce((s: number, t: any) => s + t.durationMinutes, 0), count: version.writingTasks.length, unit: "phần" },
-    speaking: { minutes: version.speakingParts.reduce((s: number, p: any) => s + p.durationMinutes, 0), count: version.speakingParts.length, unit: "phần" },
+    listening: { minutes: summaries.listening?.durationMinutes ?? 0, count: summaries.listening?.itemCount ?? 0, unit: "câu" },
+    reading: { minutes: summaries.reading?.durationMinutes ?? 0, count: summaries.reading?.itemCount ?? 0, unit: "câu" },
+    writing: { minutes: summaries.writing?.durationMinutes ?? 0, count: summaries.writing?.partCount ?? 0, unit: "phần" },
+    speaking: { minutes: summaries.speaking?.durationMinutes ?? 0, count: summaries.speaking?.partCount ?? 0, unit: "phần" },
   };
-}
-
-function getSpeakingTypeLabel(type: string): string {
-  const map: Record<string, string> = { social: "Giao tiếp xã hội", solution: "Đề xuất giải pháp", topic: "Thảo luận chủ đề" };
-  return map[type] ?? type;
 }
 
 function getStartLabel(insufficient: boolean, hasActive: boolean, isFull: boolean, cost: number): string {

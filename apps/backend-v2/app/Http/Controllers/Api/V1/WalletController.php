@@ -107,7 +107,7 @@ final class WalletController extends Controller
             'id' => ['required', 'string'],
         ]);
 
-        $order = $this->topupService->cancelFromPaymentReturn($request->user(), $validated['id']);
+        $order = $this->topupService->refreshFromPaymentReturn($request->user(), $validated['id']);
 
         return response()->json([
             'data' => new WalletTopupOrderResource($order),

@@ -7,6 +7,7 @@ import { ScrollArea } from "#/components/ScrollArea"
 import { createEnrollmentOrder } from "#/features/course/actions"
 import { EnrollFailurePopup } from "#/features/course/components/EnrollFailurePopup"
 import { SignaturePadField, type SignaturePadFieldRef } from "#/features/course/components/SignaturePadField"
+import { savePendingEnrollmentOrder } from "#/features/course/enroll-pending"
 import type { CourseWithRelations } from "#/features/course/types"
 import { useSession } from "#/lib/auth"
 import { formatNumber, formatVnd } from "#/lib/utils"
@@ -41,6 +42,13 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 		},
 		onSuccess: (order) => {
 			if (order.payment_url) {
+				savePendingEnrollmentOrder({
+					orderId: order.id,
+					courseId: course.id,
+					courseTitle: course.title,
+					bonusCoins: course.bonus_coins,
+					createdAt: Date.now(),
+				})
 				const paymentWindow = window.open(order.payment_url, "_blank")
 				if (paymentWindow) paymentWindow.opener = null
 				onClose()

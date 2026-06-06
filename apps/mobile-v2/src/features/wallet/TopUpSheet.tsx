@@ -230,7 +230,14 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
 
 function createTopupReturnUrl(): string {
   const configured = process.env.EXPO_PUBLIC_PAYOS_RETURN_URL?.trim();
-  return configured || DEFAULT_PAYOS_RETURN_URL;
+  return appendPaymentReturnParams(configured || DEFAULT_PAYOS_RETURN_URL, { flow: "topup" });
+}
+
+function appendPaymentReturnParams(baseUrl: string, params: Record<string, string>): string {
+  const url = new URL(baseUrl);
+  url.searchParams.set("client", "mobile");
+  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  return url.toString();
 }
 
 function reportTopupPaymentReturn(paymentLinkId: string): Promise<TopupOrder> {

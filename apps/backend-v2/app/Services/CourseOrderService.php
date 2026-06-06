@@ -13,6 +13,7 @@ use App\Models\CourseEnrollmentOrder;
 use App\Models\Profile;
 use App\Services\Payment\OrderNotFoundAfterValidation;
 use App\Services\Payment\PaymentGatewayRegistry;
+use App\Services\Payment\PayOsGateway;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -270,6 +271,66 @@ final class CourseOrderService
             $locked->update(['status' => OrderStatus::Cancelled]);
 
             return $locked;
+        });
+    }
+
+    public function refreshFromPaymentReturn(Profile $profile, string $paymentLinkId): CourseEnrollmentOrder
+    {
+        $gateway = $this->gateways->get(PaymentProvider::PayOs);
+        if (! $gateway instanceof PayOsGateway) {
+            throw new \RuntimeException('PayOS gateway is not configured.');
+        }
+
+        $status = $gateway->getPaymentLinkStatus($paymentLinkId);
+
+        return DB::transaction(function () use ($profile, $paymentLinkId, $status): CourseEnrollmentOrder {
+            $order = CourseEnrollmentOrder::query()
+                ->where(function ($query) use ($paymentLinkId, $status): void {
+                    $query->where('gateway_transaction_id', $paymentLinkId)
+                        ->orWhere('provider_ref', $paymentLinkId);
+
+                    if ($status['orderCode'] > 0) {
+                        $query->orWhere('order_code', $status['orderCode']);
+                    }
+                })
+                ->lockForUpdate()
+                ->first();
+
+            if ($order === null) {
+                throw ValidationException::withMessages(['order' => ['Không tìm thấy đơn thanh toán.']]);
+            }
+
+            if ($order->profile_id !== $profile->id) {
+                throw ValidationException::withMessages(['order' => ['Đơn hàng không thuộc hồ sơ hiện tại.']]);
+            }
+
+            $gatewayStatus = strtoupper($status['status']);
+
+            if ($gatewayStatus === 'PAID') {
+                return $this->confirmByOrderCode(
+                    (int) $order->order_code,
+                    (string) ($status['id'] ?: $paymentLinkId),
+                    $status['raw'],
+                );
+            }
+
+            if ($gatewayStatus === 'CANCELLED' && $order->status === OrderStatus::Pending) {
+                $order->update([
+                    'status' => OrderStatus::Cancelled,
+                    'gateway_response' => $status['raw'],
+                    'callback_received_at' => now(),
+                ]);
+            }
+
+            if ($gatewayStatus === 'EXPIRED' && $order->status === OrderStatus::Pending) {
+                $order->update([
+                    'status' => OrderStatus::Expired,
+                    'gateway_response' => $status['raw'],
+                    'callback_received_at' => now(),
+                ]);
+            }
+
+            return $order->refresh();
         });
     }
 

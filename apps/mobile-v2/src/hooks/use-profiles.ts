@@ -104,6 +104,15 @@ export function useResetProfile() {
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["profiles"] });
+      qc.invalidateQueries({ queryKey: ["overview"] });
+      qc.invalidateQueries({ queryKey: ["streak"] });
+      qc.invalidateQueries({ queryKey: ["activity-heatmap"] });
+      qc.invalidateQueries({ queryKey: ["practice"] });
+      qc.invalidateQueries({ queryKey: ["exams"] });
+      qc.invalidateQueries({ queryKey: ["exam-sessions"] });
+      qc.invalidateQueries({ queryKey: ["courses"] });
+      qc.invalidateQueries({ queryKey: ["booking"] });
+      qc.invalidateQueries({ queryKey: ["wallet"] });
     },
   });
 }

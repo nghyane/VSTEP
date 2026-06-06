@@ -194,7 +194,7 @@ final class TopupService
         });
     }
 
-    public function cancelFromPaymentReturn(User $account, string $paymentLinkId): WalletTopupOrder
+    public function refreshFromPaymentReturn(User $account, string $paymentLinkId): WalletTopupOrder
     {
         $gateway = $this->gateways->get(PaymentProvider::PayOs);
         if (! $gateway instanceof PayOsGateway) {
@@ -224,9 +224,27 @@ final class TopupService
                 throw ValidationException::withMessages(['order' => ['Đơn hàng không thuộc tài khoản hiện tại.']]);
             }
 
-            if (strtoupper($status['status']) === 'CANCELLED' && $order->status === OrderStatus::Pending) {
+            $gatewayStatus = strtoupper($status['status']);
+
+            if ($gatewayStatus === 'PAID') {
+                return $this->confirmByOrderCode(
+                    (int) $order->order_code,
+                    (string) ($status['id'] ?: $paymentLinkId),
+                    $status['raw'],
+                );
+            }
+
+            if ($gatewayStatus === 'CANCELLED' && $order->status === OrderStatus::Pending) {
                 $order->update([
                     'status' => OrderStatus::Cancelled,
+                    'gateway_response' => $status['raw'],
+                    'callback_received_at' => now(),
+                ]);
+            }
+
+            if ($gatewayStatus === 'EXPIRED' && $order->status === OrderStatus::Pending) {
+                $order->update([
+                    'status' => OrderStatus::Expired,
                     'gateway_response' => $status['raw'],
                     'callback_received_at' => now(),
                 ]);

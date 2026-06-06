@@ -84,6 +84,7 @@ export interface EnrollmentOrder {
   status: OrderStatus;
   paymentProvider: PaymentProvider;
   paymentUrl: string | null;
+  providerRef: string | null;
   paidAt: string | null;
   expiresAt: string | null;
   createdAt: string;

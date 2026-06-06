@@ -8,6 +8,7 @@ import { Icon, type IconName, StaticIcon } from "#/components/Icon"
 import { SupportFab } from "#/components/SupportFab"
 import { cancelEnrollmentOrder } from "#/features/course/actions"
 import { EnrollDialog } from "#/features/course/components/EnrollDialog"
+import { EnrollSuccessPopup } from "#/features/course/components/EnrollSuccessPopup"
 import { courseDetailQuery } from "#/features/course/queries"
 import {
 	COURSE_LEVEL_LABELS,
@@ -30,7 +31,14 @@ function CourseDetailPage() {
 	const { cancel_order } = Route.useSearch()
 	const queryClient = useQueryClient()
 	const handledCancelOrder = useRef<string | null>(null)
+	const previousEnrolledRef = useRef<boolean | null>(null)
+	const [enrollSuccessOpen, setEnrollSuccessOpen] = useState(false)
 	const { data, isLoading } = useQuery(courseDetailQuery(courseId))
+	const currentEnrolled = data?.data.commitment
+		? data.data.commitment.phase !== "not_enrolled"
+		: data
+			? false
+			: null
 	const cancelOrder = useMutation({
 		mutationFn: cancelEnrollmentOrder,
 		onSettled: async () => {
@@ -53,6 +61,13 @@ function CourseDetailPage() {
 		window.addEventListener("focus", refetchCourse)
 		return () => window.removeEventListener("focus", refetchCourse)
 	}, [courseId, queryClient])
+
+	useEffect(() => {
+		if (currentEnrolled === null) return
+		const previous = previousEnrolledRef.current
+		previousEnrolledRef.current = currentEnrolled
+		if (previous === false && currentEnrolled) setEnrollSuccessOpen(true)
+	}, [currentEnrolled])
 
 	if (isLoading || !data) {
 		return (
@@ -120,6 +135,12 @@ function CourseDetailPage() {
 				<CommitmentsCard />
 			</div>
 			<SupportFab />
+			<EnrollSuccessPopup
+				open={enrollSuccessOpen}
+				courseTitle={course.title}
+				bonusCoins={course.bonus_coins}
+				onClose={() => setEnrollSuccessOpen(false)}
+			/>
 		</>
 	)
 }

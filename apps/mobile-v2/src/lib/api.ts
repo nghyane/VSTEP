@@ -276,13 +276,14 @@ export async function registerApi(
   email: string,
   password: string,
   nickname: string,
+  entryLevel: string,
   targetLevel: string,
   targetDeadline: string,
 ) {
   const res = await fetch(`${API_URL}/api/v1/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ email, password, nickname, target_level: targetLevel, target_deadline: targetDeadline }),
+    body: JSON.stringify({ email, password, nickname, entry_level: entryLevel, target_level: targetLevel, target_deadline: targetDeadline }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({})) as Record<string, unknown>;
@@ -316,11 +317,11 @@ export async function resetPasswordApi(input: {
   return api.post<{ success: boolean }>("/api/v1/auth/reset-password", input);
 }
 
-export async function completeOnboardingApi(nickname: string, targetLevel: string, targetDeadline: string) {
+export async function completeOnboardingApi(nickname: string, entryLevel: string, targetLevel: string, targetDeadline: string) {
   return api.post<{
     accessToken: string;
     expiresIn: number;
     profile: Profile;
     onboardingBonus?: { amount: number; granted: boolean };
-  }>("/api/v1/auth/complete-onboarding", { nickname, targetLevel, targetDeadline });
+  }>("/api/v1/auth/complete-onboarding", { nickname, entryLevel, targetLevel, targetDeadline });
 }

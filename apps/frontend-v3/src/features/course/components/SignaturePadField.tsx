@@ -21,8 +21,9 @@ export function SignaturePadField({ ref, disabled, onChange }: Props) {
 	useEffect(() => {
 		const canvas = canvasRef.current
 		if (!canvas) return
+		const canvasEl: HTMLCanvasElement = canvas
 
-		const pad = new SignaturePad(canvas, {
+		const pad = new SignaturePad(canvasEl, {
 			penColor: "#1f1f1f",
 			backgroundColor: "rgba(0,0,0,0)",
 			minWidth: 1.2,
@@ -34,9 +35,9 @@ export function SignaturePadField({ ref, disabled, onChange }: Props) {
 		function resize(): void {
 			const ratio = Math.max(window.devicePixelRatio || 1, 1)
 			const data = pad.toData()
-			canvas.width = canvas.offsetWidth * ratio
-			canvas.height = canvas.offsetHeight * ratio
-			canvas.getContext("2d")?.scale(ratio, ratio)
+			canvasEl.width = canvasEl.offsetWidth * ratio
+			canvasEl.height = canvasEl.offsetHeight * ratio
+			canvasEl.getContext("2d")?.scale(ratio, ratio)
 			pad.clear()
 			if (data.length > 0) pad.fromData(data)
 		}

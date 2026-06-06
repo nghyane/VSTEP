@@ -10,15 +10,15 @@ import { DepthCard } from "@/components/DepthCard";
 import { GameIcon } from "@/components/GameIcon";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { CourseEnrollSheet } from "@/features/course/CourseEnrollSheet";
-import type { CommitmentStatus, CourseScheduleItem, CourseTeacher } from "@/features/course/types";
+import type { CommitmentStatus, CourseDetail, CourseScheduleItem, CourseTeacher } from "@/features/course/types";
 import {
-  fetchEnrollmentOrders,
+  reportEnrollmentPaymentReturn,
   useCancelEnrollmentOrder,
   useCourse,
   useCreateEnrollmentOrder,
 } from "@/features/course/queries";
 import { useAuth } from "@/hooks/use-auth";
-import { getApiErrorMessage } from "@/lib/api";
+import { api, getApiErrorMessage } from "@/lib/api";
 import { formatDate, formatVnd, getInitials } from "@/lib/utils";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
@@ -34,6 +34,8 @@ interface PendingCourseOrder {
   id: string;
   courseId: string;
   profileId: string;
+  orderCode?: number | null;
+  providerRef?: string | null;
 }
 
 export default function CourseDetailScreen() {
@@ -51,6 +53,8 @@ export default function CourseDetailScreen() {
   const [pendingOrder, setPendingOrder] = useState<PendingCourseOrder | null>(null);
   const [checkingPayment, setCheckingPayment] = useState(false);
   const checkingPaymentRef = useRef(false);
+  const successAlertedRef = useRef<string | null>(null);
+  const currentEnrolled = data ? isCourseEnrolled(data) : false;
 
   const setChecking = useCallback((value: boolean) => {
     checkingPaymentRef.current = value;
@@ -61,26 +65,21 @@ export default function CourseDetailScreen() {
     if (checkingPaymentRef.current) return;
     setChecking(true);
     try {
-      const orders = await fetchEnrollmentOrders();
-      const order = orders.find((item) => item.id === orderToCheck.id);
-      if (!order) {
-        if (notifyPending) Alert.alert("Không tìm thấy đơn", "Không tìm thấy đơn thanh toán khóa học hiện tại.");
+      let lastStatus: string | null = null;
+      for (const paymentReturnId of getPaymentReturnIds(orderToCheck)) {
+        const checkedOrder = await reportEnrollmentPaymentReturn(paymentReturnId).catch(() => null);
+        if (!checkedOrder) continue;
+        lastStatus = checkedOrder.status;
+        if (checkedOrder.status !== "pending") break;
+      }
+
+      const detail = await fetchCourseDetail(queryClient, orderToCheck.courseId);
+      if (lastStatus === "paid" || isCourseEnrolled(detail)) {
+        await markEnrollmentPaid(orderToCheck, queryClient, setPendingOrder, successAlertedRef);
         return;
       }
 
-      if (order.status === "paid") {
-        await clearPendingCourseOrder();
-        setPendingOrder(null);
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ["courses"] }),
-          queryClient.invalidateQueries({ queryKey: ["courses", courseId] }),
-          queryClient.invalidateQueries({ queryKey: ["courses", "enrollment-orders"] }),
-        ]);
-        Alert.alert("Đăng ký thành công", "Khóa học đã được kích hoạt cho hồ sơ hiện tại.");
-        return;
-      }
-
-      if (order.status === "failed" || order.status === "cancelled" || order.status === "expired") {
+      if (lastStatus === "failed" || lastStatus === "cancelled" || lastStatus === "expired") {
         await clearPendingCourseOrder();
         setPendingOrder(null);
         Alert.alert("Thanh toán chưa hoàn tất", "Giao dịch đã bị hủy, thất bại hoặc hết hạn. Bạn có thể tạo giao dịch mới.");
@@ -95,7 +94,7 @@ export default function CourseDetailScreen() {
     } finally {
       setChecking(false);
     }
-  }, [courseId, queryClient, setChecking]);
+  }, [queryClient, setChecking]);
 
   useEffect(() => {
     let mounted = true;
@@ -120,6 +119,11 @@ export default function CourseDetailScreen() {
     });
     return () => subscription.remove();
   }, [checkOrderPayment, pendingOrder]);
+
+  useEffect(() => {
+    if (!pendingOrder || !currentEnrolled) return;
+    void markEnrollmentPaid(pendingOrder, queryClient, setPendingOrder, successAlertedRef);
+  }, [currentEnrolled, pendingOrder, queryClient]);
 
   if (!courseId) {
     return (
@@ -151,15 +155,21 @@ export default function CourseDetailScreen() {
         courseId,
         commitmentSignature: signatureSvg,
         paymentProvider: "payos",
-        returnUrl: createCourseReturnUrl(),
-        cancelUrl: createCourseReturnUrl(),
+        returnUrl: createCourseReturnUrl(courseId),
+        cancelUrl: createCourseReturnUrl(courseId),
       });
       if (!order.paymentUrl) {
         Alert.alert("Chưa tạo được thanh toán", "Cổng thanh toán chưa trả về đường dẫn thanh toán. Vui lòng thử lại.");
         return;
       }
 
-      const nextPendingOrder = { id: order.id, courseId: order.courseId, profileId: profile.id };
+      const nextPendingOrder = {
+        id: order.id,
+        courseId: order.courseId,
+        profileId: profile.id,
+        orderCode: order.orderCode,
+        providerRef: order.providerRef,
+      };
       await savePendingCourseOrder(nextPendingOrder);
       setPendingOrder(nextPendingOrder);
       setEnrollOpen(false);
@@ -499,10 +509,52 @@ function diffDays(iso: string): number {
   return Math.ceil((end.getTime() - start.getTime()) / 86_400_000);
 }
 
-function createCourseReturnUrl(): string {
+function createCourseReturnUrl(courseId: string): string {
   const configured = process.env.EXPO_PUBLIC_PAYOS_RETURN_URL?.trim();
-  if (configured) return configured;
-  return DEFAULT_PAYOS_RETURN_URL;
+  return appendPaymentReturnParams(configured || DEFAULT_PAYOS_RETURN_URL, { flow: "course", courseId });
+}
+
+function appendPaymentReturnParams(baseUrl: string, params: Record<string, string>): string {
+  const url = new URL(baseUrl);
+  url.searchParams.set("client", "mobile");
+  for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  return url.toString();
+}
+
+function getPaymentReturnIds(pendingOrder: PendingCourseOrder): string[] {
+  const ids = [pendingOrder.providerRef, pendingOrder.orderCode]
+    .filter((id): id is number | string => typeof id === "number" || (typeof id === "string" && id.length > 0))
+    .map(String);
+  return [...new Set(ids)];
+}
+
+async function fetchCourseDetail(queryClient: ReturnType<typeof useQueryClient>, courseId: string): Promise<CourseDetail> {
+  await queryClient.invalidateQueries({ queryKey: ["courses", courseId] });
+  return queryClient.fetchQuery({
+    queryKey: ["courses", courseId],
+    queryFn: () => api.get<CourseDetail>(`/api/v1/courses/${courseId}`),
+  });
+}
+
+function isCourseEnrolled(detail: CourseDetail): boolean {
+  return detail.commitment !== null && detail.commitment.phase !== "not_enrolled";
+}
+
+async function markEnrollmentPaid(
+  pendingOrder: PendingCourseOrder,
+  queryClient: ReturnType<typeof useQueryClient>,
+  setPendingOrder: (order: PendingCourseOrder | null) => void,
+  successAlertedRef: { current: string | null },
+) {
+  await clearPendingCourseOrder();
+  setPendingOrder(null);
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["courses"] }),
+    queryClient.invalidateQueries({ queryKey: ["courses", pendingOrder.courseId] }),
+  ]);
+  if (successAlertedRef.current === pendingOrder.id) return;
+  successAlertedRef.current = pendingOrder.id;
+  Alert.alert("Đăng ký thành công", "Khóa học đã được kích hoạt cho hồ sơ hiện tại.");
 }
 
 function isPendingCourseOrder(value: unknown): value is PendingCourseOrder {

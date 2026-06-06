@@ -4,9 +4,9 @@ import Svg, { Circle, Text as SvgText } from "react-native-svg";
 
 import { DepthCard } from "@/components/DepthCard";
 import { SkillIcon } from "@/components/SkillIcon";
-import { useExamSessions } from "@/hooks/use-exams";
+import { useOverview } from "@/hooks/use-progress";
 import { fontFamily, fontSize, radius, spacing, type ThemeColors, useThemeColors } from "@/theme";
-import type { ExamSessionResult, Skill } from "@/types/api";
+import type { ScoreTimelinePoint, Skill } from "@/types/api";
 
 const SKILLS: Skill[] = ["listening", "reading", "writing", "speaking"];
 const BASE_SIZE = 200;
@@ -31,12 +31,11 @@ function getSkillColor(skill: Skill, theme: ThemeColors): string {
   return map[skill];
 }
 
-function countBySkill(sessions: ExamSessionResult[]): Record<Skill, number> {
+function countBySkill(points: ScoreTimelinePoint[]): Record<Skill, number> {
   const result: Record<Skill, number> = { listening: 0, reading: 0, writing: 0, speaking: 0 };
-  for (const session of sessions) {
-    if (session.submittedAt === null || session.scores === null) continue;
+  for (const point of points) {
     for (const skill of SKILLS) {
-      if (session.scores[skill] !== null && session.scores[skill] !== undefined) {
+      if (point[skill] !== null && point[skill] !== undefined) {
         result[skill] += 1;
       }
     }
@@ -44,11 +43,11 @@ function countBySkill(sessions: ExamSessionResult[]): Record<Skill, number> {
   return result;
 }
 
-function averageBySkill(sessions: ExamSessionResult[]): Record<Skill, number | null> {
+function averageBySkill(points: ScoreTimelinePoint[]): Record<Skill, number | null> {
   const result: Record<Skill, number | null> = { listening: null, reading: null, writing: null, speaking: null };
   for (const skill of SKILLS) {
-    const values = sessions
-      .map((session) => session.scores?.[skill] ?? null)
+    const values = points
+      .map((point) => point[skill])
       .filter((value): value is number => value !== null);
     result[skill] = values.length > 0 ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
   }
@@ -84,14 +83,15 @@ export function DoughnutCard() {
   const c = useThemeColors();
   const { width } = useWindowDimensions();
   const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
-  const { data: sessions } = useExamSessions();
+  const { data: overview } = useOverview();
   const size = width >= 768 ? 240 : BASE_SIZE;
   const center = size / 2;
 
-  if (!sessions) return null;
+  if (!overview) return null;
 
-  const counts = countBySkill(sessions);
-  const averages = averageBySkill(sessions);
+  const points = overview.scores.timeline;
+  const counts = countBySkill(points);
+  const averages = averageBySkill(points);
   const total = SKILLS.reduce((sum, skill) => sum + counts[skill], 0);
 
   let cursor = 0;

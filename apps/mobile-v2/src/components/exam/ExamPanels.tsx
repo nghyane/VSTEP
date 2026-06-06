@@ -6,7 +6,7 @@ import { resolvePlayableAudioUrl } from "@/lib/asset-url";
 import { useLogListeningPlayed } from "@/hooks/use-exam-session";
 import { useTTSPlayer } from "@/hooks/use-tts-player";
 import { useThemeColors, spacing, radius, fontSize, fontFamily, colors as themeColors } from "@/theme";
-import type { ExamVersionMcqItem, ExamVersionListeningSection, ExamVersionReadingPassage, ExamVersionWritingTask } from "@/types/api";
+import type { ExamVersionMcqItem, ExamVersionListeningSection, ExamVersionReadingPassage, ExamVersionWritingTask, ListeningPlaySummaryItem } from "@/types/api";
 
 const LISTENING_DARK = "#0B7FB2";
 
@@ -15,13 +15,14 @@ const LISTENING_DARK = "#0B7FB2";
 interface ListeningPanelProps {
   sections: ExamVersionListeningSection[];
   sessionId: string;
+  initialPlaySummary: ListeningPlaySummaryItem[];
   answers: Map<string, number>;
   onAnswer: (itemId: string, idx: number) => void;
   c: ReturnType<typeof useThemeColors>;
   insets: { bottom: number };
 }
 
-export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, insets }: ListeningPanelProps) {
+export function ListeningPanel({ sections, sessionId, initialPlaySummary, answers, onAnswer, c, insets }: ListeningPanelProps) {
   const sortedSections = useMemo(
     () => [...sections].sort((a, b) => a.displayOrder - b.displayOrder || a.part - b.part),
     [sections],
@@ -42,7 +43,7 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
   const [countdown, setCountdown] = useState(3);
   const [useTtsFallback, setUseTtsFallback] = useState(false);
   const shouldAutoPlayRef = useRef(false);
-  const loggedSectionsRef = useRef<Set<string>>(new Set());
+  const loggedSectionsRef = useRef<Set<string>>(new Set(initialPlaySummary.filter((item) => item.played).map((item) => item.sectionId)));
   const logPlayed = useLogListeningPlayed(sessionId);
   const logPlayedRef = useRef(logPlayed.mutate);
   const activeGroupTranscript = useMemo(
@@ -54,6 +55,10 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
   useEffect(() => {
     logPlayedRef.current = logPlayed.mutate;
   }, [logPlayed.mutate]);
+
+  useEffect(() => {
+    loggedSectionsRef.current = new Set(initialPlaySummary.filter((item) => item.played).map((item) => item.sectionId));
+  }, [initialPlaySummary]);
 
   useEffect(() => {
     setSectionInPartIdx(0);
@@ -74,9 +79,8 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
       if (activeGroupTranscript) {
         setAudioError(null);
         setUseTtsFallback(true);
-        setAudioNotice("Audio gốc chưa có, đang dùng giọng đọc máy.");
       } else {
-        setAudioError("Bài này chưa có audio.");
+        setAudioError(null);
       }
       return;
     }
@@ -128,7 +132,6 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
         if (activeGroupTranscript) {
           setUseTtsFallback(true);
           setAudioError(null);
-          setAudioNotice("Không tải được audio gốc, đang dùng giọng đọc máy.");
         } else {
           setAudioError("Không tải được audio. Vui lòng thử lại.");
         }
@@ -142,6 +145,10 @@ export function ListeningPanel({ sections, sessionId, answers, onAnswer, c, inse
 
   async function togglePlay() {
     if (!section) return;
+    if (loggedSectionsRef.current.has(section.id)) {
+      setAudioNotice("Âm thanh phần này đã phát. Bạn vẫn có thể tiếp tục trả lời câu hỏi.");
+      return;
+    }
     try {
       if (useTtsFallback) {
         logSectionPlayed(section.id);

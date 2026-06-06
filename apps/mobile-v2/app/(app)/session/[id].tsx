@@ -14,13 +14,12 @@ import { SkillIcon } from "@/components/SkillIcon";
 import { ConfirmModal, ResultScreen } from "@/components/exam/ConfirmModal";
 import { ListeningPanel, ReadingPanel, WritingPanel } from "@/components/exam/ExamPanels";
 import { SpeakingPanel } from "@/components/exam/SpeakingPanel";
-import { useExam } from "@/hooks/use-exams";
 import {
-  useExamSession, useExamSessionState, useExamTimer,
+  useExamRoom, useExamSessionState, useExamTimer,
   type SubmitSessionResult,
 } from "@/hooks/use-exam-session";
 import { useThemeColors, spacing, radius, fontSize, fontFamily, colors as themeColors } from "@/theme";
-import type { ExamVersionMcqItem, Skill } from "@/types/api";
+import type { ExamRoomData, ExamVersionMcqItem, Skill } from "@/types/api";
 import { getApiErrorMessage } from "@/lib/api";
 
 const SKILL_COLOR: Record<string, string> = {
@@ -40,15 +39,14 @@ function fmtTime(s: number) {
 }
 
 export default function SessionScreen() {
-  const { id, examId, resume } = useLocalSearchParams<{ id: string; examId: string; resume?: string }>();
-  const { data: sessionData, isLoading: sessionLoading } = useExamSession(id ?? "");
-  const { data: examDetail, isLoading: examLoading } = useExam(examId ?? "");
+  const { id, resume } = useLocalSearchParams<{ id: string; resume?: string }>();
+  const { data: roomData, isLoading: roomLoading } = useExamRoom(id ?? "");
   const [submitResult, setSubmitResult] = useState<SubmitSessionResult | null>(null);
   const c = useThemeColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  if (sessionLoading || examLoading) {
+  if (roomLoading) {
     return (
       <View style={[s.center, { backgroundColor: c.background }]}>
         <ActivityIndicator color={c.primary} size="large" />
@@ -56,7 +54,7 @@ export default function SessionScreen() {
     );
   }
 
-  if (!sessionData || !examDetail) {
+  if (!roomData) {
     return (
       <View style={[s.center, { backgroundColor: c.background }]}>
         <Text style={{ color: c.destructive }}>Không tải được phiên thi.</Text>
@@ -67,17 +65,17 @@ export default function SessionScreen() {
     );
   }
 
-  if (sessionData.status !== "active") {
-    return <SubmittedSessionRedirect sessionId={sessionData.id} c={c} />;
+  if (roomData.session.status !== "active") {
+    return <SubmittedSessionRedirect sessionId={roomData.session.id} c={c} />;
   }
 
   if (submitResult) {
     return (
       <ResultScreen
         result={submitResult}
-        sessionId={sessionData.id}
-        examTitle={examDetail.exam.title}
-        onGoToResult={() => router.replace(`/(app)/exam-result/${sessionData.id}`)}
+        sessionId={roomData.session.id}
+        examTitle={roomData.exam.title}
+        onGoToResult={() => router.replace(`/(app)/exam-result/${roomData.session.id}?celebrate=streak`)}
         onGoToExams={() => router.replace("/(app)/(tabs)/exams")}
       />
     );
@@ -85,8 +83,7 @@ export default function SessionScreen() {
 
   return (
     <ExamRoom
-      session={sessionData}
-      examDetail={examDetail}
+      room={roomData}
       skipDeviceCheck={resume === "1"}
       onSubmitted={setSubmitResult}
       c={c}
@@ -112,8 +109,7 @@ function SubmittedSessionRedirect({ sessionId, c }: { sessionId: string; c: Retu
 }
 
 interface ExamRoomProps {
-  session: { id: string; serverDeadlineAt: string; selectedSkills: string[] };
-  examDetail: { exam: { title: string }; version: { listeningSections: unknown[]; readingPassages: unknown[]; writingTasks: unknown[]; speakingParts: unknown[] } };
+  room: ExamRoomData;
   skipDeviceCheck: boolean;
   onSubmitted: (result: SubmitSessionResult) => void;
   c: ReturnType<typeof useThemeColors>;
@@ -121,8 +117,8 @@ interface ExamRoomProps {
   router: ReturnType<typeof useRouter>;
 }
 
-function ExamRoom({ session, examDetail, skipDeviceCheck, onSubmitted, c, insets, router }: ExamRoomProps) {
-  const { version, exam } = examDetail;
+function ExamRoom({ room, skipDeviceCheck, onSubmitted, c, insets, router }: ExamRoomProps) {
+  const { session, version, exam, draft } = room;
   const listeningItems: ExamVersionMcqItem[] = (version.listeningSections as { items: ExamVersionMcqItem[] }[]).flatMap((s) => s.items);
   const readingItems: ExamVersionMcqItem[] = (version.readingPassages as { items: ExamVersionMcqItem[] }[]).flatMap((p) => p.items);
 
@@ -132,6 +128,7 @@ function ExamRoom({ session, examDetail, skipDeviceCheck, onSubmitted, c, insets
     readingItems,
     version.writingTasks as Parameters<typeof useExamSessionState>[3],
     version.speakingParts as Parameters<typeof useExamSessionState>[4],
+    draft,
     onSubmitted,
   );
   const remaining = useExamTimer(session.serverDeadlineAt);
@@ -256,6 +253,7 @@ function ExamRoom({ session, examDetail, skipDeviceCheck, onSubmitted, c, insets
           <ListeningPanel
             sections={version.listeningSections as Parameters<typeof ListeningPanel>[0]["sections"]}
             sessionId={session.id}
+            initialPlaySummary={room.listeningPlaySummary}
             answers={es.state.mcqAnswers}
             onAnswer={es.answerMcq}
             c={c}

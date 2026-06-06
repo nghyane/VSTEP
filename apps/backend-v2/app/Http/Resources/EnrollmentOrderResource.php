@@ -20,6 +20,7 @@ final class EnrollmentOrderResource extends JsonResource
             'status' => $this->status,
             'payment_provider' => $this->payment_provider,
             'payment_url' => $this->payment_url,
+            'provider_ref' => $this->provider_ref,
             'paid_at' => $this->paid_at,
             'expires_at' => $this->expires_at,
             'created_at' => $this->created_at,
