@@ -276,6 +276,22 @@ export function ProfileDropdown({ unread, initial }: Props) {
 								>
 									Chỉnh sửa hồ sơ
 								</MenuItem>
+								<MenuItem
+									onClick={() => {
+										setOpen(false)
+										navigate({ to: "/don-hang" })
+									}}
+								>
+									Lịch sử đơn hàng
+								</MenuItem>
+								<MenuItem
+									onClick={() => {
+										setOpen(false)
+										navigate({ to: "/giao-dich-xu" })
+									}}
+								>
+									Lịch sử giao dịch xu
+								</MenuItem>
 								<div className="my-1 h-px bg-border" />
 								<MenuItem
 									iconNode={<Icon name="logout" size="xs" />}

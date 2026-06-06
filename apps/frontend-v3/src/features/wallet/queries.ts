@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { TopupPackage, WalletBalance } from "#/features/wallet/types"
-import { type ApiResponse, api } from "#/lib/api"
+import type { CoinTransaction, TopupPackage, WalletBalance } from "#/features/wallet/types"
+import { type ApiResponse, api, type PaginatedResponse } from "#/lib/api"
 
 export const walletBalanceQuery = queryOptions({
 	queryKey: ["wallet", "balance"],
@@ -12,3 +12,13 @@ export const topupPackagesQuery = queryOptions({
 	queryFn: () => api.get("wallet/topup-packages").json<ApiResponse<TopupPackage[]>>(),
 	staleTime: 5 * 60 * 1000,
 })
+
+export function walletTransactionsQuery(page: number) {
+	return queryOptions({
+		queryKey: ["wallet", "transactions", page],
+		queryFn: () =>
+			api
+				.get("wallet/transactions", { searchParams: { page, per_page: 15 } })
+				.json<PaginatedResponse<CoinTransaction>>(),
+	})
+}

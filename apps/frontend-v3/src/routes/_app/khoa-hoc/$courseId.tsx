@@ -131,8 +131,6 @@ function CourseDetailPage() {
 				)}
 
 				{course.teacher && <TeacherCard teacher={course.teacher} />}
-
-				<CommitmentsCard />
 			</div>
 			<SupportFab />
 			<EnrollSuccessPopup
@@ -171,30 +169,6 @@ function TeacherCard({ teacher }: { teacher: CourseTeacher }) {
 					{teacher.bio && <p className="text-sm text-foreground leading-relaxed pt-1">{teacher.bio}</p>}
 				</div>
 			</div>
-		</div>
-	)
-}
-
-const COMMITMENTS = [
-	"Tỉ lệ đạt trên 98% với học viên học đúng lộ trình.",
-	"Miễn phí học lại nếu chưa đạt mục tiêu sau khóa.",
-	"Giảng viên dạy sát định dạng đề và tiêu chí chấm điểm VSTEP.",
-] as const
-
-function CommitmentsCard() {
-	return (
-		<div className="card p-6">
-			<p className="text-xs font-bold uppercase tracking-wide text-muted mb-4">Cam kết từ Luyện Thi VSTEP</p>
-			<ul className="space-y-3">
-				{COMMITMENTS.map((c) => (
-					<li key={c} className="flex items-start gap-3 text-sm text-foreground">
-						<span className="size-5 shrink-0 rounded-full bg-primary/10 text-primary inline-flex items-center justify-center mt-0.5">
-							<Icon name="check" size="xs" className="h-3 w-auto" />
-						</span>
-						<span>{c}</span>
-					</li>
-				))}
-			</ul>
 		</div>
 	)
 }

@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\LearningPathController;
 use App\Http\Controllers\Api\V1\McqPracticeController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OverviewController;
+use App\Http\Controllers\Api\V1\OrderHistoryController;
 use App\Http\Controllers\Api\V1\PaymentCallbackController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ShadowingProgressController;
@@ -75,6 +76,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:api', 'active-profile'])->group(function () {
         Route::patch('/me/avatar', [AccountController::class, 'updateAvatar']);
         Route::post('/me/avatar', [AccountController::class, 'uploadAvatar']);
+        Route::get('/me/orders', [OrderHistoryController::class, 'index']);
 
         Route::get('/wallet/balance', [WalletController::class, 'balance']);
         Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
@@ -259,6 +261,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/orders', [Admin\FinanceController::class, 'orders']);
             Route::get('/orders/{type}/{id}', [Admin\FinanceController::class, 'show'])->whereIn('type', ['topup', 'course'])->whereUuid('id');
             Route::get('/top-products', [Admin\FinanceController::class, 'topProducts']);
+            Route::get('/coin-summary', [Admin\FinanceController::class, 'coinSummary']);
+            Route::get('/coin-transactions', [Admin\FinanceController::class, 'coinTransactions']);
         });
 
         // Exam management

@@ -17,6 +17,8 @@ import { Route as AppThiThuRouteImport } from "./routes/_app/thi-thu"
 import { Route as AppLuyenTapRouteImport } from "./routes/_app/luyen-tap"
 import { Route as AppKhoaHocRouteImport } from "./routes/_app/khoa-hoc"
 import { Route as AppHoSoRouteImport } from "./routes/_app/ho-so"
+import { Route as AppGiaoDichXuRouteImport } from "./routes/_app/giao-dich-xu"
+import { Route as AppDonHangRouteImport } from "./routes/_app/don-hang"
 import { Route as AppDashboardRouteImport } from "./routes/_app/dashboard"
 import { Route as AppThiThuIndexRouteImport } from "./routes/_app/thi-thu/index"
 import { Route as AppLuyenTapIndexRouteImport } from "./routes/_app/luyen-tap/index"
@@ -85,6 +87,16 @@ const AppKhoaHocRoute = AppKhoaHocRouteImport.update({
 const AppHoSoRoute = AppHoSoRouteImport.update({
   id: "/ho-so",
   path: "/ho-so",
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGiaoDichXuRoute = AppGiaoDichXuRouteImport.update({
+  id: "/giao-dich-xu",
+  path: "/giao-dich-xu",
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDonHangRoute = AppDonHangRouteImport.update({
+  id: "/don-hang",
+  path: "/don-hang",
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -260,6 +272,8 @@ export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
   "/wallet": typeof WalletRoute
   "/dashboard": typeof AppDashboardRoute
+  "/don-hang": typeof AppDonHangRoute
+  "/giao-dich-xu": typeof AppGiaoDichXuRoute
   "/ho-so": typeof AppHoSoRoute
   "/khoa-hoc": typeof AppKhoaHocRouteWithChildren
   "/luyen-tap": typeof AppLuyenTapRouteWithChildren
@@ -299,6 +313,8 @@ export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "/wallet": typeof WalletRoute
   "/dashboard": typeof AppDashboardRoute
+  "/don-hang": typeof AppDonHangRoute
+  "/giao-dich-xu": typeof AppGiaoDichXuRoute
   "/ho-so": typeof AppHoSoRoute
   "/khoa-hoc/$courseId": typeof AppKhoaHocCourseIdRoute
   "/luyen-tap/doc": typeof AppLuyenTapDocRoute
@@ -335,6 +351,8 @@ export interface FileRoutesById {
   "/_focused": typeof FocusedRouteWithChildren
   "/wallet": typeof WalletRoute
   "/_app/dashboard": typeof AppDashboardRoute
+  "/_app/don-hang": typeof AppDonHangRoute
+  "/_app/giao-dich-xu": typeof AppGiaoDichXuRoute
   "/_app/ho-so": typeof AppHoSoRoute
   "/_app/khoa-hoc": typeof AppKhoaHocRouteWithChildren
   "/_app/luyen-tap": typeof AppLuyenTapRouteWithChildren
@@ -376,6 +394,8 @@ export interface FileRouteTypes {
     | "/"
     | "/wallet"
     | "/dashboard"
+    | "/don-hang"
+    | "/giao-dich-xu"
     | "/ho-so"
     | "/khoa-hoc"
     | "/luyen-tap"
@@ -415,6 +435,8 @@ export interface FileRouteTypes {
     | "/"
     | "/wallet"
     | "/dashboard"
+    | "/don-hang"
+    | "/giao-dich-xu"
     | "/ho-so"
     | "/khoa-hoc/$courseId"
     | "/luyen-tap/doc"
@@ -450,6 +472,8 @@ export interface FileRouteTypes {
     | "/_focused"
     | "/wallet"
     | "/_app/dashboard"
+    | "/_app/don-hang"
+    | "/_app/giao-dich-xu"
     | "/_app/ho-so"
     | "/_app/khoa-hoc"
     | "/_app/luyen-tap"
@@ -549,6 +573,20 @@ declare module "@tanstack/react-router" {
       path: "/ho-so"
       fullPath: "/ho-so"
       preLoaderRoute: typeof AppHoSoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    "/_app/giao-dich-xu": {
+      id: "/_app/giao-dich-xu"
+      path: "/giao-dich-xu"
+      fullPath: "/giao-dich-xu"
+      preLoaderRoute: typeof AppGiaoDichXuRouteImport
+      parentRoute: typeof AppRoute
+    }
+    "/_app/don-hang": {
+      id: "/_app/don-hang"
+      path: "/don-hang"
+      fullPath: "/don-hang"
+      preLoaderRoute: typeof AppDonHangRouteImport
       parentRoute: typeof AppRoute
     }
     "/_app/dashboard": {
@@ -867,6 +905,8 @@ const AppThiThuRouteWithChildren = AppThiThuRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDonHangRoute: typeof AppDonHangRoute
+  AppGiaoDichXuRoute: typeof AppGiaoDichXuRoute
   AppHoSoRoute: typeof AppHoSoRoute
   AppKhoaHocRoute: typeof AppKhoaHocRouteWithChildren
   AppLuyenTapRoute: typeof AppLuyenTapRouteWithChildren
@@ -875,6 +915,8 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppDonHangRoute: AppDonHangRoute,
+  AppGiaoDichXuRoute: AppGiaoDichXuRoute,
   AppHoSoRoute: AppHoSoRoute,
   AppKhoaHocRoute: AppKhoaHocRouteWithChildren,
   AppLuyenTapRoute: AppLuyenTapRouteWithChildren,
