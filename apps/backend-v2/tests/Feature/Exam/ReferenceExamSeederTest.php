@@ -56,8 +56,8 @@ final class ReferenceExamSeederTest extends TestCase
             ->firstOrFail();
 
         $this->assertSame('Đề 10 · Môi trường & tiêu dùng', $exam->title);
-        $this->assertSame('Capstone VSTEP · Biên soạn theo cấu trúc VSTEP 3-5', $exam->source_school);
-        $this->assertSame(['Môi trường', 'Tiêu dùng bền vững'], $exam->tags);
+        $this->assertSame('Capstone VSTEP', $exam->source_school);
+        $this->assertSame(['Môi trường', 'Tiêu dùng xanh'], $exam->tags);
 
         $version = $exam
             ->versions()
@@ -148,7 +148,7 @@ final class ReferenceExamSeederTest extends TestCase
         $exam = Exam::factory()->create([
             'slug' => 'vstep-de-thi-thu-01-doi-song-sinh-vien',
             'title' => 'Old title',
-            'source_school' => 'Capstone VSTEP · Biên soạn theo cấu trúc VSTEP 3-5',
+            'source_school' => 'Capstone VSTEP',
         ]);
         $version = ExamVersion::factory()->create([
             'exam_id' => $exam->id,
@@ -171,7 +171,7 @@ final class ReferenceExamSeederTest extends TestCase
 
         $freshExam = Exam::query()->where('slug', 'vstep-de-thi-thu-01-doi-song-sinh-vien')->firstOrFail();
         $this->assertSame($exam->id, $freshExam->id);
-        $this->assertSame('Đề 01 · Đời sống sinh viên', $freshExam->title);
+        $this->assertSame('Đề 1 · Đời sống sinh viên', $freshExam->title);
         $this->assertDatabaseHas('exam_sessions', ['id' => $session->id]);
         $this->assertSame(2, $freshExam->versions()->count());
         $this->assertFalse((bool) $version->fresh()->is_active);

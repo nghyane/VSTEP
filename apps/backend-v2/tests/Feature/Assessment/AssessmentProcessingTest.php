@@ -300,6 +300,38 @@ final class AssessmentProcessingTest extends TestCase
         $this->assertSame('speaking_unreliable', $display['reason']['code']);
     }
 
+    public function test_nested_speaking_prompt_content_is_used_for_content_relevance(): void
+    {
+        $relevance = new CountingContentRelevanceAssessor;
+        $this->app->instance(ContentRelevanceAssessor::class, $relevance);
+        $this->app->bind(SpeechToText::class, fn () => new ReliableSpeechToText);
+
+        $profile = Profile::factory()->initial()->forAccount(User::factory()->create())->create();
+
+        $attempt = $this->app->make(AssessmentSubmissionService::class)->submit(new AssessmentInput(
+            profileId: $profile->id,
+            skill: AssessmentSkill::Speaking,
+            taskType: AssessmentTaskType::SpeakingPart1Personal,
+            sourceType: AssessmentSourceType::Exam,
+            sourceId: '00000000-0000-0000-0000-000000000009',
+            prompt: [
+                'content' => [
+                    'topics' => [[
+                        'name' => 'Daily Routine',
+                        'questions' => ['Tell me about your typical day.'],
+                    ]],
+                ],
+            ],
+            audioKey: 'audio/reliable.webm',
+        ));
+
+        $this->app->make(AssessmentProcessingService::class)->process($attempt->job);
+
+        $this->assertSame(1, $relevance->calls);
+        $this->assertStringContainsString('Daily Routine', (string) $relevance->prompt);
+        $this->assertStringContainsString('Tell me about your typical day.', (string) $relevance->prompt);
+    }
+
     private function activeRubric(): AssessmentRubric
     {
         return AssessmentRubric::updateOrCreate(
@@ -374,11 +406,48 @@ final class CountingContentRelevanceAssessor implements ContentRelevanceAssessor
 {
     public int $calls = 0;
 
+    public ?string $prompt = null;
+
     public function assess(string $transcript, string $prompt, array $requirements): float
     {
         $this->calls++;
+        $this->prompt = $prompt;
 
         return 1.0;
+    }
+}
+
+final class ReliableSpeechToText implements SpeechToText
+{
+    public function transcribe(string $audioContent, string $language = 'en-US', ?string $contentType = null): ?array
+    {
+        return $this->result();
+    }
+
+    public function transcribeFromStorage(string $audioKey, AudioStorageService $storage): ?array
+    {
+        return $this->result();
+    }
+
+    private function result(): array
+    {
+        $text = str_repeat('I usually study English in the morning because it helps me prepare for my exam. ', 6);
+
+        return [
+            'text' => trim($text),
+            'confidence' => 0.9,
+            'duration_ms' => 60_000,
+            'word_count' => str_word_count($text),
+            'pause_count' => 3,
+            'speaking_rate' => 96.0,
+            'pronunciation' => [
+                'accuracy' => 8.0,
+                'fluency' => 7.5,
+                'prosody' => 7.5,
+                'completeness' => 8.0,
+                'overall' => 7.8,
+            ],
+        ];
     }
 }
 

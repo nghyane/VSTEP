@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Assessment\Enums\AssessmentJobStatus;
+use App\Models\AssessmentAttempt;
 use App\Models\ExamListeningPlayLog;
 use App\Models\ExamSession;
 use App\Models\ExamSpeakingSubmission;
@@ -12,6 +13,7 @@ use App\Models\ExamVersionListeningSection;
 use App\Models\ExamVersionSpeakingPart;
 use App\Models\ExamVersionWritingTask;
 use App\Models\ExamWritingSubmission;
+use App\Models\TeacherGradingRequest;
 use App\Services\Contracts\ExamResultDisplayFormatterInterface;
 use App\Services\Contracts\ExamResultMcqBuilderInterface;
 use App\Services\Contracts\ExamResultReadModelInterface;
@@ -182,6 +184,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
         $jobStatus = $submission->assessmentAttempt?->job?->status;
         $feedback = $this->coachFeedback($result?->feedback);
         $scoreInsights = $this->scoreInsights($result?->feedback);
+        $teacherGradingRequest = $this->loadTeacherGradingRequest($submission->assessmentAttempt);
 
         return [
             'submission_id' => $submission->id,
@@ -200,6 +203,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             'score_insights' => $scoreInsights,
             'feedback' => $feedback,
             'calculation_trace' => $result?->calculation_trace,
+            'teacher_grading_request' => $this->teacherGradingRequestState($teacherGradingRequest, $result !== null),
         ];
     }
 
@@ -223,6 +227,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             'score_insights' => [],
             'feedback' => null,
             'calculation_trace' => ['source' => 'blank_submission'],
+            'teacher_grading_request' => null,
         ];
     }
 
@@ -267,6 +272,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
         $jobStatus = $submission->assessmentAttempt?->job?->status;
         $feedback = $this->coachFeedback($result?->feedback);
         $scoreInsights = $this->scoreInsights($result?->feedback);
+        $teacherGradingRequest = $this->loadTeacherGradingRequest($submission->assessmentAttempt);
 
         return [
             'submission_id' => $submission->id,
@@ -276,7 +282,8 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             'feedback_status' => $this->assessmentFeedbackStatus($feedback !== null, $result !== null, $jobStatus),
             'part_id' => $submission->part_id,
             'audio_url' => $submission->audio_url,
-            'transcript' => $submission->transcript,
+            'transcript' => $submission->transcript
+                ?? $submission->assessmentAttempt?->evidence?->signals['speech']['transcript'] ?? null,
             'overall_band' => $result?->overall_band,
             'criterion_scores' => $result?->criterion_scores,
             'caps_applied' => $result?->caps_applied,
@@ -285,6 +292,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             'score_insights' => $scoreInsights,
             'feedback' => $feedback,
             'calculation_trace' => $result?->calculation_trace,
+            'teacher_grading_request' => $this->teacherGradingRequestState($teacherGradingRequest, $result !== null),
         ];
     }
 
@@ -445,6 +453,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             'score_insights' => [],
             'feedback' => null,
             'calculation_trace' => ['source' => 'blank_submission'],
+            'teacher_grading_request' => null,
         ];
     }
 
@@ -548,5 +557,58 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             })
             ->values()
             ->all();
+    }
+
+    private function loadTeacherGradingRequest(?AssessmentAttempt $attempt): ?TeacherGradingRequest
+    {
+        if ($attempt === null) {
+            return null;
+        }
+
+        return TeacherGradingRequest::query()
+            ->with(['assignedTeacher:id,full_name,email', 'teacherResult'])
+            ->where('attempt_id', $attempt->id)
+            ->first();
+    }
+
+    /** @return array<string, mixed> */
+    private function teacherGradingRequestState(?TeacherGradingRequest $request, bool $canRequest): array
+    {
+        if ($request === null) {
+            return [
+                'can_request' => $canRequest,
+                'requested' => false,
+                'request_id' => null,
+                'status' => 'none',
+                'assigned_teacher' => null,
+                'requested_at' => null,
+                'assigned_at' => null,
+                'completed_at' => null,
+                'teacher_result' => null,
+            ];
+        }
+
+        return [
+            'can_request' => $canRequest,
+            'requested' => true,
+            'request_id' => $request->id,
+            'status' => $request->status->value,
+            'assigned_teacher' => $request->assignedTeacher === null ? null : [
+                'id' => $request->assignedTeacher->id,
+                'full_name' => $request->assignedTeacher->full_name,
+                'email' => $request->assignedTeacher->email,
+            ],
+            'requested_at' => $request->requested_at,
+            'assigned_at' => $request->assigned_at,
+            'completed_at' => $request->completed_at,
+            'teacher_result' => $request->teacherResult === null ? null : [
+                'id' => $request->teacherResult->id,
+                'overall_band' => $request->teacherResult->overall_band,
+                'criterion_scores' => $request->teacherResult->criterion_scores,
+                'feedback' => $request->teacherResult->feedback,
+                'submitted_at' => $request->teacherResult->submitted_at,
+                'source' => 'teacher',
+            ],
+        ];
     }
 }

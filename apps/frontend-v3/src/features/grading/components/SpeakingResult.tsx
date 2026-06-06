@@ -262,7 +262,7 @@ function teacherGradingText(
 		default:
 			return requested
 				? "Yêu cầu đã gửi. Staff sẽ kiểm tra và gán giáo viên phù hợp."
-				: "Gửi bài nói cho staff để gán giáo viên chấm thủ công. Điểm giáo viên sẽ hiển thị riêng với điểm AI."
+				: "Gửi bài nói cho staff để gán giáo viên chấm thủ công. Điểm giáo viên sẽ hiển thị riêng với điểm hệ thống."
 	}
 }
 
@@ -349,7 +349,7 @@ function SpeakingDiagnosticsPanel({ result }: { result: SpeakingGradingResult })
 						metric={{ value: diagnostics.speech?.speaking_rate, suffix: " từ/phút" }}
 					/>
 					<DiagnosticMetric label="Số lần ngắt nghỉ" metric={{ value: diagnostics.fluency?.pause_count }} />
-					<DiagnosticMetric label="Phát âm" metric={{ value: pronunciation, suffix: "/100" }} />
+					<DiagnosticMetric label="Phát âm" metric={{ value: pronunciation, suffix: "/10" }} />
 					<DiagnosticMetric
 						label="Nội dung"
 						metric={{ value: diagnostics.content?.content_factor, multiplier: 100, suffix: "%" }}

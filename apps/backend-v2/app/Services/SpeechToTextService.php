@@ -179,10 +179,12 @@ final class SpeechToTextService implements SpeechToText
         $missingBreakCount = 0;
         $monotoneCount = 0;
         $lowAccuracyWords = [];
+        // Azure ticks = 100ns units. 2M ticks ≈ 200ms — meaningful pause.
+        $pauseThresholdTicks = 2_000_000;
         for ($i = 1; $i < $wordCount; $i++) {
             $prevEnd = ($words[$i - 1]['Offset'] ?? 0) + ($words[$i - 1]['Duration'] ?? 0);
             $currStart = $words[$i]['Offset'] ?? 0;
-            if (($currStart - $prevEnd) > 50_000) {
+            if (($currStart - $prevEnd) > $pauseThresholdTicks) {
                 $pauseCount++;
             }
         }

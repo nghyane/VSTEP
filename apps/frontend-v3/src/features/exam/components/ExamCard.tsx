@@ -83,13 +83,6 @@ export function ExamCard({ exam, coinCost }: Props) {
 							<span className="text-sm font-extrabold text-coin-dark tabular-nums">{coinCost}</span>
 						</span>
 					)}
-					<Link
-						to="/thi-thu/$examId"
-						params={{ examId: exam.id }}
-						className="btn btn-secondary text-sm py-2 px-3"
-					>
-						Chi tiết
-					</Link>
 					{hasActive ? (
 						<Link
 							to="/phong-thi/$sessionId"

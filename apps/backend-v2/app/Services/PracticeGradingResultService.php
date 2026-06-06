@@ -74,15 +74,15 @@ final class PracticeGradingResultService
                 'max_score' => $this->maxScore($attempt->rubric->scoring_policy),
                 'criteria' => $attempt->rubric->criteria,
             ],
-            'teacher_grading_request' => $this->teacherGradingRequestState($teacherGradingRequest),
+            'teacher_grading_request' => $this->teacherGradingRequestState($teacherGradingRequest, $attempt->result !== null),
         ];
     }
 
     /** @return array<string,mixed> */
-    private function teacherGradingRequestState(?TeacherGradingRequest $request): array
+    private function teacherGradingRequestState(?TeacherGradingRequest $request, bool $canRequest): array
     {
         return [
-            'can_request' => true,
+            'can_request' => $canRequest,
             'requested' => $request !== null,
             'request_id' => $request?->id,
             'status' => $request?->status?->value ?? 'none',

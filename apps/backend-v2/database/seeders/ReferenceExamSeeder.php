@@ -15,7 +15,7 @@ use RuntimeException;
 
 final class ReferenceExamSeeder extends Seeder
 {
-    private const SOURCE_SCHOOL = 'Capstone VSTEP · Biên soạn theo cấu trúc VSTEP 3-5';
+    private const SOURCE_SCHOOL = 'Capstone VSTEP';
 
     private const TOTAL_DURATION_MINUTES = 172;
 
@@ -549,10 +549,10 @@ final class ReferenceExamSeeder extends Seeder
         return [
             $this->plan(
                 'vstep-de-thi-thu-01-doi-song-sinh-vien',
-                'Đề 01 · Đời sống sinh viên',
+                'Đề 1 · Đời sống sinh viên',
                 1,
                 'campus orientation',
-                ['Đời sống sinh viên', 'Dịch vụ sinh viên'],
+                ['Đời sống sinh viên', 'Kỹ năng học tập'],
                 [
                     ['title' => 'First-Year Advisory Desks', 'subject' => 'first-year advisory desks', 'setting' => 'large university campuses', 'people' => 'new students, advisers and faculty assistants', 'benefit' => 'help new students choose courses, solve timetable problems and find welfare support', 'challenge' => 'keeping advice consistent when several offices answer similar questions', 'example' => 'a university placed trained peer advisers beside the enrolment hall during the first two weeks'],
                     ['title' => 'Student ID Services', 'subject' => 'student ID services', 'setting' => 'student administration offices', 'people' => 'students, security staff and service clerks', 'benefit' => 'make borrowing, attendance checks and building access quicker', 'challenge' => 'replacing lost cards without creating long queues', 'example' => 'an office introduced an appointment window for students who needed replacement cards'],
@@ -562,10 +562,10 @@ final class ReferenceExamSeeder extends Seeder
             ),
             $this->plan(
                 'vstep-de-thi-thu-02-thuc-tap-cong-so',
-                'Đề 02 · Thực tập & công sở',
+                'Đề 2 · Nghề nghiệp & thực tập',
                 2,
                 'workplace preparation',
-                ['Nghề nghiệp', 'Giao tiếp công sở'],
+                ['Nghề nghiệp', 'Kỹ năng chuyên nghiệp'],
                 [
                     ['title' => 'Remote Internship Supervision', 'subject' => 'remote internship supervision', 'setting' => 'companies with hybrid teams', 'people' => 'interns, mentors and department managers', 'benefit' => 'give young workers professional experience without requiring daily travel', 'challenge' => 'helping interns ask quick questions when supervisors are busy online', 'example' => 'a marketing firm scheduled two short check-ins each day for remote interns'],
                     ['title' => 'Workplace Email Etiquette', 'subject' => 'workplace email etiquette', 'setting' => 'training departments', 'people' => 'new employees and team leaders', 'benefit' => 'reduce misunderstandings and make requests easier to answer', 'challenge' => 'teaching polite tone without making messages too long', 'example' => 'a company asked trainees to rewrite unclear emails from realistic office situations'],
@@ -575,10 +575,10 @@ final class ReferenceExamSeeder extends Seeder
             ),
             $this->plan(
                 'vstep-de-thi-thu-03-doi-song-do-thi',
-                'Đề 03 · Đời sống đô thị',
+                'Đề 3 · Đời sống đô thị',
                 3,
                 'urban living',
-                ['Đời sống đô thị', 'Dịch vụ công'],
+                ['Đô thị', 'Dịch vụ công cộng'],
                 [
                     ['title' => 'Student Housing Advice', 'subject' => 'student housing advice', 'setting' => 'rental districts near universities', 'people' => 'students, landlords and housing officers', 'benefit' => 'help renters understand contracts, deposits and repair responsibilities', 'challenge' => 'checking unreliable advertisements before students pay fees', 'example' => 'a housing office created a checklist for viewing rooms safely'],
                     ['title' => 'Evening Bus Services', 'subject' => 'evening bus services', 'setting' => 'suburban transport routes', 'people' => 'shift workers, students and bus operators', 'benefit' => 'make late travel safer and cheaper for people without private vehicles', 'challenge' => 'running enough buses when passenger numbers change by season', 'example' => 'a transport company tested later buses during the university exam period'],
@@ -588,7 +588,7 @@ final class ReferenceExamSeeder extends Seeder
             ),
             $this->plan(
                 'vstep-de-thi-thu-04-hoc-tap-dai-hoc',
-                'Đề 04 · Học tập đại học',
+                'Đề 4 · Phương pháp học tập',
                 4,
                 'campus learning',
                 ['Giáo dục', 'Kỹ năng học thuật'],
@@ -601,10 +601,10 @@ final class ReferenceExamSeeder extends Seeder
             ),
             $this->plan(
                 'vstep-de-thi-thu-05-thanh-pho-ben-vung',
-                'Đề 05 · Thành phố bền vững',
+                'Đề 5 · Phát triển bền vững',
                 5,
                 'sustainable cities',
-                ['Môi trường', 'Dịch vụ công'],
+                ['Môi trường', 'Quy hoạch đô thị'],
                 [
                     ['title' => 'Urban Tree Projects', 'subject' => 'urban tree projects', 'setting' => 'crowded city districts', 'people' => 'residents and local planners', 'benefit' => 'cool streets, absorb rainwater and make public spaces more pleasant', 'challenge' => 'choosing species that do not damage pavements', 'example' => 'a neighbourhood mapped hot streets before planting shade trees'],
                     ['title' => 'Public Bicycle Schemes', 'subject' => 'public bicycle schemes', 'setting' => 'busy transport corridors', 'people' => 'commuters and city visitors', 'benefit' => 'offer a low-cost option for short journeys', 'challenge' => 'balancing bicycle supply between popular stations', 'example' => 'a city used morning travel data to move bicycles before rush hour'],
@@ -614,10 +614,10 @@ final class ReferenceExamSeeder extends Seeder
             ),
             $this->plan(
                 'vstep-de-thi-thu-06-cong-so-so',
-                'Đề 06 · Công sở số',
+                'Đề 6 · Công nghệ & công sở',
                 6,
                 'digital workplace',
-                ['Công nghệ', 'Giao tiếp công sở'],
+                ['Công nghệ', 'Chuyển đổi số'],
                 [
                     ['title' => 'Remote Team Meetings', 'subject' => 'remote team meetings', 'setting' => 'international companies', 'people' => 'employees and project managers', 'benefit' => 'connect teams across locations without frequent travel', 'challenge' => 'preventing online meetings from becoming too long', 'example' => 'a design team used shorter agendas and shared notes after each call'],
                     ['title' => 'Online Training Portals', 'subject' => 'online training portals', 'setting' => 'growing businesses', 'people' => 'new employees and trainers', 'benefit' => 'let staff review essential skills at their own pace', 'challenge' => 'keeping learning materials current after procedures change', 'example' => 'a company updated safety videos after workers reported unclear steps'],
@@ -627,10 +627,10 @@ final class ReferenceExamSeeder extends Seeder
             ),
             $this->plan(
                 'vstep-de-thi-thu-07-suc-khoe-cong-dong',
-                'Đề 07 · Sức khỏe cộng đồng',
+                'Đề 7 · Sức khỏe cộng đồng',
                 7,
                 'public health',
-                ['Sức khỏe', 'Cộng đồng'],
+                ['Sức khỏe', 'Y tế dự phòng'],
                 [
                     ['title' => 'School Breakfast Clubs', 'subject' => 'school breakfast clubs', 'setting' => 'urban primary schools', 'people' => 'children, parents and teachers', 'benefit' => 'help pupils start lessons with more energy and attention', 'challenge' => 'finding volunteers who can arrive early every morning', 'example' => 'a local bakery donated bread while parents served fruit twice a week'],
                     ['title' => 'Walking Groups', 'subject' => 'walking groups', 'setting' => 'residential areas', 'people' => 'older adults and community nurses', 'benefit' => 'improve fitness while reducing social isolation', 'challenge' => 'choosing routes that are safe in different weather conditions', 'example' => 'a clinic organized short walks that ended at a public garden'],
@@ -640,10 +640,10 @@ final class ReferenceExamSeeder extends Seeder
             ),
             $this->plan(
                 'vstep-de-thi-thu-08-du-lich-di-san',
-                'Đề 08 · Du lịch & di sản',
+                'Đề 8 · Du lịch & văn hóa',
                 8,
                 'tourism and heritage',
-                ['Du lịch', 'Văn hóa'],
+                ['Du lịch', 'Di sản văn hóa'],
                 [
                     ['title' => 'Local Heritage Trails', 'subject' => 'local heritage trails', 'setting' => 'historic towns', 'people' => 'visitors, guides and residents', 'benefit' => 'bring attention to small museums and traditional streets', 'challenge' => 'protecting quiet neighbourhoods from overcrowding', 'example' => 'a walking map encouraged tourists to visit less crowded workshops'],
                     ['title' => 'Homestay Standards', 'subject' => 'homestay standards', 'setting' => 'rural tourism areas', 'people' => 'hosts, guests and tourism officers', 'benefit' => 'raise service quality while keeping local character', 'challenge' => 'checking safety standards without creating too much paperwork', 'example' => 'families attended a short course on hygiene and guest communication'],
@@ -653,10 +653,10 @@ final class ReferenceExamSeeder extends Seeder
             ),
             $this->plan(
                 'vstep-de-thi-thu-09-cong-nghe-giao-duc',
-                'Đề 09 · Công nghệ giáo dục',
+                'Đề 9 · Giáo dục & công nghệ',
                 9,
                 'technology and education',
-                ['Giáo dục', 'Công nghệ'],
+                ['Giáo dục', 'EdTech'],
                 [
                     ['title' => 'Learning Apps for Vocabulary', 'subject' => 'learning apps for vocabulary', 'setting' => 'language classrooms', 'people' => 'learners and teachers', 'benefit' => 'support regular review through short daily practice', 'challenge' => 'encouraging learners to use the app beyond the first week', 'example' => 'a teacher linked app practice with short classroom speaking tasks'],
                     ['title' => 'AI Feedback Tools', 'subject' => 'AI feedback tools', 'setting' => 'writing courses', 'people' => 'students and writing instructors', 'benefit' => 'give quick comments on grammar, organization and word choice', 'challenge' => 'helping learners understand that automated advice is not always complete', 'example' => 'one class compared machine feedback with teacher comments before revising essays'],
@@ -669,7 +669,7 @@ final class ReferenceExamSeeder extends Seeder
                 'Đề 10 · Môi trường & tiêu dùng',
                 10,
                 'environmental choices',
-                ['Môi trường', 'Tiêu dùng bền vững'],
+                ['Môi trường', 'Tiêu dùng xanh'],
                 [
                     ['title' => 'Reusable Packaging', 'subject' => 'reusable packaging', 'setting' => 'cafes and food shops', 'people' => 'customers, shop owners and suppliers', 'benefit' => 'reduce single-use waste from everyday purchases', 'challenge' => 'cleaning and returning containers reliably', 'example' => 'a group of cafes tested a deposit system for takeaway cups'],
                     ['title' => 'Water Saving Campaigns', 'subject' => 'water saving campaigns', 'setting' => 'dry farming districts', 'people' => 'families, farmers and local officials', 'benefit' => 'reduce waste during months when rainfall is low', 'challenge' => 'changing habits before a serious shortage occurs', 'example' => 'local radio messages explained simple ways to reuse household water'],

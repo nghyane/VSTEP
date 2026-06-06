@@ -115,7 +115,7 @@ final class AssessmentResultDisplayService
 
         if ($status === 'below_b1') {
             if ($reasonCode === 'low_asr_confidence') {
-                return 'Audio chưa đủ rõ nên transcript không đáng tin cậy. Hãy thu âm lại trước khi dựa vào điểm AI.';
+                return 'Audio chưa đủ rõ nên transcript không đáng tin cậy. Hãy thu âm lại trước khi dựa vào điểm hệ thống.';
             }
 
             return 'Bài chưa đạt ngưỡng B1. Hãy xem góp ý chi tiết để cải thiện các tiêu chí còn yếu.';

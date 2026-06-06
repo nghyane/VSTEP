@@ -90,7 +90,8 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
 
     public function extractEvidence(AssessmentInput $input, SignalBag $signals, AssessmentRubric $rubric): EvidenceBag
     {
-        if ($input->requirements === []) {
+        $requirements = $input->requirements;
+        if ($requirements === []) {
             throw new AssessmentFailedException('Writing assessment requires task requirements.');
         }
 
@@ -102,8 +103,8 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
         if ($tfParams->isNonAssessable($wordCount) || $copiedPrompt) {
             $evidence = [
                 'points_covered' => 0,
-                'points_required' => max(1, count($input->requirements)),
-                'requirements_met' => array_fill(0, max(1, count($input->requirements)), false),
+                'points_required' => max(1, count($requirements)),
+                'requirements_met' => array_fill(0, max(1, count($requirements)), false),
                 'depth_factor' => 0.0,
                 'has_examples' => false,
                 'has_clear_position' => false,
@@ -119,7 +120,7 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
         $evidence = $this->taskAssessor->assess(
             $text,
             (string) ($input->prompt['prompt'] ?? ''),
-            $input->requirements,
+            $requirements,
             $signals->grammar['errors'],
             $signals->raw['rule_analysis'],
             $this->part($input),

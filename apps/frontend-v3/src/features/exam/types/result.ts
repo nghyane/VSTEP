@@ -3,6 +3,7 @@ import type {
 	AssessmentFeedback,
 	AssessmentResultDisplay,
 	CriterionScore,
+	TeacherGradingRequestState,
 } from "#/features/grading/types"
 import type {
 	Exam,
@@ -35,7 +36,13 @@ export interface McqDetailItem {
 	answered_at: string | null
 }
 
-export type { AssessmentDiagnostics, AssessmentFeedback, AssessmentResultDisplay, CriterionScore }
+export type {
+	AssessmentDiagnostics,
+	AssessmentFeedback,
+	AssessmentResultDisplay,
+	CriterionScore,
+	TeacherGradingRequestState,
+}
 
 export interface WritingFeedbackItem {
 	submission_id: string | null
@@ -54,6 +61,7 @@ export interface WritingFeedbackItem {
 	score_insights: ExamScoreInsight[]
 	feedback: AssessmentFeedback | null
 	calculation_trace: unknown
+	teacher_grading_request: TeacherGradingRequestState | null
 }
 
 export interface SpeakingFeedbackItem {
@@ -73,6 +81,7 @@ export interface SpeakingFeedbackItem {
 	score_insights: ExamScoreInsight[]
 	feedback: AssessmentFeedback | null
 	calculation_trace: unknown
+	teacher_grading_request: TeacherGradingRequestState | null
 }
 
 export interface ExamScoreInsight {

@@ -98,7 +98,7 @@ function TeacherGradingRequestDetailPage() {
 		<Flex vertical gap={24}>
 			<PageHeader
 				title="Chấm bài học viên"
-				subtitle="Nhập điểm theo rubric. Điểm giáo viên sẽ được lưu riêng với điểm AI."
+				subtitle="Nhập điểm theo rubric. Điểm giáo viên sẽ được lưu riêng với điểm hệ thống."
 				extra={
 					<Link to="/teacher/grading-requests">
 						<Button icon={<ArrowLeftOutlined />}>Quay lại</Button>
@@ -207,9 +207,9 @@ function AttemptPanel({ item }: { item: TeacherGradingRequestItem }) {
 				</Typography.Paragraph>
 			</section>
 			{attempt.result && (
-				<Card size="small" title="Điểm AI hiện tại">
+				<Card size="small" title="Điểm hệ thống">
 					<Space orientation="vertical" size={4}>
-						<Tag color="blue">AI</Tag>
+						<Tag color="blue">Hệ thống</Tag>
 						<Typography.Text strong>{attempt.result.overall_band}/10</Typography.Text>
 					</Space>
 				</Card>
@@ -280,7 +280,7 @@ function RequirementReference({ diagnostics }: { diagnostics: TeacherGradingDiag
 
 	return (
 		<Space orientation="vertical" size={8} style={{ width: "100%" }}>
-			<Typography.Text strong>Yêu cầu/nội dung AI kiểm tra</Typography.Text>
+			<Typography.Text strong>Yêu cầu/nội dung hệ thống kiểm tra</Typography.Text>
 			<Flex wrap gap={6}>
 				{word && (
 					<Tag color={word.is_met === false ? "red" : word.is_met === true ? "green" : "default"}>
@@ -444,7 +444,7 @@ function CriterionInput({
 					<Tag>Tối đa {maxScore}</Tag>
 					{aiScore !== null && (
 						<Tag color="geekblue">
-							AI: {aiScore}/{maxScore}
+							Hệ thống: {aiScore}/{maxScore}
 						</Tag>
 					)}
 				</Flex>

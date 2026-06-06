@@ -410,14 +410,33 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
     /** @param array<string,mixed> $prompt */
     private function promptText(array $prompt): string
     {
-        $content = $prompt['content'] ?? [];
-        if (! is_array($content)) {
-            return (string) ($prompt['prompt'] ?? '');
+        if (is_string($prompt['prompt'] ?? null)) {
+            return $prompt['prompt'];
         }
 
-        return implode('. ', array_filter(array_map(
-            fn (mixed $value): string => is_array($value) ? implode(' ', array_filter($value, 'is_string')) : (is_string($value) ? $value : ''),
-            $content,
-        )));
+        $content = $prompt['content'] ?? [];
+
+        return implode('. ', $this->stringValues($content));
+    }
+
+    /** @return list<string> */
+    private function stringValues(mixed $value): array
+    {
+        if (is_string($value)) {
+            $value = trim($value);
+
+            return $value === '' ? [] : [$value];
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $strings = [];
+        foreach ($value as $item) {
+            array_push($strings, ...$this->stringValues($item));
+        }
+
+        return $strings;
     }
 }
