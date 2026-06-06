@@ -2,8 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { FeedbackSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
 import { feedbackImprovements } from "#/features/grading/feedback"
-import { requestTeacherGrading, speakingResultQuery } from "#/features/grading/queries"
+import { assessmentViewQuery, requestTeacherGrading, speakingResultQuery } from "#/features/grading/queries"
 import type {
+	AssessmentView,
+	GradingProgress,
 	RubricMeta,
 	SpeakingGradingResult,
 	TeacherGradingRequestState,
@@ -32,38 +34,54 @@ interface DiagnosticMetricProps {
 
 export function SpeakingResult({ submissionId }: Props) {
 	const queryClient = useQueryClient()
-	const { data, isLoading } = useQuery({
+	const discovery = useQuery({
 		...speakingResultQuery(submissionId),
-		refetchInterval: (query) => (query.state.data?.data ? false : 3000),
+		refetchInterval: (query) => (query.state.data?.attempt_id ? false : 3000),
 	})
-	const result = data?.data
-	const rubric = data?.rubric ?? null
-	const attemptId = data?.attempt_id ?? null
-	const teacherGradingState = data?.teacher_grading_request ?? null
+	const attemptId = discovery.data?.attempt_id ?? null
+	const view = useQuery({
+		...assessmentViewQuery(attemptId ?? ""),
+		enabled: attemptId !== null,
+		refetchInterval: (query) => {
+			const status = query.state.data?.data.status
+			return status === "ready" || status === "failed" ? false : 1500
+		},
+		retry: false,
+	})
+	const viewData = view.data?.data ?? null
+	const result = speakingResult(viewData)
+	const rubric = viewData?.rubric ?? discovery.data?.rubric ?? null
 	const teacherGrading = useMutation({
 		mutationFn: () => requestTeacherGrading(attemptId ?? ""),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["practice", "speaking", "result", submissionId] })
+			if (attemptId) queryClient.invalidateQueries({ queryKey: ["assessment-attempts", attemptId, "view"] })
 		},
 		onError: () => {},
 	})
 
-	if (isLoading || !result) {
-		return (
-			<div className="text-center py-12">
-				<img src="/mascot/lac-happy.png" alt="" className="w-20 h-20 mx-auto mb-4 object-contain" />
-				<p className="font-bold text-lg text-foreground">AI đang chấm bài...</p>
-				<p className="text-sm text-muted mt-1">Thường mất 10–30 giây, trang sẽ tự cập nhật</p>
-				<div className="mt-4 w-32 h-1.5 bg-background rounded-full mx-auto overflow-hidden">
-					<div className="h-full bg-skill-speaking rounded-full animate-pulse" style={{ width: "60%" }} />
-				</div>
-			</div>
-		)
+	if (discovery.isError) {
+		return <SpeakingError message={errorMessage(discovery.error)} />
+	}
+
+	if (view.isError || viewData?.status === "failed") {
+		return <SpeakingError message={viewData?.error ?? errorMessage(view.error)} />
+	}
+
+	if (
+		discovery.isLoading ||
+		!attemptId ||
+		viewData?.status === "pending" ||
+		viewData?.status === "processing" ||
+		!result
+	) {
+		return <SpeakingPending progress={normalizeProgress(viewData?.progress)} />
 	}
 
 	const diagnostics = result.diagnostics
 	const pronScore = result.pronunciation_report?.accuracy_score ?? diagnostics?.pronunciation?.overall ?? null
-	const teacherGradingStatus = teacherGrading.data?.data.status ?? teacherGradingState?.status ?? "none"
+	const teacherGradingState = viewData.teacher_grading_request
+	const teacherGradingStatus = teacherGrading.data?.data.status ?? teacherGradingState.status
 
 	return (
 		<div className="space-y-6">
@@ -128,6 +146,54 @@ export function SpeakingResult({ submissionId }: Props) {
 			)}
 		</div>
 	)
+}
+
+function SpeakingPending({ progress }: { progress: GradingProgress[] }) {
+	const width = `${Math.min(90, 35 + progress.length * 18)}%`
+
+	return (
+		<div className="text-center py-12">
+			<img src="/mascot/lac-happy.png" alt="" className="w-20 h-20 mx-auto mb-4 object-contain" />
+			<p className="font-bold text-lg text-foreground">AI đang chấm bài...</p>
+			<p className="text-sm text-muted mt-1">Thường mất 10-30 giây, trang sẽ tự cập nhật.</p>
+			<div className="mt-4 w-32 h-1.5 bg-background rounded-full mx-auto overflow-hidden">
+				<div className="h-full bg-skill-speaking rounded-full transition-all" style={{ width }} />
+			</div>
+		</div>
+	)
+}
+
+function SpeakingError({ message }: { message: string | null }) {
+	return (
+		<div className="card max-w-lg mx-auto p-8 text-center space-y-4">
+			<img src="/mascot/lac-sad.png" alt="" className="w-20 h-20 mx-auto object-contain" />
+			<div>
+				<p className="font-bold text-lg text-foreground">Có lỗi khi chấm bài nói</p>
+				<p className="text-sm text-subtle mt-1">{message ?? "Vui lòng thử lại sau."}</p>
+			</div>
+			<a href="/luyen-tap/noi" className="inline-flex text-sm font-bold text-skill-speaking">
+				Quay lại luyện nói
+			</a>
+		</div>
+	)
+}
+
+function speakingResult(view: AssessmentView | null): SpeakingGradingResult | null {
+	if (!view || view.context.skill !== "speaking" || !view.result) return null
+	const result = view.result as SpeakingGradingResult
+	const pronunciation = view.result.diagnostics?.pronunciation?.overall
+	return {
+		...result,
+		transcript:
+			result.transcript ?? view.context.transcript ?? view.result.diagnostics?.speech?.transcript ?? null,
+		pronunciation_report:
+			result.pronunciation_report ?? (isNumber(pronunciation) ? { accuracy_score: pronunciation } : null),
+	}
+}
+
+function normalizeProgress(progress: GradingProgress[] | GradingProgress | undefined): GradingProgress[] {
+	if (!progress) return []
+	return Array.isArray(progress) ? progress : [progress]
 }
 
 function TeacherGradingPanel({

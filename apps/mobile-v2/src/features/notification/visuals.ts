@@ -19,12 +19,17 @@ export type NotifVisual =
 const VISUALS: Record<string, NotifVisual> = {
   topup_completed: { brandIcon: "coin", tone: "coin" },
   coin_received: { iconName: "gift-outline", tone: "coin" },
+  coin_spent: { iconName: "remove-circle-outline", tone: "destructive" },
+  assessment_completed: { iconName: "trophy-outline", tone: "warning" },
+  assessment_failed: { iconName: "alert-circle-outline", tone: "destructive" },
   grading_completed: { iconName: "trophy-outline", tone: "warning" },
   grading_failed: { iconName: "alert-circle-outline", tone: "destructive" },
   course_enrolled: { iconName: "book-outline", tone: "primary" },
   course_unenrolled: { iconName: "trash-outline", tone: "destructive" },
   booking_created: { iconName: "time-outline", tone: "info" },
   booking_cancelled: { iconName: "trash-outline", tone: "destructive" },
+  booking_meet_url_updated: { iconName: "videocam-outline", tone: "primary" },
+  teacher_grading_completed: { iconName: "ribbon-outline", tone: "warning" },
   study_reminder: { iconName: "alarm-outline", tone: "warning" },
 };
 

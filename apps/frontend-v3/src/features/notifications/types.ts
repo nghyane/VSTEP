@@ -5,6 +5,9 @@
 export type NotificationType =
 	| "topup_completed"
 	| "coin_received"
+	| "coin_spent"
+	| "assessment_completed"
+	| "assessment_failed"
 	| "grading_completed"
 	| "grading_failed"
 	| "course_enrolled"
@@ -13,6 +16,7 @@ export type NotificationType =
 	| "booking_cancelled"
 	| "booking_meet_url_updated"
 	| "teacher_grading_completed"
+	| "study_reminder"
 
 export interface Notification {
 	id: string

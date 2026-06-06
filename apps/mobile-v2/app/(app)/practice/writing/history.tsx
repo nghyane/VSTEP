@@ -65,6 +65,7 @@ export default function WritingHistoryScreen() {
 function HistoryCard({ item }: { item: WritingHistoryItem }) {
   const c = useThemeColors();
   const router = useRouter();
+  const canOpenGrading = !!item.attemptId;
 
   const dateStr = item.submittedAt
     ? new Date(item.submittedAt).toLocaleDateString("vi-VN", {
@@ -79,13 +80,15 @@ function HistoryCard({ item }: { item: WritingHistoryItem }) {
   return (
     <HapticTouchable
       style={s.cardWrapper}
-      onPress={() =>
+      disabled={!canOpenGrading}
+      onPress={() => {
+        if (!item.attemptId) return;
         router.push(
           `/(app)/grading/writing/${item.attemptId}` as never,
-        )
-      }
+        );
+      }}
     >
-      <DepthCard style={s.card}>
+      <DepthCard style={canOpenGrading ? s.card : { ...s.card, opacity: 0.7 }}>
         <View style={s.cardHeader}>
           <Text style={[s.cardTitle, { color: c.foreground }]}>
             {item.prompt?.title ?? "Bài viết không rõ đề"}

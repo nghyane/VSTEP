@@ -6,6 +6,7 @@ import {
   Text,
   View,
   type GestureResponderEvent,
+  type LayoutRectangle,
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 
@@ -34,7 +35,9 @@ export function CourseEnrollSheet({ visible, course, profile, submitting, onClos
   const [agreed, setAgreed] = useState(false);
   const [paths, setPaths] = useState<string[]>([]);
   const [draftPath, setDraftPath] = useState("");
-  const [signatureSize, setSignatureSize] = useState({ width: SIGNATURE_WIDTH, height: SIGNATURE_HEIGHT });
+  const [isSigning, setIsSigning] = useState(false);
+  const signaturePadRef = useRef<View>(null);
+  const signatureFrame = useRef<LayoutRectangle>({ x: 0, y: 0, width: SIGNATURE_WIDTH, height: SIGNATURE_HEIGHT });
   const currentPoints = useRef<{ x: number; y: number }[]>([]);
   const hasSignature = paths.length > 0;
   const canSubmit = agreed && hasSignature && !submitting;
@@ -51,10 +54,13 @@ export function CourseEnrollSheet({ visible, course, profile, submitting, onClos
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: (event) => {
-        currentPoints.current = [pointFromEvent(event, signatureSize)];
+        setIsSigning(true);
+        measureSignaturePad();
+        currentPoints.current = [pointFromEvent(event, signatureFrame.current)];
+        setDraftPath(pathFromPoints(currentPoints.current));
       },
       onPanResponderMove: (event) => {
-        currentPoints.current = [...currentPoints.current.slice(-700), pointFromEvent(event, signatureSize)];
+        currentPoints.current = [...currentPoints.current.slice(-700), pointFromEvent(event, signatureFrame.current)];
         setDraftPath(pathFromPoints(currentPoints.current));
       },
       onPanResponderRelease: () => {
@@ -62,19 +68,27 @@ export function CourseEnrollSheet({ visible, course, profile, submitting, onClos
         if (path) setPaths((prev) => [...prev.filter(Boolean), path]);
         setDraftPath("");
         currentPoints.current = [];
+        setIsSigning(false);
       },
       onPanResponderTerminate: () => {
         setDraftPath("");
         currentPoints.current = [];
+        setIsSigning(false);
       },
     }),
-    [signatureSize],
+    [],
   );
 
   function clearSignature() {
     setPaths([]);
     setDraftPath("");
     currentPoints.current = [];
+  }
+
+  function measureSignaturePad() {
+    signaturePadRef.current?.measureInWindow((x, y, width, height) => {
+      signatureFrame.current = { x, y, width: Math.max(1, width), height: Math.max(1, height) };
+    });
   }
 
   function handleAgreeToggle() {
@@ -92,7 +106,7 @@ export function CourseEnrollSheet({ visible, course, profile, submitting, onClos
 
   return (
     <BottomSheet visible={visible} onClose={submitting ? () => undefined : onClose}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} scrollEnabled={!isSigning}>
         <View>
           <Text style={[styles.title, { color: c.foreground }]}>Đăng ký khóa học</Text>
           <Text style={[styles.subtitle, { color: c.subtle }]}>Thanh toán một lần qua PayOS cho toàn khóa.</Text>
@@ -131,11 +145,13 @@ export function CourseEnrollSheet({ visible, course, profile, submitting, onClos
             </HapticTouchable>
           </View>
           <View
+            ref={signaturePadRef}
+            collapsable={false}
             style={[styles.signaturePad, { backgroundColor: c.surface, borderColor: agreed ? c.warning : c.border }]}
-            onLayout={(event) => setSignatureSize(event.nativeEvent.layout)}
+            onLayout={() => requestAnimationFrame(measureSignaturePad)}
             {...(agreed && !submitting ? panResponder.panHandlers : {})}
           >
-            <Svg width="100%" height="100%" viewBox={`0 0 ${SIGNATURE_WIDTH} ${SIGNATURE_HEIGHT}`}>
+            <Svg pointerEvents="none" width="100%" height="100%" viewBox={`0 0 ${SIGNATURE_WIDTH} ${SIGNATURE_HEIGHT}`}>
               {[...paths, draftPath].filter(Boolean).map((path, index) => (
                 <Path key={`${path}-${index}`} d={path} stroke={c.foreground} strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
               ))}
@@ -177,13 +193,13 @@ function InfoRow({ label, value, strong = false }: { label: string; value: strin
 
 function pointFromEvent(
   event: GestureResponderEvent,
-  size: { width: number; height: number },
+  frame: { x: number; y: number; width: number; height: number },
 ): { x: number; y: number } {
-  const width = Math.max(1, size.width);
-  const height = Math.max(1, size.height);
+  const width = Math.max(1, frame.width);
+  const height = Math.max(1, frame.height);
   return {
-    x: clamp((event.nativeEvent.locationX / width) * SIGNATURE_WIDTH, 0, SIGNATURE_WIDTH),
-    y: clamp((event.nativeEvent.locationY / height) * SIGNATURE_HEIGHT, 0, SIGNATURE_HEIGHT),
+    x: clamp(((event.nativeEvent.pageX - frame.x) / width) * SIGNATURE_WIDTH, 0, SIGNATURE_WIDTH),
+    y: clamp(((event.nativeEvent.pageY - frame.y) / height) * SIGNATURE_HEIGHT, 0, SIGNATURE_HEIGHT),
   };
 }
 
