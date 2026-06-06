@@ -12,6 +12,7 @@ use App\Enums\NotificationType;
 use App\Enums\SlotStatus;
 use App\Models\CoinTransaction;
 use App\Models\Course;
+use App\Models\CourseScheduleItem;
 use App\Models\TeacherBooking;
 use App\Models\TeacherSlot;
 use App\Services\Admin\Course\Contracts\AdminCourseBookingInterface;
@@ -54,15 +55,17 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
     public function createSlot(Course $course, array $data): TeacherSlot
     {
         $startsAt = CarbonImmutable::parse($data['starts_at']);
+        $duration = (int) ($data['duration_minutes'] ?? 30);
         $this->guardSlotWithinCourseWindow($course, $startsAt);
-        $this->guardSlotConflict($course, $startsAt);
+        $this->guardSlotConflict($course, $startsAt, $duration);
+        $this->guardSlotDoesNotOverlapSchedule($course, $startsAt, $duration);
 
         try {
             return TeacherSlot::create([
                 'course_id' => $course->id,
                 'teacher_id' => $course->teacher_id,
                 'starts_at' => $startsAt,
-                'duration_minutes' => (int) ($data['duration_minutes'] ?? 30),
+                'duration_minutes' => $duration,
                 'status' => SlotStatus::Open,
             ]);
         } catch (UniqueConstraintViolationException) {
@@ -127,6 +130,15 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
                 if (isset($existingSet[$key])) {
                     continue;
                 }
+                if ($this->slotConflicts($course, $startsAt, $duration)) {
+                    continue;
+                }
+                if ($this->slotOverlapsSchedule($course, $startsAt, $duration)) {
+                    continue;
+                }
+                if ($this->candidateOverlapsRows($startsAt, $duration, $rows)) {
+                    continue;
+                }
                 $rows[] = [
                     'id' => (string) Str::uuid(), 'course_id' => $course->id,
                     'teacher_id' => $course->teacher_id, 'starts_at' => $startsAt,
@@ -152,19 +164,28 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
     public function updateSlot(TeacherSlot $slot, array $data): TeacherSlot
     {
         $this->guardSlotHasActiveBooking($slot, 'Slot đang có học viên đặt — hãy hủy booking trước khi sửa.');
+        $newStart = $slot->starts_at instanceof CarbonImmutable
+            ? $slot->starts_at
+            : CarbonImmutable::parse($slot->starts_at);
+        $newDuration = (int) $slot->duration_minutes;
         if (array_key_exists('starts_at', $data)) {
             $newStart = CarbonImmutable::parse($data['starts_at']);
             if (! $slot->starts_at->equalTo($newStart)) {
                 if ($newStart->lessThanOrEqualTo(CarbonImmutable::now())) {
                     throw ValidationException::withMessages(['starts_at' => ['Không thể dời slot về thời điểm đã qua.']]);
                 }
-                $this->guardSlotWithinCourseWindow($slot->course, $newStart);
-                $this->guardSlotConflict($slot->course, $newStart, exceptId: $slot->id);
-                $slot->starts_at = $newStart;
             }
         }
         if (array_key_exists('duration_minutes', $data)) {
-            $slot->duration_minutes = (int) $data['duration_minutes'];
+            $newDuration = (int) $data['duration_minutes'];
+        }
+
+        if (! $slot->starts_at->equalTo($newStart) || (int) $slot->duration_minutes !== $newDuration) {
+            $this->guardSlotWithinCourseWindow($slot->course, $newStart);
+            $this->guardSlotConflict($slot->course, $newStart, $newDuration, exceptId: $slot->id);
+            $this->guardSlotDoesNotOverlapSchedule($slot->course, $newStart, $newDuration);
+            $slot->starts_at = $newStart;
+            $slot->duration_minutes = $newDuration;
         }
         $slot->save();
 
@@ -420,15 +441,69 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
         }
     }
 
-    private function guardSlotConflict(Course $course, CarbonImmutable $startsAt, ?string $exceptId = null): void
+    private function guardSlotConflict(Course $course, CarbonImmutable $startsAt, int $durationMinutes, ?string $exceptId = null): void
     {
-        $query = TeacherSlot::query()->where('course_id', $course->id)->where('starts_at', $startsAt);
+        if ($this->slotConflicts($course, $startsAt, $durationMinutes, $exceptId)) {
+            throw ValidationException::withMessages(['starts_at' => ['Giáo viên đã có slot 1-1 khác trùng khung giờ này.']]);
+        }
+    }
+
+    private function slotConflicts(Course $course, CarbonImmutable $startsAt, int $durationMinutes, ?string $exceptId = null): bool
+    {
+        $endsAt = $startsAt->addMinutes($durationMinutes);
+        $query = TeacherSlot::query()
+            ->where('teacher_id', $course->teacher_id)
+            ->where('starts_at', '<', $endsAt)
+            ->whereRaw("starts_at + (duration_minutes * interval '1 minute') > ?", [$startsAt]);
         if ($exceptId !== null) {
             $query->where('id', '!=', $exceptId);
         }
-        if ($query->exists()) {
-            throw ValidationException::withMessages(['starts_at' => ['Đã có slot khác bắt đầu cùng giờ này trong khóa.']]);
+
+        return $query->exists();
+    }
+
+    /** @param array<int, array{starts_at: CarbonImmutable, duration_minutes: int}> $rows */
+    private function candidateOverlapsRows(CarbonImmutable $startsAt, int $durationMinutes, array $rows): bool
+    {
+        $endsAt = $startsAt->addMinutes($durationMinutes);
+
+        foreach ($rows as $row) {
+            $rowStart = $row['starts_at'];
+            $rowEnd = $rowStart->addMinutes($row['duration_minutes']);
+            if ($rowStart->lt($endsAt) && $rowEnd->gt($startsAt)) {
+                return true;
+            }
         }
+
+        return false;
+    }
+
+    private function guardSlotDoesNotOverlapSchedule(Course $course, CarbonImmutable $startsAt, int $durationMinutes): void
+    {
+        if ($this->slotOverlapsSchedule($course, $startsAt, $durationMinutes)) {
+            throw ValidationException::withMessages([
+                'starts_at' => ['Khung giờ này trùng với buổi học chính của giáo viên.'],
+            ]);
+        }
+    }
+
+    private function slotOverlapsSchedule(Course $course, CarbonImmutable $startsAt, int $durationMinutes): bool
+    {
+        $tz = 'Asia/Ho_Chi_Minh';
+        $slotStart = $startsAt->setTimezone($tz);
+        $slotEnd = $slotStart->addMinutes($durationMinutes);
+
+        return CourseScheduleItem::query()
+            ->whereDate('date', $slotStart->toDateString())
+            ->where('status', '!=', 'cancelled')
+            ->whereHas('course', fn ($q) => $q->where('teacher_id', $course->teacher_id))
+            ->get(['date', 'start_time', 'end_time'])
+            ->contains(function (CourseScheduleItem $item) use ($slotStart, $slotEnd, $tz): bool {
+                $itemStart = CarbonImmutable::parse($item->date->toDateString().' '.substr((string) $item->start_time, 0, 5), $tz);
+                $itemEnd = CarbonImmutable::parse($item->date->toDateString().' '.substr((string) $item->end_time, 0, 5), $tz);
+
+                return $itemStart->lt($slotEnd) && $itemEnd->gt($slotStart);
+            });
     }
 
     private function guardSlotHasActiveBooking(TeacherSlot $slot, string $message): void
