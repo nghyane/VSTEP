@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Be Vietnam Pro", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --font-math: "STIX Two Text", "JetBrains Mono", Georgia, serif;
+  --color-bg: #faf9f7;
+  --color-surface: #ffffff;
+  --color-border: #e7e5e4;
+  --color-fg: #1c1917;
+  --color-fg-2: #57534e;
+  --color-fg-3: #a8a29e;
+  --radius-card: 12px;
+}
+
+@layer base {
+  body {
+    @apply bg-bg text-fg antialiased;
+    min-height: 100dvh;
+    font-family: var(--font-sans);
+    font-weight: 400;
+  }
+}
+
+.page-shell { min-height:100dvh; display:flex; flex-direction:column }
+
+.sidebar-link { display:block; padding:4px 12px; font-family:var(--font-sans); font-size:13px; color:#a8a29e; border-radius:6px; transition: color .1s, background .1s }
+.sidebar-link:hover { color:#57534e }
+.sidebar-link.active { color:#1c1917; background:#f0ede8; font-weight:500 }
+.sidebar-section { font-family:var(--font-sans); font-size:11px; font-weight:600; color:#a8a29e; text-transform:uppercase; letter-spacing:.05em; padding:0 12px; margin-bottom:4px }
+
+.prose h2 { font-family:var(--font-sans); font-size:20px; font-weight:700; margin-top:40px; margin-bottom:12px; padding-top:20px; border-top:1px solid #e7e5e4 }
+.prose h2:first-child { margin-top:0; padding-top:0; border-top:none }
+.prose h3 { font-family:var(--font-sans); font-size:15px; font-weight:600; margin-top:28px; margin-bottom:8px; color:#1c1917 }
+.prose p { font-size:14px; color:#57534e; line-height:1.7; margin-bottom:12px }
+.prose ul { font-size:14px; color:#57534e; line-height:1.7; margin-bottom:12px; padding-left:20px }
+.prose li { margin-bottom:4px }
+.prose li::marker { color:#a8a29e }
+.prose strong { color:#292524; font-weight:600 }
+.prose a { color:#1c1917; text-decoration:underline; text-underline-offset:2px }
+.prose a:hover { color:#57534e }
+
+.code-block { background:#1c1917; color:#e7e5e4; border-radius:10px; padding:16px 20px; font-family:var(--font-mono); font-size:13px; line-height:1.7; overflow-x:auto }
+.code-block .kw { color:#c4b5fd }
+.code-block .fn { color:#93c5fd }
+.code-block .str { color:#86efac }
+.code-block .cm { color:#6b7280 }
+.code-block strong { color:#e7e5e4; font-weight:500 }
+.code-inline { background:#f0ede8; padding:2px 6px; border-radius:4px; font-family:var(--font-mono); font-size:12px }
+
+.formula-block { margin:14px 0 10px }
+.formula-line { display:grid; grid-template-columns:92px minmax(430px,1fr); gap:16px; align-items:baseline; white-space:nowrap }
+.formula-line strong { font-family:var(--font-math); font-size:15px; font-weight:600; letter-spacing:.01em }
+.formula-line sub, .formula-note sub { font-size:.72em; line-height:0; vertical-align:baseline; position:relative; bottom:-.2em }
+.formula-line em { color:#6b7280; font-size:12px; font-style:normal; margin-left:18px }
+
+.source-note {
+  font-size:12px !important;
+  color:#78716c !important;
+  line-height:1.6 !important;
+  margin:8px 0 12px !important;
+}
+.formula-note {
+  font-size:12px !important;
+  color:#78716c !important;
+  line-height:1.6 !important;
+  margin:6px 0 10px !important;
+}
+
+@media (max-width:768px) { .sidebar { display:none } }
