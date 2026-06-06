@@ -128,6 +128,8 @@ export interface WritingGradingResult {
   attemptId: string | null;
   rubricScores: Record<string, number> | null;
   overallBand: number | null;
+  feedback: AssessmentFeedback | null;
+  hasDetailedFeedback: boolean;
   strengths: string[];
   improvements: { message: string; explanation: string }[];
   rewrites: { original: string; improved: string; reason: string }[];
@@ -277,6 +279,8 @@ export interface SpeakingGradingResult {
   attemptId: string | null;
   criterionScores: CriterionScore[];
   overallBand: number | null;
+  feedback: AssessmentFeedback | null;
+  hasDetailedFeedback: boolean;
   strengths: string[];
   improvements: { message: string; explanation: string }[];
   pronunciationReport: { accuracyScore: number } | null;
@@ -292,15 +296,11 @@ export interface CriterionScore {
   weight?: number;
 }
 
-type FeedbackTextItem = string | { message?: string; explanation?: string };
-
-type FeedbackRewriteItem = string | { original?: string; improved?: string; reason?: string };
-
 interface AssessmentFeedback {
-  strengths?: FeedbackTextItem[];
-  improvements?: FeedbackTextItem[];
-  evidenceNotes?: string[];
-  rewrites?: FeedbackRewriteItem[];
+  strengths?: unknown;
+  improvements?: unknown;
+  evidenceNotes?: unknown;
+  rewrites?: unknown;
 }
 
 export type { AssessmentFeedback };
@@ -867,14 +867,16 @@ function normalizeWritingGradingResult(response: PracticeGradingResultResponse |
   if (!result) return null;
 
   const feedback = result.feedback;
-  const improvementItems = feedback?.improvements && feedback.improvements.length > 0
-    ? feedback.improvements
-    : feedback?.evidenceNotes ?? [];
+  const improvementItems = hasFeedbackItems(feedback?.improvements)
+    ? feedback?.improvements
+    : feedback?.evidenceNotes;
 
   return {
     attemptId: "attemptId" in response ? response.attemptId ?? null : null,
     rubricScores: normalizeWritingRubricScores(result.criterionScores),
     overallBand: result.overallBand,
+    feedback: feedback ?? null,
+    hasDetailedFeedback: hasDetailedFeedback(feedback),
     strengths: normalizeTextItems(feedback?.strengths),
     improvements: normalizeImprovementItems(improvementItems),
     rewrites: normalizeRewriteItems(feedback?.rewrites),
@@ -891,14 +893,16 @@ function normalizeSpeakingGradingResult(response: PracticeGradingResultResponse 
   if (!result) return null;
 
   const feedback = result.feedback;
-  const improvementItems = feedback?.improvements && feedback.improvements.length > 0
-    ? feedback.improvements
-    : feedback?.evidenceNotes ?? [];
+  const improvementItems = hasFeedbackItems(feedback?.improvements)
+    ? feedback?.improvements
+    : feedback?.evidenceNotes;
 
   return {
     attemptId: "attemptId" in response ? response.attemptId ?? null : null,
     overallBand: result.overallBand,
     criterionScores: result.criterionScores ?? [],
+    feedback: feedback ?? null,
+    hasDetailedFeedback: hasDetailedFeedback(feedback),
     strengths: normalizeTextItems(feedback?.strengths),
     improvements: normalizeImprovementItems(improvementItems),
     pronunciationReport: normalizePronunciationReport(result),
@@ -935,28 +939,81 @@ function writingRubricKey(key: string): string {
   }
 }
 
-function normalizeTextItems(items: FeedbackTextItem[] | undefined): string[] {
-  return (items ?? [])
-    .map((item) => (typeof item === "string" ? item : item.message ?? ""))
+function normalizeTextItems(items: unknown): string[] {
+  return normalizeFeedbackItems(items)
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (!isRecord(item)) return "";
+      return stringValue(item.message) ?? stringValue(item.label) ?? "";
+    })
     .filter((item) => item.trim().length > 0);
 }
 
-function normalizeImprovementItems(items: FeedbackTextItem[] | undefined) {
-  return (items ?? [])
+function normalizeImprovementItems(items: unknown) {
+  return normalizeFeedbackItems(items)
     .map((item) => {
       if (typeof item === "string") return { message: item, explanation: "" };
-      return { message: item.message ?? "", explanation: item.explanation ?? "" };
+      if (!isRecord(item)) return { message: "", explanation: "" };
+      return {
+        message: stringValue(item.message) ?? stringValue(item.label) ?? "",
+        explanation: stringValue(item.explanation) ?? stringValue(item.detail) ?? "",
+      };
     })
     .filter((item) => item.message.trim().length > 0);
 }
 
-function normalizeRewriteItems(items: FeedbackRewriteItem[] | undefined) {
-  return (items ?? [])
+function normalizeRewriteItems(items: unknown) {
+  return normalizeFeedbackItems(items)
     .map((item) => {
       if (typeof item === "string") return { original: "", improved: item, reason: "" };
-      return { original: item.original ?? "", improved: item.improved ?? "", reason: item.reason ?? "" };
+      if (!isRecord(item)) return { original: "", improved: "", reason: "" };
+      return {
+        original: stringValue(item.original) ?? "",
+        improved: stringValue(item.improved) ?? "",
+        reason: stringValue(item.reason) ?? "",
+      };
     })
     .filter((item) => item.original.trim().length > 0 || item.improved.trim().length > 0);
+}
+
+function hasFeedbackItems(items: unknown): boolean {
+  return normalizeFeedbackItems(items).length > 0;
+}
+
+function hasDetailedFeedback(feedback: AssessmentFeedback | null | undefined): boolean {
+  return (
+    hasFeedbackItems(feedback?.strengths) ||
+    hasFeedbackItems(feedback?.improvements) ||
+    hasFeedbackItems(feedback?.rewrites)
+  );
+}
+
+function normalizeFeedbackItems(items: unknown): unknown[] {
+  if (!items) return [];
+  if (Array.isArray(items)) return items;
+  if (!isRecord(items)) return [items];
+  if (isFeedbackItemRecord(items)) return [items];
+  return Object.values(items);
+}
+
+function isFeedbackItemRecord(item: Record<string, unknown>): boolean {
+  return (
+    typeof item.message === "string" ||
+    typeof item.explanation === "string" ||
+    typeof item.label === "string" ||
+    typeof item.detail === "string" ||
+    typeof item.original === "string" ||
+    typeof item.improved === "string" ||
+    typeof item.reason === "string"
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
 }
 
 function normalizePronunciationReport(result: AssessmentResultPayload): { accuracyScore: number } | null {

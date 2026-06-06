@@ -150,12 +150,13 @@ export default function SpeakingGradingScreen() {
             <AIFeedbackPanel
               attemptId={data.attemptId}
               feedbackRequest={data.feedbackRequest}
+              feedbackBase={data.feedback}
               feedbackGenerated={feedbackGenerated}
               pending={feedbackMutation.isPending}
               error={feedbackMutation.error ? getApiErrorMessage(feedbackMutation.error) : null}
               accentColor={accentText}
               onRequest={() => feedbackMutation.mutate()}
-              hasBaseFeedback={data.strengths.length > 0 || data.improvements.length > 0}
+              hasBaseFeedback={data.hasDetailedFeedback}
             />
 
             <TeacherGradingPanel

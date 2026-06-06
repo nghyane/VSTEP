@@ -8,12 +8,10 @@ import { DepthButton } from "@/components/DepthButton";
 import type { FeedbackRequestState, AssessmentFeedback } from "@/hooks/use-practice";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
-type FeedbackTextItem = string | { message?: string; explanation?: string };
-type FeedbackRewriteItem = string | { original?: string; improved?: string; reason?: string };
-
 interface Props {
   attemptId: string | null;
   feedbackRequest: FeedbackRequestState | null;
+  feedbackBase: AssessmentFeedback | null;
   feedbackGenerated: AssessmentFeedback | null;
   pending: boolean;
   error: string | null;
@@ -26,6 +24,7 @@ interface Props {
 export function AIFeedbackPanel({
   attemptId,
   feedbackRequest,
+  feedbackBase,
   feedbackGenerated,
   pending,
   error,
@@ -37,18 +36,18 @@ export function AIFeedbackPanel({
   const canRequest = feedbackRequest?.canRequest === true;
   const requested = feedbackRequest?.requested === true;
   const cost = feedbackRequest?.costCoins ?? 0;
+  const aiFeedback = feedbackGenerated ?? (hasBaseFeedback ? feedbackBase : null);
   const hasGenerated = feedbackGenerated !== null;
 
   // Mirrors fe v3 FeedbackPanel: paid feedback OR base result feedback = "hasFeedback"
-  const aiFeedback = feedbackGenerated ?? (hasBaseFeedback ? {} as AssessmentFeedback : null);
   const hasFeedback = aiFeedback !== null;
 
   if (!attemptId || !canRequest) return null;
 
   const strengths = normalizeTextItems(aiFeedback?.strengths);
   const improvements = normalizeImprovementItems(
-    (aiFeedback?.improvements && aiFeedback.improvements.length > 0)
-      ? aiFeedback.improvements
+    hasFeedbackItems(aiFeedback?.improvements)
+      ? aiFeedback?.improvements
       : aiFeedback?.evidenceNotes,
   );
   const rewrites = normalizeRewriteItems(aiFeedback?.rewrites);
@@ -76,14 +75,18 @@ export function AIFeedbackPanel({
         </View>
       </View>
 
-      {!hasFeedback && !requested ? (
+      {!hasFeedback ? (
         <View style={s.requestRow}>
-          <View style={[s.coinLabel, { backgroundColor: c.coinTint, borderColor: c.coin }]}>
-            <BrandIcon name="coin" size={12} />
-            <Text style={[s.coinText, { color: c.coinDark }]}>{cost} xu</Text>
-          </View>
+          {requested ? (
+            <Text style={[s.statusText, { color: c.mutedForeground }]}>Đã thanh toán.</Text>
+          ) : (
+            <View style={[s.coinLabel, { backgroundColor: c.coinTint, borderColor: c.coin }]}>
+              <BrandIcon name="coin" size={12} />
+              <Text style={[s.coinText, { color: c.coinDark }]}>{cost} xu</Text>
+            </View>
+          )}
           <DepthButton variant="coin" onPress={onRequest} disabled={pending}>
-            {pending ? "Đang xử lý..." : "Nhận xét từ AI"}
+            {pending ? "Đang xử lý..." : requested ? "Tải nhận xét AI" : "Nhận xét từ AI"}
           </DepthButton>
         </View>
       ) : null}
@@ -102,7 +105,7 @@ export function AIFeedbackPanel({
         </View>
       ) : null}
 
-      {requested && !hasGenerated ? (
+      {requested && !hasFeedback ? (
         <View style={[s.statusRow, { backgroundColor: c.surfaceTint }]}>
           <Ionicons name="time-outline" size={16} color={c.coinDark} />
           <Text style={[s.statusText, { color: c.mutedForeground }]}>Đã thanh toán. Đang chờ AI phản hồi...</Text>
@@ -155,20 +158,73 @@ function FeedbackBlock({ title, tone, items }: { title: string; tone: "success" 
   );
 }
 
-function normalizeTextItems(items: FeedbackTextItem[] | undefined): string[] {
-  return (items ?? []).map((item) => typeof item === "string" ? item : item.message ?? item.explanation ?? "").filter(Boolean);
+function normalizeTextItems(items: unknown): string[] {
+  return normalizeFeedbackItems(items)
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (!isRecord(item)) return "";
+      return stringValue(item.message) ?? stringValue(item.label) ?? "";
+    })
+    .filter((item) => item.trim().length > 0);
 }
 
-function normalizeImprovementItems(items: FeedbackTextItem[] | undefined): { message: string; explanation: string }[] {
-  return (items ?? [])
-    .map((item) => typeof item === "string" ? { message: item, explanation: "" } : { message: item.message ?? item.explanation ?? "", explanation: item.explanation ?? "" })
-    .filter((item) => item.message.length > 0);
+function normalizeImprovementItems(items: unknown): { message: string; explanation: string }[] {
+  return normalizeFeedbackItems(items)
+    .map((item) => {
+      if (typeof item === "string") return { message: item, explanation: "" };
+      if (!isRecord(item)) return { message: "", explanation: "" };
+      return {
+        message: stringValue(item.message) ?? stringValue(item.label) ?? "",
+        explanation: stringValue(item.explanation) ?? stringValue(item.detail) ?? "",
+      };
+    })
+    .filter((item) => item.message.trim().length > 0);
 }
 
-function normalizeRewriteItems(items: FeedbackRewriteItem[] | undefined): { original: string; improved: string; reason: string }[] {
-  return (items ?? [])
-    .map((item) => typeof item === "string" ? { original: item, improved: item, reason: "" } : { original: item.original ?? "", improved: item.improved ?? "", reason: item.reason ?? "" })
-    .filter((item) => item.original.length > 0 || item.improved.length > 0);
+function normalizeRewriteItems(items: unknown): { original: string; improved: string; reason: string }[] {
+  return normalizeFeedbackItems(items)
+    .map((item) => {
+      if (typeof item === "string") return { original: "", improved: item, reason: "" };
+      if (!isRecord(item)) return { original: "", improved: "", reason: "" };
+      return {
+        original: stringValue(item.original) ?? "",
+        improved: stringValue(item.improved) ?? "",
+        reason: stringValue(item.reason) ?? "",
+      };
+    })
+    .filter((item) => item.original.trim().length > 0 || item.improved.trim().length > 0);
+}
+
+function hasFeedbackItems(items: unknown): boolean {
+  return normalizeFeedbackItems(items).length > 0;
+}
+
+function normalizeFeedbackItems(items: unknown): unknown[] {
+  if (!items) return [];
+  if (Array.isArray(items)) return items;
+  if (!isRecord(items)) return [items];
+  if (isFeedbackItemRecord(items)) return [items];
+  return Object.values(items);
+}
+
+function isFeedbackItemRecord(item: Record<string, unknown>): boolean {
+  return (
+    typeof item.message === "string" ||
+    typeof item.explanation === "string" ||
+    typeof item.label === "string" ||
+    typeof item.detail === "string" ||
+    typeof item.original === "string" ||
+    typeof item.improved === "string" ||
+    typeof item.reason === "string"
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
 }
 
 const s = StyleSheet.create({

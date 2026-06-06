@@ -152,12 +152,13 @@ export default function WritingGradingScreen() {
             <AIFeedbackPanel
               attemptId={data.attemptId ?? attemptId ?? null}
               feedbackRequest={data.feedbackRequest}
+              feedbackBase={data.feedback}
               feedbackGenerated={feedbackGenerated}
               pending={feedbackMutation.isPending}
               error={feedbackMutation.error ? getApiErrorMessage(feedbackMutation.error) : null}
               accentColor={accent}
               onRequest={() => feedbackMutation.mutate()}
-              hasBaseFeedback={data.strengths.length > 0 || data.improvements.length > 0 || data.rewrites.length > 0}
+              hasBaseFeedback={data.hasDetailedFeedback}
             />
 
             <TeacherGradingPanel
