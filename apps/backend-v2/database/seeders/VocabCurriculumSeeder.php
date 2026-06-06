@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Models\VocabExercise;
 use App\Models\VocabTopic;
 use App\Models\VocabWord;
 use Illuminate\Database\Seeder;
@@ -72,11 +73,12 @@ final class VocabCurriculumSeeder extends Seeder
                     );
 
                     $this->syncWords($topic, $words);
+                    $this->syncExercises($topic, $words);
                 }
             }
         });
 
-        $this->command?->info('Vocabulary curriculum seeded: 30 topics, 600 words (20 words per A1-C1 topic card).');
+        $this->command?->info('Vocabulary curriculum seeded: 30 topics, 600 words, 60 exercises.');
     }
 
     /**
@@ -111,6 +113,42 @@ final class VocabCurriculumSeeder extends Seeder
                     'word_family' => [],
                     'vstep_tip' => null,
                     'display_order' => $displayOrder + 1,
+                ],
+            );
+        }
+    }
+
+    /**
+     * @param  list<array{string, string, string, string}>  $words
+     */
+    private function syncExercises(VocabTopic $topic, array $words): void
+    {
+        foreach (array_slice($words, 0, 2) as $index => [$word, $partOfSpeech, $definition]) {
+            $distractors = collect($words)
+                ->pluck(2)
+                ->reject(fn (string $candidate): bool => $candidate === $definition)
+                ->values()
+                ->take(3)
+                ->all();
+
+            if (count($distractors) < 3) {
+                continue;
+            }
+
+            $correctIndex = $index % 4;
+            $options = $distractors;
+            array_splice($options, $correctIndex, 0, [$definition]);
+
+            VocabExercise::query()->updateOrCreate(
+                ['topic_id' => $topic->id, 'display_order' => $index + 1],
+                [
+                    'kind' => 'mcq',
+                    'payload' => [
+                        'prompt' => "Chọn nghĩa đúng của \"{$word}\" ({$partOfSpeech}).",
+                        'options' => array_values($options),
+                        'correct_index' => $correctIndex,
+                    ],
+                    'explanation' => "\"{$word}\" nghĩa là {$definition}.",
                 ],
             );
         }

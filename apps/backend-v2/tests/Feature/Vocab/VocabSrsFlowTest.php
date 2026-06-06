@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Vocab;
 
 use App\Models\Profile;
+use App\Models\ProfileDailyActivity;
 use App\Models\ProfileVocabSrsState;
 use App\Models\User;
 use App\Models\VocabTopic;
@@ -125,6 +126,9 @@ class VocabSrsFlowTest extends TestCase
             'word_id' => $word->id,
             'rating' => 3,
         ]);
+        $this->assertSame(1, ProfileDailyActivity::query()
+            ->where('profile_id', $profile->id)
+            ->sum('vocab_review_count'));
     }
 
     public function test_multiple_reviews_graduate_to_review(): void

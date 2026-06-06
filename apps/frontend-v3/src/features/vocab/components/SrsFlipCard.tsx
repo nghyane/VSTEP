@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import { Icon } from "#/components/Icon"
 import type { VocabWord } from "#/features/vocab/types"
 import { useIpa } from "#/lib/phonemize"
@@ -17,7 +18,7 @@ export function SrsFlipCard({ word, flipped, onReveal }: Props) {
 			<div key={word.id} className={cn("flip-inner", flipped && "flipped")}>
 				<div className="flip-face">
 					<FlipButton onClick={onReveal} label="Lật thẻ">
-						<FlipHeader word={word.word} />
+						<FlipHeader word={word.word} canSpeak={false} />
 						<div className="flex-1 flex flex-col items-center justify-center gap-3">
 							<span className="font-extrabold text-4xl text-foreground break-words">{word.word}</span>
 							{ipa && <p className="text-base text-subtle">/{ipa}/</p>}
@@ -33,7 +34,7 @@ export function SrsFlipCard({ word, flipped, onReveal }: Props) {
 
 				<div className="flip-face flip-face-back">
 					<FlipPanel>
-						<FlipHeader word={word.word} />
+						<FlipHeader word={word.word} canSpeak />
 						<div className="flex-1 flex flex-col items-center justify-center gap-3">
 							<span className="font-extrabold text-3xl text-foreground break-words">{word.word}</span>
 							{ipa && <p className="text-sm text-subtle">/{ipa}/</p>}
@@ -50,23 +51,25 @@ export function SrsFlipCard({ word, flipped, onReveal }: Props) {
 	)
 }
 
-function FlipHeader({ word }: { word: string }) {
+function FlipHeader({ word, canSpeak }: { word: string; canSpeak: boolean }) {
 	return (
 		<div className="flex items-center justify-between">
 			<span className="text-[11px] font-bold text-muted uppercase tracking-wide bg-background px-2 py-0.5 rounded">
 				Ôn tập
 			</span>
-			<button
-				type="button"
-				onClick={(e) => {
-					e.stopPropagation()
-					speak(word)
-				}}
-				className="text-muted hover:text-primary transition"
-				aria-label="Phát âm"
-			>
-				<Icon name="volume" size="sm" />
-			</button>
+			{canSpeak && (
+				<button
+					type="button"
+					onClick={(e) => {
+						e.stopPropagation()
+						speak(word)
+					}}
+					className="text-muted hover:text-primary transition"
+					aria-label="Phát âm"
+				>
+					<Icon name="volume" size="sm" />
+				</button>
+			)}
 		</div>
 	)
 }
@@ -78,7 +81,7 @@ function FlipButton({
 }: {
 	onClick: () => void
 	label: string
-	children: React.ReactNode
+	children: ReactNode
 }) {
 	return (
 		<button
@@ -92,7 +95,7 @@ function FlipButton({
 	)
 }
 
-function FlipPanel({ children }: { children: React.ReactNode }) {
+function FlipPanel({ children }: { children: ReactNode }) {
 	return (
 		<div className="card w-full p-8 text-center min-h-[26rem] flex flex-col border-border">{children}</div>
 	)
