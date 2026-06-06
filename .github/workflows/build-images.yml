@@ -127,8 +127,8 @@ jobs:
             set_backend_env FILESYSTEM_DISK s3
             set_backend_env AWS_DEFAULT_REGION auto
             set_backend_env AWS_BUCKET vstep
-            set_backend_env AWS_URL https://pub-2c7bac3350414b75b3766a5a511dc672.r2.dev
-            set_backend_env AWS_ENDPOINT https://11a58966d1289d0387eebba638a19cc3.r2.cloudflarestorage.com
+            set_backend_env AWS_URL https://pub-42b35db3ed5d4a1480c601814b2fa27b.r2.dev
+            set_backend_env AWS_ENDPOINT https://818e551312970df676abe1a0e61819c7.r2.cloudflarestorage.com
             set_backend_env AWS_USE_PATH_STYLE_ENDPOINT true
 
             missing=""

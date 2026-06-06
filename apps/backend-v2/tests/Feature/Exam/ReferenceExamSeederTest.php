@@ -118,13 +118,12 @@ final class ReferenceExamSeederTest extends TestCase
         $this->assertSame($firstVersionIds, ExamVersion::query()->orderBy('exam_id')->orderBy('version_number')->pluck('id')->all());
     }
 
-    public function test_reference_exam_seeder_links_existing_r2_listening_audio(): void
+    public function test_reference_exam_seeder_links_configured_r2_listening_audio_url(): void
     {
         config()->set('filesystems.disks.s3.bucket', 'test-bucket');
         Storage::fake('s3');
 
         $key = ReferenceExamListeningAudio::key('vstep-de-thi-thu-01-doi-song-sinh-vien', 1, 1);
-        Storage::disk('s3')->put($key, 'audio');
 
         $this->seed(ReferenceExamSeeder::class);
 

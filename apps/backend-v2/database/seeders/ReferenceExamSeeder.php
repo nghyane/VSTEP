@@ -169,7 +169,7 @@ final class ReferenceExamSeeder extends Seeder
 
     private function listeningAudioUrl(string $slug, int $part, int $sectionNumber): ?string
     {
-        return ReferenceExamListeningAudio::publicUrlIfStored(
+        return ReferenceExamListeningAudio::publicUrlIfConfigured(
             ReferenceExamListeningAudio::key($slug, $part, $sectionNumber),
         );
     }

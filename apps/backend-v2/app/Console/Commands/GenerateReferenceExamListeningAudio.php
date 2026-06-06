@@ -11,6 +11,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
+use League\Flysystem\UnableToCheckFileExistence;
 
 final class GenerateReferenceExamListeningAudio extends Command
 {
@@ -54,6 +55,7 @@ final class GenerateReferenceExamListeningAudio extends Command
         $generated = 0;
         $uploaded = 0;
         $linked = 0;
+        $force = (bool) $this->option('force');
 
         foreach ($sections as $entry) {
             $section = $entry['section'];
@@ -66,7 +68,7 @@ final class GenerateReferenceExamListeningAudio extends Command
                 continue;
             }
 
-            if (Storage::disk('s3')->exists($key) && ! (bool) $this->option('force')) {
+            if (! $force && $this->storedAudioExists($key)) {
                 $section->update(['audio_url' => $audioUrl]);
                 $linked++;
                 $this->line("Linked existing: {$key}");
@@ -97,6 +99,15 @@ final class GenerateReferenceExamListeningAudio extends Command
         $this->info("Reference listening audio synced. generated={$generated}, uploaded={$uploaded}, linked_existing={$linked}.");
 
         return self::SUCCESS;
+    }
+
+    private function storedAudioExists(string $key): bool
+    {
+        try {
+            return Storage::disk('s3')->exists($key);
+        } catch (UnableToCheckFileExistence) {
+            return false;
+        }
     }
 
     private function ensureStorageConfigured(): void
