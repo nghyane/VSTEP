@@ -22,6 +22,9 @@ docs/
 │   ├── assessment-validation-strategy.md
 │   └── profile-learning-target-policy.md
 │
+├── operations/
+│   └── deploy-env-update.md
+│
 ├── rfcs/
 │   └── assessment engine redesign records
 │
@@ -47,6 +50,10 @@ docs/
 - [`decisions/assessment-scoring-principles.md`](decisions/assessment-scoring-principles.md)
 - [`decisions/assessment-validation-strategy.md`](decisions/assessment-validation-strategy.md)
 - [`decisions/profile-learning-target-policy.md`](decisions/profile-learning-target-policy.md)
+
+## Operations
+
+- [`operations/deploy-env-update.md`](operations/deploy-env-update.md)
 
 ## Archive
 
