@@ -35,6 +35,10 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
 
     private const LOW_ASR_CONFIDENCE = 0.65;
 
+    private const LOW_ASR_CRITERION_CAP = 4.0;
+
+    private const LOW_ASR_OVERALL_CAP = 3.5;
+
     private const LOW_CONTENT_FACTOR = 0.4;
 
     public function __construct(
@@ -63,12 +67,9 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
         }
 
         $stt = $this->transcribe($audioKey);
-        $transcript = (string) $stt['text'];
-        if ($transcript === '') {
-            throw new AssessmentFailedException('Speech-to-text returned empty transcript.');
-        }
+        $transcript = trim((string) ($stt['text'] ?? ''));
 
-        $grammarErrors = $this->languageTool->checkSpeakingTranscript($transcript);
+        $grammarErrors = $transcript === '' ? [] : $this->languageTool->checkSpeakingTranscript($transcript);
         $syntax = $this->syntax->analyze($transcript);
         $metricResult = $this->metrics->analyze($transcript, $grammarErrors);
         $speakingFeatures = $this->speakingFeatures->extract($transcript);
@@ -102,11 +103,21 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
     {
         $prompt = $this->promptText($input->prompt);
         $contentFactor = 1.0;
+        $hasPromptContext = $prompt !== '' || $input->requirements !== [];
 
-        if ($prompt !== '' || $input->requirements !== []) {
-            $contentFactor = $this->relevance->assess((string) $signals->speech['transcript'], $prompt, $input->requirements);
-        } elseif ($input->sourceType === AssessmentSourceType::Exam) {
+        if (! $hasPromptContext && $input->sourceType === AssessmentSourceType::Exam) {
             throw new AssessmentFailedException('Speaking exam assessment requires prompt or requirements.');
+        }
+
+        if (! $this->hasReliableSpeechContent($signals)) {
+            return new EvidenceBag(content: [
+                'content_factor' => 0.0,
+                'content_status' => 'unassessable_speech',
+            ]);
+        }
+
+        if ($hasPromptContext) {
+            $contentFactor = $this->relevance->assess((string) $signals->speech['transcript'], $prompt, $input->requirements);
         }
 
         return new EvidenceBag(content: ['content_factor' => $contentFactor]);
@@ -289,6 +300,22 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
             ];
         }
 
+        if (($evidence->content['content_status'] ?? null) === 'unassessable_speech') {
+            $scores = array_map(fn (): float => 1.0, $scores);
+
+            return [
+                'scores' => $scores,
+                'overall' => 1.0,
+                'caps' => [
+                    'type' => 'speaking_audio_unassessable',
+                    'word_count' => $wordCount,
+                    'confidence' => $asrConfidence,
+                    'minimum_word_count' => self::MIN_ASSESSABLE_WORDS,
+                    'minimum_confidence' => self::LOW_ASR_CONFIDENCE,
+                ],
+            ];
+        }
+
         if ($wordCount < self::SHORT_RESPONSE_WORDS) {
             $scores = array_map(fn (float $score): float => min($score, 4.0), $scores);
             $overall = min($overall, 4.0);
@@ -299,13 +326,13 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
         }
 
         if ($asrConfidence < self::LOW_ASR_CONFIDENCE) {
-            $scores['fluency'] = min($scores['fluency'], 4.0);
-            $scores['pronunciation'] = min($scores['pronunciation'], 4.0);
-            $overall = min($overall, 4.0);
+            $scores = array_map(fn (float $score): float => min($score, self::LOW_ASR_CRITERION_CAP), $scores);
+            $overall = min($overall, self::LOW_ASR_OVERALL_CAP);
             $caps['low_asr_confidence'] = [
                 'confidence' => $asrConfidence,
                 'minimum_confidence' => self::LOW_ASR_CONFIDENCE,
-                'cap' => 4.0,
+                'criterion_cap' => self::LOW_ASR_CRITERION_CAP,
+                'overall_cap' => self::LOW_ASR_OVERALL_CAP,
             ];
         }
 
@@ -320,6 +347,20 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
         }
 
         return ['scores' => $scores, 'overall' => $overall, 'caps' => $caps];
+    }
+
+    private function hasReliableSpeechContent(SignalBag $signals): bool
+    {
+        return $this->recognizedWordCount($signals) >= self::MIN_ASSESSABLE_WORDS
+            && (float) ($signals->speech['confidence'] ?? 0.0) >= self::LOW_ASR_CONFIDENCE;
+    }
+
+    private function recognizedWordCount(SignalBag $signals): int
+    {
+        return max(
+            (int) ($signals->speech['word_count'] ?? 0),
+            str_word_count((string) ($signals->speech['transcript'] ?? '')),
+        );
     }
 
     /** @return array<string,mixed> */
@@ -339,10 +380,31 @@ abstract class SpeakingAssessmentStrategy extends TaskStrategy
     {
         $pronunciation = $stt['pronunciation'] ?? null;
         if (! is_array($pronunciation) || ! isset($pronunciation['overall'])) {
+            if ((int) ($stt['word_count'] ?? 0) === 0) {
+                return $this->emptyPronunciation();
+            }
+
             throw new AssessmentFailedException('Speaking assessment requires pronunciation score from speech service.');
         }
 
         return $pronunciation;
+    }
+
+    /** @return array<string,mixed> */
+    private function emptyPronunciation(): array
+    {
+        return [
+            'accuracy' => 0.0,
+            'fluency' => 0.0,
+            'prosody' => 0.0,
+            'completeness' => 0.0,
+            'overall' => 0.0,
+            'mispronunciation_count' => 0,
+            'unexpected_break_count' => 0,
+            'missing_break_count' => 0,
+            'monotone_count' => 0,
+            'low_accuracy_words' => [],
+        ];
     }
 
     /** @param array<string,mixed> $prompt */

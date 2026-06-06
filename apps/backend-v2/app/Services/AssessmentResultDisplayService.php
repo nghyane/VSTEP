@@ -58,7 +58,7 @@ final class AssessmentResultDisplayService
 
     private function status(float $band, string $reasonCode): string
     {
-        if ($reasonCode === 'not_assessable') {
+        if (in_array($reasonCode, ['not_assessable', 'speaking_too_short', 'speaking_unreliable'], true)) {
             return 'not_assessable';
         }
 
@@ -106,12 +106,18 @@ final class AssessmentResultDisplayService
     {
         if ($status === 'not_assessable') {
             return match ($reasonCode) {
+                'speaking_unreliable' => 'Audio chưa đủ rõ để chấm tin cậy. Hãy thu âm lại ở nơi yên tĩnh và nói rõ từng câu.',
+                'speaking_too_short' => 'Audio chưa nhận diện được đủ nội dung để chấm tin cậy. Hãy thu âm lại ở nơi yên tĩnh và nói rõ hơn.',
                 'too_short' => 'Bài quá ngắn hoặc chưa có đủ nội dung để đánh giá. Hãy viết lại bài đầy đủ hơn.',
                 default => 'Bài chưa đủ điều kiện chấm. Hãy viết lại bài với nội dung tiếng Anh rõ ràng hơn.',
             };
         }
 
         if ($status === 'below_b1') {
+            if ($reasonCode === 'low_asr_confidence') {
+                return 'Audio chưa đủ rõ nên transcript không đáng tin cậy. Hãy thu âm lại trước khi dựa vào điểm AI.';
+            }
+
             return 'Bài chưa đạt ngưỡng B1. Hãy xem góp ý chi tiết để cải thiện các tiêu chí còn yếu.';
         }
 
@@ -148,6 +154,34 @@ final class AssessmentResultDisplayService
                 'label' => 'Bài chưa đáp ứng yêu cầu bắt buộc',
                 'source' => 'assessment_requirements_not_met',
                 'details' => $capsApplied,
+            ];
+        }
+
+        if (($capsApplied['type'] ?? null) === 'speaking_response_too_short') {
+            return [
+                'code' => 'speaking_too_short',
+                'label' => 'Audio chưa đủ dữ liệu chấm',
+                'source' => 'speaking_response_too_short',
+                'details' => $capsApplied,
+            ];
+        }
+
+        if (($capsApplied['type'] ?? null) === 'speaking_audio_unassessable') {
+            return [
+                'code' => 'speaking_unreliable',
+                'label' => 'Audio chưa đủ tin cậy',
+                'source' => 'speaking_audio_unassessable',
+                'details' => $capsApplied,
+            ];
+        }
+
+        $lowAsrConfidence = $capsApplied['low_asr_confidence'] ?? null;
+        if (is_array($lowAsrConfidence)) {
+            return [
+                'code' => 'low_asr_confidence',
+                'label' => 'Transcript không đủ tin cậy',
+                'source' => 'low_asr_confidence',
+                'details' => $lowAsrConfidence,
             ];
         }
 

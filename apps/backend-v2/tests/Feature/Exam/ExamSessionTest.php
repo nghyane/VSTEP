@@ -230,6 +230,46 @@ class ExamSessionTest extends TestCase
             ->assertJsonPath('data.speaking_feedback.0.overall_band', 0);
     }
 
+    public function test_start_rejects_selected_skill_without_content(): void
+    {
+        [$user, , $exam] = $this->seedExam();
+        $token = $this->tokenFor($user);
+
+        ExamVersionListeningItem::query()->delete();
+        ExamVersionReadingItem::query()->delete();
+        ExamVersionWritingTask::query()->delete();
+        ExamVersionSpeakingPart::query()->delete();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/exams/{$exam->id}/sessions", ['mode' => 'full'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('selected_skills');
+
+        $this->assertDatabaseCount('exam_sessions', 0);
+    }
+
+    public function test_submit_rejects_session_when_selected_skill_content_is_missing(): void
+    {
+        [$user, , $exam] = $this->seedExam();
+        $token = $this->tokenFor($user);
+
+        $sessionId = $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/exams/{$exam->id}/sessions", ['mode' => 'full'])
+            ->json('data.session_id');
+
+        ExamVersionSpeakingPart::query()->delete();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/exam-sessions/{$sessionId}/submit")
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('selected_skills');
+
+        $this->assertDatabaseHas('exam_sessions', [
+            'id' => $sessionId,
+            'status' => 'active',
+        ]);
+    }
+
     public function test_session_results_returns_server_read_model(): void
     {
         [$user, , $exam] = $this->seedExam();

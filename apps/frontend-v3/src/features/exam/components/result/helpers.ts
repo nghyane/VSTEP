@@ -30,7 +30,7 @@ export function statusTone(status: ExamResultStatus): StatusTone {
 export function statusLabel(status: ExamResultStatus): string {
 	if (status === "ready") return "Đã có kết quả"
 	if (status === "pending") return "Đang chấm điểm"
-	if (status === "partial") return "Còn đang chấm"
+	if (status === "partial") return "Chưa đủ dữ liệu"
 	if (status === "failed") return "Lỗi chấm điểm"
 	if (status === "not_submitted") return "Chưa nộp"
 	if (status === "not_applicable") return "Không xếp bậc"
@@ -53,7 +53,7 @@ export function scoreLabel(value: number | null | undefined): string {
 }
 
 export function isProcessing(summary: ExamResultSummary): boolean {
-	return summary.score_status === "pending" || summary.score_status === "partial"
+	return summary.score_status === "pending"
 }
 
 export function orderedSkills<T extends { readonly key: SkillKey }>(skills: readonly T[]): T[] {

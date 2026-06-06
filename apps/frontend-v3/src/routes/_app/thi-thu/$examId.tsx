@@ -78,7 +78,8 @@ function computeStats(overview: ExamOverview) {
 function historyResultLabel(session: ExamSessionSummary): string {
 	const summary = session.result_summary
 	if (!summary) return session.status === "submitted" || session.status === "grading" ? "Đang chấm..." : "—"
-	if (summary.score_status === "pending" || summary.score_status === "partial") return "Đang chấm..."
+	if (summary.score_status === "pending") return "Đang chấm..."
+	if (summary.score_status === "partial") return statusLabel(summary.score_status)
 	if (summary.score_status === "failed") return statusLabel(summary.score_status)
 	if (summary.skills.some((skill) => skill.status === "pending")) return "Đang chấm..."
 	if (summary.skills.some((skill) => skill.status === "failed")) return statusLabel("failed")

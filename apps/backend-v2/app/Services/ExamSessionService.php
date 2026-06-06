@@ -70,6 +70,8 @@ final class ExamSessionService
             $selectedSkills = $allSkills;
         }
 
+        $this->assertSelectedSkillsHaveContent($version, $selectedSkills);
+
         $this->expiry->forceSubmitExpired($profile);
 
         // Fast-path: reject trước khi vào transaction nếu đã có session active.
@@ -146,6 +148,8 @@ final class ExamSessionService
             $selectedSkills = $allSkills;
         }
 
+        $this->assertSelectedSkillsHaveContent($version, $selectedSkills);
+
         $this->expiry->forceSubmitExpired($profile);
 
         $cost = $this->computeCost($selectedSkills);
@@ -221,6 +225,12 @@ final class ExamSessionService
 
             throw ValidationException::withMessages(['session' => ['Session đã hết hạn.']]);
         }
+
+        $version = $session->examVersion;
+        if ($version === null) {
+            throw ValidationException::withMessages(['session' => ['Exam version not found.']]);
+        }
+        $this->assertSelectedSkillsHaveContent($version, $session->selected_skills ?? []);
 
         return DB::transaction(function () use ($session, $mcqAnswers, $writingAnswers, $speakingAnswers) {
             // ── 1. MCQ grading (sync) ──
@@ -372,6 +382,39 @@ final class ExamSessionService
         }
 
         return max($total, 1);
+    }
+
+    /** @param  array<int,string>  $skills */
+    private function assertSelectedSkillsHaveContent(ExamVersion $version, array $skills): void
+    {
+        $version->loadMissing([
+            'listeningSections.items',
+            'readingPassages.items',
+            'writingTasks',
+            'speakingParts',
+        ]);
+
+        $missing = [];
+        if (in_array('listening', $skills, true) && $version->listeningSections->sum(fn ($section) => $section->items->count()) === 0) {
+            $missing[] = 'Nghe';
+        }
+        if (in_array('reading', $skills, true) && $version->readingPassages->sum(fn ($passage) => $passage->items->count()) === 0) {
+            $missing[] = 'Đọc';
+        }
+        if (in_array('writing', $skills, true) && $version->writingTasks->count() === 0) {
+            $missing[] = 'Viết';
+        }
+        if (in_array('speaking', $skills, true) && $version->speakingParts->count() === 0) {
+            $missing[] = 'Nói';
+        }
+
+        if ($missing === []) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'selected_skills' => ['Đề thi chưa đủ nội dung cho phần '.implode(', ', $missing).'. Vui lòng chọn kỹ năng khác hoặc liên hệ quản trị viên.'],
+        ]);
     }
 
     /**
