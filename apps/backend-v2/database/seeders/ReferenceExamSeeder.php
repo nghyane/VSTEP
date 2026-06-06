@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Assessment\Enums\AssessmentSourceType;
-use App\Models\AssessmentAttempt;
 use App\Models\Exam;
-use App\Models\ExamSession;
 use App\Services\ExamImportService;
 use App\Services\ExamVersionValidator;
 use App\Support\ReferenceExamListeningAudio;
@@ -21,6 +18,12 @@ final class ReferenceExamSeeder extends Seeder
     private const SOURCE_SCHOOL = 'Capstone VSTEP · Biên soạn theo cấu trúc VSTEP 3-5';
 
     private const TOTAL_DURATION_MINUTES = 172;
+
+    private const SUPERSEDED_FIXTURE_SLUGS = [
+        'vstep-demo-1',
+        'vstep-practice-2',
+        'vstep-practice-3',
+    ];
 
     private const READING_TARGET_WORDS = [1 => 480, 2 => 500, 3 => 520, 4 => 540];
 
@@ -44,13 +47,11 @@ final class ReferenceExamSeeder extends Seeder
         $synced = 0;
 
         DB::transaction(function () use ($importer, $validator, &$synced): void {
-            $this->resetExamData();
-
             foreach ($this->examPlans() as $plan) {
                 $versionData = $this->versionData($plan);
                 $this->validateOfficialVersionData($validator, $versionData, $plan['slug']);
 
-                $importer->importExam([
+                $importer->syncExam([
                     'slug' => $plan['slug'],
                     'title' => $plan['title'],
                     'source_school' => self::SOURCE_SCHOOL,
@@ -61,18 +62,20 @@ final class ReferenceExamSeeder extends Seeder
 
                 $synced++;
             }
+
+            $this->retireSupersededFixtureExams();
         });
 
         $this->command?->info("Capstone VSTEP exams synced: {$synced} exams.");
     }
 
-    private function resetExamData(): void
+    private function retireSupersededFixtureExams(): void
     {
-        AssessmentAttempt::query()
-            ->where('source_type', AssessmentSourceType::Exam->value)
-            ->delete();
-        ExamSession::query()->delete();
-        Exam::query()->delete();
+        Exam::query()
+            ->whereIn('slug', self::SUPERSEDED_FIXTURE_SLUGS)
+            ->where('is_published', true)
+            ->whereDoesntHave('sessions')
+            ->update(['is_published' => false]);
     }
 
     /** @param array<string, mixed> $versionData */
