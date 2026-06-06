@@ -6,7 +6,6 @@ import { PracticeMcqResultPanel } from "#/features/practice/components/PracticeM
 import { QuestionList } from "#/features/practice/components/QuestionList"
 import { Subtitle } from "#/features/practice/components/Subtitle"
 import { TTSAudioBar } from "#/features/practice/components/TTSAudioBar"
-import { TTSVoicePicker } from "#/features/practice/components/TTSVoicePicker"
 import type { ExerciseDetail } from "#/features/practice/types"
 import { useListeningSession } from "#/features/practice/use-listening-session"
 import { useTTSPlayer } from "#/features/practice/use-tts-player"
@@ -46,18 +45,9 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 			{showSub ? "Ẩn lời thoại" : "Hiện lời thoại"}
 		</button>
 	) : null
-	const topBarContent = (
-		<div className="flex items-center gap-3">
-			{transcriptToggle}
-			{hasTTS ? (
-				<TTSVoicePicker
-					voice={tts.voice}
-					onVoiceChange={tts.setVoice}
-					accentClassName="border-skill-listening text-skill-listening"
-				/>
-			) : null}
-		</div>
-	)
+	const topBarContent = transcriptToggle ? (
+		<div className="flex items-center gap-3">{transcriptToggle}</div>
+	) : null
 
 	useEffect(() => {
 		if (finishRequested && session.result) setShowCompletion(true)

@@ -162,9 +162,10 @@ function DefaultActions({
 				type="button"
 				onClick={onPrevious}
 				disabled={!onPrevious || currentQuestionIndex === 0}
-				className="btn btn-secondary min-h-12 disabled:cursor-not-allowed disabled:opacity-50"
+				className="btn btn-secondary flex min-h-12 items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
 			>
-				← Back
+				<Icon name="back" size="xs" />
+				Back
 			</button>
 			<button
 				type="button"
@@ -173,11 +174,12 @@ function DefaultActions({
 					showFinish ? !(action && canFinish && !disabled && !submitting) : !action || disabled || submitting
 				}
 				className={cn(
-					"btn min-h-12 text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50",
+					"btn flex min-h-12 items-center gap-2 text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50",
 					primaryActionClassName,
 				)}
 			>
 				{submitting ? "Đang xử lý..." : showFinish ? finishLabel : "Next"}
+				{submitting || showFinish ? null : <Icon name="back" size="xs" className="rotate-180" />}
 			</button>
 		</>
 	)
