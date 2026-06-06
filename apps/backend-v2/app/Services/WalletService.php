@@ -6,6 +6,8 @@ namespace App\Services;
 
 use App\Enums\CoinSourceType;
 use App\Enums\CoinTransactionType;
+use App\Enums\IconKey;
+use App\Enums\NotificationType;
 use App\Models\CoinTransaction;
 use App\Models\Profile;
 use App\Models\User;
@@ -25,6 +27,10 @@ use Illuminate\Validation\ValidationException;
  */
 final class WalletService
 {
+    public function __construct(
+        private readonly NotificationService $notificationService,
+    ) {}
+
     /**
      * Read-only balance snapshot for display/API responses.
      * Do not use this method for spend decisions; spend() re-checks under an account row lock.
@@ -154,7 +160,7 @@ final class WalletService
                 ]);
             }
 
-            return CoinTransaction::create([
+            $transaction = CoinTransaction::create([
                 'account_id' => $locked->id,
                 'profile_id' => $profile?->id,
                 'type' => $type,
@@ -164,7 +170,38 @@ final class WalletService
                 'source_id' => $source?->getKey(),
                 'metadata' => $metadata,
             ]);
+
+            if ($delta < 0 && $profile !== null) {
+                DB::afterCommit(fn () => $this->notificationService->push(
+                    profile: $profile,
+                    type: NotificationType::CoinSpent,
+                    title: $this->spendNotificationTitle($type),
+                    body: 'Đã trừ '.number_format(abs($delta), 0, ',', '.').' xu. Số dư còn lại: '.number_format($next, 0, ',', '.').' xu.',
+                    iconKey: IconKey::Coin,
+                    payload: [
+                        'transaction_id' => $transaction->id,
+                        'type' => $type->value,
+                        'delta' => $delta,
+                        'balance_after' => $next,
+                    ],
+                    dedupKey: "coin-spent:{$transaction->id}",
+                ));
+            }
+
+            return $transaction;
         });
+    }
+
+    private function spendNotificationTitle(CoinTransactionType $type): string
+    {
+        return match ($type) {
+            CoinTransactionType::ExamFull => 'Đã trừ xu thi full-test',
+            CoinTransactionType::ExamCustom => 'Đã trừ xu thi kỹ năng',
+            CoinTransactionType::CoursePurchase => 'Đã trừ xu mua khóa học',
+            CoinTransactionType::TeacherBooking => 'Đã trừ xu đặt lịch 1-1',
+            CoinTransactionType::PracticeFeedback => 'Đã trừ xu nhận xét AI',
+            default => 'Đã trừ xu',
+        };
     }
 
     private function resolveSourceType(Model $source): string

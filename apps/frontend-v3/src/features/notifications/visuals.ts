@@ -26,6 +26,27 @@ const VISUALS: Record<NotificationType, NotifVisual> = {
 		tone: "coin",
 		navigateTo: "/dashboard",
 	},
+	coin_spent: {
+		iconKind: "regular",
+		iconName: "trash",
+		tintClass: "bg-destructive-tint",
+		tone: "destructive",
+		navigateTo: "/giao-dich-xu",
+	},
+	assessment_completed: {
+		iconKind: "static",
+		iconName: "trophy",
+		tintClass: "bg-warning-tint",
+		tone: "warning",
+		navigateTo: "/luyen-tap/ket-qua",
+	},
+	assessment_failed: {
+		iconKind: "regular",
+		iconName: "lightning",
+		tintClass: "bg-destructive-tint",
+		tone: "destructive",
+		navigateTo: "/luyen-tap/ket-qua",
+	},
 	grading_completed: {
 		iconKind: "static",
 		iconName: "trophy",
@@ -81,6 +102,13 @@ const VISUALS: Record<NotificationType, NotifVisual> = {
 		tintClass: "bg-warning-tint",
 		tone: "warning",
 		navigateTo: "/luyen-tap/ket-qua",
+	},
+	study_reminder: {
+		iconKind: "regular",
+		iconName: "timer",
+		tintClass: "bg-warning-tint",
+		tone: "warning",
+		navigateTo: "/dashboard",
 	},
 }
 

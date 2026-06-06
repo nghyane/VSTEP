@@ -10,12 +10,18 @@ export type SubmissionStatus = "pending" | "processing" | "completed" | "review_
 export type ExamType = "practice" | "placement" | "mock";
 export type ExamSkill = "listening" | "reading" | "writing" | "speaking" | "mixed";
 export type NotificationType =
-  | "grading_complete"
-  | "goal_achieved"
-  | "streak_milestone"
+  | "topup_completed"
+  | "coin_received"
+  | "coin_spent"
+  | "assessment_completed"
+  | "assessment_failed"
+  | "teacher_grading_completed"
+  | "course_enrolled"
+  | "course_unenrolled"
+  | "booking_created"
+  | "booking_cancelled"
+  | "booking_meet_url_updated"
   | "study_reminder"
-  | "session_abandoned"
-  | "feedback"
   | "system";
 export type PracticeMode = "free" | "shadowing" | "drill" | "guided";
 

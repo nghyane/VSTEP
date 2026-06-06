@@ -219,6 +219,18 @@ export default function ProfileScreen() {
             <Text style={[s.sectionLabel, { color: c.subtle }]}>CÀI ĐẶT</Text>
             <View style={[s.menuGroup, { backgroundColor: c.card, borderColor: c.border }]}>
               <MenuRow
+                icon="receipt-outline"
+                label="Lịch sử đơn hàng"
+                onPress={() => router.push("/(app)/orders" as never)}
+              />
+              <View style={[s.divider, { backgroundColor: c.borderLight }]} />
+              <MenuRow
+                icon="wallet-outline"
+                label="Lịch sử giao dịch xu"
+                onPress={() => router.push("/(app)/wallet" as never)}
+              />
+              <View style={[s.divider, { backgroundColor: c.borderLight }]} />
+              <MenuRow
                 icon="information-circle-outline"
                 label="Tài khoản & Bảo mật"
                 onPress={() => router.push("/(app)/account")}
