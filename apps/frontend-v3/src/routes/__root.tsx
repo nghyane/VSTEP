@@ -10,7 +10,7 @@ interface RouterContext {
 
 export const Route = createRootRouteWithContext<RouterContext>()({
 	beforeLoad: async ({ location }) => {
-		if (location.pathname === "/wallet") return
+		if (location.pathname === "/wallet" || location.pathname === "/payos/mobile-return") return
 		if (useAuth.getState().status === "idle") {
 			await initAuth()
 		}

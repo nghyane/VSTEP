@@ -23,7 +23,7 @@ import { formatDate, formatVnd, getInitials } from "@/lib/utils";
 import { fontSize, fontFamily, radius, spacing, useThemeColors } from "@/theme";
 
 const PENDING_COURSE_ORDER_KEY = "course.pendingEnrollmentOrder";
-const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/wallet";
+const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/payos/mobile-return";
 const COURSE_COMMITMENTS = [
   "Tỉ lệ đạt trên 98% với học viên học đúng lộ trình.",
   "Miễn phí học lại nếu chưa đạt mục tiêu sau khóa.",
@@ -511,13 +511,19 @@ function diffDays(iso: string): number {
 
 function createCourseReturnUrl(courseId: string): string {
   const configured = process.env.EXPO_PUBLIC_PAYOS_RETURN_URL?.trim();
-  return appendPaymentReturnParams(configured || DEFAULT_PAYOS_RETURN_URL, { flow: "course", courseId });
+  return appendPaymentReturnParams(normalizePayosReturnUrl(configured || DEFAULT_PAYOS_RETURN_URL), { flow: "course", courseId });
 }
 
 function appendPaymentReturnParams(baseUrl: string, params: Record<string, string>): string {
   const url = new URL(baseUrl);
   url.searchParams.set("client", "mobile");
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  return url.toString();
+}
+
+function normalizePayosReturnUrl(baseUrl: string): string {
+  const url = new URL(baseUrl);
+  if (url.pathname === "/wallet") url.pathname = "/payos/mobile-return";
   return url.toString();
 }
 

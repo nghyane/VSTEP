@@ -17,7 +17,7 @@ import type { TopupPackage, TopupOrder, WalletBalance } from "@/features/wallet/
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
 
 const PENDING_TOPUP_ORDER_KEY = "wallet.pendingTopupOrder";
-const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/wallet";
+const DEFAULT_PAYOS_RETURN_URL = "https://vstepgo.com/payos/mobile-return";
 
 interface PendingTopupOrder {
   id: string;
@@ -234,13 +234,19 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
 
 function createTopupReturnUrl(): string {
   const configured = process.env.EXPO_PUBLIC_PAYOS_RETURN_URL?.trim();
-  return appendPaymentReturnParams(configured || DEFAULT_PAYOS_RETURN_URL, { flow: "topup" });
+  return appendPaymentReturnParams(normalizePayosReturnUrl(configured || DEFAULT_PAYOS_RETURN_URL), { flow: "topup" });
 }
 
 function appendPaymentReturnParams(baseUrl: string, params: Record<string, string>): string {
   const url = new URL(baseUrl);
   url.searchParams.set("client", "mobile");
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+  return url.toString();
+}
+
+function normalizePayosReturnUrl(baseUrl: string): string {
+  const url = new URL(baseUrl);
+  if (url.pathname === "/wallet") url.pathname = "/payos/mobile-return";
   return url.toString();
 }
 
