@@ -65,20 +65,22 @@ export const useRecentActivity = () =>
 		staleTime: STALE_1M,
 	})
 
-export const useRevenueOverview = () =>
+export const useRevenueOverview = (enabled = true) =>
 	useQuery({
 		queryKey: ["admin", "analytics", "revenue-overview"],
 		queryFn: () => get<RevenueOverview>("admin/analytics/revenue-overview"),
 		select: (r) => r.data,
 		staleTime: STALE_5M,
+		enabled,
 	})
 
-export const useRevenueTrend = (days = 30) =>
+export const useRevenueTrend = (days = 30, enabled = true) =>
 	useQuery({
 		queryKey: ["admin", "analytics", "revenue-trend", days],
 		queryFn: () => get<RevenueTrendRow[]>(`admin/analytics/revenue-trend?days=${days}`),
 		select: (r) => r.data,
 		staleTime: STALE_5M,
+		enabled,
 	})
 
 export const useUserGrowth = (days = 30) =>
@@ -89,12 +91,13 @@ export const useUserGrowth = (days = 30) =>
 		staleTime: STALE_5M,
 	})
 
-export const useWalletEconomy = () =>
+export const useWalletEconomy = (enabled = true) =>
 	useQuery({
 		queryKey: ["admin", "analytics", "wallet-economy"],
 		queryFn: () => get<WalletEconomy>("admin/analytics/wallet-economy"),
 		select: (r) => r.data,
 		staleTime: STALE_5M,
+		enabled,
 	})
 
 export const usePracticeActivity = (days = 30) =>
@@ -129,12 +132,13 @@ export const useStreakDistribution = () =>
 		staleTime: STALE_5M,
 	})
 
-export const usePromoStats = () =>
+export const usePromoStats = (enabled = true) =>
 	useQuery({
 		queryKey: ["admin", "analytics", "promo-stats"],
 		queryFn: () => get<PromoStats>("admin/analytics/promo-stats"),
 		select: (r) => r.data,
 		staleTime: STALE_5M,
+		enabled,
 	})
 
 export const useTopContent = () =>

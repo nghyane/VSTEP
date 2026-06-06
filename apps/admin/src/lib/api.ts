@@ -1,5 +1,18 @@
 import ky from "ky"
-import { clearAuth, getToken } from "#/lib/auth"
+import { type AdminRole, clearAuth, getRefreshToken, getToken, useAuth } from "#/lib/auth"
+
+interface RefreshResponse {
+	access_token: string
+	refresh_token: string
+	user: {
+		id: string
+		email: string
+		full_name: string
+		role: AdminRole
+	}
+}
+
+let refreshPromise: Promise<boolean> | null = null
 
 export const api = ky.create({
 	prefix: import.meta.env.VITE_API_URL,
@@ -13,12 +26,15 @@ export const api = ky.create({
 			},
 		],
 		afterResponse: [
-			({ response }) => {
+			async ({ request, response }) => {
 				if (response.status === 401 && getToken()) {
-					clearAuth()
-					if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
-						window.location.href = "/login"
+					const refreshed = await refreshSession()
+					if (refreshed) {
+						request.headers.set("Authorization", `Bearer ${getToken()}`)
+						return ky(request)
 					}
+
+					redirectToLogin()
 				}
 			},
 		],
@@ -39,6 +55,47 @@ export const api = ky.create({
 		],
 	},
 })
+
+async function refreshSession(): Promise<boolean> {
+	if (refreshPromise) return refreshPromise
+
+	refreshPromise = (async () => {
+		const refreshToken = getRefreshToken()
+		if (!refreshToken) return false
+
+		try {
+			const res = await ky
+				.post("auth/refresh", {
+					prefix: import.meta.env.VITE_API_URL,
+					json: { refresh_token: refreshToken },
+					timeout: 30_000,
+					retry: 0,
+				})
+				.json<ApiResponse<RefreshResponse>>()
+			const user = res.data.user
+			useAuth.getState().setSession(res.data.access_token, res.data.refresh_token, {
+				id: user.id,
+				email: user.email,
+				name: user.full_name,
+				role: user.role,
+			})
+			return true
+		} catch {
+			return false
+		} finally {
+			refreshPromise = null
+		}
+	})()
+
+	return refreshPromise
+}
+
+function redirectToLogin(): void {
+	clearAuth()
+	if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+		window.location.href = "/login"
+	}
+}
 
 export interface ApiResponse<T> {
 	data: T

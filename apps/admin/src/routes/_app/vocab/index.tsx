@@ -1,7 +1,18 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { Input as AntdInput, Empty, Flex, Pagination, Skeleton, Space, Switch as AntdSwitch, Table, Tag, Typography } from "antd"
+import {
+	Input as AntdInput,
+	Switch as AntdSwitch,
+	Empty,
+	Flex,
+	Pagination,
+	Skeleton,
+	Space,
+	Table,
+	Tag,
+	Typography,
+} from "antd"
 import type { ColumnsType } from "antd/es/table"
 import { useState } from "react"
 import { Button } from "#/components/Button"

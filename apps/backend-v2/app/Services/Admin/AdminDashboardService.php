@@ -142,8 +142,8 @@ final class AdminDashboardService
             ['type' => 'Bài nghe',          'published' => PracticeListeningExercise::query()->where('is_published', true)->count(), 'draft' => PracticeListeningExercise::query()->where('is_published', false)->count()],
             ['type' => 'Bài đọc',           'published' => PracticeReadingExercise::query()->where('is_published', true)->count(),  'draft' => PracticeReadingExercise::query()->where('is_published', false)->count()],
             ['type' => 'Bài viết',          'published' => PracticeWritingPrompt::query()->where('is_published', true)->count(),    'draft' => PracticeWritingPrompt::query()->where('is_published', false)->count()],
-            ['type' => 'Bài phát âm',       'published' => PracticeSpeakingDrill::query()->count(),                                  'draft' => 0],
-            ['type' => 'Bài nói',           'published' => PracticeSpeakingTask::query()->count(),                                   'draft' => 0],
+            ['type' => 'Bài phát âm',       'published' => PracticeSpeakingDrill::query()->where('is_published', true)->count(),     'draft' => PracticeSpeakingDrill::query()->where('is_published', false)->count()],
+            ['type' => 'Bài nói',           'published' => PracticeSpeakingTask::query()->where('is_published', true)->count(),      'draft' => PracticeSpeakingTask::query()->where('is_published', false)->count()],
         ];
     }
 

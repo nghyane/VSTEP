@@ -8,6 +8,7 @@ import { type AdminRole, useAuth } from "#/lib/auth"
 
 interface LoginResponse {
 	access_token: string
+	refresh_token: string
 	user: {
 		id: string
 		email: string
@@ -47,7 +48,7 @@ function LoginPage() {
 				setError("Tài khoản không có quyền truy cập admin panel.")
 				return
 			}
-			setSession(data.access_token, {
+			setSession(data.access_token, data.refresh_token, {
 				id: user.id,
 				email: user.email,
 				name: user.full_name,

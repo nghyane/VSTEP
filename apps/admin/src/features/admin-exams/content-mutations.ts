@@ -36,7 +36,9 @@ export function useUpdateListeningSection(examId: string, versionId: string) {
 	const qc = useQueryClient()
 	return useMutation({
 		mutationFn: ({ id, ...input }: Partial<SectionInput> & { id: string }) =>
-			api.patch(`admin/exams/listening-sections/${id}`, { json: input }).json<ApiResponse<ListeningSection>>(),
+			api
+				.patch(`admin/exams/listening-sections/${id}`, { json: input })
+				.json<ApiResponse<ListeningSection>>(),
 		onSuccess: () => invalidateVersion(qc, examId, versionId),
 	})
 }

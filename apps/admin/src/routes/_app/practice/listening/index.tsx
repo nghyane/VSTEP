@@ -1,7 +1,7 @@
 import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { Input as AntInput, Empty, Flex, Space, Switch as AntdSwitch, Table, Tag, Typography } from "antd"
+import { Switch as AntdSwitch, Input as AntInput, Empty, Flex, Space, Table, Tag, Typography } from "antd"
 import { useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"

@@ -200,7 +200,6 @@ export function BulkSlotsForm({ courseStartDate, courseEndDate, onSubmit, onCanc
 				>
 					<Flex vertical gap={6}>
 						{times.map((t, idx) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: thứ tự ổn định trong UX edit list cơ bản
 							<Flex key={idx} gap={8} align="center">
 								<Input
 									type="time"

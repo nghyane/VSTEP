@@ -1,4 +1,5 @@
-import React, { useState } from "react"
+import type React from "react"
+import { useState } from "react"
 import type { AdminWritingMarker } from "#/features/admin-practice/types"
 
 export function useMarkerDrag(
@@ -26,15 +27,24 @@ export function useMarkerDrag(
 	}
 
 	function applyDrop(targetId: string | null, targetSide: "left" | "right") {
-		if (!dragId || dragId === targetId) { clearDrag(); return }
+		if (!dragId || dragId === targetId) {
+			clearDrag()
+			return
+		}
 		const dragSide = leftMarkers.find((m) => m.id === dragId) ? "left" : "right"
 		const fromList = dragSide === "left" ? leftMarkers : rightMarkers
 		const toList = targetSide === "left" ? leftMarkers : rightMarkers
 		const dragMarker = fromList.find((m) => m.id === dragId)
-		if (!dragMarker) { clearDrag(); return }
+		if (!dragMarker) {
+			clearDrag()
+			return
+		}
 
 		if (dragSide === targetSide) {
-			if (targetId === null) { clearDrag(); return }
+			if (targetId === null) {
+				clearDrag()
+				return
+			}
 			const reordered = [...fromList]
 			const fromIdx = reordered.findIndex((m) => m.id === dragId)
 			const toIdx = reordered.findIndex((m) => m.id === targetId)
@@ -42,9 +52,7 @@ export function useMarkerDrag(
 			reordered.splice(toIdx, 0, item)
 			onReorder?.(reordered.map((m, i) => ({ ...m, display_order: i + 1 })))
 		} else {
-			const newFrom = fromList
-				.filter((m) => m.id !== dragId)
-				.map((m, i) => ({ ...m, display_order: i + 1 }))
+			const newFrom = fromList.filter((m) => m.id !== dragId).map((m, i) => ({ ...m, display_order: i + 1 }))
 			const inserted = [...toList]
 			const toIdx = targetId ? inserted.findIndex((m) => m.id === targetId) : inserted.length
 			inserted.splice(toIdx === -1 ? inserted.length : toIdx, 0, { ...dragMarker, side: targetSide })
@@ -63,5 +71,13 @@ export function useMarkerDrag(
 		applyDrop(null, side)
 	}
 
-	return { dragId, dragOverId, handleDragStart, handleDragOver, handleDrop, handleColumnDrop, handleDragEnd: clearDrag }
+	return {
+		dragId,
+		dragOverId,
+		handleDragStart,
+		handleDragOver,
+		handleDrop,
+		handleColumnDrop,
+		handleDragEnd: clearDrag,
+	}
 }

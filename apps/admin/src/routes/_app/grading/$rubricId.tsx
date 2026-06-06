@@ -1,5 +1,5 @@
 import { ArrowLeftOutlined, CopyOutlined, EditOutlined, ThunderboltOutlined } from "@ant-design/icons"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { type UseMutationResult, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, Link, redirect } from "@tanstack/react-router"
 import {
 	Alert,
@@ -33,10 +33,12 @@ import {
 	updateRubric,
 } from "#/features/admin-grading/queries"
 import type { Criterion, GradingRubric } from "#/features/admin-grading/types"
-import { extractError, formatApiErrorBanner } from "#/lib/api"
+import { type ApiResponse, extractError, formatApiErrorBanner } from "#/lib/api"
 import { useAuth } from "#/lib/auth"
 
 const gradingSearch = { page: 1, skill: null, is_active: null }
+
+type RubricActionMutation = UseMutationResult<ApiResponse<GradingRubric>, Error, void, unknown>
 
 export const Route = createFileRoute("/_app/grading/$rubricId")({
 	beforeLoad: () => {
@@ -121,8 +123,8 @@ function DetailHeader({
 	activateMutation,
 }: {
 	rubric: GradingRubric
-	cloneMutation: ReturnType<typeof useMutation>
-	activateMutation: ReturnType<typeof useMutation>
+	cloneMutation: RubricActionMutation
+	activateMutation: RubricActionMutation
 }) {
 	const skillLabel = rubric.skill === "writing" ? "Writing" : "Speaking"
 
@@ -189,7 +191,7 @@ function ReadOnlyView({
 	cloneMutation,
 }: {
 	rubric: GradingRubric
-	cloneMutation: ReturnType<typeof useMutation>
+	cloneMutation: RubricActionMutation
 }) {
 	return (
 		<Tabs
@@ -229,7 +231,7 @@ function OverviewTab({
 	cloneMutation,
 }: {
 	rubric: GradingRubric
-	cloneMutation: ReturnType<typeof useMutation>
+	cloneMutation: RubricActionMutation
 }) {
 	return (
 		<Flex vertical gap={16}>
@@ -333,7 +335,7 @@ function VersionActionCard({
 	cloneMutation,
 }: {
 	rubric: GradingRubric
-	cloneMutation: ReturnType<typeof useMutation>
+	cloneMutation: RubricActionMutation
 }) {
 	return (
 		<Card size="small" title="Quản trị version">
@@ -593,7 +595,7 @@ function DraftBuilder({
 	activateMutation,
 }: {
 	rubric: GradingRubric
-	activateMutation: ReturnType<typeof useMutation>
+	activateMutation: RubricActionMutation
 }) {
 	const [form] = Form.useForm<PolicyFormValues>()
 	const queryClient = useQueryClient()
