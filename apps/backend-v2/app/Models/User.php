@@ -21,7 +21,7 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
-#[Fillable(['full_name', 'email', 'password', 'role', 'avatar_key', 'avatar_url', 'google_id', 'title', 'bio', 'active_profile_id', 'email_verified_at', 'deactivated_at'])]
+#[Fillable(['full_name', 'email', 'phone_number', 'password', 'role', 'avatar_key', 'avatar_url', 'google_id', 'title', 'bio', 'active_profile_id', 'email_verified_at', 'deactivated_at'])]
 #[Hidden(['password'])]
 class User extends Authenticatable implements CanResetPasswordContract, JWTSubject, MustVerifyEmailContract
 {

@@ -79,9 +79,8 @@ export function ListeningPanel({ sections, sessionId, initialPlaySummary, answer
       if (activeGroupTranscript) {
         setAudioError(null);
         setUseTtsFallback(true);
-        setAudioNotice("Audio gốc chưa có, đang dùng giọng đọc máy.");
       } else {
-        setAudioError("Bài này chưa có audio.");
+        setAudioError(null);
       }
       return;
     }
@@ -133,7 +132,6 @@ export function ListeningPanel({ sections, sessionId, initialPlaySummary, answer
         if (activeGroupTranscript) {
           setUseTtsFallback(true);
           setAudioError(null);
-          setAudioNotice("Không tải được audio gốc, đang dùng giọng đọc máy.");
         } else {
           setAudioError("Không tải được audio. Vui lòng thử lại.");
         }

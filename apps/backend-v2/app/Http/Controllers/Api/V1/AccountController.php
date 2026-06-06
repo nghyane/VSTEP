@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Account\UpdateAccountRequest;
 use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\Profile\UpdateAvatarRequest;
 use App\Http\Requests\Profile\UploadAvatarRequest;
 use App\Http\Resources\AvatarResource;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\AccountService;
 use App\Services\ProfileService;
@@ -25,6 +27,14 @@ final class AccountController extends Controller
         private readonly AccountService $accountService,
         private readonly ProfileService $profileService,
     ) {}
+
+    public function update(UpdateAccountRequest $request): UserResource
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        return new UserResource($this->accountService->update($user, $request->validated()));
+    }
 
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {

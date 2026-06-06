@@ -59,6 +59,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/auth/me', [AuthController::class, 'me']);
 
         // Self-service account ops (mọi role dùng được).
+        Route::patch('/me', [AccountController::class, 'update']);
         Route::post('/me/change-password', [AccountController::class, 'changePassword']);
 
         // Profile CRUD — scoped by authenticated account.

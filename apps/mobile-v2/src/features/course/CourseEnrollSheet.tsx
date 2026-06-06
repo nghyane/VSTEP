@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   PanResponder,
   ScrollView,
@@ -38,6 +38,13 @@ export function CourseEnrollSheet({ visible, course, profile, submitting, onClos
   const currentPoints = useRef<{ x: number; y: number }[]>([]);
   const hasSignature = paths.length > 0;
   const canSubmit = agreed && hasSignature && !submitting;
+
+  useEffect(() => {
+    if (!visible) {
+      setAgreed(false);
+      clearSignature();
+    }
+  }, [visible]);
 
   const panResponder = useMemo(
     () => PanResponder.create({
@@ -113,28 +120,35 @@ export function CourseEnrollSheet({ visible, course, profile, submitting, onClos
           </HapticTouchable>
         </View>
 
-        {agreed ? (
-          <View style={styles.signatureSection}>
-            <View style={styles.signatureHeader}>
+        <View style={[styles.signatureSection, !agreed && styles.signatureDisabled]}>
+          <View style={styles.signatureHeader}>
+            <View>
               <Text style={[styles.sectionLabel, { color: c.subtle }]}>Ký xác nhận</Text>
-              <HapticTouchable onPress={clearSignature} disabled={submitting || !hasSignature}>
-                <Text style={[styles.clearText, { color: hasSignature ? c.destructive : c.subtle }]}>Xóa chữ ký</Text>
-              </HapticTouchable>
+              <Text style={[styles.signatureSub, { color: c.mutedForeground }]}>Cần ký sau khi đồng ý cam kết.</Text>
             </View>
-            <View
-              style={[styles.signaturePad, { backgroundColor: c.surface, borderColor: c.border }]}
-              onLayout={(event) => setSignatureSize(event.nativeEvent.layout)}
-              {...panResponder.panHandlers}
-            >
-              <Svg width="100%" height="100%" viewBox={`0 0 ${SIGNATURE_WIDTH} ${SIGNATURE_HEIGHT}`}>
-                {[...paths, draftPath].filter(Boolean).map((path, index) => (
-                  <Path key={`${path}-${index}`} d={path} stroke={c.foreground} strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                ))}
-              </Svg>
-              {!hasSignature ? <Text style={[styles.signatureHint, { color: c.subtle }]}>Ký trong khung này</Text> : null}
-            </View>
+            <HapticTouchable onPress={clearSignature} disabled={submitting || !hasSignature}>
+              <Text style={[styles.clearText, { color: hasSignature ? c.destructive : c.subtle }]}>Vẽ lại</Text>
+            </HapticTouchable>
           </View>
-        ) : null}
+          <View
+            style={[styles.signaturePad, { backgroundColor: c.surface, borderColor: agreed ? c.warning : c.border }]}
+            onLayout={(event) => setSignatureSize(event.nativeEvent.layout)}
+            {...(agreed && !submitting ? panResponder.panHandlers : {})}
+          >
+            <Svg width="100%" height="100%" viewBox={`0 0 ${SIGNATURE_WIDTH} ${SIGNATURE_HEIGHT}`}>
+              {[...paths, draftPath].filter(Boolean).map((path, index) => (
+                <Path key={`${path}-${index}`} d={path} stroke={c.foreground} strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              ))}
+            </Svg>
+            {!hasSignature ? (
+              <Text style={[styles.signatureHint, { color: agreed ? c.warning : c.subtle }]}>Ký tên của bạn vào đây</Text>
+            ) : null}
+            <View style={[styles.signatureLine, { borderColor: agreed ? c.warning : c.border }]} />
+          </View>
+          <Text style={[styles.signatureStatus, { color: hasSignature ? c.primaryDark : c.subtle }]}>
+            {hasSignature ? "Đã ký, bạn có thể tiếp tục thanh toán." : "Dùng ngón tay để ký xác nhận cam kết."}
+          </Text>
+        </View>
 
         <View style={styles.actions}>
           <View style={styles.actionItem}>
@@ -210,11 +224,15 @@ const styles = StyleSheet.create({
   checkText: { color: "#FFFFFF", fontSize: fontSize.sm, fontFamily: fontFamily.extraBold, lineHeight: 18 },
   agreeText: { flex: 1, fontSize: fontSize.sm, fontFamily: fontFamily.medium, lineHeight: 20 },
   signatureSection: { gap: spacing.sm },
+  signatureDisabled: { opacity: 0.72 },
   signatureHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   sectionLabel: { fontSize: fontSize.xs, fontFamily: fontFamily.extraBold, textTransform: "uppercase", letterSpacing: 1 },
+  signatureSub: { marginTop: 2, fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   clearText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   signaturePad: { height: SIGNATURE_HEIGHT, borderWidth: 2, borderStyle: "dashed", borderRadius: radius.lg, overflow: "hidden" },
   signatureHint: { position: "absolute", alignSelf: "center", top: SIGNATURE_HEIGHT / 2 - 10, fontSize: fontSize.sm, fontFamily: fontFamily.medium },
+  signatureLine: { position: "absolute", left: spacing.xl, right: spacing.xl, bottom: spacing.lg, borderBottomWidth: 1, borderStyle: "dashed", opacity: 0.55 },
+  signatureStatus: { fontSize: fontSize.xs, fontFamily: fontFamily.medium },
   actions: { flexDirection: "row", gap: spacing.md, paddingBottom: spacing.md },
   actionItem: { flex: 1 },
 });

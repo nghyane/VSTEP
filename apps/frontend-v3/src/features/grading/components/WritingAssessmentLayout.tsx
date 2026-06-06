@@ -83,7 +83,7 @@ export function WritingAssessmentPending({ context, progress }: PendingProps) {
 			<div className="card p-6 text-center space-y-4">
 				<img src="/mascot/lac-happy.png" alt="" className="w-20 h-20 mx-auto object-contain" />
 				<div>
-					<p className="font-bold text-lg text-foreground">AI đang chấm bài...</p>
+					<p className="font-bold text-lg text-foreground">Hệ thống đang chấm bài...</p>
 					<p className="text-sm text-subtle mt-1">Đang phân tích ngữ pháp, từ vựng và yêu cầu đề bài</p>
 				</div>
 				<DuoProgressBar

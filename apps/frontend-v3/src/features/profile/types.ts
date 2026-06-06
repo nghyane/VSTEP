@@ -12,6 +12,10 @@ export interface UpdateProfileInput {
 	target_deadline?: string
 }
 
+export interface UpdateAccountInput {
+	phone_number: string | null
+}
+
 export interface AvatarResponse {
 	avatar_key: AvatarKey | null
 	avatar_url: string | null

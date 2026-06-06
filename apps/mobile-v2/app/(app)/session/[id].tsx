@@ -75,7 +75,7 @@ export default function SessionScreen() {
         result={submitResult}
         sessionId={roomData.session.id}
         examTitle={roomData.exam.title}
-        onGoToResult={() => router.replace(`/(app)/exam-result/${roomData.session.id}`)}
+        onGoToResult={() => router.replace(`/(app)/exam-result/${roomData.session.id}?celebrate=streak`)}
         onGoToExams={() => router.replace("/(app)/(tabs)/exams")}
       />
     );

@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useToast } from "#/lib/toast"
-import { getEnglishVoices, pickEnglishVoice, speak, stopSpeaking } from "#/lib/utils"
+import {
+	getEnglishVoices,
+	pickBoundaryEnglishVoice,
+	pickEnglishVoice,
+	speak,
+	stopSpeaking,
+} from "#/lib/utils"
 
 export interface DialogueTurn {
 	speaker: string
@@ -131,18 +137,19 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
 	const [activeTurnIndex, setActiveTurnIndex] = useState(-1)
 	const [speed, setSpeed] = useState<TTSSpeed>(1)
 	const cancelledRef = useRef(false)
-	const wordTimerRef = useRef(0)
 	const activeWordIndexRef = useRef(-1)
 	const activeTurnIndexRef = useRef(-1)
 
 	const turns = useMemo(() => (transcript ? parseDialogue(transcript) : []), [transcript])
 	const totalWords = turns.length > 0 ? turns[turns.length - 1].globalWordEnd + 1 : 0
 
-	const [primaryVoice, setPrimaryVoice] = useState<SpeechSynthesisVoice | undefined>(() => pickEnglishVoice())
+	const [primaryVoice, setPrimaryVoice] = useState<SpeechSynthesisVoice | undefined>(() =>
+		pickBoundaryEnglishVoice(),
+	)
 	useEffect(() => {
 		if (primaryVoice) return
 		const load = () => {
-			const v = pickEnglishVoice()
+			const v = pickBoundaryEnglishVoice() ?? pickEnglishVoice()
 			if (v) setPrimaryVoice(v)
 		}
 		window.speechSynthesis?.addEventListener("voiceschanged", load)
@@ -160,13 +167,6 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
 		return map
 	}, [turns, primaryVoice, secondVoice])
 
-	const clearWordTimer = useCallback(() => {
-		if (wordTimerRef.current) {
-			clearInterval(wordTimerRef.current)
-			wordTimerRef.current = 0
-		}
-	}, [])
-
 	const setActiveWord = useCallback((index: number) => {
 		activeWordIndexRef.current = index
 		setActiveWordIndex(index)
@@ -179,10 +179,9 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
 
 	const stop = useCallback(() => {
 		cancelledRef.current = true
-		clearWordTimer()
 		stopSpeaking()
 		setPlaying(false)
-	}, [clearWordTimer])
+	}, [])
 
 	const selectVoice = useCallback(
 		(voice: SpeechSynthesisVoice) => {
@@ -192,34 +191,14 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
 		[stop],
 	)
 
-	const startWordTimer = useCallback(
-		(turn: DialogueTurn, rate: number, startWordOffset = 0) => {
-			clearWordTimer()
-			const wordCount = turn.globalWordEnd - turn.globalWordStart + 1
-			let currentWord = startWordOffset
-			setActiveWord(turn.globalWordStart + startWordOffset)
-			wordTimerRef.current = window.setInterval(() => {
-				currentWord++
-				if (currentWord >= wordCount) {
-					clearWordTimer()
-					return
-				}
-				setActiveWord(turn.globalWordStart + currentWord)
-			}, msPerWord(rate))
-		},
-		[clearWordTimer, setActiveWord],
-	)
-
 	const speakTurn = useCallback(
 		(turnIdx: number, startWordOffset = 0) => {
 			if (cancelledRef.current) {
 				setPlaying(false)
-				clearWordTimer()
 				return
 			}
 			if (turnIdx >= turns.length) {
 				setPlaying(false)
-				clearWordTimer()
 				if (turns.length > 0) {
 					setActiveWord(turns[turns.length - 1].globalWordEnd)
 					setActiveTurn(turns.length - 1)
@@ -237,24 +216,20 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
 			const wordPositions = computeWordPositions(text)
 			const voice = speakerVoices.get(turn.speaker) ?? primaryVoice
 
-			startWordTimer(turn, speed, safeStartWordOffset)
-
 			speak(text, {
 				rate: speed,
 				voice,
 				skipCancel: true,
+				boundaryFallback: false,
 				onError: () => {
 					setPlaying(false)
-					clearWordTimer()
 					useToast.getState().add(VOICE_ERROR_MESSAGE)
 				},
 				onBoundary: (charIndex) => {
-					if (wordTimerRef.current) clearWordTimer()
 					setActiveWord(findWordAtChar(charIndex, wordPositions, turn.globalWordStart + safeStartWordOffset))
 				},
 				onEnd: () => {
 					if (cancelledRef.current) return
-					clearWordTimer()
 					setActiveWord(turn.globalWordEnd)
 					const delay = turns.some((t) => t.speaker) ? 600 : 400
 					setTimeout(() => {
@@ -263,7 +238,7 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
 				},
 			})
 		},
-		[turns, speakerVoices, primaryVoice, speed, startWordTimer, clearWordTimer, setActiveWord, setActiveTurn],
+		[turns, speakerVoices, primaryVoice, speed, setActiveWord, setActiveTurn],
 	)
 
 	const startSpeaking = useCallback(
@@ -298,9 +273,8 @@ export function useTTSPlayer(transcript: string | null): TTSPlayer {
 	useEffect(() => {
 		return () => {
 			stopSpeaking()
-			clearWordTimer()
 		}
-	}, [clearWordTimer])
+	}, [])
 
 	const progress = totalWords > 0 && activeWordIndex >= 0 ? ((activeWordIndex + 1) / totalWords) * 100 : 0
 

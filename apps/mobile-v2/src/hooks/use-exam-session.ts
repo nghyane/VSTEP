@@ -159,9 +159,15 @@ export function useRestartExamSession() {
 }
 
 export function useSubmitExamSession(sessionId: string) {
+  const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: SubmitSessionPayload) =>
       api.post<SubmitSessionResult>(`/api/v1/exam-sessions/${sessionId}/submit`, payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["streak"] });
+      void qc.invalidateQueries({ queryKey: ["overview"] });
+      void qc.invalidateQueries({ queryKey: ["activity-heatmap"] });
+    },
   });
 }
 
