@@ -121,8 +121,12 @@ final class TeacherDashboardService
             ],
         );
 
-        if ($leave->wasRecentlyCreated) {
-            $this->notifyStaffLeaveRequestCreated($leave, $teacher);
+        if ($leave->status === LeaveRequestStatus::Pending) {
+            try {
+                $this->notifyStaffLeaveRequestCreated($leave, $teacher);
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         return $leave;
@@ -410,7 +414,7 @@ final class TeacherDashboardService
                     'teacher_id' => $teacher->id,
                     'route' => '/leave-requests',
                 ],
-                dedupKey: "teacher_leave_request:{$leave->id}:created:{$user->id}",
+                dedupKey: "tlr:{$leave->id}:{$user->id}",
             ));
     }
 }

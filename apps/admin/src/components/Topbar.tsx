@@ -257,6 +257,11 @@ function NotificationsTab({
 type NavigateFn = ReturnType<typeof useNavigate>
 
 function openNotificationRoute(route: string, navigate: NavigateFn): void {
+	if (route === "/leave-requests") {
+		navigate({ to: "/leave-requests" })
+		return
+	}
+
 	const teacherRequestId = routeSegment(route, "/teacher/grading-requests/")
 	if (teacherRequestId) {
 		navigate({ to: "/teacher/grading-requests/$requestId", params: { requestId: teacherRequestId } })
