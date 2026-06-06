@@ -41,7 +41,7 @@ export function LandingMobileAppNotice({ mode, onLogout }: Props) {
 					<a
 						href={MOBILE_APP_DOWNLOAD_URL}
 						className="btn btn-primary block w-full py-3.5 text-center"
-						download="vstepGO.apk"
+						download="VstepGO.apk"
 					>
 						Tải app Android
 					</a>

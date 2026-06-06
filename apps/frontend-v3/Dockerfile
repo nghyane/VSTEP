@@ -5,7 +5,7 @@ RUN bun install --frozen-lockfile
 COPY . .
 ARG VITE_API_URL=https://api.vstepgo.com/api/v1
 ARG VITE_GOOGLE_CLIENT_ID=644444548899-q6kldv6576f2gjoccrm3i3s9sqlbetce.apps.googleusercontent.com
-ARG VITE_MOBILE_APK_URL=https://expo.dev/artifacts/eas/nyr4L56C6P8Hb8wMDDWcMQ.apk
+ARG VITE_MOBILE_APK_URL=https://github.com/nghyane/VSTEP/releases/latest/download/VstepGO.apk
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 ENV VITE_MOBILE_APK_URL=$VITE_MOBILE_APK_URL
