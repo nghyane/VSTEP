@@ -4,10 +4,13 @@ import { createPortal } from "react-dom"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
 import { ScrollArea } from "#/components/ScrollArea"
+import { ZaloSupportLink } from "#/components/SupportFab"
 import { createTopupOrder } from "#/features/wallet/actions"
 import { savePendingTopupOrder } from "#/features/wallet/topup-pending"
 import { type EnrichedPackage, useTopupDialog } from "#/features/wallet/use-topup-dialog"
 import { cn, formatNumber, formatVnd } from "#/lib/utils"
+
+type UsagePricing = NonNullable<ReturnType<typeof useTopupDialog>["pricing"]>
 
 // ─── Shell ────────────────────────────────────────────────
 
@@ -49,7 +52,7 @@ export function TopUpDialog({ open, onClose }: { open: boolean; onClose: () => v
 // ─── Body ─────────────────────────────────────────────────
 
 function Body({ onClose }: { onClose: () => void }) {
-	const { packages, balance, isLoading } = useTopupDialog()
+	const { packages, balance, pricing, isLoading } = useTopupDialog()
 	const defaultId = packages[Math.floor(packages.length / 2)]?.id ?? packages[0]?.id ?? ""
 	const [selectedId, setSelectedId] = useState<string>(defaultId)
 
@@ -76,7 +79,7 @@ function Body({ onClose }: { onClose: () => void }) {
 
 	return (
 		<div className="grid md:max-h-[92vh] md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.4fr)]">
-			<LeftPanel balance={balance} onClose={onClose} />
+			<LeftPanel balance={balance} pricing={pricing} onClose={onClose} />
 			<ScrollArea className="md:max-h-[92vh]">
 				<RightPanel
 					packages={packages}
@@ -91,8 +94,17 @@ function Body({ onClose }: { onClose: () => void }) {
 
 // ─── Left Panel ───────────────────────────────────────────
 
-function LeftPanel({ balance, onClose }: { balance: number; onClose: () => void }) {
+function LeftPanel({
+	balance,
+	pricing,
+	onClose,
+}: {
+	balance: number
+	pricing: UsagePricing | null
+	onClose: () => void
+}) {
 	const isEmpty = balance === 0
+	const feedbackCost = pricing?.practice.feedback_cost_coins ?? null
 	return (
 		<div className="flex flex-col items-center justify-between gap-6 bg-background p-8 md:py-10">
 			<div className="flex flex-col items-center gap-4">
@@ -124,7 +136,7 @@ function LeftPanel({ balance, onClose }: { balance: number; onClose: () => void 
 						) : (
 							<>
 								Còn <span className="font-extrabold text-foreground">{formatNumber(balance)} xu</span>. Nạp
-								thêm để học không lo dừng giữa chừng.
+								thêm khi cần để luôn sẵn sàng làm đề và nhận xét AI.
 							</>
 						)}
 					</p>
@@ -139,18 +151,27 @@ function LeftPanel({ balance, onClose }: { balance: number; onClose: () => void 
 					<li className="flex items-start gap-1.5">
 						<span className="mt-1 size-1 shrink-0 rounded-full bg-subtle" />
 						<span>
-							<span className="font-extrabold text-foreground">Full-test</span>: 25 xu / đề
+							<span className="font-extrabold text-foreground">Full-test</span>:{" "}
+							{coinCostLabel(pricing?.exam.full_test_cost_coins, "lượt")}
 						</span>
 					</li>
 					<li className="flex items-start gap-1.5">
 						<span className="mt-1 size-1 shrink-0 rounded-full bg-subtle" />
 						<span>
-							Thi theo kỹ năng riêng: <span className="font-extrabold text-foreground">8 xu / kỹ năng</span>
+							Thi theo từng kỹ năng:{" "}
+							<span className="font-extrabold text-foreground">
+								{coinCostLabel(pricing?.exam.custom_per_skill_coins, "kỹ năng")}
+							</span>
 						</span>
 					</li>
 					<li className="flex items-start gap-1.5">
 						<span className="mt-1 size-1 shrink-0 rounded-full bg-subtle" />
-						<span>Nhận xét AI chi tiết sau mỗi bài Viết / Nói</span>
+						<span>
+							Nhận xét AI chi tiết:{" "}
+							<span className="font-extrabold text-foreground">
+								{feedbackCost === 0 ? "đang miễn phí" : coinCostLabel(feedbackCost, "lần")}
+							</span>
+						</span>
 					</li>
 				</ul>
 			</div>
@@ -160,10 +181,14 @@ function LeftPanel({ balance, onClose }: { balance: number; onClose: () => void 
 				onClick={onClose}
 				className="text-xs font-bold text-subtle underline-offset-4 hover:text-foreground hover:underline transition"
 			>
-				Quay lại vào ngày mai
+				Để sau
 			</button>
 		</div>
 	)
+}
+
+function coinCostLabel(cost: number | null | undefined, unit: string): string {
+	return typeof cost === "number" ? `${formatNumber(cost)} xu / ${unit}` : "theo cấu hình hiện tại"
 }
 
 // ─── Right Panel ──────────────────────────────────────────
@@ -187,19 +212,19 @@ function RightPanel({
 
 			<div className="space-y-2">
 				<h1 className="text-2xl md:text-3xl font-extrabold leading-tight text-foreground">
-					Nạp xu một lần, học thả ga mỗi ngày!
+					Chủ động xu để giữ nhịp học mỗi ngày
 				</h1>
 				<p className="text-sm leading-relaxed text-subtle">
-					Mở khoá <span className="font-extrabold text-foreground">không giới hạn</span> lượt làm đề và chấm
-					điểm AI. Xu không bao giờ hết hạn — mua một lần, dùng đến khi đạt mục tiêu.
+					Dùng xu cho thi thử, luyện kỹ năng và nhận xét AI chi tiết. Xu không hết hạn — nạp khi cần, dùng dần
+					theo mục tiêu học của bạn.
 				</p>
 			</div>
 
 			<ul className="space-y-3">
 				<Benefit
 					icon="target"
-					title="Luyện tập & thi thử không giới hạn"
-					body="Làm toàn bộ đề full-test hoặc từng kỹ năng tuỳ nhu cầu."
+					title="Linh hoạt luyện tập & thi thử"
+					body="Chọn làm full-test hoặc từng kỹ năng tuỳ nhu cầu ôn tập."
 				/>
 				<Benefit
 					icon="pencil"
@@ -208,8 +233,8 @@ function RightPanel({
 				/>
 				<Benefit
 					icon="lightning"
-					title="Tặng thêm xu theo streak học tập"
-					body="Duy trì chuỗi 7 / 14 / 30 ngày để nhận thưởng xu cộng dồn."
+					title="Xu không hết hạn"
+					body="Số dư còn lại được giữ trong ví để dùng tiếp cho các lần học sau."
 				/>
 			</ul>
 
@@ -328,14 +353,9 @@ function BuyButton({ pack }: { pack: EnrichedPackage }) {
 			</button>
 			<p className="text-center text-xs text-subtle">
 				Hoặc{" "}
-				<a
-					href="https://www.facebook.com/"
-					target="_blank"
-					rel="noreferrer"
-					className="underline underline-offset-4 hover:text-foreground transition"
-				>
-					liên hệ fanpage
-				</a>{" "}
+				<ZaloSupportLink className="underline underline-offset-4 hover:text-foreground transition">
+					liên hệ Zalo hỗ trợ
+				</ZaloSupportLink>{" "}
 				để được hỗ trợ nạp xu
 			</p>
 		</div>

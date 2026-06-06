@@ -1,26 +1,44 @@
 import { useQuery } from "@tanstack/react-query"
+import type { ReactNode } from "react"
 import { useState } from "react"
 import { createPortal } from "react-dom"
 import { appConfigQuery } from "#/features/config/queries"
+import { cn } from "#/lib/utils"
+
+function useZaloSupportUrl(): string | null {
+	const { data: configData } = useQuery(appConfigQuery)
+	const zaloPhone = configData?.data.support?.zalo_phone.replace(/\D/g, "") ?? ""
+	return zaloPhone ? `https://zalo.me/${zaloPhone}` : null
+}
+
+export function ZaloSupportLink({ children, className }: { children: ReactNode; className?: string }) {
+	const zaloUrl = useZaloSupportUrl()
+
+	if (!zaloUrl) return <span className={className}>{children}</span>
+
+	return (
+		<a href={zaloUrl} target="_blank" rel="noopener noreferrer" className={className}>
+			{children}
+		</a>
+	)
+}
 
 export function SupportFab() {
 	const [open, setOpen] = useState(false)
-	const { data: configData } = useQuery(appConfigQuery)
-	const zaloPhone = configData?.data.support?.zalo_phone.replace(/\D/g, "") ?? ""
-	const zaloUrl = zaloPhone ? `https://zalo.me/${zaloPhone}` : null
+	const zaloUrl = useZaloSupportUrl()
 
 	return createPortal(
 		<div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
 			{open && zaloUrl && (
-				<a
-					href={zaloUrl}
-					target="_blank"
-					rel="noopener noreferrer"
-					className="flex items-center gap-2.5 rounded-full bg-[#0068FF] px-4 py-2.5 text-sm font-bold text-white shadow-lg transition-transform hover:scale-105 animate-[slideIn_0.15s_ease-out]"
+				<ZaloSupportLink
+					className={cn(
+						"flex items-center gap-2.5 rounded-full bg-info px-4 py-2.5 text-sm font-bold text-white shadow-lg",
+						"transition-transform hover:scale-105 animate-[slideIn_0.15s_ease-out]",
+					)}
 				>
 					<img src="/icons/zalo.png" alt="" className="size-5 shrink-0" />
 					Chat Zalo hỗ trợ
-				</a>
+				</ZaloSupportLink>
 			)}
 			<button
 				type="button"
