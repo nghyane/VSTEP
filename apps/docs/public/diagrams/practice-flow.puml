@@ -1,0 +1,27 @@
+@startuml
+!theme plain
+top to bottom direction
+skinparam backgroundColor transparent
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam rectangle {
+  BorderColor #e7e5e4
+  FontColor #1c1917
+  FontSize 12
+}
+skinparam ArrowColor #78716c
+
+title Nền tảng luyện tập 4 kỹ năng
+
+rectangle "Listening · Reading · Writing · Speaking" #E8F2FF
+rectangle "Practice UI\nTanStack Router + React" #F3E8FF
+rectangle "API Client\nTanStack Query + ky" #ECFDF3
+rectangle "Backend\nLaravel practice services" #FFF3D8
+rectangle "Kết quả\nĐiểm, tiến độ, nhận xét" #F5F5F0
+
+Listening · Reading · Writing · Speaking --> Practice UI\nTanStack Router + React
+Practice UI\nTanStack Router + React --> API Client\nTanStack Query + ky
+API Client\nTanStack Query + ky --> Backend\nLaravel practice services
+Backend\nLaravel practice services --> Kết quả\nĐiểm, tiến độ, nhận xét
+
+@enduml

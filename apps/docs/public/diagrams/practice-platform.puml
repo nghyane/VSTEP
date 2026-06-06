@@ -1,0 +1,35 @@
+@startuml
+!theme plain
+skinparam backgroundColor transparent
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam rectangle {
+  BorderColor #e7e5e4
+  FontColor #1c1917
+  FontSize 13
+}
+skinparam ArrowColor #78716c
+
+title Nền tảng luyện tập 4 kỹ năng
+
+rectangle "Practice UI" as ui #E8F2FF
+
+rectangle "Listening\naudio + MCQ" as listening #F3E8FF
+rectangle "Reading\npassage + MCQ" as reading #ECFDF3
+rectangle "Writing\nprompt + editor" as writing #FFF3D8
+rectangle "Speaking\nmic + transcript" as speaking #FFE8D8
+
+rectangle "API layer\nTanStack Query + ky" as api #F5F5F0
+rectangle "Backend services\ncontent, scoring, feedback, progress" as backend #F5F5F0
+
+ui --> listening
+ui --> reading
+ui --> writing
+ui --> speaking
+
+listening --> api
+reading --> api
+writing --> api
+speaking --> api
+api --> backend
+@enduml

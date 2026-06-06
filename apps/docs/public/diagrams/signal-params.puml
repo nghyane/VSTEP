@@ -1,0 +1,38 @@
+@startuml
+!theme plain
+skinparam backgroundColor transparent
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam activity {
+  BorderColor #e7e5e4
+  FontColor #1c1917
+  FontSize 13
+  ArrowColor #78716c
+}
+
+title Mô hình tín hiệu và tham số chấm điểm
+
+start
+
+#E8F2FF:<b>Bài làm</b>\nWriting text hoặc Speaking audio;
+
+split
+  #F3E8FF:<b>Writing signals</b>\nNgữ pháp — chính tả — số từ/câu/đoạn\nTừ nối — độ đa dạng từ — CEFR\nĐộ phủ đề — phát triển ý;
+split again
+  #F3E8FF:<b>Speaking signals</b>\nTranscript — tốc độ nói — ngập ngừng\nTừ vựng — cấu trúc câu — từ nối\nPhát âm — mức độ bám đề;
+end split
+
+#FFF3D8:<b>Tham số cấu hình</b>\nThresholds, weights, caps, penalties;
+
+#ECFDF3:<b>Bộ tính điểm</b>\nChấm theo tiêu chí\nÁp điều kiện giới hạn\nTạo nhận xét nhanh;
+
+#F5F5F0:<b>Đầu ra</b>\nĐiểm tham khảo\nNhận xét nhanh\nCờ cần người chấm xem xét;
+
+note right
+Tín hiệu đến từ nhiều nguồn khác
+nhau. Hệ thống kiểm soát điểm
+bằng tham số và điều kiện giới hạn.
+end note
+
+stop
+@enduml
