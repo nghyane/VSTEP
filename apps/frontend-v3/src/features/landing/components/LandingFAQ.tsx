@@ -28,17 +28,18 @@ const FAQS: FaqItem[] = [
 	},
 	{
 		question: "Có app điện thoại không?",
-		answer: "Hiện tại có web đầy đủ tính năng. App mobile đang trong giai đoạn beta, sẽ sớm mở public.",
+		answer:
+			"Có. VSTEP đã có APK Android để tải trực tiếp trên landing page. Bản web vẫn hoạt động đầy đủ trên máy tính.",
 	},
 ]
 
 export function LandingFAQ() {
 	return (
 		<section className="py-14 sm:py-20 lg:py-24">
-			<div className="max-w-[820px] mx-auto px-4 sm:px-6 lg:px-8">
-				<div className="text-center mb-9 sm:mb-12">
-					<p className="text-xs font-extrabold uppercase tracking-[0.18em] text-primary mb-3">FAQ</p>
-					<h2 className="font-sans font-extrabold text-2xl sm:text-3xl md:text-4xl text-foreground leading-tight tracking-tight">
+			<div className="mx-auto max-w-[820px] px-4 sm:px-6 lg:px-8">
+				<div className="mb-9 text-center sm:mb-12">
+					<p className="mb-3 text-xs font-extrabold uppercase tracking-[0.18em] text-primary">FAQ</p>
+					<h2 className="font-sans text-2xl font-extrabold leading-tight tracking-tight text-foreground sm:text-3xl md:text-4xl">
 						Câu hỏi thường gặp
 					</h2>
 				</div>
@@ -59,13 +60,13 @@ function FaqRow({ item }: { item: FaqItem }) {
 			<button
 				type="button"
 				onClick={() => setOpen((v) => !v)}
-				className="w-full flex items-center justify-between gap-4 px-4 py-4 sm:px-5 text-left"
+				className="flex w-full items-center justify-between gap-4 px-4 py-4 text-left sm:px-5"
 			>
-				<span className="text-base font-extrabold text-foreground leading-snug">{item.question}</span>
+				<span className="text-base font-extrabold leading-snug text-foreground">{item.question}</span>
 				<Chevron open={open} />
 			</button>
 			{open && (
-				<div className="px-4 pb-5 -mt-1 text-sm text-muted leading-relaxed border-t border-border-light pt-4 sm:px-5">
+				<div className="-mt-1 border-t border-border-light px-4 pb-5 pt-4 text-sm leading-relaxed text-muted sm:px-5">
 					{item.answer}
 				</div>
 			)}
@@ -82,7 +83,7 @@ function Chevron({ open }: { open: boolean }) {
 			strokeWidth="2.5"
 			strokeLinecap="round"
 			strokeLinejoin="round"
-			className={`w-5 h-5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+			className={`h-5 w-5 shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
 			aria-hidden="true"
 		>
 			<path d="M5 8l5 5 5-5" />
