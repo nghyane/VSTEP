@@ -12,6 +12,7 @@ export type NotificationType =
 	| "booking_created"
 	| "booking_cancelled"
 	| "booking_meet_url_updated"
+	| "teacher_grading_completed"
 
 export interface Notification {
 	id: string

@@ -200,6 +200,7 @@ abstract class WritingAssessmentStrategy extends TaskStrategy
             $capsApplied['minimum_word_count'] = $part === 1
                 ? $scoringRubric->taskFulfillmentParams()->wordMinimumTask1
                 : $scoringRubric->taskFulfillmentParams()->wordMinimumTask2;
+            $capsApplied['severe_minimum_word_count'] = $scoringRubric->taskFulfillmentParams()->severeMinimumWords($part);
             $capsApplied['points_covered'] = (int) ($evidence->task['points_covered'] ?? 0);
             $capsApplied['points_required'] = (int) ($evidence->task['points_required'] ?? 0);
             $capsApplied['copied_prompt'] = ($evidence->task['copied_prompt'] ?? false) === true;

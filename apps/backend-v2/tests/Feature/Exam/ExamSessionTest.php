@@ -277,9 +277,17 @@ class ExamSessionTest extends TestCase
             ->assertJsonPath('data.summary.overall.applicable', true)
             ->assertJsonPath('data.summary.overall.band', 2.5)
             ->assertJsonPath('data.summary.overall.score_on_10', 2.5)
-            ->assertJsonPath('data.summary.overall.vstep_level', 'Không đạt')
+            ->assertJsonPath('data.summary.overall.max_score', 10)
+            ->assertJsonPath('data.summary.overall.vstep_level', 'Không xét')
+            ->assertJsonPath('data.summary.overall.level', null)
             ->assertJsonPath('data.summary.overall.cefr_level', null)
-            ->assertJsonPath('data.summary.overall.result_label', 'Không đạt')
+            ->assertJsonPath('data.summary.overall.result_label', 'Không xét')
+            ->assertJsonPath('data.summary.scoring.scheme', 'vstep_3_5')
+            ->assertJsonPath('data.summary.scoring.skill_scale.step', 0.5)
+            ->assertJsonPath('data.summary.skills.0.key', 'listening')
+            ->assertJsonPath('data.summary.skills.0.score_on_10', 10)
+            ->assertJsonPath('data.summary.skills.0.raw.correct', 1)
+            ->assertJsonPath('data.session.result_summary.overall.score_on_10', 2.5)
             ->assertJsonPath('data.summary.mcq.correct', 1)
             ->assertJsonPath('data.summary.mcq.unanswered', 1)
             ->assertJsonPath('data.review.skills.0.key', 'listening')
@@ -404,10 +412,16 @@ class ExamSessionTest extends TestCase
             ->assertJsonPath('data.summary.overall.applicable', true)
             ->assertJsonPath('data.summary.overall.band', 8)
             ->assertJsonPath('data.summary.overall.score_on_10', 8)
+            ->assertJsonPath('data.summary.overall.level.code', 'B2')
+            ->assertJsonPath('data.summary.overall.level.vietnamese_level', 4)
             ->assertJsonPath('data.summary.overall.vstep_level', 'B2')
             ->assertJsonPath('data.summary.overall.cefr_level', null)
             ->assertJsonPath('data.summary.overall.result_label', 'B2')
             ->assertJsonPath('data.summary.mcq.correct', 2)
+            ->assertJsonPath('data.writing_feedback.0.feedback.strengths.0', 'Clear response.')
+            ->assertJsonPath('data.writing_feedback.0.feedback.improvements.0', 'Add more detail.')
+            ->assertJsonPath('data.writing_feedback.0.feedback.rewrites.0.original', 'I good')
+            ->assertJsonPath('data.writing_feedback.0.feedback.rewrites.0.improved', 'I am good')
             ->assertJsonPath('data.review.skills.2.key', 'writing')
             ->assertJsonPath('data.review.skills.2.status', 'ready')
             ->assertJsonPath('data.review.skills.2.score_label', 'Band 6.5')
@@ -416,6 +430,37 @@ class ExamSessionTest extends TestCase
             ->assertJsonPath('data.review.sections.2.source_type', 'exam_writing_task')
             ->assertJsonPath('data.review.sections.2.source_id', $writingTasks->get(0)->id)
             ->assertJsonPath('data.review.sections.4.status', 'ready');
+    }
+
+    public function test_session_results_does_not_expose_raw_assessment_feedback(): void
+    {
+        [$user, $profile, , $version] = $this->seedExam();
+        $this->createSecondWritingTask($version);
+        $session = $this->createSession($profile, $version, ExamSessionStatus::Submitted, ['writing']);
+
+        $writingTasks = ExamVersionWritingTask::query()->orderBy('part')->get();
+        $rawFeedback = [
+            'evidenceNotes' => [
+                'grammar' => [
+                    'label' => 'Grammar',
+                    'detail' => 'Raw rubric evidence should not be rendered as learner feedback.',
+                ],
+            ],
+        ];
+
+        $this->createAssessedWriting($profile, $session, $writingTasks->get(0), 6.0, $rawFeedback);
+        $this->createAssessedWriting($profile, $session, $writingTasks->get(1), 7.0, $rawFeedback);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->getJson("/api/v1/exam-sessions/{$session->id}/results")
+            ->assertOk()
+            ->assertJsonPath('data.summary.feedback_status', 'none')
+            ->assertJsonPath('data.writing_feedback.0.feedback_status', 'none')
+            ->assertJsonPath('data.writing_feedback.0.feedback', null)
+            ->assertJsonPath('data.writing_feedback.0.score_insights.0.key', 'grammar')
+            ->assertJsonPath('data.writing_feedback.0.score_insights.0.label', 'Grammar')
+            ->assertJsonPath('data.writing_feedback.0.score_insights.0.detail', 'Raw rubric evidence should not be rendered as learner feedback.')
+            ->assertJsonMissingPath('data.writing_feedback.0.feedback.evidenceNotes');
     }
 
     public function test_session_results_returns_failed_feedback_state(): void
@@ -435,11 +480,31 @@ class ExamSessionTest extends TestCase
             ->assertJsonPath('data.summary.has_failed_jobs', true)
             ->assertJsonPath('data.summary.display.band_value', 'Chấm lỗi')
             ->assertJsonPath('data.summary.display.total_score_value', 'Chấm lỗi')
+            ->assertJsonPath('data.session.result_summary.score_status', 'failed')
+            ->assertJsonPath('data.session.result_summary.skills.2.status', 'failed')
             ->assertJsonPath('data.writing_feedback.0.score_status', 'failed')
             ->assertJsonPath('data.writing_feedback.0.feedback_status', 'failed')
             ->assertJsonPath('data.review.skills.2.status', 'failed')
             ->assertJsonPath('data.review.skills.2.score_label', 'Chấm lỗi')
             ->assertJsonPath('data.review.sections.2.status', 'failed');
+    }
+
+    public function test_session_results_marks_productive_skill_failed_before_pending(): void
+    {
+        [$user, $profile, , $version] = $this->seedExam();
+        $this->createSecondWritingTask($version);
+        $session = $this->createSession($profile, $version, ExamSessionStatus::Submitted, ['writing']);
+        $writingTasks = ExamVersionWritingTask::query()->orderBy('part')->get();
+
+        $this->createAssessedWriting($profile, $session, $writingTasks->get(0), null, null, AssessmentJobStatus::Failed);
+        $this->createAssessedWriting($profile, $session, $writingTasks->get(1), null, null, AssessmentJobStatus::Pending);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->getJson("/api/v1/exam-sessions/{$session->id}/results")
+            ->assertOk()
+            ->assertJsonPath('data.summary.feedback_status', 'failed')
+            ->assertJsonPath('data.review.skills.0.status', 'failed')
+            ->assertJsonPath('data.review.skills.0.score_label', 'Chấm lỗi');
     }
 
     public function test_session_results_keeps_feedback_none_when_score_is_ready_without_feedback(): void
@@ -482,6 +547,10 @@ class ExamSessionTest extends TestCase
             ->assertJsonPath('data.summary.feedback_status', 'none')
             ->assertJsonPath('data.summary.overall.applicable', false)
             ->assertJsonPath('data.summary.overall.reason', 'Bài thi chưa đủ 4 kỹ năng để xếp bậc VSTEP tham khảo.')
+            ->assertJsonPath('data.summary.skills.0.key', 'reading')
+            ->assertJsonPath('data.summary.skills.0.score_on_10', 10)
+            ->assertJsonPath('data.session.result_summary.score_status', 'not_applicable')
+            ->assertJsonPath('data.session.result_summary.overall.score_on_10', null)
             ->assertJsonPath('data.summary.mcq.correct', 1)
             ->assertJsonPath('data.summary.mcq.total', 1)
             ->assertJsonCount(1, 'data.review.skills')
@@ -490,6 +559,74 @@ class ExamSessionTest extends TestCase
             ->assertJsonCount(1, 'data.review.sections')
             ->assertJsonPath('data.review.sections.0.id', 'read-1')
             ->assertJsonCount(1, 'data.mcq_detail');
+    }
+
+    public function test_session_results_rounds_scores_to_vstep_half_band(): void
+    {
+        [$user, $profile, , $version] = $this->seedExam();
+        $session = $this->createSession($profile, $version, ExamSessionStatus::Submitted, ['listening']);
+        $section = ExamVersionListeningSection::query()->firstOrFail();
+        $answeredItem = ExamVersionListeningItem::query()->firstOrFail();
+
+        ExamVersionListeningItem::create([
+            'section_id' => $section->id,
+            'display_order' => 1,
+            'stem' => 'Q extra 1?',
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct_index' => 0,
+        ]);
+        ExamVersionListeningItem::create([
+            'section_id' => $section->id,
+            'display_order' => 2,
+            'stem' => 'Q extra 2?',
+            'options' => ['A', 'B', 'C', 'D'],
+            'correct_index' => 0,
+        ]);
+        $this->createMcqAnswer($session, 'exam_listening_item', $answeredItem->id, $answeredItem->correct_index);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->getJson("/api/v1/exam-sessions/{$session->id}/results")
+            ->assertOk()
+            ->assertJsonPath('data.session.scores.listening', 3.5)
+            ->assertJsonPath('data.summary.skills.0.score_on_10', 3.5)
+            ->assertJsonPath('data.summary.score_status', 'not_applicable');
+    }
+
+    public function test_session_results_rounds_speaking_to_vstep_half_band(): void
+    {
+        [$user, $profile, , $version] = $this->seedExam();
+        $session = $this->createSession($profile, $version, ExamSessionStatus::Submitted, ['speaking']);
+        $part = ExamVersionSpeakingPart::query()->firstOrFail();
+
+        $this->createAssessedSpeaking($profile, $session, $part, 6.3);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->getJson("/api/v1/exam-sessions/{$session->id}/results")
+            ->assertOk()
+            ->assertJsonPath('data.session.scores.speaking', 6.5)
+            ->assertJsonPath('data.summary.skills.0.score_on_10', 6.5)
+            ->assertJsonPath('data.summary.score_status', 'not_applicable');
+    }
+
+    public function test_session_results_rounds_overall_to_vstep_half_band_boundary(): void
+    {
+        [$user, $profile, , $version] = $this->seedExam();
+        $session = $this->createSession($profile, $version, ExamSessionStatus::Submitted);
+        $listeningItem = ExamVersionListeningItem::query()->firstOrFail();
+        $readingItem = ExamVersionReadingItem::query()->firstOrFail();
+        $writingTask = ExamVersionWritingTask::query()->firstOrFail();
+        $speakingPart = ExamVersionSpeakingPart::query()->firstOrFail();
+
+        $this->createMcqAnswer($session, 'exam_listening_item', $listeningItem->id, $listeningItem->correct_index);
+        $this->createMcqAnswer($session, 'exam_reading_item', $readingItem->id, $readingItem->correct_index);
+        $this->createAssessedWriting($profile, $session, $writingTask, 6.0);
+        $this->createAssessedSpeaking($profile, $session, $speakingPart, 3.0);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->getJson("/api/v1/exam-sessions/{$session->id}/results")
+            ->assertOk()
+            ->assertJsonPath('data.summary.overall.score_on_10', 7.5)
+            ->assertJsonPath('data.summary.overall.vstep_level', 'B2');
     }
 
     public function test_submit_rejects_already_submitted(): void
@@ -754,7 +891,28 @@ class ExamSessionTest extends TestCase
             ->assertJsonPath('data.attempt_state.active_session.id', $active->id)
             ->assertJsonPath('data.attempt_state.active_current_version_session.id', $active->id)
             ->assertJsonPath('data.attempt_state.history.0.id', $submitted->id)
+            ->assertJsonPath('data.attempt_state.history.0.result_summary.scoring.scheme', 'vstep_3_5')
+            ->assertJsonPath('data.attempt_state.history.0.result_summary.overall.score_on_10', 0)
+            ->assertJsonPath('data.attempt_state.history.0.result_summary.overall.result_label', 'Không xét')
             ->assertJsonCount(1, 'data.attempt_state.history');
+    }
+
+    public function test_exam_overview_history_does_not_fake_overall_for_custom_skill_sessions(): void
+    {
+        [$user, $profile, $exam, $version] = $this->seedExam();
+        $session = $this->createSession($profile, $version, ExamSessionStatus::Submitted, ['reading']);
+        $readingItem = ExamVersionReadingItem::query()->firstOrFail();
+        $this->createMcqAnswer($session, 'exam_reading_item', $readingItem->id, $readingItem->correct_index);
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($user))
+            ->getJson("/api/v1/exams/{$exam->id}")
+            ->assertOk()
+            ->assertJsonPath('data.attempt_state.history.0.id', $session->id)
+            ->assertJsonPath('data.attempt_state.history.0.result_summary.score_status', 'not_applicable')
+            ->assertJsonPath('data.attempt_state.history.0.result_summary.overall.applicable', false)
+            ->assertJsonPath('data.attempt_state.history.0.result_summary.overall.score_on_10', null)
+            ->assertJsonPath('data.attempt_state.history.0.result_summary.skills.0.key', 'reading')
+            ->assertJsonPath('data.attempt_state.history.0.result_summary.skills.0.score_on_10', 10);
     }
 
     private function seedExam(): array
@@ -999,7 +1157,7 @@ class ExamSessionTest extends TestCase
             'strengths' => ['Clear response.'],
             'improvements' => ['Add more detail.'],
             'warnings' => [],
-            'rewrites' => [],
+            'rewrites' => ['Original: I good → Improved: I am good'],
         ];
     }
 

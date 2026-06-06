@@ -46,8 +46,10 @@ use App\Services\Contracts\ExamResultReadModelInterface;
 use App\Services\Contracts\ExamResultReviewBuilderInterface;
 use App\Services\Contracts\ExamResultSummaryBuilderInterface;
 use App\Services\Contracts\ExamRoomInterface;
+use App\Services\Contracts\ExamSessionExpiryInterface;
 use App\Services\Contracts\ExamSessionResultInterface;
 use App\Services\Contracts\LearningPathInterface;
+use App\Services\Contracts\TeacherGradingRequestServiceInterface;
 use App\Services\ConversationServiceInterface;
 use App\Services\Exam\Results\ExamResultDisplayFormatter;
 use App\Services\Exam\Results\ExamResultMcqBuilder;
@@ -57,6 +59,7 @@ use App\Services\Exam\Results\ExamResultSummaryBuilder;
 use App\Services\ExamCatalogService;
 use App\Services\ExamOverviewService;
 use App\Services\ExamRoomService;
+use App\Services\ExamSessionExpiryService;
 use App\Services\ExamSessionResultService;
 use App\Services\Grading\RubricResolver;
 use App\Services\Grading\SpeakingScoringFormula;
@@ -68,6 +71,7 @@ use App\Services\Payment\VnPayGateway;
 use App\Services\SpeakingConversationService;
 use App\Services\SpeechToText;
 use App\Services\SpeechToTextService;
+use App\Services\TeacherGradingRequestService;
 use App\Srs\FsrsConfig;
 use Carbon\CarbonImmutable;
 use Google\Client as GoogleClient;
@@ -132,6 +136,8 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->bind(ExamRoomInterface::class, ExamRoomService::class);
 
+        $this->app->bind(ExamSessionExpiryInterface::class, ExamSessionExpiryService::class);
+
         $this->app->bind(ExamResultDisplayFormatterInterface::class, ExamResultDisplayFormatter::class);
 
         $this->app->bind(ExamResultMcqBuilderInterface::class, ExamResultMcqBuilder::class);
@@ -143,6 +149,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ExamResultReadModelInterface::class, ExamResultReadModelService::class);
 
         $this->app->bind(ExamSessionResultInterface::class, ExamSessionResultService::class);
+
+        $this->app->bind(TeacherGradingRequestServiceInterface::class, TeacherGradingRequestService::class);
 
         $this->app->bind(AssessmentRubricResolver::class, DatabaseRubricResolver::class);
         $this->app->scoped(AssessmentManager::class, fn ($app) => new AssessmentManager($app, $app->make(RubricResolver::class), [

@@ -9,9 +9,12 @@ import { feedbackImprovements } from "#/features/grading/feedback"
 import type {
 	AssessmentAnnotation,
 	AssessmentFeedback,
+	AssessmentResultDisplay,
 	GradingProgress,
 	Rewrite,
 	RubricMeta,
+	TeacherGradingRequestStatus,
+	TeacherGradingResultState,
 	WritingGradingResult,
 } from "#/features/grading/types"
 import { censorProfanityText, censorProfanityWords } from "#/lib/profanity"
@@ -38,11 +41,23 @@ export interface WritingFeedbackAction {
 	onRequest: () => void
 }
 
+export interface TeacherGradingAction {
+	canRequest: boolean
+	requested: boolean
+	status: TeacherGradingRequestStatus
+	assignedTeacher: { id: string; full_name: string | null; email: string | null } | null
+	result: TeacherGradingResultState | null
+	pending: boolean
+	error: string | null
+	onRequest: () => void
+}
+
 export interface WritingAssessmentView {
 	result: WritingGradingResult
 	rubric: RubricMeta | null
 	context: WritingAssessmentContext | null
 	feedback: WritingFeedbackAction
+	teacherGrading: TeacherGradingAction
 }
 
 interface LayoutProps {
@@ -67,11 +82,13 @@ export function WritingAssessmentLayout({ view }: LayoutProps) {
 			</aside>
 			<section className="space-y-4">
 				<WritingPaperPanel context={view.context} result={view.result} />
+				<NotAssessablePanel display={view.result.display} />
 				<RequirementPanel result={view.result} />
 				<ProfanityWarning result={view.result} />
 				<RubricPanel view={view} />
 				<DiagnosticsPanel result={view.result} />
 				<FeedbackPanel view={view} />
+				<TeacherGradingPanel action={view.teacherGrading} />
 			</section>
 		</div>
 	)
@@ -147,6 +164,9 @@ function ResultHero({ view }: LayoutProps) {
 				<div>
 					<p className="text-6xl font-extrabold tabular-nums text-skill-writing">{scoreLabel}</p>
 					<p className="text-sm text-subtle mt-1">{maxScore ? `/ ${maxScore}` : "Điểm tổng theo rubric"}</p>
+					<p className="mt-2 inline-flex rounded-full bg-primary-tint px-2.5 py-1 text-[10px] font-extrabold uppercase text-primary-dark">
+						Nguồn: AI tự động
+					</p>
 				</div>
 			) : (
 				<div className="rounded-2xl bg-warning/10 px-4 py-3">
@@ -311,7 +331,7 @@ function RubricPanel({ view }: LayoutProps) {
 function FeedbackPanel({ view }: LayoutProps) {
 	const aiFeedback = view.feedback.generated ?? detailedAIFeedback(view.result.feedback)
 	const showFeedback = view.result.display?.ui.show_feedback ?? true
-	if (!showFeedback && !view.feedback.canRequest) return null
+	if (!showFeedback) return null
 
 	return (
 		<div id="ai-writing-feedback" className="card p-5 space-y-4">
@@ -332,6 +352,20 @@ function FeedbackPanel({ view }: LayoutProps) {
 					)}
 				</div>
 			)}
+		</div>
+	)
+}
+
+function NotAssessablePanel({ display }: { display?: AssessmentResultDisplay }) {
+	if (display?.status !== "not_assessable") return null
+
+	return (
+		<div className="card border-l-4 border-l-destructive bg-destructive/5 p-5">
+			<p className="text-xs font-bold uppercase tracking-wide text-destructive">Không chấm điểm rubric</p>
+			<p className="mt-2 text-base font-extrabold text-foreground">
+				{display.reason.label ?? display.status_label}
+			</p>
+			<p className="mt-1 text-sm leading-6 text-muted">{notAssessableDetail(display)}</p>
 		</div>
 	)
 }
@@ -412,6 +446,110 @@ function AIFeedbackButton({ action, hasFeedback }: { action: WritingFeedbackActi
 			{action.error && <p className="mt-2 text-xs font-bold text-destructive">{action.error}</p>}
 		</div>
 	)
+}
+
+function TeacherGradingPanel({ action }: { action: TeacherGradingAction }) {
+	if (!action.canRequest && !action.result) return null
+
+	const isTeacherGraded = action.result !== null || action.status === "completed"
+	const requested = action.requested || action.status !== "none"
+	const disabled = action.pending || requested || isTeacherGraded
+	const title = isTeacherGraded ? "Giáo viên đã chấm" : "Yêu cầu giáo viên chấm"
+	const description = teacherGradingDescription(action)
+
+	return (
+		<div className="card p-5 space-y-3 border-l-4 border-l-info">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<div>
+					<p className="text-xs font-bold uppercase tracking-wide text-subtle">Teacher review</p>
+					<p className="mt-1 text-base font-extrabold text-foreground">{title}</p>
+					<p className="mt-1 text-sm text-muted">{description}</p>
+				</div>
+				<span className="self-start rounded-full bg-info-tint px-2.5 py-1 text-[10px] font-extrabold uppercase text-info">
+					{teacherGradingLabel(action.status, isTeacherGraded)}
+				</span>
+			</div>
+			{action.assignedTeacher && (
+				<p className="rounded-2xl bg-background/50 px-3 py-2 text-xs text-muted">
+					Giáo viên phụ trách:{" "}
+					<span className="font-bold text-foreground">{action.assignedTeacher.full_name}</span>
+				</p>
+			)}
+			{action.result && <TeacherResultSummary result={action.result} />}
+			{!requested && !isTeacherGraded && (
+				<button
+					type="button"
+					onClick={action.onRequest}
+					disabled={disabled}
+					className="btn btn-secondary px-5 py-2.5 text-sm disabled:opacity-50"
+				>
+					{action.pending ? "Đang gửi..." : "Gửi yêu cầu"}
+				</button>
+			)}
+			{action.error && <p className="text-xs font-bold text-destructive">{action.error}</p>}
+		</div>
+	)
+}
+
+function TeacherResultSummary({ result }: { result: TeacherGradingResultState }) {
+	const strengths = result.feedback?.strengths ?? []
+	const improvements = feedbackImprovements(result.feedback)
+	const hasFeedback = strengths.length > 0 || improvements.length > 0
+
+	return (
+		<div className="rounded-2xl bg-background/50 p-4">
+			<div className="flex items-end justify-between gap-3">
+				<div>
+					<p className="text-[10px] font-bold uppercase tracking-wide text-subtle">Điểm giáo viên</p>
+					<p className="mt-1 text-4xl font-extrabold tabular-nums text-info">{round(result.overall_band)}</p>
+				</div>
+				<span className="rounded-full bg-info-tint px-2.5 py-1 text-[10px] font-extrabold uppercase text-info">
+					Nguồn: Giáo viên
+				</span>
+			</div>
+			{hasFeedback && (
+				<div className="mt-3 border-t-2 border-border pt-3">
+					<FeedbackSection strengths={strengths} improvements={improvements} />
+				</div>
+			)}
+		</div>
+	)
+}
+
+function teacherGradingLabel(status: TeacherGradingRequestStatus, isTeacherGraded: boolean): string {
+	if (isTeacherGraded) return "Đã chấm"
+	switch (status) {
+		case "pending_assignment":
+			return "Chờ gán"
+		case "assigned":
+			return "Đã gán"
+		case "in_progress":
+			return "Đang chấm"
+		case "rejected":
+			return "Từ chối"
+		case "cancelled":
+			return "Đã hủy"
+		default:
+			return "Chưa gửi"
+	}
+}
+
+function teacherGradingDescription(action: TeacherGradingAction): string {
+	if (action.result) return "Bên dưới là điểm giáo viên. Điểm AI vẫn được giữ riêng ở khối kết quả phía trên."
+	switch (action.status) {
+		case "pending_assignment":
+			return "Yêu cầu đã gửi. Staff sẽ kiểm tra và gán giáo viên phù hợp."
+		case "assigned":
+			return "Yêu cầu đã được gán cho giáo viên. Bạn sẽ nhận thông báo khi có kết quả."
+		case "in_progress":
+			return "Giáo viên đang chấm bài. Bạn sẽ nhận thông báo khi hoàn tất."
+		case "rejected":
+			return "Yêu cầu chưa được duyệt. Vui lòng liên hệ trung tâm nếu cần hỗ trợ."
+		case "cancelled":
+			return "Yêu cầu đã được hủy."
+		default:
+			return "Gửi bài cho staff để gán giáo viên chấm thủ công. Điểm giáo viên sẽ hiển thị riêng với điểm AI."
+	}
 }
 
 function detailedAIFeedback(feedback: AssessmentFeedback | null): AssessmentFeedback | null {
@@ -585,6 +723,43 @@ function criterionLabel(rubric: RubricMeta, key: string): string {
 
 function criterionMax(rubric: RubricMeta, key: string): number {
 	return rubric.criteria.find((criterion) => criterion.key === key)?.max ?? rubric.max_score
+}
+
+function notAssessableDetail(display: AssessmentResultDisplay): string {
+	const details = display.reason.details
+	if (!isRecord(details)) return display.message
+
+	const failedRequirements = stringList(details.failed_requirements)
+	const wordCount = numberValue(details.word_count)
+	const minimumWordCount = numberValue(details.minimum_word_count)
+	const severeMinimumWordCount = numberValue(details.severe_minimum_word_count)
+
+	if (failedRequirements.includes("severe_minimum_word_count") && wordCount !== null) {
+		const minimumText = minimumWordCount === null ? "đủ số từ yêu cầu" : `${minimumWordCount} từ`
+		if (severeMinimumWordCount === null) {
+			return `Bài có ${wordCount} từ, quá ngắn so với yêu cầu ${minimumText}. Hãy viết lại đầy đủ hơn trước khi xem điểm theo tiêu chí.`
+		}
+
+		return `Bài có ${wordCount} từ, dưới ngưỡng tối thiểu để chấm tự động ${severeMinimumWordCount} từ. Hãy viết lại gần yêu cầu đầy đủ ${minimumText} trước khi xem điểm theo tiêu chí.`
+	}
+
+	if (failedRequirements.includes("task_coverage")) {
+		return "Bài chưa bao phủ yêu cầu bắt buộc của đề, nên hệ thống không hiển thị điểm theo tiêu chí. Hãy viết lại với nội dung bám sát từng ý trong đề."
+	}
+
+	return display.message
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function numberValue(value: unknown): number | null {
+	return typeof value === "number" ? value : null
+}
+
+function stringList(value: unknown): string[] {
+	return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : []
 }
 
 function toneBorder(tone: "danger" | "warning" | "success") {

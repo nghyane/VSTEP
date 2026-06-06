@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Services\ExamVersionValidator;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use RuntimeException;
 
 /**
  * Content seed from fixtures/content.json.
@@ -50,7 +51,12 @@ class ContentSeeder extends Seeder
 
     public function run(): void
     {
-        if (DB::table('exams')->exists() && env('CONTENT_SEEDER_FORCE') !== '1') {
+        $force = env('CONTENT_SEEDER_FORCE') === '1';
+        if ($force && app()->isProduction()) {
+            throw new RuntimeException('CONTENT_SEEDER_FORCE is disabled in production because it truncates versioned content tables.');
+        }
+
+        if (DB::table('exams')->exists() && ! $force) {
             $this->command->line('  ContentSeeder skipped — content already populated. Set CONTENT_SEEDER_FORCE=1 to force re-seed (will wipe user exam data).');
 
             return;

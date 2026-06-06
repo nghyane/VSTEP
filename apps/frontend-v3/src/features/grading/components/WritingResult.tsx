@@ -44,6 +44,7 @@ export function WritingResult({ attemptId }: Props) {
 					generated: assessment.feedbackGenerated,
 					onRequest: assessment.requestFeedback,
 				},
+				teacherGrading: assessment.teacherGrading,
 			}}
 		/>
 	)

@@ -4,7 +4,17 @@ import type {
 	AssessmentResultDisplay,
 	CriterionScore,
 } from "#/features/grading/types"
-import type { Exam, ExamSessionSummary, ExamVersion, ListeningPlaySummaryItem, SkillKey } from "../types"
+import type {
+	Exam,
+	ExamOverallScoreSummary,
+	ExamResultStatus,
+	ExamScoringRules,
+	ExamSessionSummary,
+	ExamSkillScoreSummary,
+	ExamVersion,
+	ListeningPlaySummaryItem,
+	SkillKey,
+} from "../types"
 
 export interface McqDetailItem {
 	item_ref_type: "exam_listening_item" | "exam_reading_item"
@@ -41,6 +51,7 @@ export interface WritingFeedbackItem {
 	caps_applied?: unknown
 	display?: AssessmentResultDisplay | null
 	diagnostics?: AssessmentDiagnostics | null
+	score_insights: ExamScoreInsight[]
 	feedback: AssessmentFeedback | null
 	calculation_trace: unknown
 }
@@ -59,18 +70,16 @@ export interface SpeakingFeedbackItem {
 	caps_applied?: unknown
 	display?: AssessmentResultDisplay | null
 	diagnostics?: AssessmentDiagnostics | null
+	score_insights: ExamScoreInsight[]
 	feedback: AssessmentFeedback | null
 	calculation_trace: unknown
 }
 
-export type ExamResultStatus =
-	| "pending"
-	| "ready"
-	| "partial"
-	| "not_submitted"
-	| "not_applicable"
-	| "none"
-	| "failed"
+export interface ExamScoreInsight {
+	key: string
+	label: string
+	detail: string
+}
 
 export interface ExamResultMcqSummary {
 	correct: number
@@ -81,14 +90,8 @@ export interface ExamResultMcqSummary {
 	score_on_10: number
 }
 
-export interface ExamResultOverallSummary {
-	applicable: boolean
-	reason: string | null
-	band: number | null
-	score_on_10: number | null
-	vstep_level: string | null
+export interface ExamResultOverallSummary extends ExamOverallScoreSummary {
 	cefr_level: string | null
-	result_label: string | null
 }
 
 export interface ExamResultDisplaySummary {
@@ -104,8 +107,10 @@ export interface ExamResultSummary {
 	feedback_status: ExamResultStatus
 	has_pending_jobs: boolean
 	has_failed_jobs: boolean
+	scoring: ExamScoringRules
 	display: ExamResultDisplaySummary
 	overall: ExamResultOverallSummary
+	skills: ExamSkillScoreSummary[]
 	mcq: ExamResultMcqSummary
 }
 

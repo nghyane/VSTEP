@@ -151,6 +151,7 @@ final class AssessmentProcessingTest extends TestCase
         $this->assertSame($expectedCap, $result->overall_band);
         $this->assertSame('assessment_requirements_not_met', $result->caps_applied['type']);
         $this->assertContains('severe_minimum_word_count', $result->caps_applied['failed_requirements']);
+        $this->assertSame($tfParams->severeMinimumWords(1), $result->caps_applied['severe_minimum_word_count']);
 
         $display = $this->app->make(AssessmentResultDisplayService::class)->forResult($result);
         $this->assertSame('not_assessable', $display['status']);

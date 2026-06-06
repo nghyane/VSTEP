@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Assessment\Enums\AssessmentJobStatus;
 use App\Assessment\Enums\AssessmentSkill;
 use App\Assessment\Enums\AssessmentSourceType;
 use App\Assessment\Enums\AssessmentTaskType;
 use App\Enums\CoinTransactionType;
+use App\Enums\ExamSessionStatus;
 use App\Models\AssessmentAttempt;
+use App\Models\AssessmentJob;
 use App\Models\AssessmentResult;
 use App\Models\AssessmentRubric;
 use App\Models\CoinTransaction;
@@ -22,12 +25,16 @@ use App\Models\ExamWritingSubmission;
 use App\Models\ExerciseFeedback;
 use App\Models\PracticeListeningExercise;
 use App\Models\PracticeReadingExercise;
+use App\Models\PracticeVocabExerciseAttempt;
+use App\Models\PracticeVocabReview;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
 use App\Models\ProfileVocabSrsState;
+use App\Models\VocabExercise;
 use App\Models\VocabWord;
 use App\Services\McqSkillService;
 use App\Services\ProgressService;
+use App\Services\VocabService;
 use App\Services\WalletService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
@@ -64,7 +71,7 @@ final class DemoProgressSeeder extends Seeder
         'inactive_student' => ['listening' => 5.0, 'reading' => 4.5, 'writing' => 5.5, 'speaking' => 5.0],
     ];
 
-    public function run(McqSkillService $mcqService, WalletService $walletService, ProgressService $progressService): void
+    public function run(McqSkillService $mcqService, WalletService $walletService, ProgressService $progressService, VocabService $vocabService): void
     {
         $profile = Profile::query()->where('nickname', self::MAIN_NICKNAME)->first();
         if (! $profile) {
@@ -73,11 +80,14 @@ final class DemoProgressSeeder extends Seeder
             return;
         }
 
-        $version = ExamVersion::query()
+        $versions = ExamVersion::query()
+            ->with('exam:id,slug,is_published')
             ->where('is_active', true)
             ->whereHas('exam', fn ($query) => $query->where('is_published', true))
-            ->first();
-        if (! $version) {
+            ->get()
+            ->sortBy(fn (ExamVersion $version): string => $version->exam?->slug ?? $version->id)
+            ->values();
+        if ($versions->isEmpty()) {
             $this->command?->warn('No exam version found. Run ContentSeeder first.');
 
             return;
@@ -85,9 +95,9 @@ final class DemoProgressSeeder extends Seeder
 
         // ── Main Profile ──
         $this->seedActivityAndStreak($profile, self::ACTIVITY_DAYS, self::ACTIVITY_PROBABILITY, 12);
-        $this->seedExamSessions($profile, $version, self::MAIN_BANDS);
+        $this->seedExamSessions($profile, $versions, self::MAIN_BANDS);
         $this->seedPracticeHistory($profile, $mcqService);
-        $this->seedVocabSrs($profile);
+        $this->seedVocabJourney($profile, $vocabService);
         $this->seedWalletTransactions($profile, $walletService);
         $this->seedExerciseFeedback($profile);
 
@@ -98,7 +108,8 @@ final class DemoProgressSeeder extends Seeder
                 continue;
             }
 
-            $this->seedExamSessions($extra, $version, $bands);
+            $versionOffset = (int) array_search($nickname, array_keys(self::EXTRA_BANDS), true) + 1;
+            $this->seedExamSessions($extra, $versions, $bands, $versionOffset);
 
             if ($nickname !== 'inactive_student') {
                 $this->seedActivityAndStreak($extra, 14, 0.5, 3);
@@ -167,37 +178,19 @@ final class DemoProgressSeeder extends Seeder
 
     /**
      * @param  array{listening: float, reading: float, writing: float, speaking: float}  $bands
+     * @param  Collection<int, ExamVersion>  $versions
      */
-    private function seedExamSessions(Profile $profile, ExamVersion $version, array $bands): void
+    private function seedExamSessions(Profile $profile, Collection $versions, array $bands, int $versionOffset = 0): void
     {
-        $existing = ExamSession::query()
-            ->where('profile_id', $profile->id)
-            ->where('status', 'submitted')
-            ->count();
-
-        if ($existing >= 6) {
+        if ($this->hasCompleteExamSessionSeed($profile, $versions)) {
             return;
         }
 
-        $writingTaskId = DB::table('exam_version_writing_tasks')
-            ->where('exam_version_id', $version->id)
-            ->value('id');
-
-        $speakingPartId = DB::table('exam_version_speaking_parts')
-            ->where('exam_version_id', $version->id)
-            ->value('id');
-
-        $listeningItems = DB::table('exam_version_listening_items')
-            ->join('exam_version_listening_sections', 'exam_version_listening_sections.id', '=', 'exam_version_listening_items.section_id')
-            ->where('exam_version_listening_sections.exam_version_id', $version->id)
-            ->pluck('exam_version_listening_items.id');
-
-        $readingItems = DB::table('exam_version_reading_items')
-            ->join('exam_version_reading_passages', 'exam_version_reading_passages.id', '=', 'exam_version_reading_items.passage_id')
-            ->where('exam_version_reading_passages.exam_version_id', $version->id)
-            ->pluck('exam_version_reading_items.id');
+        $this->resetExamSessions($profile);
 
         for ($i = 0; $i < self::EXAM_SESSION_COUNT; $i++) {
+            /** @var ExamVersion $version */
+            $version = $versions->get(($i + $versionOffset) % $versions->count());
             $submittedAt = now()->subDays($i * self::EXAM_GAP_DAYS + 1)->subHours(rand(1, 12));
 
             $session = ExamSession::create([
@@ -210,61 +203,191 @@ final class DemoProgressSeeder extends Seeder
                 'started_at' => $submittedAt->copy()->subMinutes(self::EXAM_DURATION_MINUTES),
                 'server_deadline_at' => $submittedAt->copy()->addMinutes(10),
                 'submitted_at' => $submittedAt,
-                'status' => 'submitted',
+                'status' => ExamSessionStatus::Submitted,
                 'coins_charged' => 0,
             ]);
 
+            $listeningItems = $this->listeningItems($version);
+            $readingItems = $this->readingItems($version);
             $listeningProb = $bands['listening'] / 10;
             $readingProb = $bands['reading'] / 10;
             $this->seedMcqAnswers($session->id, 'exam_listening_item', $listeningItems, $submittedAt, $listeningProb);
             $this->seedMcqAnswers($session->id, 'exam_reading_item', $readingItems, $submittedAt, $readingProb);
 
-            if ($writingTaskId) {
-                $this->seedWritingResult($session->id, $profile->id, $writingTaskId, $submittedAt, $bands['writing']);
+            foreach ($this->writingTasks($version) as $task) {
+                $this->seedWritingResult($session->id, $profile->id, $task->id, (int) $task->part, $submittedAt, $bands['writing']);
             }
-            if ($speakingPartId) {
-                $this->seedSpeakingResult($session->id, $profile->id, $speakingPartId, $submittedAt, $bands['speaking']);
+
+            foreach ($this->speakingParts($version) as $part) {
+                $this->seedSpeakingResult($session->id, $profile->id, $part->id, (int) $part->part, $submittedAt, $bands['speaking']);
             }
         }
     }
 
-    private function seedMcqAnswers(string $sessionId, string $itemType, Collection $itemIds, \DateTimeInterface $answeredAt, float $correctProb): void
+    /** @param Collection<int, ExamVersion> $versions */
+    private function hasCompleteExamSessionSeed(Profile $profile, Collection $versions): bool
     {
-        foreach ($itemIds as $itemId) {
+        $sessions = ExamSession::query()
+            ->where('profile_id', $profile->id)
+            ->whereIn('status', ExamSessionStatus::countableValues())
+            ->with('examVersion')
+            ->get();
+
+        if ($sessions->count() !== self::EXAM_SESSION_COUNT) {
+            return false;
+        }
+
+        $activeVersionIds = $versions->pluck('id');
+        if ($sessions->pluck('exam_version_id')->diff($activeVersionIds)->isNotEmpty()) {
+            return false;
+        }
+
+        $expectedDistinctVersions = min(self::EXAM_SESSION_COUNT, $versions->count());
+        if ($sessions->pluck('exam_version_id')->unique()->count() < $expectedDistinctVersions) {
+            return false;
+        }
+
+        foreach ($sessions as $session) {
+            $version = $session->examVersion;
+            if (! $version instanceof ExamVersion) {
+                return false;
+            }
+
+            $expectedMcqCount = $this->listeningItems($version)->count() + $this->readingItems($version)->count();
+            $actualMcqCount = ExamMcqAnswer::query()->where('session_id', $session->id)->count();
+            if ($actualMcqCount < $expectedMcqCount) {
+                return false;
+            }
+
+            $expectedWritingCount = $this->writingTasks($version)->count();
+            $actualWritingCount = ExamWritingSubmission::query()->where('session_id', $session->id)->count();
+            if ($actualWritingCount < $expectedWritingCount) {
+                return false;
+            }
+
+            $expectedSpeakingCount = $this->speakingParts($version)->count();
+            $actualSpeakingCount = ExamSpeakingSubmission::query()->where('session_id', $session->id)->count();
+            if ($actualSpeakingCount < $expectedSpeakingCount) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function resetExamSessions(Profile $profile): void
+    {
+        $sessionIds = ExamSession::query()
+            ->where('profile_id', $profile->id)
+            ->pluck('id');
+
+        if ($sessionIds->isEmpty()) {
+            return;
+        }
+
+        $sourceIds = ExamWritingSubmission::query()
+            ->whereIn('session_id', $sessionIds)
+            ->pluck('id')
+            ->merge(ExamSpeakingSubmission::query()
+                ->whereIn('session_id', $sessionIds)
+                ->pluck('id'));
+
+        if ($sourceIds->isNotEmpty()) {
+            AssessmentAttempt::query()
+                ->where('profile_id', $profile->id)
+                ->where('source_type', AssessmentSourceType::Exam->value)
+                ->whereIn('source_id', $sourceIds)
+                ->delete();
+        }
+
+        ExamSession::query()->whereIn('id', $sessionIds)->delete();
+    }
+
+    private function listeningItems(ExamVersion $version): Collection
+    {
+        return DB::table('exam_version_listening_items')
+            ->join('exam_version_listening_sections', 'exam_version_listening_sections.id', '=', 'exam_version_listening_items.section_id')
+            ->where('exam_version_listening_sections.exam_version_id', $version->id)
+            ->orderBy('exam_version_listening_sections.part')
+            ->orderBy('exam_version_listening_sections.display_order')
+            ->orderBy('exam_version_listening_items.display_order')
+            ->get(['exam_version_listening_items.id', 'exam_version_listening_items.correct_index']);
+    }
+
+    private function readingItems(ExamVersion $version): Collection
+    {
+        return DB::table('exam_version_reading_items')
+            ->join('exam_version_reading_passages', 'exam_version_reading_passages.id', '=', 'exam_version_reading_items.passage_id')
+            ->where('exam_version_reading_passages.exam_version_id', $version->id)
+            ->orderBy('exam_version_reading_passages.part')
+            ->orderBy('exam_version_reading_passages.display_order')
+            ->orderBy('exam_version_reading_items.display_order')
+            ->get(['exam_version_reading_items.id', 'exam_version_reading_items.correct_index']);
+    }
+
+    private function writingTasks(ExamVersion $version): Collection
+    {
+        return DB::table('exam_version_writing_tasks')
+            ->where('exam_version_id', $version->id)
+            ->orderBy('part')
+            ->orderBy('display_order')
+            ->get(['id', 'part']);
+    }
+
+    private function speakingParts(ExamVersion $version): Collection
+    {
+        return DB::table('exam_version_speaking_parts')
+            ->where('exam_version_id', $version->id)
+            ->orderBy('part')
+            ->orderBy('display_order')
+            ->get(['id', 'part']);
+    }
+
+    private function seedMcqAnswers(string $sessionId, string $itemType, Collection $items, \DateTimeInterface $answeredAt, float $correctProb): void
+    {
+        foreach ($items as $item) {
+            $correctIndex = (int) $item->correct_index;
+            $isCorrect = mt_rand() / mt_getrandmax() < $correctProb;
+
             ExamMcqAnswer::create([
                 'session_id' => $sessionId,
                 'item_ref_type' => $itemType,
-                'item_ref_id' => $itemId,
-                'selected_index' => rand(0, self::MCQ_OPTION_COUNT - 1),
-                'is_correct' => mt_rand() / mt_getrandmax() < $correctProb,
+                'item_ref_id' => $item->id,
+                'selected_index' => $isCorrect ? $correctIndex : $this->wrongIndex($correctIndex),
+                'is_correct' => $isCorrect,
                 'answered_at' => $answeredAt,
             ]);
         }
     }
 
-    private function seedWritingResult(string $sessionId, string $profileId, string $taskId, \DateTimeInterface $submittedAt, float $band): void
+    private function seedWritingResult(string $sessionId, string $profileId, string $taskId, int $part, \DateTimeInterface $submittedAt, float $band): void
     {
+        $taskType = $part === 1
+            ? AssessmentTaskType::WritingTask1Letter
+            : AssessmentTaskType::WritingTask2Essay;
+
         $submission = ExamWritingSubmission::create([
             'session_id' => $sessionId,
             'profile_id' => $profileId,
             'task_id' => $taskId,
-            'text' => 'Seed writing submission.',
-            'word_count' => rand(120, 250),
+            'text' => "Seed writing part {$part} submission.",
+            'word_count' => $part === 1 ? rand(120, 180) : rand(250, 320),
             'submitted_at' => $submittedAt,
         ]);
 
-        $rubric = $this->rubric(AssessmentTaskType::WritingTask2Essay);
+        $rubric = $this->rubric($taskType);
         $attempt = AssessmentAttempt::create([
             'profile_id' => $profileId,
             'rubric_id' => $rubric->id,
             'skill' => AssessmentSkill::Writing,
-            'task_type' => AssessmentTaskType::WritingTask2Essay,
+            'task_type' => $taskType,
             'source_type' => AssessmentSourceType::Exam,
             'source_id' => $submission->id,
-            'prompt' => ['requirements' => ['Demo writing task']],
+            'prompt' => ['requirements' => ["Demo writing task {$part}"]],
             'response_payload' => ['text' => $submission->text, 'metadata' => ['word_count' => $submission->word_count]],
             'submitted_at' => $submittedAt,
         ]);
+        $this->seedAssessmentJob($attempt, $submittedAt);
 
         AssessmentResult::create([
             'attempt_id' => $attempt->id,
@@ -281,9 +404,15 @@ final class DemoProgressSeeder extends Seeder
         ]);
     }
 
-    private function seedSpeakingResult(string $sessionId, string $profileId, string $partId, \DateTimeInterface $submittedAt, float $band): void
+    private function seedSpeakingResult(string $sessionId, string $profileId, string $partId, int $part, \DateTimeInterface $submittedAt, float $band): void
     {
-        $audioKey = 'audio/exam_speaking/'.$profileId.'/demo-'.uniqid().'.mp3';
+        $taskType = match ($part) {
+            1 => AssessmentTaskType::SpeakingPart1Personal,
+            2 => AssessmentTaskType::SpeakingPart2Solution,
+            default => AssessmentTaskType::SpeakingPart3Discussion,
+        };
+
+        $audioKey = 'audio/exam_speaking/'.$profileId.'/demo-part-'.$part.'-'.uniqid().'.mp3';
         $audioUrl = 'https://demo.vstep.test/'.$audioKey;
         $submission = ExamSpeakingSubmission::create([
             'session_id' => $sessionId,
@@ -292,19 +421,19 @@ final class DemoProgressSeeder extends Seeder
             'audio_key' => $audioKey,
             'audio_url' => $audioUrl,
             'duration_seconds' => rand(60, 180),
-            'transcript' => 'Seed speaking transcript.',
+            'transcript' => "Seed speaking part {$part} transcript.",
             'submitted_at' => $submittedAt,
         ]);
 
-        $rubric = $this->rubric(AssessmentTaskType::SpeakingPart1Personal);
+        $rubric = $this->rubric($taskType);
         $attempt = AssessmentAttempt::create([
             'profile_id' => $profileId,
             'rubric_id' => $rubric->id,
             'skill' => AssessmentSkill::Speaking,
-            'task_type' => AssessmentTaskType::SpeakingPart1Personal,
+            'task_type' => $taskType,
             'source_type' => AssessmentSourceType::Exam,
             'source_id' => $submission->id,
-            'prompt' => ['requirements' => ['Demo speaking task']],
+            'prompt' => ['requirements' => ["Demo speaking part {$part}"]],
             'response_payload' => [
                 'audio_key' => $submission->audio_key,
                 'audio_url' => $submission->audio_url,
@@ -312,6 +441,7 @@ final class DemoProgressSeeder extends Seeder
             ],
             'submitted_at' => $submittedAt,
         ]);
+        $this->seedAssessmentJob($attempt, $submittedAt);
 
         AssessmentResult::create([
             'attempt_id' => $attempt->id,
@@ -326,6 +456,18 @@ final class DemoProgressSeeder extends Seeder
             'overall_band' => $band,
             'calculation_trace' => ['source' => 'demo_seed'],
             'feedback' => ['strengths' => ['Demo seed data']],
+        ]);
+    }
+
+    private function seedAssessmentJob(AssessmentAttempt $attempt, \DateTimeInterface $submittedAt): void
+    {
+        AssessmentJob::create([
+            'attempt_id' => $attempt->id,
+            'status' => AssessmentJobStatus::Ready,
+            'attempts' => 1,
+            'progress' => ['source' => 'demo_seed'],
+            'started_at' => $submittedAt,
+            'completed_at' => $submittedAt,
         ]);
     }
 
@@ -403,10 +545,9 @@ final class DemoProgressSeeder extends Seeder
 
     private function wrongIndex(int $correctIndex): int
     {
-        $options = [0, 1, 2, 3];
-        unset($options[$correctIndex]);
+        $options = array_values(array_diff(range(0, self::MCQ_OPTION_COUNT - 1), [$correctIndex]));
 
-        return (int) array_rand(array_values($options));
+        return (int) $options[array_rand($options)];
     }
 
     private function recordActivityForDate(Profile $profile, string $skill, \DateTimeInterface $date): void
@@ -441,61 +582,118 @@ final class DemoProgressSeeder extends Seeder
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // VOCAB SRS — raw (FSRS scheduler is complex, tested separately)
+    // VOCAB — real service flow: review + exercise attempts
     // ═══════════════════════════════════════════════════════════════
 
-    private function seedVocabSrs(Profile $profile): void
+    private function seedVocabJourney(Profile $profile, VocabService $vocabService): void
     {
-        if (ProfileVocabSrsState::query()->where('profile_id', $profile->id)->exists()) {
+        if ($this->hasCompleteVocabJourney($profile)) {
             return;
         }
 
-        $words = VocabWord::query()->orderBy('id')->limit(60)->get();
-        if ($words->isEmpty()) {
-            return;
-        }
+        if (! $this->hasCompleteVocabReviewCore($profile)) {
+            $this->resetVocabJourney($profile);
 
-        $now = now();
+            $words = VocabWord::query()
+                ->whereHas('topic', fn ($query) => $query->where('is_published', true))
+                ->with('topic:id,slug,display_order')
+                ->get()
+                ->sortBy(fn (VocabWord $word): string => sprintf(
+                    '%04d-%s-%04d-%s',
+                    (int) ($word->topic?->display_order ?? 0),
+                    $word->topic?->slug ?? '',
+                    (int) $word->display_order,
+                    $word->word,
+                ))
+                ->take(60)
+                ->values();
 
-        foreach ($words as $i => $word) {
-            if ($i < 20) {
-                ProfileVocabSrsState::create([
-                    'profile_id' => $profile->id,
-                    'word_id' => $word->id,
-                    'state_kind' => 'new',
-                    'difficulty' => 0.3,
-                    'stability' => 0,
-                    'lapses' => 0,
-                    'remaining_steps' => 1,
-                    'due_at' => $now,
-                    'last_review_at' => null,
-                ]);
-            } elseif ($i < 40) {
-                ProfileVocabSrsState::create([
-                    'profile_id' => $profile->id,
-                    'word_id' => $word->id,
-                    'state_kind' => 'learning',
-                    'difficulty' => 0.5,
-                    'stability' => 2.0,
-                    'lapses' => 1,
-                    'remaining_steps' => 0,
-                    'due_at' => $now->copy()->subMinutes(rand(1, 60)),
-                    'last_review_at' => $now->copy()->subHours(rand(4, 24)),
-                ]);
-            } else {
-                ProfileVocabSrsState::create([
-                    'profile_id' => $profile->id,
-                    'word_id' => $word->id,
-                    'state_kind' => 'review',
-                    'difficulty' => 0.7,
-                    'stability' => 15.0,
-                    'lapses' => 0,
-                    'remaining_steps' => 0,
-                    'due_at' => $now->copy()->addDays(rand(1, 14)),
-                    'last_review_at' => $now->copy()->subDays(rand(1, 10)),
-                ]);
+            if ($words->isEmpty()) {
+                return;
+            }
+
+            foreach ($words as $index => $word) {
+                foreach ($this->reviewRatingsForWord($index) as $rating) {
+                    $vocabService->review($profile, $word, $rating);
+                }
             }
         }
+
+        if (PracticeVocabExerciseAttempt::query()->where('profile_id', $profile->id)->exists()) {
+            return;
+        }
+
+        $this->seedVocabExerciseAttempts($profile, $vocabService);
+    }
+
+    private function seedVocabExerciseAttempts(Profile $profile, VocabService $vocabService): void
+    {
+        $exercises = VocabExercise::query()
+            ->whereHas('topic', fn ($query) => $query->where('is_published', true))
+            ->orderBy('display_order')
+            ->limit(8)
+            ->get();
+
+        foreach ($exercises as $index => $exercise) {
+            $vocabService->attemptExercise(
+                $profile,
+                $exercise,
+                $this->answerForVocabExercise($exercise, $index % 4 !== 3),
+            );
+        }
+    }
+
+    private function hasCompleteVocabJourney(Profile $profile): bool
+    {
+        $hasExercises = VocabExercise::query()
+            ->whereHas('topic', fn ($query) => $query->where('is_published', true))
+            ->exists();
+
+        return $this->hasCompleteVocabReviewCore($profile)
+            && (! $hasExercises || PracticeVocabExerciseAttempt::query()->where('profile_id', $profile->id)->exists());
+    }
+
+    private function hasCompleteVocabReviewCore(Profile $profile): bool
+    {
+        return PracticeVocabReview::query()->where('profile_id', $profile->id)->count() >= 60
+            && ProfileVocabSrsState::query()->where('profile_id', $profile->id)->count() >= 40;
+    }
+
+    private function resetVocabJourney(Profile $profile): void
+    {
+        PracticeVocabExerciseAttempt::query()->where('profile_id', $profile->id)->delete();
+        PracticeVocabReview::query()->where('profile_id', $profile->id)->delete();
+        ProfileVocabSrsState::query()->where('profile_id', $profile->id)->delete();
+    }
+
+    /** @return list<int> */
+    private function reviewRatingsForWord(int $index): array
+    {
+        return match (true) {
+            $index < 20 => [3],
+            $index < 40 => [3, 3],
+            $index < 50 => [4],
+            default => [1],
+        };
+    }
+
+    /** @return array<string, mixed> */
+    private function answerForVocabExercise(VocabExercise $exercise, bool $correct): array
+    {
+        $payload = $exercise->payload ?? [];
+
+        if ($exercise->kind === 'mcq') {
+            $correctIndex = (int) ($payload['correct_index'] ?? 0);
+            $optionCount = max(2, count((array) ($payload['options'] ?? [])));
+            $wrongOptions = array_values(array_diff(range(0, $optionCount - 1), [$correctIndex]));
+
+            return ['selected_index' => $correct ? $correctIndex : (int) $wrongOptions[array_rand($wrongOptions)]];
+        }
+
+        $accepted = (array) ($payload['accepted_answers'] ?? []);
+        $answer = (string) ($accepted[0] ?? 'demo');
+
+        return ['text' => $correct ? $answer : "{$answer}-incorrect"];
     }
 
     // ═══════════════════════════════════════════════════════════════

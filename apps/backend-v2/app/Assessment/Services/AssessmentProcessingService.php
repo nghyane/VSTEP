@@ -15,6 +15,7 @@ use App\Models\AssessmentAttempt;
 use App\Models\AssessmentEvidence;
 use App\Models\AssessmentJob;
 use App\Models\AssessmentResult;
+use App\Services\AssessmentCoachFeedbackService;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -22,6 +23,7 @@ final readonly class AssessmentProcessingService
 {
     public function __construct(
         private AssessmentManager $assessments,
+        private AssessmentCoachFeedbackService $coachFeedback,
     ) {}
 
     public function process(AssessmentJob $job): AssessmentResult
@@ -53,6 +55,7 @@ final readonly class AssessmentProcessingService
 
             $scores = $strategy->score($evidence, $signals, $rubric);
             $feedback = $strategy->buildFeedback($scores, $evidence, $signals);
+            $feedback = $this->coachFeedback->forExam($input, $signals, $scores, $feedback);
 
             return DB::transaction(function () use ($attempt, $rubric, $job, $signals, $evidence, $validation, $scores, $feedback): AssessmentResult {
                 AssessmentEvidence::updateOrCreate(
