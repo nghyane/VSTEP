@@ -23,7 +23,7 @@ export function LandingAppBanner() {
 					<a
 						href={MOBILE_APP_DOWNLOAD_URL}
 						className="btn btn-primary w-full px-5 py-3 text-sm sm:w-auto"
-						download="vstepGO.apk"
+						download="VstepGO.apk"
 					>
 						Tải APK
 					</a>

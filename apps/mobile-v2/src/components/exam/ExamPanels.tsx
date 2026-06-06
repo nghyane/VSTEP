@@ -145,12 +145,16 @@ export function ListeningPanel({ sections, sessionId, initialPlaySummary, answer
 
   async function togglePlay() {
     if (!section) return;
-    if (loggedSectionsRef.current.has(section.id)) {
-      setAudioNotice("Âm thanh phần này đã phát. Bạn vẫn có thể tiếp tục trả lời câu hỏi.");
-      return;
-    }
     try {
       if (useTtsFallback) {
+        if (ttsPlayer.playing) {
+          ttsPlayer.toggle();
+          return;
+        }
+        if (loggedSectionsRef.current.has(section.id)) {
+          setAudioNotice("Âm thanh phần này đã phát. Bạn vẫn có thể tiếp tục trả lời câu hỏi.");
+          return;
+        }
         logSectionPlayed(section.id);
         ttsPlayer.toggle();
         return;
@@ -163,11 +167,16 @@ export function ListeningPanel({ sections, sessionId, initialPlaySummary, answer
         shouldDuckAndroid: true,
         playThroughEarpieceAndroid: false,
       });
-      if (playing) await sound.pauseAsync();
-      else {
-        logSectionPlayed(section.id);
-        await sound.playAsync();
+      if (playing) {
+        await sound.pauseAsync();
+        return;
       }
+      if (loggedSectionsRef.current.has(section.id)) {
+        setAudioNotice("Âm thanh phần này đã phát. Bạn vẫn có thể tiếp tục trả lời câu hỏi.");
+        return;
+      }
+      logSectionPlayed(section.id);
+      await sound.playAsync();
     } catch (e: unknown) {
       if (__DEV__) {
         console.warn("Exam listening playback failed", e);
