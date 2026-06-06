@@ -8,7 +8,10 @@ import { ConversationHeader } from "#/features/practice/components/ConversationH
 import { ConversationReviewPanel } from "#/features/practice/components/ConversationReviewPopup"
 import { ConversationScenarioCard } from "#/features/practice/components/ConversationScenarioCard"
 import { ConversationSuggestions } from "#/features/practice/components/ConversationSuggestions"
-import { ConversationTurnView } from "#/features/practice/components/ConversationTurnView"
+import {
+	ConversationTurnView,
+	ConversationUserTurnLoading,
+} from "#/features/practice/components/ConversationTurnView"
 import { invalidateProgressQueries } from "#/features/practice/invalidate-progress"
 import type { ConversationSessionDetail, ConversationTurn } from "#/features/practice/types"
 import { useSpeechTranscriber } from "#/features/practice/use-speech-transcriber"
@@ -22,7 +25,7 @@ interface Props {
 	onEnd: () => void
 }
 
-type MicState = "idle" | "listening" | "thinking" | "speaking"
+type MicState = "idle" | "listening" | "transcribing" | "thinking" | "speaking"
 type SessionState = "active" | "completed"
 
 const MAX_SECONDS = 30
@@ -92,12 +95,12 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 
 	const turnsLen = useRef(turns.length)
 	useEffect(() => {
-		if (turns.length !== turnsLen.current) {
+		if (turns.length !== turnsLen.current || mic === "transcribing" || mic === "thinking") {
 			turnsLen.current = turns.length
 			const el = scrollRef.current
 			if (el) el.scrollTop = el.scrollHeight
 		}
-	})
+	}, [mic, turns.length])
 
 	const doSubmit = (text: string, confidence = 0.9) => {
 		if (submittedRef.current) return
@@ -201,6 +204,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 			return
 		}
 		if (mic === "listening") {
+			setMic("transcribing")
 			stopSpeechTranscription()
 			return
 		}
@@ -213,6 +217,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 		void startSpeechTranscription({
 			language: "en-US",
 			onStart: () => setMic("listening"),
+			onProcessing: () => setMic("transcribing"),
 			onResult: ({ transcript, confidence }) => {
 				setEmptyWarning(false)
 				doSubmit(transcript, confidence)
@@ -301,6 +306,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 							highlightCharIndex={speakingTurnId === t.id ? speakingCharIndex : -1}
 						/>
 					))}
+					{mic === "transcribing" && <ConversationUserTurnLoading />}
 					{mic === "thinking" && (
 						<div className="flex gap-3">
 							<img
@@ -423,13 +429,13 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 									<button
 										type="button"
 										onClick={handleMic}
-										disabled={mic === "thinking"}
+										disabled={mic === "thinking" || mic === "transcribing"}
 										className="w-16 h-16 rounded-full flex items-center justify-center transition shrink-0 disabled:opacity-50 bg-surface text-foreground border-2 border-b-4 border-border hover:border-skill-speaking active:translate-y-[2px] active:border-b-2"
 									>
 										<Icon name="mic" size="md" />
 									</button>
 									<p className="text-xs font-bold text-muted">
-										{mic === "thinking" ? "Đang xử lý…" : "Nhấn để nói"}
+										{mic === "thinking" || mic === "transcribing" ? "Đang xử lý…" : "Nhấn để nói"}
 									</p>
 									{emptyWarning && (
 										<p className="text-xs font-bold text-warning animate-[fadeIn_0.2s_ease-out] mt-1">
