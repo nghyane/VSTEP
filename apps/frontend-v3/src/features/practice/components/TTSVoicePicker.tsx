@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react"
 import { Icon } from "#/components/Icon"
-import { extractFirstName, getAvatarUrl } from "#/lib/avatar"
+import { extractFirstName } from "#/lib/avatar"
 import { useToast } from "#/lib/toast"
 import { cn, getEnglishVoices, shortVoiceName, speak, stopSpeaking } from "#/lib/utils"
 
@@ -77,11 +77,7 @@ export function TTSVoicePicker({ voice, onVoiceChange, accentClassName }: Props)
 				)}
 				title="Chọn giọng đọc"
 			>
-				<img
-					src={getAvatarUrl(displayName(voice))}
-					alt=""
-					className="h-6 w-6 shrink-0 rounded-full bg-primary/10 object-cover"
-				/>
+				<Icon name="volume" size="xs" />
 				<span className="hidden max-w-20 truncate sm:inline">{displayName(voice)}</span>
 			</button>
 
@@ -102,11 +98,6 @@ export function TTSVoicePicker({ voice, onVoiceChange, accentClassName }: Props)
 									isActive ? "bg-primary/5" : "hover:bg-background",
 								)}
 							>
-								<img
-									src={getAvatarUrl(name)}
-									alt={name}
-									className="h-8 w-8 shrink-0 rounded-full bg-primary/10 object-cover"
-								/>
 								<button type="button" onClick={() => select(nextVoice)} className="min-w-0 flex-1 text-left">
 									<p
 										className={cn(

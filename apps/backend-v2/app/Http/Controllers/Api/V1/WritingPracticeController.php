@@ -30,13 +30,26 @@ final class WritingPracticeController extends Controller
         private readonly WritingRealtimeDiagnosticsService $diagnosticsService,
     ) {}
 
-    public function listPrompts(Request $request): JsonResponse
+    public function listPrompts(Request $request): JsonResponse|AnonymousResourceCollection
     {
         $part = $request->integer('part') ?: null;
 
-        return response()->json(['data' => WritingPromptSummaryResource::collection(
-            $this->writingService->listPrompts($part)
-        )]);
+        if ($request->has('page') || $request->has('per_page')) {
+            return WritingPromptSummaryResource::collection(
+                $this->writingService->paginatePrompts(
+                    $part,
+                    min(max($request->integer('per_page', 12), 1), 48),
+                    max($request->integer('page', 1), 1),
+                    $request->profile(),
+                ),
+            );
+        }
+
+        return response()->json([
+            'data' => WritingPromptSummaryResource::collection(
+                $this->writingService->listPrompts($part, $request->profile())
+            ),
+        ]);
     }
 
     public function history(Request $request): AnonymousResourceCollection
@@ -44,7 +57,12 @@ final class WritingPracticeController extends Controller
         $part = $request->integer('part') ?: null;
 
         return WritingSubmissionHistoryResource::collection(
-            $this->writingService->history($request->profile(), $part),
+            $this->writingService->history(
+                $request->profile(),
+                $part,
+                min(max($request->integer('per_page', 10), 1), 48),
+                max($request->integer('page', 1), 1),
+            ),
         );
     }
 

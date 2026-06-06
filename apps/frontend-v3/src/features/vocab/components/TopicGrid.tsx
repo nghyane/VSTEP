@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useMemo } from "react"
+import { PaginatedGrid } from "#/components/PaginatedGrid"
+import { PaginationControls } from "#/components/PaginationControls"
 import { vocabTopicsQuery } from "#/features/vocab/queries"
 import {
 	groupVocabTopics,
@@ -8,6 +10,9 @@ import {
 	type TopicGroup,
 	topicFocusLabel,
 } from "#/features/vocab/topic-adaptive"
+import { useClientPagination } from "#/lib/use-client-pagination"
+
+const PAGE_SIZE = 12
 
 export function TopicGrid() {
 	const { data, isLoading } = useQuery(vocabTopicsQuery)
@@ -15,6 +20,7 @@ export function TopicGrid() {
 	const topicGroups = useMemo(() => {
 		return groupVocabTopics(data?.data ?? [])
 	}, [data])
+	const pagination = useClientPagination(topicGroups, PAGE_SIZE)
 
 	return (
 		<section>
@@ -31,11 +37,24 @@ export function TopicGrid() {
 					<p className="text-sm font-bold text-subtle">Chưa có chủ đề nào</p>
 				</div>
 			) : (
-				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-					{topicGroups.map((topic) => (
-						<TopicCard key={topic.key} topic={topic} />
-					))}
-				</div>
+				<>
+					<PaginatedGrid
+						itemCount={pagination.pageItems.length}
+						pageSize={PAGE_SIZE}
+						hasPagination={pagination.lastPage > 1}
+					>
+						{pagination.pageItems.map((topic) => (
+							<TopicCard key={topic.key} topic={topic} />
+						))}
+					</PaginatedGrid>
+					<PaginationControls
+						currentPage={pagination.page}
+						lastPage={pagination.lastPage}
+						total={pagination.total}
+						itemLabel="chủ đề"
+						onPageChange={pagination.setPage}
+					/>
+				</>
 			)}
 		</section>
 	)

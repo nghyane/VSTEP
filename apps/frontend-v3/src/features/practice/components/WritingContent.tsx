@@ -1,72 +1,92 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { useMemo } from "react"
+import { useState } from "react"
+import { PaginatedGrid } from "#/components/PaginatedGrid"
+import { PaginationControls } from "#/components/PaginationControls"
 import { ExerciseCard } from "#/features/practice/components/ExerciseCard"
 import { writingPromptsQuery } from "#/features/practice/queries"
+import type { WritingPrompt } from "#/features/practice/types"
+import { paginationMetaOrDefault } from "#/lib/api"
 
 const PARTS = [
 	{
 		part: 1,
 		label: "Task 1 — Viết thư",
-		desc: "Viết thư theo tình huống. AI chấm cấu trúc, ngữ pháp, từ vựng.",
+		desc: "Viết thư theo tình huống. Nhận phản hồi về cấu trúc, ngữ pháp, từ vựng.",
 	},
 	{
 		part: 2,
 		label: "Task 2 — Viết luận",
-		desc: "Viết luận nghị luận. AI chấm lập luận, mạch lạc, ngôn ngữ.",
+		desc: "Viết luận nghị luận. Nhận phản hồi về lập luận, mạch lạc, ngôn ngữ.",
 	},
 ]
 
+const PAGE_SIZE = 12
+
 export function WritingContent() {
-	const { data } = useQuery(writingPromptsQuery)
-	const prompts = data ? data.data : []
-
-	const grouped = useMemo(() => {
-		const map = new Map<number, typeof prompts>()
-		for (const p of prompts) {
-			const list = map.get(p.part) ?? []
-			list.push(p)
-			map.set(p.part, list)
-		}
-		return map
-	}, [prompts])
-
-	if (!data) return <p className="text-muted">Đang tải...</p>
-
 	return (
 		<div className="space-y-8">
-			{PARTS.map(({ part, label, desc }) => {
-				const list = grouped.get(part) ?? []
-				return (
-					<section key={part}>
-						<h3 className="font-extrabold text-xl text-foreground">{label}</h3>
-						<p className="text-sm text-subtle mt-0.5 mb-4">{desc}</p>
-						{list.length === 0 ? (
-							<div className="card p-6 text-center">
-								<p className="text-sm text-subtle">Sắp ra mắt</p>
-							</div>
-						) : (
-							<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-								{list.map((p) => (
-									<ExerciseCard
-										key={p.id}
-										title={p.title}
-										description={null}
-										meta={`${p.min_words}–${p.max_words} từ${p.estimated_minutes ? ` · ~${p.estimated_minutes} phút` : ""}`}
-										overlay={
-											<Link
-												to="/writing/$promptId"
-												params={{ promptId: p.id }}
-												className="absolute inset-0 rounded-(--radius-card)"
-											/>
-										}
-									/>
-								))}
-							</div>
-						)}
-					</section>
-				)
-			})}
+			{PARTS.map((part) => (
+				<WritingPartSection key={part.part} {...part} />
+			))}
 		</div>
+	)
+}
+
+function WritingPartSection({ part, label, desc }: { part: number; label: string; desc: string }) {
+	const [page, setPage] = useState(1)
+	const { data, isLoading } = useQuery(writingPromptsQuery({ part, page, perPage: PAGE_SIZE }))
+	const list = data?.data ?? []
+	const pagination = paginationMetaOrDefault(data, page, PAGE_SIZE)
+
+	return (
+		<section>
+			<h3 className="font-extrabold text-xl text-foreground">{label}</h3>
+			<p className="text-sm text-subtle mt-0.5 mb-4">{desc}</p>
+			{isLoading || !data ? (
+				<p className="text-sm text-subtle">Đang tải...</p>
+			) : list.length === 0 ? (
+				<div className="card p-6 text-center">
+					<p className="text-sm text-subtle">Sắp ra mắt</p>
+				</div>
+			) : (
+				<>
+					<PaginatedGrid
+						itemCount={list.length}
+						pageSize={PAGE_SIZE}
+						hasPagination={pagination.last_page > 1}
+					>
+						{list.map((prompt) => (
+							<WritingCard key={prompt.id} prompt={prompt} />
+						))}
+					</PaginatedGrid>
+					<PaginationControls
+						currentPage={pagination.current_page}
+						lastPage={pagination.last_page}
+						total={pagination.total}
+						itemLabel="đề viết"
+						onPageChange={setPage}
+					/>
+				</>
+			)}
+		</section>
+	)
+}
+
+function WritingCard({ prompt }: { prompt: WritingPrompt }) {
+	return (
+		<ExerciseCard
+			title={prompt.title}
+			description={prompt.description}
+			meta={`${prompt.min_words}–${prompt.max_words} từ${prompt.estimated_minutes ? ` · ~${prompt.estimated_minutes} phút` : ""}`}
+			tag={prompt.has_submitted ? "Đã làm" : undefined}
+			overlay={
+				<Link
+					to="/writing/$promptId"
+					params={{ promptId: prompt.id }}
+					className="absolute inset-0 rounded-(--radius-card)"
+				/>
+			}
+		/>
 	)
 }

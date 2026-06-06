@@ -15,6 +15,7 @@ final class DrillSummaryResource extends JsonResource
             'id' => $this->id,
             'slug' => $this->slug,
             'title' => $this->title,
+            'description' => $this->description ?: "Luyện shadowing theo chủ đề {$this->title} ở trình độ {$this->level}.",
             'level' => $this->level,
             'segment_count' => $this->sentences_count ?? $this->sentences()->count(),
             'estimated_minutes' => $this->estimated_minutes,

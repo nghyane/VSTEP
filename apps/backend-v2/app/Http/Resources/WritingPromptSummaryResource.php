@@ -15,10 +15,12 @@ final class WritingPromptSummaryResource extends JsonResource
             'id' => $this->id,
             'slug' => $this->slug,
             'title' => $this->title,
+            'description' => $this->description ?: $this->prompt,
             'part' => $this->part,
             'min_words' => $this->min_words,
             'max_words' => $this->max_words,
             'estimated_minutes' => $this->estimated_minutes,
+            'has_submitted' => (bool) ($this->has_submitted ?? false),
         ];
     }
 }

@@ -38,7 +38,7 @@ export const skills: readonly Skill[] = [
 		key: "writing",
 		label: "Viết",
 		en: "Writing",
-		desc: "Thư + luận · AI chấm",
+		desc: "Thư + luận · phản hồi rubric",
 		icon: "pencil",
 		pngIcon: "writing",
 		color: "var(--color-skill-writing)",

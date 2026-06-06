@@ -5821,14 +5821,14 @@
         {
             "id": "019da080-543c-70e4-b0f3-a4b842bfda8c",
             "slug": "directions-post-office",
-            "title": "Asking for Directions",
-            "description": "A short conversation about directions to the post office.",
+            "title": "Hỏi đường đến bưu điện",
+            "description": "Hội thoại ngắn về cách đi đến bưu điện.",
             "part": 1,
             "audio_url": null,
             "transcript": "Woman: Excuse me, could you tell me how to get to the post office?\nMan: Sure. Go straight ahead for two blocks, then turn left at the traffic lights.\nWoman: Is it far from here?\nMan: No, it's about a five-minute walk.",
             "vietnamese_transcript": "Hỏi đường đến bưu điện.",
             "word_timestamps": null,
-            "keywords": "[\"directions\",\"post office\",\"traffic lights\"]",
+            "keywords": "[\"chỉ đường\", \"bưu điện\", \"đèn giao thông\"]",
             "estimated_minutes": 5,
             "is_published": true,
             "created_at": "2026-04-18 12:10:57",
@@ -5837,14 +5837,14 @@
         {
             "id": "019db448-0478-7180-a3de-4c8173882744",
             "slug": "weather-forecast",
-            "title": "Weather Forecast",
-            "description": "Listen to a short weather report and answer questions.",
+            "title": "Dự báo thời tiết",
+            "description": "Nghe bản tin thời tiết ngắn và trả lời câu hỏi.",
             "part": 1,
             "audio_url": null,
             "transcript": "Good morning. Here is your weather update. Today will be mostly cloudy with temperatures around 28 degrees. There is a 60 percent chance of rain this afternoon, so please carry an umbrella. Tomorrow will be sunny and warmer, with highs of 32 degrees.",
             "vietnamese_transcript": "Dự báo thời tiết buổi sáng.",
             "word_timestamps": null,
-            "keywords": "[\"weather\",\"temperature\",\"rain\",\"umbrella\"]",
+            "keywords": "[\"thời tiết\", \"nhiệt độ\", \"mưa\", \"ô/dù\"]",
             "estimated_minutes": 3,
             "is_published": true,
             "created_at": "2026-04-22 08:21:51",
@@ -5853,14 +5853,14 @@
         {
             "id": "019db448-0483-711f-9475-b0beff2b2a74",
             "slug": "hotel-check-in",
-            "title": "Hotel Check-in",
-            "description": "A guest checks into a hotel and asks about services.",
+            "title": "Làm thủ tục nhận phòng khách sạn",
+            "description": "Khách nhận phòng khách sạn và hỏi về dịch vụ.",
             "part": 1,
             "audio_url": null,
             "transcript": "Receptionist: Good evening, welcome to the Grand Hotel. Do you have a reservation?\nGuest: Yes, under the name Johnson. I booked a double room for three nights.\nReceptionist: Let me check. Yes, I have your reservation. Room 405 on the fourth floor. Breakfast is served from 7 to 10 AM in the restaurant on the ground floor.\nGuest: Thank you. Is there Wi-Fi in the room?\nReceptionist: Yes, the password is on the card in your room. Enjoy your stay.",
             "vietnamese_transcript": "Đăng ký khách sạn.",
             "word_timestamps": null,
-            "keywords": "[\"hotel\",\"reservation\",\"room\",\"breakfast\"]",
+            "keywords": "[\"khách sạn\", \"đặt phòng\", \"phòng\", \"bữa sáng\"]",
             "estimated_minutes": 4,
             "is_published": true,
             "created_at": "2026-04-22 08:21:51",
@@ -5869,14 +5869,14 @@
         {
             "id": "019db448-0487-7011-bb6a-b214ea1c7dc3",
             "slug": "train-announcement",
-            "title": "Train Station Announcement",
-            "description": "Listen to a train station announcement about schedule changes.",
+            "title": "Thông báo tại ga tàu",
+            "description": "Nghe thông báo ga tàu về thay đổi lịch trình.",
             "part": 1,
             "audio_url": null,
             "transcript": "Attention passengers. The 9:15 express train to Da Nang has been delayed by approximately 20 minutes due to signal problems. The train will now depart at 9:35 from platform 2. We apologize for the inconvenience. Passengers traveling to Hue should take the 9:30 local service from platform 5.",
             "vietnamese_transcript": "Thông báo ga tàu.",
             "word_timestamps": null,
-            "keywords": "[\"train\",\"delay\",\"platform\",\"passengers\"]",
+            "keywords": "[\"tàu hỏa\", \"trì hoãn\", \"sân ga\", \"hành khách\"]",
             "estimated_minutes": 3,
             "is_published": true,
             "created_at": "2026-04-22 08:21:51",
@@ -5885,14 +5885,14 @@
         {
             "id": "019db448-0489-7265-84c4-cc5a479a43a6",
             "slug": "job-interview",
-            "title": "Job Interview Conversation",
-            "description": "A candidate discusses experience and career goals with an interviewer.",
+            "title": "Hội thoại phỏng vấn xin việc",
+            "description": "Ứng viên trao đổi về kinh nghiệm và mục tiêu nghề nghiệp với người phỏng vấn.",
             "part": 2,
             "audio_url": null,
             "transcript": "Interviewer: So, tell me about your experience in marketing.\nCandidate: I have worked in digital marketing for three years at a small agency. I managed social media campaigns and created content for various clients.\nInterviewer: What do you consider your greatest strength?\nCandidate: I think my ability to analyze data and turn it into actionable strategies is my strongest skill.\nInterviewer: And why are you interested in this position?\nCandidate: I want to work for a larger company where I can take on more responsibility and lead a team.\nInterviewer: We will let you know our decision by next Friday.",
             "vietnamese_transcript": "Phỏng vấn xin việc.",
             "word_timestamps": null,
-            "keywords": "[\"interview\",\"marketing\",\"experience\",\"strength\"]",
+            "keywords": "[\"phỏng vấn\", \"tiếp thị\", \"kinh nghiệm\", \"điểm mạnh\"]",
             "estimated_minutes": 6,
             "is_published": true,
             "created_at": "2026-04-22 08:21:51",
@@ -5901,14 +5901,14 @@
         {
             "id": "019db448-048d-7125-b58a-b2b617f294c0",
             "slug": "university-lecture-climate",
-            "title": "Climate and Agriculture Lecture",
-            "description": "A university lecture about how climate change affects farming worldwide.",
+            "title": "Bài giảng về khí hậu và nông nghiệp",
+            "description": "Bài giảng đại học về tác động của biến đổi khí hậu đối với nông nghiệp.",
             "part": 3,
             "audio_url": null,
             "transcript": "Today we will examine how climate change affects agriculture worldwide. Rising temperatures are causing shifts in growing seasons. In tropical regions, increased heat stress reduces crop yields for staple foods like rice and wheat. Meanwhile, some northern regions are experiencing longer growing seasons, which could temporarily benefit certain crops.\n\nWater availability is another critical factor. Changes in rainfall patterns mean some areas face more frequent droughts while others experience flooding. Both extremes damage crops and reduce food production.\n\nFarmers are adapting through various strategies. Some are switching to drought-resistant crop varieties. Others are adopting precision irrigation systems that use water more efficiently. However, these adaptations require investment that many smallholder farmers cannot afford.\n\nGovernments and international organizations must support farmers through funding, research, and technology transfer to ensure global food security in a changing climate.",
             "vietnamese_transcript": "Bài giảng về khí hậu và nông nghiệp.",
             "word_timestamps": null,
-            "keywords": "[\"climate\",\"agriculture\",\"drought\",\"crops\",\"food security\"]",
+            "keywords": "[\"khí hậu\", \"nông nghiệp\", \"hạn hán\", \"cây trồng\", \"an ninh lương thực\"]",
             "estimated_minutes": 8,
             "is_published": true,
             "created_at": "2026-04-22 08:21:51",
@@ -6077,6 +6077,114 @@
             "options": "[\"More research only\",\"Government and international support for farmers\",\"Banning certain crops\",\"Reducing farming\"]",
             "correct_index": 1,
             "explanation": "Support through funding, research, and technology transfer."
+        },
+        {
+            "id": "a82314ca-e327-41c7-a07d-b8579c6a3bf7",
+            "exercise_id": "019da080-543c-70e4-b0f3-a4b842bfda8c",
+            "display_order": 2,
+            "question": "What should the woman do after going straight for two blocks?",
+            "options": "[\"Turn left at the traffic lights\",\"Turn right at the bank\",\"Take a bus\",\"Walk for twenty minutes\"]",
+            "correct_index": 0,
+            "explanation": "The man tells her to go straight for two blocks, then turn left at the traffic lights."
+        },
+        {
+            "id": "285bc720-6353-4e13-99dd-9f13a45f93b8",
+            "exercise_id": "019da080-543c-70e4-b0f3-a4b842bfda8c",
+            "display_order": 3,
+            "question": "Who gives the directions?",
+            "options": "[\"A man\",\"A receptionist\",\"A teacher\",\"A train passenger\"]",
+            "correct_index": 0,
+            "explanation": "The man answers the woman and gives directions."
+        },
+        {
+            "id": "849e2cd4-c1ed-47ef-96b5-94f5651dcfeb",
+            "exercise_id": "019da080-543c-70e4-b0f3-a4b842bfda8c",
+            "display_order": 4,
+            "question": "What is the main purpose of the conversation?",
+            "options": "[\"Asking for directions\",\"Booking a hotel\",\"Changing a train platform\",\"Discussing the weather\"]",
+            "correct_index": 0,
+            "explanation": "The woman asks how to get to the post office."
+        },
+        {
+            "id": "cb3b15fa-3d6e-4505-9526-3daa6b0d5571",
+            "exercise_id": "019db448-0478-7180-a3de-4c8173882744",
+            "display_order": 2,
+            "question": "What temperature is expected today?",
+            "options": "[\"Around 28 degrees\",\"Around 32 degrees\",\"Around 16 degrees\",\"Around 60 degrees\"]",
+            "correct_index": 0,
+            "explanation": "The report says temperatures will be around 28 degrees."
+        },
+        {
+            "id": "ae8b1af1-bf7f-49de-9cf8-9084e516276c",
+            "exercise_id": "019db448-0478-7180-a3de-4c8173882744",
+            "display_order": 3,
+            "question": "What is the chance of rain this afternoon?",
+            "options": "[\"60 percent\",\"20 percent\",\"32 percent\",\"100 percent\"]",
+            "correct_index": 0,
+            "explanation": "The forecast mentions a 60 percent chance of rain."
+        },
+        {
+            "id": "7b6cb1c6-4dcc-4d45-96c7-96aee77d089d",
+            "exercise_id": "019db448-0478-7180-a3de-4c8173882744",
+            "display_order": 4,
+            "question": "What will the weather be like tomorrow?",
+            "options": "[\"Sunny and warmer\",\"Mostly cloudy\",\"Rainy all day\",\"Cold and snowy\"]",
+            "correct_index": 0,
+            "explanation": "Tomorrow will be sunny and warmer, with highs of 32 degrees."
+        },
+        {
+            "id": "fb210c7a-8d3a-4f11-92b6-dfa7e8d0f3a2",
+            "exercise_id": "019db448-0483-711f-9475-b0beff2b2a74",
+            "display_order": 3,
+            "question": "How long will the guest stay?",
+            "options": "[\"Three nights\",\"One night\",\"Two weeks\",\"Four days only\"]",
+            "correct_index": 0,
+            "explanation": "The guest booked a double room for three nights."
+        },
+        {
+            "id": "c8564232-17a4-4d57-a34e-ef5ac56d3c7b",
+            "exercise_id": "019db448-0483-711f-9475-b0beff2b2a74",
+            "display_order": 4,
+            "question": "Where is breakfast served?",
+            "options": "[\"In the restaurant on the ground floor\",\"In room 405\",\"At reception\",\"On the fourth floor corridor\"]",
+            "correct_index": 0,
+            "explanation": "Breakfast is served in the restaurant on the ground floor."
+        },
+        {
+            "id": "e3fea6c8-f90f-449f-aaab-0c7d1839208e",
+            "exercise_id": "019db448-0487-7011-bb6a-b214ea1c7dc3",
+            "display_order": 2,
+            "question": "Where will the delayed express train depart from?",
+            "options": "[\"Platform 2\",\"Platform 5\",\"Gate B\",\"The ticket office\"]",
+            "correct_index": 0,
+            "explanation": "The train will now depart from platform 2."
+        },
+        {
+            "id": "32f7da7f-e5cd-43aa-b5d3-e4ee7ede7729",
+            "exercise_id": "019db448-0487-7011-bb6a-b214ea1c7dc3",
+            "display_order": 3,
+            "question": "Which passengers should take the 9:30 local service?",
+            "options": "[\"Passengers traveling to Hue\",\"Passengers going to Da Nang\",\"All express passengers\",\"People with no tickets\"]",
+            "correct_index": 0,
+            "explanation": "Passengers traveling to Hue should take the 9:30 local service from platform 5."
+        },
+        {
+            "id": "b2ffc5a9-7866-4dc1-a0e2-efdd9f187d22",
+            "exercise_id": "019db448-0487-7011-bb6a-b214ea1c7dc3",
+            "display_order": 4,
+            "question": "How long is the delay?",
+            "options": "[\"About 20 minutes\",\"About 5 minutes\",\"One hour\",\"Until tomorrow\"]",
+            "correct_index": 0,
+            "explanation": "The 9:15 express train has been delayed by approximately 20 minutes."
+        },
+        {
+            "id": "29e44915-56f6-465f-8c0c-5e24e17de28b",
+            "exercise_id": "019db448-0489-7265-84c4-cc5a479a43a6",
+            "display_order": 4,
+            "question": "Where did the candidate work before?",
+            "options": "[\"At a small agency\",\"At a hotel\",\"At a university\",\"At a train station\"]",
+            "correct_index": 0,
+            "explanation": "The candidate worked in digital marketing for three years at a small agency."
         }
     ],
     "practice_reading_exercises": [
@@ -6088,7 +6196,7 @@
             "part": 1,
             "passage": "Welcome to The Green Leaf Restaurant!\n\nWe are pleased to announce that starting next Monday, we will open earlier at 7 a.m. to serve breakfast.",
             "vietnamese_translation": "Chào mừng đến nhà hàng Green Leaf!",
-            "keywords": "[\"restaurant\",\"breakfast\",\"opening hours\"]",
+            "keywords": "[\"restaurant\", \"bữa sáng\", \"giờ mở cửa\"]",
             "estimated_minutes": 10,
             "is_published": true,
             "created_at": "2026-04-18 12:10:57",
@@ -6097,12 +6205,12 @@
         {
             "id": "019db448-a0f7-723e-aba1-7b1b5f2bd292",
             "slug": "email-office-party",
-            "title": "Office Party Email",
-            "description": null,
+            "title": "Email mời tiệc công ty",
+            "description": "Email mời tham dự tiệc công ty.",
             "part": 1,
             "passage": "Dear colleagues,\n\nWe are pleased to invite you to the annual company party on Friday, December 15th, at 6 PM in the main conference hall. There will be food, drinks, and live music. Please confirm your attendance by December 10th by replying to this email. You are welcome to bring one guest. Dress code is smart casual.\n\nBest regards,\nHR Department",
             "vietnamese_translation": "Thư mời tiệc công ty.",
-            "keywords": "[\"party\",\"invitation\",\"attendance\"]",
+            "keywords": "[\"bữa tiệc\", \"lời mời\", \"tham dự\"]",
             "estimated_minutes": 8,
             "is_published": true,
             "created_at": "2026-04-22 08:22:31",
@@ -6111,12 +6219,12 @@
         {
             "id": "019db448-a101-7128-99af-9e49792b1db5",
             "slug": "public-transport-article",
-            "title": "Public Transport in Cities",
-            "description": null,
+            "title": "Giao thông công cộng trong thành phố",
+            "description": "Bài đọc về vai trò của giao thông công cộng trong đô thị.",
             "part": 2,
             "passage": "Public transport plays a vital role in modern cities. Buses, trains, and metro systems move millions of people every day, reducing traffic congestion and air pollution. Cities with well-developed public transport networks tend to have lower carbon emissions per capita.\n\nHowever, many cities face challenges in maintaining and expanding their transport systems. Aging infrastructure requires expensive repairs. Growing populations put pressure on existing capacity. Funding is often insufficient, leading to overcrowded services and delays.\n\nSome cities have found innovative solutions. Singapore uses electronic road pricing to discourage private car use. Bogota in Colombia built a bus rapid transit system that serves millions at a fraction of the cost of a metro. Curitiba in Brazil pioneered dedicated bus lanes decades ago.\n\nInvesting in public transport is not just about moving people. It promotes social equity by providing affordable mobility for all income levels. It supports economic growth by connecting workers to jobs. And it contributes to environmental sustainability.",
             "vietnamese_translation": "Bài đọc về giao thông công cộng.",
-            "keywords": "[\"transport\",\"cities\",\"pollution\",\"infrastructure\"]",
+            "keywords": "[\"giao thông\", \"thành phố\", \"ô nhiễm\", \"hạ tầng\"]",
             "estimated_minutes": 12,
             "is_published": true,
             "created_at": "2026-04-22 08:22:31",
@@ -6125,12 +6233,12 @@
         {
             "id": "019db448-a106-7280-b1d3-ddd513a72272",
             "slug": "ai-education-essay",
-            "title": "AI in Education",
-            "description": null,
+            "title": "AI trong giáo dục",
+            "description": "Bài đọc về ứng dụng trí tuệ nhân tạo trong giáo dục.",
             "part": 3,
             "passage": "Artificial intelligence is increasingly being used in educational settings around the world. From personalized learning platforms to automated grading systems, AI tools are changing how students learn and how teachers teach.\n\nProponents argue that AI can personalize education at scale. Adaptive learning systems analyze student performance in real time and adjust content difficulty accordingly. This means each student can learn at their own pace, receiving additional support where needed and advancing quickly through material they have mastered.\n\nAI-powered tools can also reduce teacher workload. Automated grading of multiple-choice tests and even essay scoring can free teachers to spend more time on direct instruction and mentoring. Chatbots can answer common student questions outside of class hours.\n\nHowever, critics raise important concerns. Over-reliance on AI may reduce human interaction, which is essential for developing social skills and emotional intelligence. There are also concerns about data privacy, algorithmic bias, and the digital divide between students who have access to technology and those who do not.\n\nThe key is to use AI as a tool that enhances rather than replaces human teaching. Teachers should remain at the center of education, using AI to support their work rather than being replaced by it.",
             "vietnamese_translation": "Bài đọc về AI trong giáo dục.",
-            "keywords": "[\"AI\",\"education\",\"personalized\",\"automated\"]",
+            "keywords": "[\"AI\", \"giáo dục\", \"cá nhân hóa\", \"tự động hóa\"]",
             "estimated_minutes": 15,
             "is_published": true,
             "created_at": "2026-04-22 08:22:31",
@@ -6139,12 +6247,12 @@
         {
             "id": "019db448-a10b-72a2-b666-e8e2c79a8fa9",
             "slug": "sleep-health-notice",
-            "title": "Sleep and Health",
-            "description": null,
+            "title": "Giấc ngủ và sức khỏe",
+            "description": "Thông tin ngắn về vai trò của giấc ngủ đối với sức khỏe.",
             "part": 1,
             "passage": "Getting enough sleep is essential for good health. Adults need 7 to 9 hours of sleep per night. During sleep, your body repairs itself and your brain processes information from the day. Lack of sleep can lead to poor concentration, weight gain, and a weakened immune system. To improve your sleep, try to go to bed at the same time every night, avoid screens before bedtime, and keep your bedroom cool and dark.",
             "vietnamese_translation": "Thông tin về giấc ngủ và sức khỏe.",
-            "keywords": "[\"sleep\",\"health\",\"concentration\",\"immune\"]",
+            "keywords": "[\"giấc ngủ\", \"sức khỏe\", \"tập trung\", \"miễn dịch\"]",
             "estimated_minutes": 5,
             "is_published": true,
             "created_at": "2026-04-22 08:22:31",
@@ -6286,6 +6394,96 @@
             "options": "[\"Better memory\",\"Poor concentration and weight gain\",\"Increased energy\",\"Stronger immunity\"]",
             "correct_index": 1,
             "explanation": "Poor concentration, weight gain, weakened immune system."
+        },
+        {
+            "id": "eae9ff02-a8b8-43b4-b33b-3ccd8d267861",
+            "exercise_id": "019da080-543e-72c0-94fa-7ba545a85b33",
+            "display_order": 1,
+            "question": "What type of place is The Green Leaf?",
+            "options": "[\"A restaurant\",\"A library\",\"A school\",\"A hotel\"]",
+            "correct_index": 0,
+            "explanation": "The notice welcomes readers to The Green Leaf Restaurant."
+        },
+        {
+            "id": "decd6d9e-2e65-4c60-993f-9e0c91f8617c",
+            "exercise_id": "019da080-543e-72c0-94fa-7ba545a85b33",
+            "display_order": 2,
+            "question": "When will the new opening time begin?",
+            "options": "[\"Next Monday\",\"This Friday\",\"December 15th\",\"Tomorrow evening\"]",
+            "correct_index": 0,
+            "explanation": "The notice says the restaurant will open earlier starting next Monday."
+        },
+        {
+            "id": "71665a8d-7238-4a6e-b54d-f9bf2f837386",
+            "exercise_id": "019da080-543e-72c0-94fa-7ba545a85b33",
+            "display_order": 3,
+            "question": "Why will the restaurant open earlier?",
+            "options": "[\"To serve breakfast\",\"To host a company party\",\"To repair the kitchen\",\"To run a workshop\"]",
+            "correct_index": 0,
+            "explanation": "It will open at 7 a.m. to serve breakfast."
+        },
+        {
+            "id": "771daf0e-1134-4aa6-ab3a-5301cb4c6552",
+            "exercise_id": "019da080-543e-72c0-94fa-7ba545a85b33",
+            "display_order": 4,
+            "question": "What is the main purpose of the notice?",
+            "options": "[\"To announce a change in opening hours\",\"To advertise a job\",\"To cancel breakfast\",\"To invite staff to a meeting\"]",
+            "correct_index": 0,
+            "explanation": "The notice announces that the restaurant will open earlier."
+        },
+        {
+            "id": "ae4540aa-e334-4fea-9d25-94b0030288e9",
+            "exercise_id": "019db448-a0f7-723e-aba1-7b1b5f2bd292",
+            "display_order": 3,
+            "question": "Where will the party take place?",
+            "options": "[\"In the main conference hall\",\"At a restaurant\",\"In Room B204\",\"On the company website\"]",
+            "correct_index": 0,
+            "explanation": "The email says the party will be in the main conference hall."
+        },
+        {
+            "id": "3b67cdba-31b9-41f5-a202-fbcfaac83f5f",
+            "exercise_id": "019db448-a0f7-723e-aba1-7b1b5f2bd292",
+            "display_order": 4,
+            "question": "How should colleagues confirm attendance?",
+            "options": "[\"By replying to the email\",\"By calling a hotel\",\"By bringing a printed CV\",\"By buying a ticket\"]",
+            "correct_index": 0,
+            "explanation": "They should confirm attendance by replying to the email."
+        },
+        {
+            "id": "3ce09319-fae7-4858-a9cf-f829d16217a7",
+            "exercise_id": "019db448-a101-7128-99af-9e49792b1db5",
+            "display_order": 4,
+            "question": "What is one example of an innovative public transport solution?",
+            "options": "[\"A bus rapid transit system in Bogota\",\"Closing all metro systems\",\"Removing buses from cities\",\"Using only private cars\"]",
+            "correct_index": 0,
+            "explanation": "The article mentions Bogota building a bus rapid transit system."
+        },
+        {
+            "id": "ab3ae59e-ad5d-4afd-96cc-276af2b53e07",
+            "exercise_id": "019db448-a10b-72a2-b666-e8e2c79a8fa9",
+            "display_order": 2,
+            "question": "What happens during sleep according to the notice?",
+            "options": "[\"The body repairs itself\",\"People need more screens\",\"The immune system stops working\",\"Adults should drink caffeine\"]",
+            "correct_index": 0,
+            "explanation": "The notice says the body repairs itself during sleep."
+        },
+        {
+            "id": "8a9cc8e3-5f74-443e-b283-aa49fcc02f0c",
+            "exercise_id": "019db448-a10b-72a2-b666-e8e2c79a8fa9",
+            "display_order": 3,
+            "question": "What should people avoid before bedtime?",
+            "options": "[\"Screens\",\"A cool room\",\"A dark bedroom\",\"A regular schedule\"]",
+            "correct_index": 0,
+            "explanation": "The notice advises avoiding screens before bedtime."
+        },
+        {
+            "id": "84575c2b-8877-4995-84e5-b9096d34f90b",
+            "exercise_id": "019db448-a10b-72a2-b666-e8e2c79a8fa9",
+            "display_order": 4,
+            "question": "What is one possible effect of lack of sleep?",
+            "options": "[\"Poor concentration\",\"Better memory\",\"More energy\",\"Stronger immunity\"]",
+            "correct_index": 0,
+            "explanation": "Lack of sleep can lead to poor concentration, weight gain and a weakened immune system."
         }
     ],
     "practice_writing_prompts": [
@@ -6295,11 +6493,11 @@
             "title": "Thư xin lỗi bạn bè",
             "description": "Viết thư xin lỗi vì đã quên sinh nhật.",
             "part": 1,
-            "prompt": "You forgot your close friend's birthday party last weekend. Write a letter to your friend to:\n- Apologize for missing the party\n- Explain why you couldn't attend\n- Suggest a plan to make it up",
+            "prompt": "Bạn đã quên tiệc sinh nhật của người bạn thân vào cuối tuần trước. Hãy viết thư cho bạn của bạn để:\n- xin lỗi vì đã bỏ lỡ bữa tiệc\n- giải thích vì sao bạn không thể tham dự\n- đề xuất một kế hoạch để bù đắp",
             "min_words": 100,
             "max_words": 150,
-            "required_points": "[\"apologize\",\"explain reason\",\"suggest plan\"]",
-            "keywords": "[\"apologize\",\"birthday\",\"make it up\"]",
+            "required_points": "[\"xin lỗi\", \"giải thích lý do\", \"đề xuất kế hoạch\"]",
+            "keywords": "[\"xin lỗi\", \"sinh nhật\", \"bù đắp\"]",
             "sentence_starters": "[\"I am writing to...\",\"I sincerely apologize for...\"]",
             "sample_answer": "Dear Minh,\n\nI am writing to sincerely apologize for missing your birthday party last Saturday. I feel terrible about it.\n\nThe reason I couldn't attend was that my grandmother was suddenly hospitalized, and I had to rush to the hospital with my family. Everything happened so quickly that I didn't even have time to call you.\n\nTo make it up to you, I would like to invite you to dinner at your favorite restaurant this weekend. It will be my treat, and I promise to bring a special gift for you.\n\nOnce again, I am truly sorry. I hope you had a wonderful birthday despite my absence.\n\nBest wishes,\nLan",
             "estimated_minutes": 20,
@@ -6313,11 +6511,11 @@
             "title": "Thư khiếu nại dịch vụ",
             "description": null,
             "part": 1,
-            "prompt": "You recently stayed at a hotel and were unhappy with the service. Write a letter to the hotel manager to:\n- Describe the problems you experienced\n- Explain how they affected your stay\n- Request compensation or an apology",
+            "prompt": "Bạn vừa ở tại một khách sạn và không hài lòng với dịch vụ. Hãy viết thư cho quản lý khách sạn để:\n- mô tả những vấn đề bạn gặp phải\n- giải thích chúng ảnh hưởng đến kỳ nghỉ của bạn như thế nào\n- yêu cầu bồi thường hoặc lời xin lỗi",
             "min_words": 100,
             "max_words": 150,
-            "required_points": "[\"describe problems\",\"explain impact\",\"request compensation\"]",
-            "keywords": "[\"complaint\",\"hotel\",\"service\",\"compensation\"]",
+            "required_points": "[\"mô tả vấn đề\", \"giải thích ảnh hưởng\", \"yêu cầu bồi thường\"]",
+            "keywords": "[\"khiếu nại\", \"khách sạn\", \"dịch vụ\", \"bồi thường\"]",
             "sentence_starters": "[\"I am writing to express my dissatisfaction with...\",\"During my stay, I experienced several problems...\"]",
             "sample_answer": "Dear Sir or Madam,\n\nI am writing to express my dissatisfaction with my recent stay at your hotel from 5th to 8th of July.\n\nFirstly, the air conditioning in my room did not work properly, and despite reporting it twice to reception, no one came to fix it. Secondly, the room had not been cleaned before my arrival — there were used towels on the floor and the bin was full.\n\nThese problems seriously affected my stay. I could not sleep well due to the heat, and the dirty room made me feel very uncomfortable. I had chosen your hotel for a relaxing holiday, but instead I was stressed and disappointed.\n\nI would appreciate it if you could offer a partial refund or a complimentary stay to make up for this experience. I look forward to hearing from you soon.\n\nYours faithfully,\nNguyen Van Hung",
             "estimated_minutes": 15,
@@ -6331,11 +6529,11 @@
             "title": "Luận về công nghệ và trẻ em",
             "description": null,
             "part": 2,
-            "prompt": "Some people believe that children should not be allowed to use smartphones until they are 16 years old. Others think that smartphones are useful tools for learning. Discuss both views and give your own opinion.",
+            "prompt": "Một số người cho rằng trẻ em không nên được phép dùng điện thoại thông minh cho đến khi 16 tuổi. Những người khác nghĩ rằng điện thoại thông minh là công cụ hữu ích cho việc học. Hãy thảo luận cả hai quan điểm và đưa ra ý kiến của bạn.",
             "min_words": 250,
             "max_words": 350,
-            "required_points": "[\"discuss both views\",\"give opinion\",\"use examples\"]",
-            "keywords": "[\"smartphone\",\"children\",\"education\",\"screen time\"]",
+            "required_points": "[\"thảo luận cả hai quan điểm\", \"đưa ra ý kiến\", \"sử dụng ví dụ\"]",
+            "keywords": "[\"điện thoại thông minh\", \"trẻ em\", \"giáo dục\", \"thời gian màn hình\"]",
             "sentence_starters": "[\"It is often argued that...\",\"On the other hand, proponents suggest...\"]",
             "sample_answer": "In today's digital age, the question of whether children should be allowed to use smartphones is widely debated. While some believe that smartphones are harmful for young people, others argue that they can be valuable learning tools. In this essay, I will discuss both views and give my own opinion.\n\nOn the one hand, many parents and educators worry that smartphones expose children to inappropriate content, cyberbullying, and addiction. Studies have shown that excessive screen time can lead to poor concentration, sleep problems, and reduced physical activity. For example, a recent survey found that children who spend more than three hours a day on their phones perform worse at school than those who use them less.\n\nOn the other hand, smartphones offer many educational benefits. Children can access learning apps, watch educational videos, and practise languages through interactive platforms. During the COVID-19 pandemic, smartphones became essential tools for online learning, especially for students in rural areas who did not have computers.\n\nIn my opinion, the key is not to ban smartphones completely but to teach children how to use them responsibly. Parents should set clear rules about screen time and monitor the content their children access. Schools can also play a role by integrating digital literacy into the curriculum.\n\nIn conclusion, while smartphones do carry risks for young users, they also provide significant learning opportunities. With proper guidance, children can benefit from technology without being harmed by it.",
             "estimated_minutes": 35,
@@ -6349,11 +6547,11 @@
             "title": "Trả lời thư mời",
             "description": null,
             "part": 1,
-            "prompt": "A friend has invited you to their graduation ceremony, but you cannot attend. Write a letter to:\n- Thank them for the invitation\n- Explain why you cannot attend\n- Suggest an alternative way to celebrate together",
+            "prompt": "Một người bạn mời bạn đến lễ tốt nghiệp của họ, nhưng bạn không thể tham dự. Hãy viết thư để:\n- cảm ơn họ vì lời mời\n- giải thích vì sao bạn không thể tham dự\n- gợi ý một cách khác để cùng chúc mừng",
             "min_words": 100,
             "max_words": 150,
-            "required_points": "[\"thank\",\"explain\",\"suggest alternative\"]",
-            "keywords": "[\"graduation\",\"invitation\",\"celebrate\"]",
+            "required_points": "[\"cảm ơn\", \"giải thích\", \"gợi ý phương án khác\"]",
+            "keywords": "[\"tốt nghiệp\", \"lời mời\", \"chúc mừng\"]",
             "sentence_starters": "[\"Thank you so much for inviting me to...\",\"Unfortunately, I will not be able to attend because...\"]",
             "sample_answer": "Dear Hoa,\n\nThank you so much for inviting me to your graduation ceremony next Saturday. I am really proud of you for completing your degree, and I wish I could be there to celebrate with you.\n\nUnfortunately, I will not be able to attend because I have a job interview that same morning. It is for a position I have been hoping to get for months, and I cannot reschedule it. I feel terrible about missing such an important day in your life.\n\nHowever, I would love to celebrate with you another way. How about we go out for dinner the following weekend? I know a wonderful restaurant downtown, and it will be my treat. I also have a special gift for you!\n\nOnce again, congratulations on your achievement. I am so happy for you.\n\nWarm regards,\nLinh",
             "estimated_minutes": 15,
@@ -6367,11 +6565,11 @@
             "title": "Luận về đô thị hóa",
             "description": null,
             "part": 2,
-            "prompt": "More and more people are moving from rural areas to cities. What are the causes of this trend? What problems does it create, and how can these problems be solved?",
+            "prompt": "Ngày càng nhiều người chuyển từ nông thôn đến thành phố. Nguyên nhân của xu hướng này là gì? Nó tạo ra những vấn đề nào, và có thể giải quyết các vấn đề đó như thế nào?",
             "min_words": 250,
             "max_words": 350,
-            "required_points": "[\"discuss causes\",\"identify problems\",\"propose solutions\"]",
-            "keywords": "[\"urbanization\",\"rural\",\"migration\",\"housing\"]",
+            "required_points": "[\"thảo luận nguyên nhân\", \"xác định vấn đề\", \"đề xuất giải pháp\"]",
+            "keywords": "[\"đô thị hóa\", \"nông thôn\", \"di cư\", \"nhà ở\"]",
             "sentence_starters": "[\"In recent decades, there has been a significant trend of...\",\"This migration is driven by several factors...\"]",
             "sample_answer": "In recent decades, there has been a significant trend of people moving from rural areas to cities in search of better opportunities. This essay will discuss the main causes of urbanization, the problems it creates, and possible solutions.\n\nThere are several reasons why people migrate to cities. Firstly, cities offer more job opportunities, especially in industries such as technology, finance, and services. Many young people leave their villages because farming alone cannot provide a stable income. Secondly, cities have better education and healthcare facilities. Parents want their children to attend good schools and have access to modern hospitals.\n\nHowever, rapid urbanization creates serious problems. The most obvious issue is overcrowding, which leads to traffic congestion, air pollution, and a shortage of affordable housing. In Ho Chi Minh City, for example, millions of people spend hours commuting every day due to heavy traffic. Additionally, the growth of slum areas on the outskirts of cities creates poor living conditions and social inequality.\n\nTo address these problems, governments should invest in developing rural areas by building better infrastructure, schools, and hospitals. This would encourage people to stay in their hometowns. Furthermore, city planners need to improve public transport systems and build more affordable housing to accommodate the growing urban population.\n\nIn conclusion, while urbanization is driven by the search for better lives, it brings significant challenges. A balanced approach that develops both rural and urban areas is essential for sustainable growth.",
             "estimated_minutes": 35,
@@ -6384,7 +6582,7 @@
         {
             "id": "019da080-5441-7151-a241-ef5973d41317",
             "slug": "daily-routine-a2",
-            "title": "Daily routine",
+            "title": "Thói quen hằng ngày",
             "description": "Luyện các câu mô tả thói quen hằng ngày.",
             "level": "A2",
             "estimated_minutes": 4,
@@ -6395,7 +6593,7 @@
         {
             "id": "019db449-6455-7102-a3c7-96e0fed79b45",
             "slug": "travel-phrases-b1",
-            "title": "Travel Phrases",
+            "title": "Cụm từ khi du lịch",
             "description": "Luyện các câu thường dùng khi du lịch.",
             "level": "B1",
             "estimated_minutes": 5,
@@ -6406,7 +6604,7 @@
         {
             "id": "019db449-6460-71f7-a4ae-b26e4e97213a",
             "slug": "workplace-communication-b2",
-            "title": "Workplace Communication",
+            "title": "Giao tiếp nơi làm việc",
             "description": "Luyện giao tiếp nơi làm việc.",
             "level": "B2",
             "estimated_minutes": 5,
@@ -6417,13 +6615,123 @@
         {
             "id": "019db449-6465-7084-9e94-d93303216a3a",
             "slug": "academic-discussion-b2",
-            "title": "Academic Discussion",
+            "title": "Thảo luận học thuật",
             "description": "Luyện thảo luận học thuật.",
             "level": "B2",
             "estimated_minutes": 6,
             "is_published": true,
             "created_at": "2026-04-22 08:23:21",
             "updated_at": "2026-04-22 08:23:21"
+        },
+        {
+            "id": "ad27d28f-9ef5-44f0-9293-c057bea0fb46",
+            "slug": "academic-analysis-c1",
+            "title": "Phân tích học thuật",
+            "description": "Luyện diễn đạt ý kiến phân tích ở mức độ học thuật nâng cao.",
+            "level": "C1",
+            "estimated_minutes": 12,
+            "is_published": true,
+            "created_at": "2026-06-06 18:21:47",
+            "updated_at": "2026-06-06 18:21:47"
+        },
+        {
+            "id": "ddc70336-b6fa-440b-a981-41de602a754e",
+            "slug": "asking-directions-a2",
+            "title": "Hỏi đường và chỉ đường",
+            "description": "Luyện các mẫu câu hỏi và chỉ đường cơ bản.",
+            "level": "A2",
+            "estimated_minutes": 5,
+            "is_published": true,
+            "created_at": "2026-06-06 18:21:47",
+            "updated_at": "2026-06-06 18:21:47"
+        },
+        {
+            "id": "5213d081-c476-442d-8748-f4d37386f6cf",
+            "slug": "business-negotiation-b2",
+            "title": "Đàm phán kinh doanh",
+            "description": "Luyện ngôn ngữ đàm phán trong môi trường công sở.",
+            "level": "B2",
+            "estimated_minutes": 10,
+            "is_published": true,
+            "created_at": "2026-06-06 18:21:47",
+            "updated_at": "2026-06-06 18:21:47"
+        },
+        {
+            "id": "f1b57b7f-d16a-4700-b419-9faea4865c68",
+            "slug": "describing-experience-b1",
+            "title": "Mô tả trải nghiệm",
+            "description": "Luyện kể lại một sự kiện hoặc trải nghiệm đáng nhớ.",
+            "level": "B1",
+            "estimated_minutes": 8,
+            "is_published": true,
+            "created_at": "2026-06-06 18:21:47",
+            "updated_at": "2026-06-06 18:21:47"
+        },
+        {
+            "id": "4ab52776-ce5a-41ff-85e3-4f9230403cda",
+            "slug": "environment-debate-b2",
+            "title": "Tranh luận về môi trường",
+            "description": "Luyện đưa ra ý kiến và phản biện về các vấn đề môi trường.",
+            "level": "B2",
+            "estimated_minutes": 10,
+            "is_published": true,
+            "created_at": "2026-06-06 18:21:47",
+            "updated_at": "2026-06-06 18:21:47"
+        },
+        {
+            "id": "0cbebd82-9797-4408-a069-a25ce10ba344",
+            "slug": "greetings-intro-a2",
+            "title": "Giới thiệu bản thân",
+            "description": "Luyện phát âm các câu giới thiệu cơ bản trong giao tiếp hàng ngày.",
+            "level": "A2",
+            "estimated_minutes": 5,
+            "is_published": true,
+            "created_at": "2026-06-06 18:21:47",
+            "updated_at": "2026-06-06 18:21:47"
+        },
+        {
+            "id": "27503c37-0210-4297-a3c8-ba92449f4488",
+            "slug": "job-interview-b1",
+            "title": "Phỏng vấn xin việc",
+            "description": "Luyện trả lời các câu hỏi phỏng vấn phổ biến bằng tiếng Anh.",
+            "level": "B1",
+            "estimated_minutes": 8,
+            "is_published": true,
+            "created_at": "2026-06-06 18:21:47",
+            "updated_at": "2026-06-06 18:21:47"
+        },
+        {
+            "id": "bcea097a-f0e7-4c14-90c8-14982a858f27",
+            "slug": "ordering-food-a2",
+            "title": "Đặt món ở nhà hàng",
+            "description": "Luyện cách gọi món và giao tiếp tại nhà hàng bằng tiếng Anh.",
+            "level": "A2",
+            "estimated_minutes": 5,
+            "is_published": true,
+            "created_at": "2026-06-06 18:21:47",
+            "updated_at": "2026-06-06 18:21:47"
+        },
+        {
+            "id": "a0681276-969d-4f30-889c-3cab61c2efc5",
+            "slug": "professional-speech-c1",
+            "title": "Diễn thuyết chuyên nghiệp",
+            "description": "Luyện kỹ thuật diễn thuyết chuyên nghiệp với cấu trúc phức tạp.",
+            "level": "C1",
+            "estimated_minutes": 12,
+            "is_published": true,
+            "created_at": "2026-06-06 18:21:47",
+            "updated_at": "2026-06-06 18:21:47"
+        },
+        {
+            "id": "cc16658b-ca8d-4a1c-b8d6-317a22b7a2a8",
+            "slug": "short-presentation-b1",
+            "title": "Thuyết trình ngắn",
+            "description": "Luyện cấu trúc bài thuyết trình ngắn 2-3 phút.",
+            "level": "B1",
+            "estimated_minutes": 8,
+            "is_published": true,
+            "created_at": "2026-06-06 18:21:47",
+            "updated_at": "2026-06-06 18:21:47"
         }
     ],
     "practice_speaking_drill_sentences": [
@@ -6552,6 +6860,356 @@
             "display_order": 4,
             "text": "This finding is consistent with previous research in the field.",
             "translation": null
+        },
+        {
+            "id": "943feb26-36d4-4384-a49a-b8d22ab623b6",
+            "drill_id": "ad27d28f-9ef5-44f0-9293-c057bea0fb46",
+            "display_order": 1,
+            "text": "The phenomenon of urbanization presents a multifaceted challenge that requires interdisciplinary analysis.",
+            "translation": "Hiện tượng đô thị hóa đặt ra một thách thức đa chiều đòi hỏi phân tích liên ngành."
+        },
+        {
+            "id": "448c6c58-2242-4d5d-8c5d-adc52dc6fb27",
+            "drill_id": "ad27d28f-9ef5-44f0-9293-c057bea0fb46",
+            "display_order": 2,
+            "text": "On one hand, cities generate approximately 80 percent of global economic output.",
+            "translation": "Một mặt, các thành phố tạo ra khoảng 80 phần trăm sản lượng kinh tế toàn cầu."
+        },
+        {
+            "id": "0a81b1ae-5b87-4984-958b-e869a3b507fb",
+            "drill_id": "ad27d28f-9ef5-44f0-9293-c057bea0fb46",
+            "display_order": 3,
+            "text": "Nevertheless, rapid urban expansion often exacerbates social inequality and environmental degradation.",
+            "translation": "Tuy nhiên, mở rộng đô thị nhanh chóng thường làm trầm trọng thêm bất bình đẳng xã hội và suy thoái môi trường."
+        },
+        {
+            "id": "f2f755cf-4b7d-4e69-8657-aadca427c783",
+            "drill_id": "ad27d28f-9ef5-44f0-9293-c057bea0fb46",
+            "display_order": 4,
+            "text": "A comprehensive urban policy must integrate economic development with social welfare and ecological sustainability.",
+            "translation": "Một chính sách đô thị toàn diện phải tích hợp phát triển kinh tế với phúc lợi xã hội và bền vững sinh thái."
+        },
+        {
+            "id": "2d12210d-2a2f-44e2-a856-92b824689f0e",
+            "drill_id": "ad27d28f-9ef5-44f0-9293-c057bea0fb46",
+            "display_order": 5,
+            "text": "Further research should focus on case studies that demonstrate successful implementation of these integrated approaches.",
+            "translation": "Nghiên cứu thêm nên tập trung vào các nghiên cứu điển hình chứng minh việc triển khai thành công các phương pháp tích hợp này."
+        },
+        {
+            "id": "79873b9a-e8ef-4bb2-874a-e923205ca8bb",
+            "drill_id": "ddc70336-b6fa-440b-a981-41de602a754e",
+            "display_order": 1,
+            "text": "Excuse me, could you tell me how to get to the nearest train station?",
+            "translation": "Xin lỗi, bạn có thể chỉ tôi đường đến ga tàu gần nhất không?"
+        },
+        {
+            "id": "7b617e73-e199-45ec-b3e3-e5e936608b75",
+            "drill_id": "ddc70336-b6fa-440b-a981-41de602a754e",
+            "display_order": 2,
+            "text": "Go straight ahead for two blocks, then turn left at the traffic light.",
+            "translation": "Đi thẳng hai dãy nhà, sau đó rẽ trái ở đèn giao thông."
+        },
+        {
+            "id": "195538d8-0ee2-4014-aaea-50220f6a6302",
+            "drill_id": "ddc70336-b6fa-440b-a981-41de602a754e",
+            "display_order": 3,
+            "text": "The museum is on your right, just across from the post office.",
+            "translation": "Bảo tàng ở bên phải bạn, ngay đối diện bưu điện."
+        },
+        {
+            "id": "7a71b02d-93ad-49db-a41f-288937a7ae30",
+            "drill_id": "ddc70336-b6fa-440b-a981-41de602a754e",
+            "display_order": 4,
+            "text": "Is it within walking distance, or should I take a bus?",
+            "translation": "Đi bộ được không hay tôi nên đi xe buýt?"
+        },
+        {
+            "id": "d47dfd33-e24b-4f49-900c-50a563dc5199",
+            "drill_id": "ddc70336-b6fa-440b-a981-41de602a754e",
+            "display_order": 5,
+            "text": "Thank you so much for your help. Have a wonderful day!",
+            "translation": "Cảm ơn bạn rất nhiều vì đã giúp đỡ. Chúc bạn một ngày tốt lành!"
+        },
+        {
+            "id": "03395612-a62c-4ec2-b7c4-fd13d404c4ed",
+            "drill_id": "5213d081-c476-442d-8748-f4d37386f6cf",
+            "display_order": 1,
+            "text": "I appreciate your proposal, but I would like to suggest a few adjustments.",
+            "translation": "Tôi đánh giá cao đề xuất của bạn, nhưng tôi muốn đề xuất một vài điều chỉnh."
+        },
+        {
+            "id": "b7878658-03f3-4a26-a974-80e6dc783c31",
+            "drill_id": "5213d081-c476-442d-8748-f4d37386f6cf",
+            "display_order": 2,
+            "text": "Our main concern is the delivery timeline. Can we agree on a faster schedule?",
+            "translation": "Mối quan tâm chính của chúng tôi là tiến độ giao hàng. Chúng ta có thể thống nhất lịch nhanh hơn không?"
+        },
+        {
+            "id": "7abe054a-55a3-41c0-b44b-633ab9dd862f",
+            "drill_id": "5213d081-c476-442d-8748-f4d37386f6cf",
+            "display_order": 3,
+            "text": "If you can offer a 10 percent discount on bulk orders, we are ready to sign the contract today.",
+            "translation": "Nếu bạn có thể giảm giá 10 phần trăm cho đơn hàng số lượng lớn, chúng tôi sẵn sàng ký hợp đồng hôm nay."
+        },
+        {
+            "id": "b1c7338f-b383-4ca0-901e-1ab437194fa3",
+            "drill_id": "5213d081-c476-442d-8748-f4d37386f6cf",
+            "display_order": 4,
+            "text": "Let me summarize what we have agreed on so far to make sure we are on the same page.",
+            "translation": "Để tôi tóm tắt những gì chúng ta đã thống nhất để đảm bảo chúng ta hiểu nhau."
+        },
+        {
+            "id": "c1915051-f18d-4c42-a5ce-64567dfcd4eb",
+            "drill_id": "5213d081-c476-442d-8748-f4d37386f6cf",
+            "display_order": 5,
+            "text": "I believe this partnership will bring significant benefits to both of our companies.",
+            "translation": "Tôi tin rằng sự hợp tác này sẽ mang lại lợi ích đáng kể cho cả hai công ty chúng ta."
+        },
+        {
+            "id": "eb9e1f92-366e-4baf-ae48-2527ef6d0045",
+            "drill_id": "f1b57b7f-d16a-4700-b419-9faea4865c68",
+            "display_order": 1,
+            "text": "Last summer, I had the opportunity to visit Da Nang for the first time.",
+            "translation": "Mùa hè năm ngoái, tôi có cơ hội đến Đà Nẵng lần đầu tiên."
+        },
+        {
+            "id": "15d9d5d3-4e17-459d-9a5e-21ef544f2f35",
+            "drill_id": "f1b57b7f-d16a-4700-b419-9faea4865c68",
+            "display_order": 2,
+            "text": "The beaches were incredibly beautiful and the local food was unforgettable.",
+            "translation": "Các bãi biển đẹp đến khó tin và đồ ăn địa phương thì không thể nào quên."
+        },
+        {
+            "id": "996b79dc-8d58-4f3d-afcf-9373dec618a6",
+            "drill_id": "f1b57b7f-d16a-4700-b419-9faea4865c68",
+            "display_order": 3,
+            "text": "I tried many new activities such as snorkeling and riding a cable car over the mountains.",
+            "translation": "Tôi đã thử nhiều hoạt động mới như lặn biển và đi cáp treo qua núi."
+        },
+        {
+            "id": "96c3c767-a86d-4e5c-9755-a44c739ebe9c",
+            "drill_id": "f1b57b7f-d16a-4700-b419-9faea4865c68",
+            "display_order": 4,
+            "text": "This experience taught me to step out of my comfort zone and embrace new challenges.",
+            "translation": "Trải nghiệm này dạy tôi bước ra khỏi vùng an toàn và đón nhận thử thách mới."
+        },
+        {
+            "id": "56329d13-021c-4b85-80c9-7c4cfeb71c65",
+            "drill_id": "f1b57b7f-d16a-4700-b419-9faea4865c68",
+            "display_order": 5,
+            "text": "I would highly recommend visiting central Viet Nam to anyone who loves nature and culture.",
+            "translation": "Tôi thực sự khuyên mọi người yêu thiên nhiên và văn hóa nên đến thăm miền Trung Việt Nam."
+        },
+        {
+            "id": "955752dc-e0ff-4846-b6ed-7c47c15b5d6b",
+            "drill_id": "4ab52776-ce5a-41ff-85e3-4f9230403cda",
+            "display_order": 1,
+            "text": "While economic growth is important, we cannot ignore its impact on our environment.",
+            "translation": "Mặc dù tăng trưởng kinh tế quan trọng, chúng ta không thể phớt lờ tác động của nó đến môi trường."
+        },
+        {
+            "id": "dbe46ea3-8743-454c-9aba-3cad51899ae5",
+            "drill_id": "4ab52776-ce5a-41ff-85e3-4f9230403cda",
+            "display_order": 2,
+            "text": "Some people argue that strict environmental regulations slow down business development.",
+            "translation": "Một số người cho rằng các quy định nghiêm ngặt về môi trường làm chậm phát triển kinh doanh."
+        },
+        {
+            "id": "c689868e-c704-4442-b93e-e19f8c938f9a",
+            "drill_id": "4ab52776-ce5a-41ff-85e3-4f9230403cda",
+            "display_order": 3,
+            "text": "However, evidence shows that sustainable practices can actually reduce long-term costs.",
+            "translation": "Tuy nhiên, bằng chứng cho thấy các thực hành bền vững thực sự có thể giảm chi phí dài hạn."
+        },
+        {
+            "id": "7cd7b890-afbb-4afe-8482-3b18b2b1633a",
+            "drill_id": "4ab52776-ce5a-41ff-85e3-4f9230403cda",
+            "display_order": 4,
+            "text": "We need to find a balance between industrial progress and protecting natural resources.",
+            "translation": "Chúng ta cần tìm sự cân bằng giữa tiến bộ công nghiệp và bảo vệ tài nguyên thiên nhiên."
+        },
+        {
+            "id": "32295816-c354-4072-a2c0-7b0058c627f0",
+            "drill_id": "4ab52776-ce5a-41ff-85e3-4f9230403cda",
+            "display_order": 5,
+            "text": "In my opinion, investing in green technology is not only ethical but also economically wise.",
+            "translation": "Theo ý kiến của tôi, đầu tư vào công nghệ xanh không chỉ có đạo đức mà còn khôn ngoan về mặt kinh tế."
+        },
+        {
+            "id": "4dae233a-91ff-40af-9a32-211f53148168",
+            "drill_id": "0cbebd82-9797-4408-a069-a25ce10ba344",
+            "display_order": 1,
+            "text": "Hello! My name is Linh. I am from Viet Nam.",
+            "translation": "Xin chào! Tôi tên là Linh. Tôi đến từ Việt Nam."
+        },
+        {
+            "id": "d963fac9-3a44-4244-8eb2-ff808ebff370",
+            "drill_id": "0cbebd82-9797-4408-a069-a25ce10ba344",
+            "display_order": 2,
+            "text": "I am twenty years old and I am a university student.",
+            "translation": "Tôi hai mươi tuổi và là sinh viên đại học."
+        },
+        {
+            "id": "50ae14de-c6c9-42e8-a1ac-96c2d23e71d8",
+            "drill_id": "0cbebd82-9797-4408-a069-a25ce10ba344",
+            "display_order": 3,
+            "text": "I enjoy learning English and playing basketball in my free time.",
+            "translation": "Tôi thích học tiếng Anh và chơi bóng rổ vào thời gian rảnh."
+        },
+        {
+            "id": "0f95dc6f-e58d-4eaa-89fa-a8a5f4bb5f84",
+            "drill_id": "0cbebd82-9797-4408-a069-a25ce10ba344",
+            "display_order": 4,
+            "text": "My family has four members: my parents, my younger sister, and me.",
+            "translation": "Gia đình tôi có bốn thành viên: bố mẹ, em gái và tôi."
+        },
+        {
+            "id": "cb9d9987-52b0-4469-aae7-c1da9ab04d79",
+            "drill_id": "0cbebd82-9797-4408-a069-a25ce10ba344",
+            "display_order": 5,
+            "text": "I hope to make many new friends and improve my speaking skills.",
+            "translation": "Tôi mong được kết bạn mới và cải thiện kỹ năng nói."
+        },
+        {
+            "id": "c0de2283-0e45-43d7-8bb9-298a72f531c0",
+            "drill_id": "27503c37-0210-4297-a3c8-ba92449f4488",
+            "display_order": 1,
+            "text": "Thank you for giving me this opportunity to introduce myself.",
+            "translation": "Cảm ơn đã cho tôi cơ hội giới thiệu bản thân."
+        },
+        {
+            "id": "278a628e-6f3e-4027-aa41-0a05e45bc339",
+            "drill_id": "27503c37-0210-4297-a3c8-ba92449f4488",
+            "display_order": 2,
+            "text": "I have three years of experience working in customer service.",
+            "translation": "Tôi có ba năm kinh nghiệm làm việc trong lĩnh vực dịch vụ khách hàng."
+        },
+        {
+            "id": "c509a1e0-73ac-4d7a-b794-538395f02afc",
+            "drill_id": "27503c37-0210-4297-a3c8-ba92449f4488",
+            "display_order": 3,
+            "text": "One of my greatest strengths is the ability to solve problems under pressure.",
+            "translation": "Một trong những điểm mạnh lớn nhất của tôi là khả năng giải quyết vấn đề dưới áp lực."
+        },
+        {
+            "id": "0a35e47c-d6bf-4342-a64a-f4a9d7d0a03c",
+            "drill_id": "27503c37-0210-4297-a3c8-ba92449f4488",
+            "display_order": 4,
+            "text": "I believe my communication skills would make me a valuable member of your team.",
+            "translation": "Tôi tin kỹ năng giao tiếp của mình sẽ giúp tôi trở thành thành viên có giá trị trong nhóm."
+        },
+        {
+            "id": "0e856d09-0390-42e8-bea8-4ecf60eae2ca",
+            "drill_id": "27503c37-0210-4297-a3c8-ba92449f4488",
+            "display_order": 5,
+            "text": "I look forward to contributing to the success of this company.",
+            "translation": "Tôi mong được đóng góp vào thành công của công ty này."
+        },
+        {
+            "id": "213f82c2-2166-4ad4-984c-118982ccf7a0",
+            "drill_id": "bcea097a-f0e7-4c14-90c8-14982a858f27",
+            "display_order": 1,
+            "text": "Good evening. I would like to order a bowl of beef pho, please.",
+            "translation": "Chào buổi tối. Tôi muốn gọi một bát phở bò ạ."
+        },
+        {
+            "id": "59259831-2c93-479f-9821-f310a812021e",
+            "drill_id": "bcea097a-f0e7-4c14-90c8-14982a858f27",
+            "display_order": 2,
+            "text": "Could you recommend a popular dish on the menu?",
+            "translation": "Bạn có thể gợi ý một món phổ biến trong thực đơn không?"
+        },
+        {
+            "id": "e0680770-891e-480d-aeb7-b8e5db7eb4ca",
+            "drill_id": "bcea097a-f0e7-4c14-90c8-14982a858f27",
+            "display_order": 3,
+            "text": "I am allergic to peanuts, so please make sure the dish has no nuts.",
+            "translation": "Tôi bị dị ứng với lạc, vui lòng đảm bảo món ăn không có hạt."
+        },
+        {
+            "id": "e9969f0b-1830-46fc-ad1f-4f4562f9388a",
+            "drill_id": "bcea097a-f0e7-4c14-90c8-14982a858f27",
+            "display_order": 4,
+            "text": "Can I have a glass of water with my meal, please?",
+            "translation": "Tôi có thể xin một cốc nước đi kèm bữa ăn không?"
+        },
+        {
+            "id": "44941eda-76ce-4ee8-ad7c-74f138dfba85",
+            "drill_id": "bcea097a-f0e7-4c14-90c8-14982a858f27",
+            "display_order": 5,
+            "text": "The food was delicious. May I have the bill, please?",
+            "translation": "Đồ ăn rất ngon. Làm ơn cho tôi xin hóa đơn."
+        },
+        {
+            "id": "32d9e112-e252-4373-ac79-55f20d4821cd",
+            "drill_id": "a0681276-969d-4f30-889c-3cab61c2efc5",
+            "display_order": 1,
+            "text": "Distinguished guests, colleagues, and fellow professionals, thank you for being here today.",
+            "translation": "Kính thưa quý vị khách quý, đồng nghiệp và các chuyên gia, cảm ơn đã có mặt hôm nay."
+        },
+        {
+            "id": "bbb05057-65c1-48b4-893c-0702f0e1855b",
+            "drill_id": "a0681276-969d-4f30-889c-3cab61c2efc5",
+            "display_order": 2,
+            "text": "I stand before you to address one of the most pressing issues of our time: digital transformation.",
+            "translation": "Tôi đứng đây để đề cập đến một trong những vấn đề cấp bách nhất của thời đại chúng ta: chuyển đổi số."
+        },
+        {
+            "id": "d899d845-6aa5-4a65-afb0-1297ca162399",
+            "drill_id": "a0681276-969d-4f30-889c-3cab61c2efc5",
+            "display_order": 3,
+            "text": "Contrary to popular belief, digital transformation is not merely about adopting new technologies.",
+            "translation": "Trái với quan niệm phổ biến, chuyển đổi số không chỉ đơn thuần là áp dụng công nghệ mới."
+        },
+        {
+            "id": "c1ed9e5a-3079-46ec-85c0-136ad251ea2d",
+            "drill_id": "a0681276-969d-4f30-889c-3cab61c2efc5",
+            "display_order": 4,
+            "text": "It requires a fundamental shift in organizational culture, leadership mindset, and operational processes.",
+            "translation": "Nó đòi hỏi sự thay đổi căn bản về văn hóa tổ chức, tư duy lãnh đạo và quy trình vận hành."
+        },
+        {
+            "id": "dcd309d0-292e-4b13-81e2-5f8378b89acf",
+            "drill_id": "a0681276-969d-4f30-889c-3cab61c2efc5",
+            "display_order": 5,
+            "text": "I invite each of you to reflect on how your organization can lead rather than follow this inevitable transformation.",
+            "translation": "Tôi mời mỗi quý vị suy ngẫm về cách tổ chức của mình có thể dẫn dắt thay vì chạy theo sự chuyển đổi tất yếu này."
+        },
+        {
+            "id": "3b4cc517-534f-4ef4-917a-c6775e0535d2",
+            "drill_id": "cc16658b-ca8d-4a1c-b8d6-317a22b7a2a8",
+            "display_order": 1,
+            "text": "Good morning everyone. Today I would like to talk about the importance of lifelong learning.",
+            "translation": "Chào buổi sáng mọi người. Hôm nay tôi muốn nói về tầm quan trọng của việc học tập suốt đời."
+        },
+        {
+            "id": "ec19f5f9-60f5-4eac-b366-d56e2db00674",
+            "drill_id": "cc16658b-ca8d-4a1c-b8d6-317a22b7a2a8",
+            "display_order": 2,
+            "text": "In a world that changes so quickly, we must constantly update our knowledge and skills.",
+            "translation": "Trong một thế giới thay đổi nhanh chóng, chúng ta phải liên tục cập nhật kiến thức và kỹ năng."
+        },
+        {
+            "id": "05716073-81e2-4398-a0e8-1141611abb96",
+            "drill_id": "cc16658b-ca8d-4a1c-b8d6-317a22b7a2a8",
+            "display_order": 3,
+            "text": "For example, many professionals now take online courses to stay competitive in their fields.",
+            "translation": "Ví dụ, nhiều chuyên gia hiện nay tham gia các khóa học trực tuyến để duy trì tính cạnh tranh."
+        },
+        {
+            "id": "e5a91f26-f8fd-4a46-a1c3-249b27a06e2a",
+            "drill_id": "cc16658b-ca8d-4a1c-b8d6-317a22b7a2a8",
+            "display_order": 4,
+            "text": "Research shows that people who keep learning new things tend to be happier and healthier.",
+            "translation": "Nghiên cứu cho thấy những người tiếp tục học điều mới thường hạnh phúc và khỏe mạnh hơn."
+        },
+        {
+            "id": "ae28cff4-8575-4fd0-a0f0-626f59abef34",
+            "drill_id": "cc16658b-ca8d-4a1c-b8d6-317a22b7a2a8",
+            "display_order": 5,
+            "text": "In conclusion, I encourage everyone to make learning a daily habit throughout their lives.",
+            "translation": "Tóm lại, tôi khuyến khích mọi người biến việc học thành thói quen hàng ngày trong suốt cuộc đời."
         }
     ],
     "practice_speaking_tasks": [

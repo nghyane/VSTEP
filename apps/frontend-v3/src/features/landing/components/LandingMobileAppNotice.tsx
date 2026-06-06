@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router"
 
+import { MOBILE_APP_DOWNLOAD_URL } from "../mobile-app"
+
 interface Props {
 	mode: "register" | "login" | "authenticated"
 	onLogout?: () => void
@@ -8,16 +10,16 @@ interface Props {
 export function LandingMobileAppNotice({ mode, onLogout }: Props) {
 	const title =
 		mode === "authenticated"
-			? "Vui lòng dùng app VSTEP trên điện thoại."
+			? "Tải app VSTEP để học trên điện thoại."
 			: mode === "login"
-				? "Đăng nhập trên điện thoại sẽ dùng app VSTEP."
-				: "Đăng ký trên điện thoại sẽ dùng app VSTEP."
+				? "Đăng nhập trên điện thoại bằng app VSTEP."
+				: "Đăng ký trên điện thoại bằng app VSTEP."
 	const body =
 		mode === "authenticated"
-			? "Tài khoản learner đã đăng nhập. Để học trên điện thoại, vui lòng chuyển sang app VSTEP khi app mở public. Dùng máy tính để luyện thi đầy đủ trên web."
+			? "Tài khoản learner đã đăng nhập. Tải APK Android để luyện thi, làm bài và xem kết quả chấm ổn định hơn trên điện thoại."
 			: mode === "login"
-				? "Hiện tại learner trên điện thoại sẽ đăng nhập qua app để có trải nghiệm ổn định hơn. Vui lòng dùng máy tính nếu muốn đăng nhập web ngay bây giờ."
-				: "Phiên bản app đang chuẩn bị mở public. Vui lòng tải app khi có thông báo, hoặc dùng máy tính để đăng ký và luyện thi đầy đủ."
+				? "Learner trên điện thoại nên đăng nhập qua app để có trải nghiệm ổn định hơn. Bạn vẫn có thể dùng máy tính nếu muốn đăng nhập web."
+				: "App Android đã có bản tải APK. Tải app để đăng ký, luyện thi và theo dõi kết quả ngay trên điện thoại."
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-end bg-foreground/50 p-0 backdrop-blur-sm sm:items-center sm:p-4">
@@ -36,13 +38,13 @@ export function LandingMobileAppNotice({ mode, onLogout }: Props) {
 				<p className="mx-auto mt-3 max-w-sm text-center text-sm leading-relaxed text-muted">{body}</p>
 
 				<div className="mt-5 space-y-3">
-					<button
-						type="button"
-						disabled
-						className="btn btn-primary w-full cursor-not-allowed py-3.5 opacity-70"
+					<a
+						href={MOBILE_APP_DOWNLOAD_URL}
+						className="btn btn-primary block w-full py-3.5 text-center"
+						download="VstepGO.apk"
 					>
-						Tải app — sắp ra mắt
-					</button>
+						Tải app Android
+					</a>
 					{mode === "authenticated" ? (
 						<button type="button" onClick={onLogout} className="btn btn-secondary w-full py-3 text-info">
 							Đăng xuất

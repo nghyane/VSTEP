@@ -35,7 +35,14 @@ final class McqPracticeController extends Controller
     {
         $this->assertSkill($skill);
         $part = $request->integer('part') ?: null;
-        $exercises = $this->mcqService->listExercises($skill, $part);
+        $exercises = $request->has('page') || $request->has('per_page')
+            ? $this->mcqService->paginateExercises(
+                $skill,
+                $part,
+                min(max($request->integer('per_page', 12), 1), 48),
+                max($request->integer('page', 1), 1),
+            )
+            : $this->mcqService->listExercises($skill, $part);
 
         return match ($skill) {
             'listening' => PracticeListeningExerciseSummaryResource::collection($exercises),

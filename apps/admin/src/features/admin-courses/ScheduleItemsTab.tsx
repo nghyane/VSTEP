@@ -28,6 +28,10 @@ function formatDate(iso: string): string {
 	return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })
 }
 
+function toDateInput(value: string): string {
+	return value.length >= 10 ? value.slice(0, 10) : value
+}
+
 export function ScheduleItemsTab({ courseId, courseStartDate, courseEndDate }: Props) {
 	const { data, isLoading } = useQuery(scheduleItemsQuery(courseId))
 	const items = data?.data ?? []
@@ -41,6 +45,8 @@ export function ScheduleItemsTab({ courseId, courseStartDate, courseEndDate }: P
 	const remove = useDeleteScheduleItem(courseId)
 
 	const nextSessionNumber = items.length === 0 ? 1 : Math.max(...items.map((i) => i.session_number)) + 1
+	const today = new Date().toISOString().slice(0, 10)
+	const createMinDate = [toDateInput(courseStartDate), today].filter(Boolean).sort().at(-1) ?? today
 
 	async function onDelete(): Promise<void> {
 		if (!deleting) return
@@ -126,7 +132,7 @@ export function ScheduleItemsTab({ courseId, courseStartDate, courseEndDate }: P
 			<Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Thêm buổi học" size="md">
 				<ScheduleItemForm
 					defaultSessionNumber={nextSessionNumber}
-					minDate={courseStartDate}
+					minDate={createMinDate}
 					maxDate={courseEndDate}
 					submitting={create.isPending}
 					onCancel={() => setCreateOpen(false)}

@@ -52,7 +52,7 @@ export function ReadingInProgress({ detail, session }: Props) {
 		<PracticeExamShell
 			backTo="/luyen-tap/doc"
 			title="Reading"
-			partLabel={`Part ${exercise.part}`}
+			partLabel={`Phần ${exercise.part}`}
 			questions={questions}
 			answers={session.answers}
 			result={session.result}

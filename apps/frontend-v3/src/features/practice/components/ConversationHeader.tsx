@@ -123,13 +123,6 @@ export function ConversationHeader({ scenario, onEnd, onBack, voice, onVoiceChan
 										isActive ? "bg-skill-speaking/10" : "hover:bg-background",
 									)}
 								>
-									{/* Avatar */}
-									<img
-										src={getAvatarUrl(vName)}
-										alt={vName}
-										className="w-8 h-8 rounded-full bg-skill-speaking/20 object-cover shrink-0"
-									/>
-
 									{/* Voice info + select */}
 									<button type="button" onClick={() => select(v)} className="flex-1 min-w-0 text-left">
 										<p

@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import { HTTPError } from "ky"
 import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
@@ -207,10 +208,11 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 								Cam kết kỷ luật
 							</p>
 							<p className="text-sm leading-relaxed text-foreground">
-								Để giữ cam kết đầu ra, bạn cần hoàn thành tối thiểu{" "}
+								Để được áp dụng cam kết đầu ra, bạn cần hoàn thành tối thiểu{" "}
 								<span className="font-extrabold">{course.required_full_tests} bài thi full-test</span> trong{" "}
-								<span className="font-extrabold">{course.commitment_window_days} ngày đầu</span> của khóa. Vi
-								phạm sẽ dẫn tới việc <span className="font-extrabold">khóa quyền truy cập khóa học</span>.
+								<span className="font-extrabold">{course.commitment_window_days} ngày đầu</span> của khóa. Nếu
+								không hoàn thành đúng hạn, trung tâm{" "}
+								<span className="font-extrabold">không chịu trách nhiệm về kết quả đầu ra</span>.
 							</p>
 
 							{course.rules && (
@@ -223,6 +225,27 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 									</p>
 								</div>
 							)}
+							<Link
+								to="/dieu-khoan"
+								target="_blank"
+								className="inline-flex items-center gap-1 text-sm font-extrabold text-primary-dark underline underline-offset-2 hover:text-primary transition-colors"
+							>
+								<svg
+									viewBox="0 0 24 24"
+									className="size-3.5"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2.5"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									aria-hidden="true"
+								>
+									<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+									<polyline points="15 3 21 3 21 9" />
+									<line x1="10" y1="14" x2="21" y2="3" />
+								</svg>
+								Điều Khoản
+							</Link>
 							<label className="flex cursor-pointer items-start gap-2">
 								<input
 									type="checkbox"

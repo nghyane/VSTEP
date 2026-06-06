@@ -4,11 +4,12 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
+import { AIFeedbackPanel } from "@/components/AIFeedbackPanel";
 import { DepthButton } from "@/components/DepthButton";
 import { GradingErrorState, GradingLoadingState, GradingPendingState } from "@/components/GradingStates";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { TeacherGradingPanel } from "@/components/TeacherGradingPanel";
-import { requestTeacherGrading, useSpeakingGradingResult } from "@/hooks/use-practice";
+import { requestTeacherGrading, requestWritingFeedback, useSpeakingGradingResult } from "@/hooks/use-practice";
 import { getApiErrorMessage } from "@/lib/api";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
@@ -42,6 +43,16 @@ export default function SpeakingGradingScreen() {
       void refetch();
     },
   });
+
+  const feedbackMutation = useMutation({
+    mutationFn: () => requestWritingFeedback(data?.attemptId ?? ""),
+    onSuccess: () => {
+      if (data?.attemptId) queryClient.invalidateQueries({ queryKey: ["assessment-attempts"] });
+      void refetch();
+    },
+  });
+
+  const feedbackGenerated = feedbackMutation.data?.feedback ?? null;
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>
@@ -135,6 +146,18 @@ export default function SpeakingGradingScreen() {
                 <Text style={[s.feedText, { color: c.foreground }]}>{data.transcript}</Text>
               </View>
             ) : null}
+
+            <AIFeedbackPanel
+              attemptId={data.attemptId}
+              feedbackRequest={data.feedbackRequest}
+              feedbackBase={data.feedback}
+              feedbackGenerated={feedbackGenerated}
+              pending={feedbackMutation.isPending}
+              error={feedbackMutation.error ? getApiErrorMessage(feedbackMutation.error) : null}
+              accentColor={accentText}
+              onRequest={() => feedbackMutation.mutate()}
+              hasBaseFeedback={data.hasDetailedFeedback}
+            />
 
             <TeacherGradingPanel
               attemptId={data.attemptId}

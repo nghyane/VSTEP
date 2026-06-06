@@ -10,17 +10,12 @@ interface Props {
 	userText: string
 }
 
-function normalizeSentence(text: string | null | undefined): string {
-	return (text ?? "").trim().toLowerCase().replace(/\s+/g, " ")
-}
-
 export function ConversationFeedback({ feedback, userText }: Props) {
 	const [open, setOpen] = useState(false)
 	const grammarCount = feedback.grammar_corrections?.length ?? 0
 	const hasProfanity = feedback.profanity?.found ?? false
 	const betterText = feedback.better ?? userText
-	const sameAsUser = normalizeSentence(betterText) === normalizeSentence(userText)
-	const improvementLabel = feedback.grammar_ok && sameAsUser ? "Câu của bạn" : "Cách nói tốt hơn"
+	const improvementLabel = feedback.grammar_ok ? "Câu của bạn" : "Cách nói tốt hơn"
 	const summary = hasProfanity
 		? "Từ ngữ không phù hợp"
 		: `${feedback.word_count.used}/${feedback.word_count.target} từ${grammarCount > 0 ? ` · ${grammarCount} gợi ý ngữ pháp` : " · Ngữ pháp OK"}`

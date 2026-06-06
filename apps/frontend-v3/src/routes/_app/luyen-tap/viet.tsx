@@ -12,7 +12,7 @@ function WritingPage() {
 		<>
 			<Header title="Viết" backTo="/luyen-tap" />
 			<div className="px-10 pb-12">
-				<p className="text-sm text-subtle mb-5">Thư + luận · AI chấm theo rubric Bộ GD</p>
+				<p className="text-sm text-subtle mb-5">Thư + luận · phản hồi theo rubric</p>
 				<WritingContent />
 				<div id="history" className="mt-10">
 					<WritingHistory />

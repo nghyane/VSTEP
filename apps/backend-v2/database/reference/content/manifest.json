@@ -3,27 +3,27 @@
   "datasets": {
     "practice_writing_prompts": {
       "file": "practice/writing-prompts.jsonl",
-      "purpose": "Curated VSTEP Task 1 and Task 2 writing prompt bank covering common communicative purposes and essay types."
+      "purpose": "Bộ dữ liệu luyện tập VSTEP được chuẩn hóa, với metadata hiển thị bằng tiếng Việt để đồng bộ UI/UX."
     },
     "practice_speaking_tasks": {
       "file": "practice/speaking-tasks.jsonl",
-      "purpose": "Curated VSTEP Speaking Part 1/2/3 task bank with official-format content shapes."
+      "purpose": "Bộ dữ liệu luyện tập VSTEP được chuẩn hóa, với metadata hiển thị bằng tiếng Việt để đồng bộ UI/UX."
     },
     "practice_reading_exercises": {
       "file": "practice/reading-exercises.jsonl",
-      "purpose": "Curated VSTEP reading practice passages across parts 1-4, domains and CEFR progression."
+      "purpose": "Bộ dữ liệu luyện tập VSTEP được chuẩn hóa, với metadata hiển thị bằng tiếng Việt để đồng bộ UI/UX."
     },
     "practice_reading_questions": {
       "file": "practice/reading-questions.jsonl",
-      "purpose": "MCQ reading question bank covering main idea, detail, inference and vocabulary-in-context."
+      "purpose": "Bộ dữ liệu luyện tập VSTEP được chuẩn hóa, với metadata hiển thị bằng tiếng Việt để đồng bộ UI/UX."
     },
     "practice_listening_exercises": {
       "file": "practice/listening-exercises.jsonl",
-      "purpose": "Curated VSTEP listening practice transcripts across short announcements, conversations and talks."
+      "purpose": "Bộ dữ liệu luyện tập VSTEP được chuẩn hóa, với metadata hiển thị bằng tiếng Việt để đồng bộ UI/UX."
     },
     "practice_listening_questions": {
       "file": "practice/listening-questions.jsonl",
-      "purpose": "MCQ listening question bank covering gist, detail, purpose and inference."
+      "purpose": "Bộ dữ liệu luyện tập VSTEP được chuẩn hóa, với metadata hiển thị bằng tiếng Việt để đồng bộ UI/UX."
     }
   }
 }

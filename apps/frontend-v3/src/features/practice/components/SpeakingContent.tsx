@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
+import { PaginatedGrid } from "#/components/PaginatedGrid"
+import { PaginationControls } from "#/components/PaginationControls"
 import { ExerciseCard } from "#/features/practice/components/ExerciseCard"
 import {
 	type Level,
@@ -14,6 +16,9 @@ import {
 } from "#/features/practice/queries"
 import { shadowingProgressQuery } from "#/features/practice/shadowing-progress"
 import type { ShadowingLesson } from "#/features/practice/types"
+import { useClientPagination } from "#/lib/use-client-pagination"
+
+const PAGE_SIZE = 12
 
 export function SpeakingContent() {
 	const { data: scenariosData } = useQuery(conversationScenariosQuery)
@@ -71,6 +76,8 @@ function ShadowingSection({
 	lessons: ShadowingLesson[]
 	progress: Record<string, { segment_index: number }[]>
 }) {
+	const pagination = useClientPagination(lessons, PAGE_SIZE)
+
 	return (
 		<section>
 			<h3 className="font-extrabold text-xl text-foreground">Shadowing</h3>
@@ -82,34 +89,47 @@ function ShadowingSection({
 					<p className="text-sm text-subtle">Không có bài nào phù hợp</p>
 				</div>
 			) : (
-				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-					{lessons.map((l) => {
-						const doneCount = new Set((progress[l.id] ?? []).map((p) => p.segment_index)).size
-						const total = l.segment_count
-						const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0
-						return (
-							<ExerciseCard
-								key={l.id}
-								title={l.title}
-								description={null}
-								level={l.level}
-								meta={`${l.segment_count} đoạn · ~${l.estimated_minutes ?? "?"} phút`}
-								progress={
-									doneCount > 0
-										? { status: pct >= 100 ? "completed" : "in_progress", score: doneCount, total }
-										: undefined
-								}
-								overlay={
-									<Link
-										to="/speaking/shadowing/$lessonId"
-										params={{ lessonId: l.id }}
-										className="absolute inset-0 rounded-(--radius-card)"
-									/>
-								}
-							/>
-						)
-					})}
-				</div>
+				<>
+					<PaginatedGrid
+						itemCount={pagination.pageItems.length}
+						pageSize={PAGE_SIZE}
+						hasPagination={pagination.lastPage > 1}
+					>
+						{pagination.pageItems.map((l) => {
+							const doneCount = new Set((progress[l.id] ?? []).map((p) => p.segment_index)).size
+							const total = l.segment_count
+							const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0
+							return (
+								<ExerciseCard
+									key={l.id}
+									title={l.title}
+									description={l.description}
+									level={l.level}
+									meta={`${l.segment_count} đoạn · ~${l.estimated_minutes ?? "?"} phút`}
+									progress={
+										doneCount > 0
+											? { status: pct >= 100 ? "completed" : "in_progress", score: doneCount, total }
+											: undefined
+									}
+									overlay={
+										<Link
+											to="/speaking/shadowing/$lessonId"
+											params={{ lessonId: l.id }}
+											className="absolute inset-0 rounded-(--radius-card)"
+										/>
+									}
+								/>
+							)
+						})}
+					</PaginatedGrid>
+					<PaginationControls
+						currentPage={pagination.page}
+						lastPage={pagination.lastPage}
+						total={pagination.total}
+						itemLabel="bài shadowing"
+						onPageChange={pagination.setPage}
+					/>
+				</>
 			)}
 		</section>
 	)
@@ -129,6 +149,8 @@ function ConversationSection({
 	}[]
 	completed: Set<string>
 }) {
+	const pagination = useClientPagination(scenarios, PAGE_SIZE)
+
 	return (
 		<section>
 			<h3 className="font-extrabold text-xl text-foreground">Hội thoại AI</h3>
@@ -140,25 +162,38 @@ function ConversationSection({
 					<p className="text-sm text-subtle">Không có bài nào phù hợp</p>
 				</div>
 			) : (
-				<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-					{scenarios.map((s) => (
-						<ExerciseCard
-							key={s.id}
-							title={s.title}
-							description={s.description}
-							level={s.level}
-							meta={`${s.character_name} · ~${s.estimated_minutes} phút`}
-							tag={completed.has(s.id) ? "Đã luyện" : undefined}
-							overlay={
-								<Link
-									to="/speaking/conversation/$scenarioId"
-									params={{ scenarioId: s.id }}
-									className="absolute inset-0 rounded-(--radius-card)"
-								/>
-							}
-						/>
-					))}
-				</div>
+				<>
+					<PaginatedGrid
+						itemCount={pagination.pageItems.length}
+						pageSize={PAGE_SIZE}
+						hasPagination={pagination.lastPage > 1}
+					>
+						{pagination.pageItems.map((s) => (
+							<ExerciseCard
+								key={s.id}
+								title={s.title}
+								description={s.description}
+								level={s.level}
+								meta={`${s.character_name} · ~${s.estimated_minutes} phút`}
+								tag={completed.has(s.id) ? "Đã luyện" : undefined}
+								overlay={
+									<Link
+										to="/speaking/conversation/$scenarioId"
+										params={{ scenarioId: s.id }}
+										className="absolute inset-0 rounded-(--radius-card)"
+									/>
+								}
+							/>
+						))}
+					</PaginatedGrid>
+					<PaginationControls
+						currentPage={pagination.page}
+						lastPage={pagination.lastPage}
+						total={pagination.total}
+						itemLabel="tình huống"
+						onPageChange={pagination.setPage}
+					/>
+				</>
 			)}
 		</section>
 	)

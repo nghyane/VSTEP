@@ -30,14 +30,19 @@ class SpeakingPracticeTest extends TestCase
     {
         // Seeder migration creates drills — count existing B1 + our new one.
         $existingB1 = PracticeSpeakingDrill::query()->where('level', 'B1')->count();
-        PracticeSpeakingDrill::factory()->create(['level' => 'B1', 'is_published' => true]);
+        PracticeSpeakingDrill::factory()->create([
+            'level' => 'B1',
+            'description' => 'Luyện nhại câu ngắn về tình huống học tập.',
+            'is_published' => true,
+        ]);
         PracticeSpeakingDrill::factory()->create(['level' => 'B2', 'is_published' => true]);
 
         $token = $this->loginLearner();
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/v1/practice/speaking/drills?level=B1')
             ->assertOk()
-            ->assertJsonCount($existingB1 + 1, 'data');
+            ->assertJsonCount($existingB1 + 1, 'data')
+            ->assertJsonFragment(['description' => 'Luyện nhại câu ngắn về tình huống học tập.']);
     }
 
     public function test_drill_session_attempt_flow(): void

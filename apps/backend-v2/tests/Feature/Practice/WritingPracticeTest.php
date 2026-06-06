@@ -30,14 +30,43 @@ class WritingPracticeTest extends TestCase
 
     public function test_list_prompts(): void
     {
-        PracticeWritingPrompt::factory()->count(2)->create(['part' => 1]);
+        $submittedPrompt = PracticeWritingPrompt::factory()->create([
+            'part' => 1,
+            'description' => 'Describe a useful study habit.',
+        ]);
+        $unsubmittedPrompt = PracticeWritingPrompt::factory()->create(['part' => 1]);
         PracticeWritingPrompt::factory()->create(['part' => 2]);
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+        $session = PracticeSession::factory()->create([
+            'profile_id' => $profile->id,
+            'module' => 'writing',
+            'content_ref_type' => 'practice_writing_prompt',
+            'content_ref_id' => $submittedPrompt->id,
+        ]);
+        PracticeWritingSubmission::create([
+            'session_id' => $session->id,
+            'profile_id' => $profile->id,
+            'prompt_id' => $submittedPrompt->id,
+            'text' => 'This answer has already been submitted.',
+            'word_count' => 6,
+            'submitted_at' => now(),
+        ]);
 
-        $token = $this->loginLearner();
+        $token = $this->tokenFor($user);
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/v1/practice/writing/prompts?part=1')
             ->assertOk()
-            ->assertJsonCount(2, 'data');
+            ->assertJsonCount(2, 'data')
+            ->assertJsonFragment([
+                'id' => $submittedPrompt->id,
+                'description' => 'Describe a useful study habit.',
+                'has_submitted' => true,
+            ])
+            ->assertJsonFragment([
+                'id' => $unsubmittedPrompt->id,
+                'has_submitted' => false,
+            ]);
     }
 
     public function test_show_prompt_with_children(): void

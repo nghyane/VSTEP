@@ -1,8 +1,11 @@
 import { Link } from "@tanstack/react-router"
 import { useMemo } from "react"
+import { PaginatedGrid } from "#/components/PaginatedGrid"
+import { PaginationControls } from "#/components/PaginationControls"
 import { findStarterPoint, type GrammarTierGroup, groupByTier } from "#/features/grammar/catalog"
 import type { GrammarPoint } from "#/features/grammar/types"
 import { ExerciseCard, type ExerciseCardProgress } from "#/features/practice/components/ExerciseCard"
+import { useClientPagination } from "#/lib/use-client-pagination"
 
 interface Props {
 	points: GrammarPoint[]
@@ -16,6 +19,8 @@ const LEVEL_ORDER: Record<string, number> = {
 	C1: 5,
 	C2: 6,
 }
+
+const PAGE_SIZE = 12
 
 function grammarLevelLabel(levels: string[]): string | undefined {
 	const uniqueLevels = Array.from(new Set(levels.map((level) => level.toUpperCase()))).sort(
@@ -62,6 +67,8 @@ function GettingStarted({ starter }: { starter: GrammarPoint | null }) {
 
 function TierSection({ group }: { group: GrammarTierGroup }) {
 	const { tier, points } = group
+	const pagination = useClientPagination(points, PAGE_SIZE)
+
 	return (
 		<section className="space-y-4">
 			<div>
@@ -70,8 +77,12 @@ function TierSection({ group }: { group: GrammarTierGroup }) {
 				<p className="text-sm text-muted mt-1">{tier.description}</p>
 				<p className="text-xs font-bold text-subtle mt-2">{points.length} chủ điểm</p>
 			</div>
-			<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-				{points.map((point) => {
+			<PaginatedGrid
+				itemCount={pagination.pageItems.length}
+				pageSize={PAGE_SIZE}
+				hasPagination={pagination.lastPage > 1}
+			>
+				{pagination.pageItems.map((point) => {
 					const correct = Math.min(point.distinct_correct, point.exercise_count)
 					const levelLabel = grammarLevelLabel(point.levels)
 					const progress: ExerciseCardProgress | undefined =
@@ -95,7 +106,14 @@ function TierSection({ group }: { group: GrammarTierGroup }) {
 						/>
 					)
 				})}
-			</div>
+			</PaginatedGrid>
+			<PaginationControls
+				currentPage={pagination.page}
+				lastPage={pagination.lastPage}
+				total={pagination.total}
+				itemLabel="chủ điểm"
+				onPageChange={pagination.setPage}
+			/>
 		</section>
 	)
 }

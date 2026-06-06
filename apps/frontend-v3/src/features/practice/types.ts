@@ -95,10 +95,12 @@ export interface WritingPrompt {
 	id: string
 	slug: string
 	title: string
+	description: string | null
 	part: number
 	min_words: number
 	max_words: number
 	estimated_minutes: number | null
+	has_submitted: boolean
 }
 
 export interface WritingPromptDetail {
@@ -186,6 +188,7 @@ export interface ShadowingLesson {
 	id: string
 	slug: string
 	title: string
+	description: string | null
 	level: string
 	segment_count: number
 	estimated_minutes: number | null
@@ -223,6 +226,7 @@ export interface ShadowingLessonDetail {
 	id: string
 	slug: string
 	title: string
+	description: string | null
 	level: string
 	audio_url: string
 	segments: ShadowingSegment[]

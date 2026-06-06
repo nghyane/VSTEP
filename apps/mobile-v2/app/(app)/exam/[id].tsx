@@ -15,6 +15,7 @@ import { useWalletBalance } from "@/features/wallet/queries";
 import { useThemeColors, colors as themeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 import { formatNumber } from "@/lib/utils";
 import { getApiErrorMessage } from "@/lib/api";
+import type { ExamSessionResult } from "@/types/api";
 
 type SkillKey = "listening" | "reading" | "writing" | "speaking";
 
@@ -71,6 +72,7 @@ export default function ExamDetailScreen() {
   const coinCost = isFull ? fullCost : Math.min(fullCost, perSkillCost * selectedAvailableSkills.length);
   const balance = wallet?.balance ?? null;
   const insufficient = balance != null && balance < coinCost;
+  const examHistory = detail.attemptState.history.filter((session) => session.submittedAt);
 
   const skillTotals = getSkillTotals(detail.skillSummaries);
   const totalMinutes = finalSelectedSkills.reduce((sum, sk) => sum + skillTotals[sk].minutes, 0);
@@ -264,6 +266,36 @@ export default function ExamDetailScreen() {
           ))}
         </DepthCard>
 
+        {examHistory.length > 0 ? (
+          <DepthCard style={s.historyCard}>
+            <View style={s.historyHeader}>
+              <View>
+                <Text style={[s.historyEyebrow, { color: c.subtle }]}>LỊCH SỬ LÀM BÀI</Text>
+                <Text style={[s.historyTitle, { color: c.foreground }]}>Xem lại kết quả thi thử</Text>
+              </View>
+              <Text style={[s.historyCount, { color: c.mutedForeground }]}>{examHistory.length}</Text>
+            </View>
+            <View style={s.historyList}>
+              {examHistory.slice(0, 5).map((session) => (
+                <HapticTouchable
+                  key={session.id}
+                  onPress={() => router.push(`/(app)/exam-result/${session.id}` as never)}
+                  style={[s.historyRow, { borderColor: c.borderLight, backgroundColor: c.surfaceTint }]}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.historyDate, { color: c.foreground }]}>{formatSessionDate(session.submittedAt ?? session.startedAt)}</Text>
+                    <Text style={[s.historyMeta, { color: c.mutedForeground }]}>{historyModeLabel(session)}</Text>
+                  </View>
+                  <View style={s.historyScoreWrap}>
+                    <Text style={[s.historyScore, { color: c.primaryDark }]}>{historyScoreLabel(session)}</Text>
+                    <Ionicons name="chevron-forward" size={16} color={c.subtle} />
+                  </View>
+                </HapticTouchable>
+              ))}
+            </View>
+          </DepthCard>
+        ) : null}
+
         <View style={{ height: insets.bottom + 80 }} />
       </ScrollView>
 
@@ -318,6 +350,32 @@ function StatCard({ icon, value, label, color, c }: { icon: string; value: strin
   );
 }
 
+function historyScoreLabel(session: ExamSessionResult): string {
+  const scores = session.scores;
+  const values = scores ? Object.values(scores).filter((score): score is number => typeof score === "number") : [];
+  if (values.length === 0) return statusLabel(session.status);
+  const avg = values.reduce((sum, score) => sum + score, 0) / values.length;
+  return `${avg.toFixed(1)}/10`;
+}
+
+function historyModeLabel(session: ExamSessionResult): string {
+  const mode = session.isFullTest ? "Full test" : "Thi từng kỹ năng";
+  return `${mode} · ${statusLabel(session.status)}`;
+}
+
+function formatSessionDate(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return `${date.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}, ${date.toLocaleDateString("vi-VN")}`;
+}
+
+function statusLabel(status: string): string {
+  if (status === "graded") return "Đã chấm";
+  if (status === "grading" || status === "submitted" || status === "auto_submitted") return "Đang chấm";
+  if (status === "abandoned") return "Đã hủy";
+  return status;
+}
+
 const s = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingHorizontal: spacing.lg, gap: spacing.md, paddingBottom: spacing["3xl"] },
@@ -356,6 +414,17 @@ const s = StyleSheet.create({
   notesTitle: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1 },
   noteRow: { flexDirection: "row", gap: spacing.sm, alignItems: "flex-start" },
   noteText: { flex: 1, fontSize: fontSize.xs, lineHeight: 18 },
+  historyCard: { gap: spacing.md },
+  historyHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: spacing.md },
+  historyEyebrow: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1 },
+  historyTitle: { marginTop: 2, fontSize: fontSize.base, fontFamily: fontFamily.extraBold },
+  historyCount: { fontSize: fontSize.sm, fontFamily: fontFamily.extraBold },
+  historyList: { gap: spacing.sm },
+  historyRow: { flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 1, borderRadius: radius.lg, padding: spacing.md },
+  historyDate: { fontSize: fontSize.sm, fontFamily: fontFamily.extraBold },
+  historyMeta: { marginTop: 2, fontSize: fontSize.xs, fontFamily: fontFamily.medium },
+  historyScoreWrap: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
+  historyScore: { fontSize: fontSize.sm, fontFamily: fontFamily.extraBold },
   durationCard: { gap: spacing.sm },
   durationTitle: { fontSize: 10, fontFamily: fontFamily.bold, letterSpacing: 1 },
   modeRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1.5, borderColor: "transparent" },

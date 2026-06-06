@@ -45,7 +45,7 @@ export function CreateProfileForm({ onSubmit, onCancel }: Props) {
 			role="presentation"
 			onClick={onCancel}
 			onKeyDown={(e) => e.key === "Escape" && onCancel()}
-			className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-[fadeIn_200ms_ease-out]"
+			className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center overflow-y-auto p-4 animate-[fadeIn_200ms_ease-out]"
 		>
 			<form
 				onClick={(e) => e.stopPropagation()}
@@ -54,7 +54,7 @@ export function CreateProfileForm({ onSubmit, onCancel }: Props) {
 					e.preventDefault()
 					void form.handleSubmit()
 				}}
-				className="card relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-surface text-left overflow-hidden animate-[popIn_300ms_cubic-bezier(0.34,1.56,0.64,1)]"
+				className="card relative my-auto flex h-[calc(100vh-2rem)] w-full max-w-xl flex-col overflow-hidden bg-surface text-left animate-[popIn_300ms_cubic-bezier(0.34,1.56,0.64,1)] sm:h-[92vh] sm:max-h-[48rem]"
 			>
 				<button
 					type="button"
@@ -67,7 +67,7 @@ export function CreateProfileForm({ onSubmit, onCancel }: Props) {
 
 				<form.Field name="nickname">
 					{(field) => (
-						<div className="shrink-0 bg-gradient-to-b from-primary-tint to-transparent px-6 pt-8 pb-6 text-center">
+						<div className="shrink-0 bg-gradient-to-b from-primary-tint to-transparent px-5 pt-7 pb-5 text-center sm:px-6 sm:pt-8 sm:pb-6">
 							<div className="size-20 mx-auto mb-3 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground font-display text-4xl shadow-lg">
 								{field.state.value.charAt(0).toUpperCase() || "?"}
 							</div>
@@ -77,8 +77,8 @@ export function CreateProfileForm({ onSubmit, onCancel }: Props) {
 					)}
 				</form.Field>
 
-				<ScrollArea className="flex-1 min-h-0" maxHeight="calc(92vh - 16rem)">
-					<div className="px-6 pb-2 space-y-5">
+				<ScrollArea className="flex-1 min-h-0">
+					<div className="min-w-0 px-5 pb-6 space-y-5 sm:px-6">
 						<form.Field name="nickname">
 							{(field) => (
 								<div className="space-y-1">
@@ -104,7 +104,7 @@ export function CreateProfileForm({ onSubmit, onCancel }: Props) {
 							{(field) => (
 								<div className="space-y-2">
 									<p className="text-xs font-bold text-muted uppercase">Trình độ hiện tại (tự đánh giá)</p>
-									<div className="grid grid-cols-5 gap-2">
+									<div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
 										{ENTRY_LEVELS.map((l) => {
 											const isActive = field.state.value === l
 											return (
@@ -148,10 +148,7 @@ export function CreateProfileForm({ onSubmit, onCancel }: Props) {
 										return (
 											<div className="space-y-2">
 												<p className="text-xs font-bold text-muted uppercase">Mục tiêu trình độ</p>
-												<div
-													className="grid gap-2"
-													style={{ gridTemplateColumns: `repeat(${targets.length}, minmax(0, 1fr))` }}
-												>
+												<div className="grid grid-cols-[repeat(auto-fit,minmax(7.5rem,1fr))] gap-2">
 													{targets.map((l) => {
 														const isActive = field.state.value === l
 														return (
@@ -211,7 +208,7 @@ export function CreateProfileForm({ onSubmit, onCancel }: Props) {
 					</div>
 				</ScrollArea>
 
-				<div className="shrink-0 flex gap-3 px-6 py-4 border-t border-border bg-surface">
+				<div className="shrink-0 flex flex-col gap-3 border-t border-border bg-surface px-5 py-4 sm:flex-row sm:px-6">
 					<button type="button" onClick={onCancel} className="btn btn-secondary flex-1">
 						Hủy
 					</button>

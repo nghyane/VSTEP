@@ -10,6 +10,7 @@ use App\Models\PracticeWritingPrompt;
 use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -22,14 +23,22 @@ final class WritingPracticeService
     ) {}
 
     /** @return Collection<int,PracticeWritingPrompt> */
-    public function listPrompts(?int $part = null): Collection
+    public function listPrompts(?int $part = null, ?Profile $profile = null): Collection
     {
-        $query = PracticeWritingPrompt::query()->where('is_published', true);
-        if ($part !== null) {
-            $query->where('part', $part);
-        }
+        return $this->promptQuery($part, $profile)
+            ->orderBy('part')
+            ->orderBy('created_at')
+            ->orderBy('slug')
+            ->get();
+    }
 
-        return $query->orderBy('part')->orderBy('created_at')->get();
+    public function paginatePrompts(?int $part, int $perPage, int $page, ?Profile $profile = null): LengthAwarePaginator
+    {
+        return $this->promptQuery($part, $profile)
+            ->orderBy('part')
+            ->orderBy('created_at')
+            ->orderBy('slug')
+            ->paginate($perPage, ['*'], 'page', $page);
     }
 
     public function getPromptWithChildren(string $id): PracticeWritingPrompt
@@ -101,7 +110,7 @@ final class WritingPracticeService
         return $submission;
     }
 
-    public function history(Profile $profile, ?int $part = null): LengthAwarePaginator
+    public function history(Profile $profile, ?int $part = null, int $perPage = 15, int $page = 1): LengthAwarePaginator
     {
         return PracticeWritingSubmission::query()
             ->where('profile_id', $profile->id)
@@ -110,7 +119,25 @@ final class WritingPracticeService
                 'prompt', fn ($q) => $q->where('part', $part),
             ))
             ->orderByDesc('submitted_at')
-            ->paginate();
+            ->paginate($perPage, ['*'], 'page', $page);
+    }
+
+    /** @return Builder<PracticeWritingPrompt> */
+    private function promptQuery(?int $part = null, ?Profile $profile = null): Builder
+    {
+        $query = PracticeWritingPrompt::query()->where('is_published', true);
+
+        if ($profile !== null) {
+            $query->withExists([
+                'submissions as has_submitted' => fn (Builder $query) => $query->where('profile_id', $profile->id),
+            ]);
+        }
+
+        if ($part !== null) {
+            $query->where('part', $part);
+        }
+
+        return $query;
     }
 
     private function countWords(string $text): int

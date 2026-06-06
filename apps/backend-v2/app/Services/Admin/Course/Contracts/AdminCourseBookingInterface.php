@@ -33,5 +33,7 @@ interface AdminCourseBookingInterface
 
     public function updateBookingMeetUrl(TeacherBooking $booking, ?string $meetUrl): TeacherBooking;
 
+    public function rescheduleBooking(TeacherBooking $booking, TeacherSlot $targetSlot): TeacherBooking;
+
     public function cancelBooking(TeacherBooking $booking): TeacherBooking;
 }

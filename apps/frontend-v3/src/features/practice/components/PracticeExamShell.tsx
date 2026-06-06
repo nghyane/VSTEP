@@ -1,7 +1,10 @@
 import { Link } from "@tanstack/react-router"
+import { useEffect, useState } from "react"
 import { Icon } from "#/components/Icon"
 import type { McqQuestion, SubmitResult } from "#/features/practice/types"
 import { cn } from "#/lib/utils"
+
+const QUESTION_PALETTE_PAGE_SIZE = 25
 
 interface PracticeExamShellProps {
 	backTo: string
@@ -201,15 +204,38 @@ function QuestionPalette({
 	onQuestionJump?: (index: number) => void
 }) {
 	const resultMap = result ? new Map(result.items.map((item) => [item.question_id, item])) : null
+	const total = questions.length
+	const lastPage = Math.max(1, Math.ceil(total / QUESTION_PALETTE_PAGE_SIZE))
+	const activePage = Math.min(
+		lastPage,
+		Math.max(1, Math.floor(currentQuestionIndex / QUESTION_PALETTE_PAGE_SIZE) + 1),
+	)
+	const [page, setPage] = useState(activePage)
+	const currentPage = Math.min(page, lastPage)
+	const startIndex = (currentPage - 1) * QUESTION_PALETTE_PAGE_SIZE
+	const visibleQuestions = questions.slice(startIndex, startIndex + QUESTION_PALETTE_PAGE_SIZE)
+	const hasPagination = total > QUESTION_PALETTE_PAGE_SIZE
+	const visibleStart = total > 0 ? startIndex + 1 : 0
+	const visibleEnd = Math.min(startIndex + visibleQuestions.length, total)
+
+	useEffect(() => {
+		setPage(activePage)
+	}, [activePage])
 
 	return (
 		<div className="card xl:sticky xl:top-20">
 			<div className="px-5 pt-4 pb-2">
 				<p className="text-lg font-bold text-foreground">Question List</p>
+				{hasPagination && (
+					<p className="mt-1 text-xs font-bold text-subtle">
+						Câu {visibleStart}-{visibleEnd}/{total}
+					</p>
+				)}
 			</div>
 			<div className="p-5">
 				<div className="grid grid-cols-5 gap-2">
-					{questions.map((q, index) => {
+					{visibleQuestions.map((q, localIndex) => {
+						const index = startIndex + localIndex
 						const isAnswered = answers[q.id] !== undefined
 						const item = resultMap?.get(q.id)
 						const isActive = index === currentQuestionIndex
@@ -247,6 +273,29 @@ function QuestionPalette({
 						)
 					})}
 				</div>
+				{hasPagination && (
+					<div className="mt-4 flex items-center justify-between gap-2">
+						<button
+							type="button"
+							disabled={currentPage <= 1}
+							onClick={() => setPage((value) => Math.max(1, value - 1))}
+							className="btn btn-secondary min-h-9 px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							Trước
+						</button>
+						<span className="text-xs font-bold text-muted tabular-nums">
+							{currentPage}/{lastPage}
+						</span>
+						<button
+							type="button"
+							disabled={currentPage >= lastPage}
+							onClick={() => setPage((value) => Math.min(lastPage, value + 1))}
+							className="btn btn-secondary min-h-9 px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+						>
+							Tiếp
+						</button>
+					</div>
+				)}
 			</div>
 		</div>
 	)

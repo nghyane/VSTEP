@@ -15,8 +15,8 @@ use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\LearningPathController;
 use App\Http\Controllers\Api\V1\McqPracticeController;
 use App\Http\Controllers\Api\V1\NotificationController;
-use App\Http\Controllers\Api\V1\OverviewController;
 use App\Http\Controllers\Api\V1\OrderHistoryController;
+use App\Http\Controllers\Api\V1\OverviewController;
 use App\Http\Controllers\Api\V1\PaymentCallbackController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ShadowingProgressController;
@@ -514,6 +514,7 @@ Route::prefix('v1')->group(function () {
             Route::get('/{id}/bookings', [Admin\CourseController::class, 'indexBookings'])->whereUuid('id');
         });
         Route::patch('/schedule-items/{itemId}', [Admin\CourseController::class, 'updateScheduleItem'])->whereUuid('itemId');
+        Route::post('/schedule-items/{itemId}/cancel', [Admin\CourseController::class, 'cancelScheduleItem'])->whereUuid('itemId');
         Route::delete('/schedule-items/{itemId}', [Admin\CourseController::class, 'destroyScheduleItem'])->whereUuid('itemId');
 
         // Slot management (admin sửa/xóa slot khi chưa có booking)
@@ -522,6 +523,7 @@ Route::prefix('v1')->group(function () {
 
         // Booking management (admin sửa meet_url + cancel kèm refund)
         Route::patch('/bookings/{bookingId}', [Admin\CourseController::class, 'updateBooking'])->whereUuid('bookingId');
+        Route::post('/bookings/{bookingId}/reschedule', [Admin\CourseController::class, 'rescheduleBooking'])->whereUuid('bookingId');
         Route::post('/bookings/{bookingId}/cancel', [Admin\CourseController::class, 'cancelBooking'])->whereUuid('bookingId');
 
         // Enrollment management (admin can unenroll + override commitment)
@@ -531,8 +533,10 @@ Route::prefix('v1')->group(function () {
         // Leave request management (staff approve/reject)
         Route::prefix('leave-requests')->group(function () {
             Route::get('/', [Admin\TeacherController::class, 'staffLeaveRequests']);
+            Route::get('/{leaveId}', [Admin\TeacherController::class, 'staffLeaveRequestDetail'])->whereUuid('leaveId');
             Route::patch('/{leaveId}', [Admin\TeacherController::class, 'staffUpdateLeaveRequest'])->whereUuid('leaveId');
         });
+        Route::get('/teachers/{teacherId}/day-schedule', [Admin\TeacherController::class, 'staffTeacherDaySchedule'])->whereUuid('teacherId');
 
         // Practice Speaking — Tasks (VSTEP)
         Route::prefix('practice/speaking-tasks')->group(function () {

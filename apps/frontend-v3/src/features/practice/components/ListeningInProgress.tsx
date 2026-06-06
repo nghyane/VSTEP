@@ -65,7 +65,7 @@ export function ListeningInProgress({ detail, sessionId }: Props) {
 		<PracticeExamShell
 			backTo="/luyen-tap/nghe"
 			title="Listening"
-			partLabel={`Part ${exercise.part}`}
+			partLabel={`Phần ${exercise.part}`}
 			questions={questions}
 			answers={session.answers}
 			result={session.result}

@@ -146,3 +146,19 @@ export interface PaginatedResponse<T> {
 	meta: PaginationMeta
 	links: PaginationLinks
 }
+
+export function paginationMetaOrDefault<T>(
+	response: { data?: T[]; meta?: Partial<PaginationMeta> } | undefined,
+	currentPage?: number,
+	perPage?: number,
+): PaginationMeta {
+	const total = response?.data?.length ?? 0
+	const meta = response?.meta
+
+	return {
+		current_page: meta?.current_page ?? currentPage ?? 1,
+		last_page: meta?.last_page ?? 1,
+		per_page: meta?.per_page ?? perPage ?? total,
+		total: meta?.total ?? total,
+	}
+}
