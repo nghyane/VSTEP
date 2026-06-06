@@ -1,17 +1,17 @@
 import { useQuery } from "@tanstack/react-query"
-import { useRouter } from "@tanstack/react-router"
+import { useLocation } from "@tanstack/react-router"
 import type { ReactNode } from "react"
 import { useMemo, useState } from "react"
 import { createPortal } from "react-dom"
 import { appConfigQuery } from "#/features/config/queries"
 import { cn } from "#/lib/utils"
 
-/** Các route đang trong phiên làm bài/thi — không hiện FAB hỗ trợ để tránh phân tâm. */
-function useShouldHideFab(): boolean {
-	const pathname = useRouter().state.location.pathname
+/** Chỉ hiện FAB hỗ trợ ở các trang cần hỗ trợ trực tiếp. */
+function useShouldShowFab(): boolean {
+	const pathname = useLocation({ select: (location) => location.pathname })
 	return useMemo(() => {
-		if (/^\/thi-thu\/[^/]+$/.test(pathname)) return true
-		if (/^\/luyen-tap\/(nghe|noi|doc|viet)/.test(pathname)) return true
+		if (pathname === "/ho-so") return true
+		if (pathname === "/khoa-hoc" || pathname.startsWith("/khoa-hoc/")) return true
 		return false
 	}, [pathname])
 }
@@ -37,9 +37,9 @@ export function ZaloSupportLink({ children, className }: { children: ReactNode; 
 export function SupportFab() {
 	const [open, setOpen] = useState(false)
 	const zaloUrl = useZaloSupportUrl()
-	const hide = useShouldHideFab()
+	const show = useShouldShowFab()
 
-	if (hide) return null
+	if (!show) return null
 
 	return createPortal(
 		<div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
