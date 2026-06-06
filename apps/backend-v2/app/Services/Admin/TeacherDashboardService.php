@@ -256,7 +256,7 @@ final class TeacherDashboardService
     private function impactedScheduleItems(TeacherLeaveRequest $leave): array
     {
         return $this->scheduleItemsQuery($leave)
-            ->with('course:id,title,teacher_id')
+            ->with('course:id,title,teacher_id,start_date,end_date')
             ->orderBy('start_time')
             ->get()
             ->map(function (CourseScheduleItem $item): array {
@@ -264,6 +264,8 @@ final class TeacherDashboardService
                     'id' => $item->id,
                     'course_id' => $item->course_id,
                     'course_title' => $item->course?->title,
+                    'course_start_date' => $item->course?->start_date?->toDateString(),
+                    'course_end_date' => $item->course?->end_date?->toDateString(),
                     'session_number' => (int) $item->session_number,
                     'date' => $item->date->toDateString(),
                     'start_time' => substr((string) $item->start_time, 0, 5),

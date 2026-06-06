@@ -10,14 +10,14 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { Alert, Select as AntSelect, Empty, Flex, Input, Space, Table, Tag, Typography } from "antd"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
-import { useState } from "react"
+import { type FormEvent, useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
+import { FormField } from "#/components/FormField"
 import { Modal } from "#/components/Modal"
 import { PageHeader } from "#/components/PageHeader"
 import { Select } from "#/components/Select"
 import { showError, showSuccess } from "#/components/Toaster"
-import { ScheduleItemForm } from "#/features/admin-courses/ScheduleItemForm"
 import type { AdminTeacherSlot, ScheduleItemFormInput } from "#/features/admin-courses/types"
 import {
 	type LeaveBookingImpact,
@@ -293,6 +293,7 @@ function StaffLeaveRequestsPage() {
 
 			<RescheduleScheduleModal
 				item={reschedulingSchedule}
+				teacherId={detail.data?.data.leave.teacher?.id ?? null}
 				onClose={() => setReschedulingSchedule(null)}
 				onSubmit={async (input) => {
 					if (!reschedulingSchedule) return
@@ -356,7 +357,7 @@ function StaffLeaveRequestsPage() {
 				size="md"
 			>
 				<Flex vertical gap={12}>
-					<Alert type="warning" showIcon message="Học viên trong khóa sẽ nhận thông báo và email." />
+					<Alert type="warning" showIcon title="Học viên trong khóa sẽ nhận thông báo và email." />
 					<Input.TextArea
 						rows={3}
 						maxLength={500}
@@ -543,7 +544,7 @@ function LeaveDetailModal({
 						<Alert
 							type="warning"
 							showIcon
-							message="Các slot này chưa có học viên đặt nhưng vẫn đang mở cho learner. Hãy dời hoặc xóa nếu không muốn học viên đặt vào ngày giáo viên nghỉ."
+							title="Các slot này chưa có học viên đặt nhưng vẫn đang mở cho learner. Hãy dời hoặc xóa nếu không muốn học viên đặt vào ngày giáo viên nghỉ."
 						/>
 						{detail.impacts.open_slots.length === 0 ? (
 							<Empty description="Không có slot 1-1 còn mở trong ngày nghỉ" />
@@ -672,7 +673,7 @@ function RescheduleBookingModal({
 	return (
 		<Modal open={booking !== null} onClose={onClose} title="Dời booking 1-1" size="md">
 			<Flex vertical gap={12}>
-				<Alert type="info" showIcon message="Dời booking không hoàn xu và không tạo giao dịch mới." />
+				<Alert type="info" showIcon title="Dời booking không hoàn xu và không tạo giao dịch mới." />
 				<AntSelect
 					showSearch
 					placeholder="Chọn slot mới còn trống"
@@ -701,11 +702,13 @@ function RescheduleBookingModal({
 
 function RescheduleScheduleModal({
 	item,
+	teacherId,
 	onClose,
 	onSubmit,
 	loading,
 }: {
 	item: LeaveScheduleImpact | null
+	teacherId: string | null
 	onClose: () => void
 	onSubmit: (input: ScheduleItemFormInput) => Promise<void>
 	loading: boolean
@@ -713,9 +716,148 @@ function RescheduleScheduleModal({
 	return (
 		<Modal open={item !== null} onClose={onClose} title="Dời buổi học" size="md">
 			{item && (
-				<ScheduleItemForm initial={item} submitting={loading} onCancel={onClose} onSubmit={onSubmit} />
+				<RescheduleScheduleForm
+					item={item}
+					teacherId={teacherId}
+					loading={loading}
+					onClose={onClose}
+					onSubmit={onSubmit}
+				/>
 			)}
 		</Modal>
+	)
+}
+
+function RescheduleScheduleForm({
+	item,
+	teacherId,
+	loading,
+	onClose,
+	onSubmit,
+}: {
+	item: LeaveScheduleImpact
+	teacherId: string | null
+	loading: boolean
+	onClose: () => void
+	onSubmit: (input: ScheduleItemFormInput) => Promise<void>
+}) {
+	const [state, setState] = useState<ScheduleItemFormInput>({
+		session_number: item.session_number,
+		date: toDateInput(item.date),
+		start_time: toTimeInput(item.start_time),
+		end_time: toTimeInput(item.end_time),
+		topic: item.topic,
+	})
+	const [errors, setErrors] = useState<Record<string, string[]>>({})
+	const [generic, setGeneric] = useState<string | null>(null)
+	const selectedDate = state.date || null
+	const daySchedule = useQuery(teacherDayScheduleQuery(teacherId, selectedDate))
+	const courseStartDate = toDateInput(item.course_start_date ?? undefined)
+	const courseEndDate = toDateInput(item.course_end_date ?? undefined)
+	const dateOutOfCourseRange =
+		(state.date && courseStartDate && state.date < courseStartDate) ||
+		(state.date && courseEndDate && state.date > courseEndDate)
+
+	function set<K extends keyof ScheduleItemFormInput>(key: K, value: ScheduleItemFormInput[K]): void {
+		setState((current) => ({ ...current, [key]: value }))
+	}
+
+	async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+		event.preventDefault()
+		setErrors({})
+		setGeneric(null)
+		if (dateOutOfCourseRange) {
+			setErrors({ date: [courseDateRangeMessage(courseStartDate, courseEndDate)] })
+			return
+		}
+		try {
+			await onSubmit({
+				...state,
+				start_time: toTimeInput(state.start_time),
+				end_time: toTimeInput(state.end_time),
+			})
+		} catch (err) {
+			const error = await extractError(err)
+			if (error.errors && Object.keys(error.errors).length > 0) {
+				setErrors(error.errors)
+			}
+			setGeneric(error.message || "Không thể dời buổi học")
+		}
+	}
+
+	return (
+		<form onSubmit={handleSubmit}>
+			<Flex vertical gap={12}>
+				<Flex gap={12} align="start">
+					<FormField label="Số buổi" htmlFor="schedule-session-number" error={errors.session_number}>
+						<Input
+							id="schedule-session-number"
+							type="number"
+							min={1}
+							value={state.session_number ?? ""}
+							onChange={(event) =>
+								set("session_number", event.target.value === "" ? null : Number(event.target.value))
+							}
+						/>
+					</FormField>
+					<FormField label="Ngày" htmlFor="schedule-date" required error={errors.date}>
+						<Input
+							id="schedule-date"
+							type="date"
+							min={courseStartDate || undefined}
+							max={courseEndDate || undefined}
+							value={state.date}
+							onChange={(event) => set("date", event.target.value)}
+						/>
+						{(courseStartDate || courseEndDate) && (
+							<Typography.Text type={dateOutOfCourseRange ? "danger" : "secondary"} style={{ fontSize: 12 }}>
+								{courseDateRangeMessage(courseStartDate, courseEndDate)}
+							</Typography.Text>
+						)}
+					</FormField>
+				</Flex>
+				<Flex gap={12} align="start">
+					<FormField label="Giờ bắt đầu" htmlFor="schedule-start-time" required error={errors.start_time}>
+						<Input
+							id="schedule-start-time"
+							type="time"
+							value={state.start_time}
+							onChange={(event) => set("start_time", event.target.value)}
+						/>
+					</FormField>
+					<FormField label="Giờ kết thúc" htmlFor="schedule-end-time" required error={errors.end_time}>
+						<Input
+							id="schedule-end-time"
+							type="time"
+							min={state.start_time || undefined}
+							value={state.end_time}
+							onChange={(event) => set("end_time", event.target.value)}
+						/>
+					</FormField>
+				</Flex>
+				<FormField label="Chủ đề" htmlFor="schedule-topic" required error={errors.topic}>
+					<Input
+						id="schedule-topic"
+						value={state.topic}
+						onChange={(event) => set("topic", event.target.value)}
+					/>
+				</FormField>
+				{generic && <Alert type="error" title={generic} showIcon />}
+				<TeacherDaySchedulePreview
+					loading={daySchedule.isLoading}
+					schedule={daySchedule.data?.data ?? null}
+					currentScheduleItemId={item.id}
+				/>
+				<Flex justify="end" gap={8}>
+					<Button variant="ghost" onClick={onClose} disabled={loading}>
+						Hủy
+					</Button>
+					<Button type="submit" loading={loading} disabled={!!dateOutOfCourseRange}>
+						Cập nhật
+					</Button>
+				</Flex>
+			</Flex>
+		</form>
 	)
 }
 
@@ -771,7 +913,7 @@ function RescheduleOpenSlotForm({
 
 	return (
 		<Flex vertical gap={12}>
-			<Alert type="info" showIcon message="Slot chưa có học viên đặt nên có thể dời trực tiếp." />
+			<Alert type="info" showIcon title="Slot chưa có học viên đặt nên có thể dời trực tiếp." />
 			<label htmlFor="open-slot-start" style={{ fontSize: 13, fontWeight: 600 }}>
 				Thời gian mới
 			</label>
@@ -824,10 +966,12 @@ function TeacherDaySchedulePreview({
 	loading,
 	schedule,
 	currentSlotId,
+	currentScheduleItemId,
 }: {
 	loading: boolean
 	schedule: TeacherDaySchedule | null
-	currentSlotId: string
+	currentSlotId?: string
+	currentScheduleItemId?: string
 }) {
 	if (loading)
 		return <Typography.Text type="secondary">Đang tải lịch hiện tại của giáo viên…</Typography.Text>
@@ -848,8 +992,13 @@ function TeacherDaySchedulePreview({
 			) : (
 				<Space direction="vertical" size={4} style={{ width: "100%" }}>
 					{visibleScheduleItems.map((item) => (
-						<Tag key={item.id} color="blue" style={{ width: "fit-content" }}>
-							Buổi học · {item.start_time}–{item.end_time} · {item.course_title ?? "—"}
+						<Tag
+							key={item.id}
+							color={item.id === currentScheduleItemId ? "gold" : "blue"}
+							style={{ width: "fit-content" }}
+						>
+							{item.id === currentScheduleItemId ? "Buổi học đang dời" : "Buổi học"} · {item.start_time}–
+							{item.end_time} · {item.course_title ?? "—"}
 						</Tag>
 					))}
 					{schedule.slots.map((busySlot) => (
@@ -879,4 +1028,21 @@ function TeacherDaySchedulePreview({
 function formatDateTime(value: string | null): string {
 	if (!value) return "—"
 	return dayjs(value).format("DD/MM/YYYY HH:mm")
+}
+
+function toDateInput(value: string | undefined): string {
+	if (!value) return ""
+	return value.length >= 10 ? value.slice(0, 10) : value
+}
+
+function toTimeInput(value: string | undefined): string {
+	if (!value) return ""
+	return value.length >= 5 ? value.slice(0, 5) : value
+}
+
+function courseDateRangeMessage(startDate: string, endDate: string): string {
+	if (startDate && endDate) return `Ngày phải nằm trong thời gian khóa học: ${startDate} đến ${endDate}.`
+	if (startDate) return `Ngày phải từ ${startDate} trở đi.`
+	if (endDate) return `Ngày phải không sau ${endDate}.`
+	return "Ngày phải nằm trong thời gian khóa học."
 }

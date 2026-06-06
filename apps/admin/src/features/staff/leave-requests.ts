@@ -31,6 +31,8 @@ export interface LeaveScheduleImpact {
 	id: string
 	course_id: string
 	course_title: string | null
+	course_start_date: string | null
+	course_end_date: string | null
 	session_number: number
 	date: string
 	start_time: string
