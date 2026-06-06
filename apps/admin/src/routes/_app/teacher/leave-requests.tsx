@@ -1,6 +1,6 @@
 import { PlusOutlined } from "@ant-design/icons"
 import { createFileRoute } from "@tanstack/react-router"
-import { App, Button, DatePicker, Empty, Flex, Input, Modal, Skeleton, Table, Tag } from "antd"
+import { App, Button, Empty, Flex, Input, Skeleton, Table, Tag } from "antd"
 import type { ColumnsType } from "antd/es/table"
 import dayjs from "dayjs"
 import { useState } from "react"
@@ -95,37 +95,74 @@ function TeacherLeaveRequests() {
 					pagination={{ pageSize: 10 }}
 				/>
 			)}
-			<Modal
-				title="Tạo đơn xin nghỉ"
-				open={modalOpen}
-				onOk={handleSubmit}
-				onCancel={() => setModalOpen(false)}
-				confirmLoading={createLeave.isPending}
-				okText="Gửi"
-				cancelText="Hủy"
-			>
-				<FormField label="Ngày nghỉ" required error={errors.date}>
-					<DatePicker
-						style={{ width: "100%" }}
-						format="DD/MM/YYYY"
-						value={formState.date ? dayjs(formState.date) : null}
-						onChange={(value) =>
-							setFormState((s) => ({ ...s, date: value ? value.format("YYYY-MM-DD") : null }))
-						}
-					/>
-				</FormField>
-				<FormField label="Lý do" style={{ marginTop: 16 }}>
-					<Input.TextArea
-						rows={3}
-						maxLength={500}
-						placeholder="Nhập lý do (không bắt buộc)"
-						value={formState.reason}
-						onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-							setFormState((s) => ({ ...s, reason: e.target.value }))
-						}
-					/>
-				</FormField>
-			</Modal>
+			{modalOpen && (
+				<div
+					role="dialog"
+					aria-modal="true"
+					aria-labelledby="teacher-leave-modal-title"
+					style={{
+						position: "fixed",
+						inset: 0,
+						zIndex: 1000,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						background: "rgba(0,0,0,0.45)",
+						padding: 16,
+					}}
+					onMouseDown={(e) => {
+						if (e.target === e.currentTarget) setModalOpen(false)
+					}}
+				>
+					<div
+						style={{
+							width: "min(520px, 100%)",
+							borderRadius: 12,
+							background: "#fff",
+							boxShadow: "0 12px 32px rgba(0,0,0,0.18)",
+							padding: 24,
+						}}
+					>
+						<h2 id="teacher-leave-modal-title" style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>
+							Tạo đơn xin nghỉ
+						</h2>
+						<div style={{ marginTop: 20 }}>
+							<FormField label="Ngày nghỉ" required error={errors.date}>
+								<input
+									type="date"
+									value={formState.date ?? ""}
+									onChange={(e) => setFormState((s) => ({ ...s, date: e.target.value || null }))}
+									style={{
+										width: "100%",
+										height: 32,
+										border: "1px solid #d9d9d9",
+										borderRadius: 6,
+										padding: "4px 11px",
+										font: "inherit",
+									}}
+								/>
+							</FormField>
+							<FormField label="Lý do" style={{ marginTop: 16 }}>
+								<Input.TextArea
+									rows={3}
+									maxLength={500}
+									placeholder="Nhập lý do (không bắt buộc)"
+									value={formState.reason}
+									onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+										setFormState((s) => ({ ...s, reason: e.target.value }))
+									}
+								/>
+							</FormField>
+						</div>
+						<Flex justify="flex-end" gap={8} style={{ marginTop: 24 }}>
+							<Button onClick={() => setModalOpen(false)}>Hủy</Button>
+							<Button type="primary" loading={createLeave.isPending} onClick={handleSubmit}>
+								Gửi
+							</Button>
+						</Flex>
+					</div>
+				</div>
+			)}
 		</Flex>
 	)
 }

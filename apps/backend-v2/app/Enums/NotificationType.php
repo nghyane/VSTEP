@@ -19,7 +19,10 @@ enum NotificationType: string
     case CourseUnenrolled = 'course_unenrolled';
     case BookingCreated = 'booking_created';
     case BookingCancelled = 'booking_cancelled';
+    case BookingRescheduled = 'booking_rescheduled';
     case BookingMeetUrlUpdated = 'booking_meet_url_updated';
+    case CourseSessionRescheduled = 'course_session_rescheduled';
+    case CourseSessionCancelled = 'course_session_cancelled';
     case TeacherGradingCompleted = 'teacher_grading_completed';
     case StudyReminder = 'study_reminder';
 }

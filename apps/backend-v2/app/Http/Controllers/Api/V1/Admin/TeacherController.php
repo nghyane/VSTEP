@@ -90,6 +90,28 @@ final class TeacherController extends Controller
         return response()->json(['data' => $paginator]);
     }
 
+    public function staffLeaveRequestDetail(Request $request, string $leaveId): JsonResponse
+    {
+        /** @var TeacherLeaveRequest $leave */
+        $leave = TeacherLeaveRequest::query()->findOrFail($leaveId);
+
+        return response()->json(['data' => $this->service->leaveRequestDetail($leave, $request->user())]);
+    }
+
+    public function staffTeacherDaySchedule(Request $request, string $teacherId): JsonResponse
+    {
+        $validated = $request->validate([
+            'date' => ['required', 'date'],
+        ]);
+
+        /** @var User $teacher */
+        $teacher = User::query()
+            ->where('role', Role::Teacher)
+            ->findOrFail($teacherId);
+
+        return response()->json(['data' => $this->service->teacherDaySchedule($teacher, $validated['date'])]);
+    }
+
     public function staffUpdateLeaveRequest(
         UpdateLeaveRequestStatusRequest $request,
         string $leaveId,

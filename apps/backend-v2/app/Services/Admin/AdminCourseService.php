@@ -164,9 +164,14 @@ final class AdminCourseService
     }
 
     /** @param array<string,mixed> $data */
-    public function updateScheduleItem(CourseScheduleItem $item, array $data): CourseScheduleItem
+    public function updateScheduleItem(CourseScheduleItem $item, array $data, bool $notifyLearners = false): CourseScheduleItem
     {
-        return $this->schedule->updateScheduleItem($item, $data);
+        return $this->schedule->updateScheduleItem($item, $data, $notifyLearners);
+    }
+
+    public function cancelScheduleItem(CourseScheduleItem $item, ?string $reason = null): CourseScheduleItem
+    {
+        return $this->schedule->cancelScheduleItem($item, $reason);
     }
 
     public function deleteScheduleItem(CourseScheduleItem $item): void
@@ -237,6 +242,11 @@ final class AdminCourseService
     public function updateBookingMeetUrl(TeacherBooking $booking, ?string $meetUrl): TeacherBooking
     {
         return $this->booking->updateBookingMeetUrl($booking, $meetUrl);
+    }
+
+    public function rescheduleBooking(TeacherBooking $booking, TeacherSlot $targetSlot): TeacherBooking
+    {
+        return $this->booking->rescheduleBooking($booking, $targetSlot);
     }
 
     public function cancelBooking(TeacherBooking $booking): TeacherBooking

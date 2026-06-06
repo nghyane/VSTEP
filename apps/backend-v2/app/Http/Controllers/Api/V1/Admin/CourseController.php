@@ -139,9 +139,25 @@ final class CourseController extends Controller
     {
         /** @var CourseScheduleItem $item */
         $item = CourseScheduleItem::query()->findOrFail($itemId);
+        $validated = $request->validated();
+        $notifyLearners = (bool) ($validated['notify_learners'] ?? false);
 
         return new AdminScheduleItemResource(
-            $this->service->updateScheduleItem($item, $request->validated()),
+            $this->service->updateScheduleItem($item, $validated, $notifyLearners),
+        );
+    }
+
+    public function cancelScheduleItem(Request $request, string $itemId): AdminScheduleItemResource
+    {
+        $validated = $request->validate([
+            'reason' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        /** @var CourseScheduleItem $item */
+        $item = CourseScheduleItem::query()->findOrFail($itemId);
+
+        return new AdminScheduleItemResource(
+            $this->service->cancelScheduleItem($item, $validated['reason'] ?? null),
         );
     }
 
@@ -295,5 +311,19 @@ final class CourseController extends Controller
         $booking = TeacherBooking::query()->findOrFail($bookingId);
 
         return new AdminTeacherBookingResource($this->service->cancelBooking($booking));
+    }
+
+    public function rescheduleBooking(Request $request, string $bookingId): AdminTeacherBookingResource
+    {
+        $validated = $request->validate([
+            'target_slot_id' => ['required', 'uuid', 'exists:teacher_slots,id'],
+        ]);
+
+        /** @var TeacherBooking $booking */
+        $booking = TeacherBooking::query()->findOrFail($bookingId);
+        /** @var TeacherSlot $targetSlot */
+        $targetSlot = TeacherSlot::query()->findOrFail($validated['target_slot_id']);
+
+        return new AdminTeacherBookingResource($this->service->rescheduleBooking($booking, $targetSlot));
     }
 }

@@ -24,6 +24,8 @@ final class AdminScheduleItemResource extends JsonResource
             'start_time' => substr($this->resource->start_time, 0, 5),
             'end_time' => substr($this->resource->end_time, 0, 5),
             'topic' => $this->resource->topic,
+            'status' => $this->resource->status ?? 'scheduled',
+            'cancel_reason' => $this->resource->cancel_reason,
         ];
     }
 }

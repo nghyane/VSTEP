@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Mail\CourseEnrollmentInvoiceMail;
 use App\Mail\TopupInvoiceMail;
 use App\Models\CourseEnrollmentOrder;
+use App\Models\CourseScheduleItem;
 use App\Models\Profile;
 use App\Models\TeacherSlot;
 use App\Models\User;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\Mail;
 
 final class NotificationEmailService
 {
+    public function __construct(private readonly SupportConfigService $supportConfig) {}
+
     public function sendCourseEnrollmentInvoice(Profile $profile, CourseEnrollmentOrder $order): void
     {
         $order->loadMissing('course');
@@ -103,6 +106,62 @@ final class NotificationEmailService
         );
     }
 
+    public function sendLearnerBookingRescheduled(Profile $profile, TeacherSlot $oldSlot, TeacherSlot $newSlot): void
+    {
+        $oldStartsAt = $oldSlot->starts_at->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i');
+        $newStartsAt = $newSlot->starts_at->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i');
+
+        $this->sendToProfile(
+            $profile,
+            'Lịch học 1-1 đã được dời',
+            [
+                "Lịch hẹn 1-1 cũ vào {$oldStartsAt} đã được dời sang {$newStartsAt}.",
+                'Vui lòng kiểm tra lại lịch hẹn trong trang khóa học.',
+                $this->supportLine(),
+            ],
+            'Xem lịch hẹn',
+            "/khoa-hoc/{$newSlot->course_id}/dat-lich-1-1",
+        );
+    }
+
+    public function sendCourseSessionRescheduled(Profile $profile, CourseScheduleItem $item, string $oldDate, string $oldStartTime): void
+    {
+        $item->loadMissing('course');
+        $courseTitle = $item->course?->title ?? 'Khóa học VSTEP';
+        $newDate = $item->date->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y');
+        $newTime = substr((string) $item->start_time, 0, 5);
+
+        $this->sendToProfile(
+            $profile,
+            'Buổi học đã được dời lịch',
+            [
+                "Buổi học của khóa {$courseTitle} vào {$oldStartTime} {$oldDate} đã được dời sang {$newTime} {$newDate}.",
+                'Vui lòng vào trang khóa học để xem lịch cập nhật.',
+                $this->supportLine(),
+            ],
+            'Xem khóa học',
+            "/khoa-hoc/{$item->course_id}",
+        );
+    }
+
+    public function sendCourseSessionCancelled(Profile $profile, CourseScheduleItem $item, ?string $reason = null): void
+    {
+        $item->loadMissing('course');
+        $courseTitle = $item->course?->title ?? 'Khóa học VSTEP';
+        $date = $item->date->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y');
+        $time = substr((string) $item->start_time, 0, 5);
+        $lines = [
+            "Buổi học của khóa {$courseTitle} vào {$time} {$date} đã bị hủy.",
+            'Vui lòng theo dõi thông báo từ trung tâm để biết lịch học tiếp theo.',
+        ];
+        if ($reason !== null && trim($reason) !== '') {
+            $lines[] = 'Lý do: '.trim($reason).'.';
+        }
+        $lines[] = $this->supportLine();
+
+        $this->sendToProfile($profile, 'Buổi học đã bị hủy', $lines, 'Xem khóa học', "/khoa-hoc/{$item->course_id}");
+    }
+
     public function sendTeacherBookingCreated(
         User $teacher,
         string $learnerName,
@@ -171,6 +230,11 @@ final class NotificationEmailService
         Mail::html($body, function (Message $message) use ($email, $subject): void {
             $message->to($email)->subject($subject);
         });
+    }
+
+    public function supportLine(): string
+    {
+        return 'Nếu cần hỗ trợ thêm, vui lòng liên hệ Zalo/SĐT: '.$this->supportConfig->zaloPhone().'.';
     }
 
     /** @param list<string> $lines */

@@ -155,6 +155,9 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
         if (array_key_exists('starts_at', $data)) {
             $newStart = CarbonImmutable::parse($data['starts_at']);
             if (! $slot->starts_at->equalTo($newStart)) {
+                if ($newStart->lessThanOrEqualTo(CarbonImmutable::now())) {
+                    throw ValidationException::withMessages(['starts_at' => ['Không thể dời slot về thời điểm đã qua.']]);
+                }
                 $this->guardSlotWithinCourseWindow($slot->course, $newStart);
                 $this->guardSlotConflict($slot->course, $newStart, exceptId: $slot->id);
                 $slot->starts_at = $newStart;
@@ -265,6 +268,69 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
         return $booking->fresh(['slot', 'profile.account']);
     }
 
+    public function rescheduleBooking(TeacherBooking $booking, TeacherSlot $targetSlot): TeacherBooking
+    {
+        $result = DB::transaction(function () use ($booking, $targetSlot) {
+            /** @var TeacherBooking $locked */
+            $locked = TeacherBooking::query()
+                ->whereKey($booking->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($locked->status !== BookingStatus::Booked) {
+                throw ValidationException::withMessages(['booking' => ['Chỉ booking đang đặt mới dời lịch được.']]);
+            }
+
+            $locked->loadMissing(['slot', 'profile']);
+            $oldSlot = $locked->slot;
+            if ($oldSlot === null) {
+                throw ValidationException::withMessages(['booking' => ['Booking không còn slot gốc.']]);
+            }
+
+            /** @var TeacherSlot $newSlot */
+            $newSlot = TeacherSlot::query()
+                ->whereKey($targetSlot->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($newSlot->course_id !== $oldSlot->course_id) {
+                throw ValidationException::withMessages(['target_slot_id' => ['Slot mới phải thuộc cùng khóa học.']]);
+            }
+            if ($newSlot->status !== SlotStatus::Open) {
+                throw ValidationException::withMessages(['target_slot_id' => ['Slot mới không còn trống.']]);
+            }
+            if ($newSlot->starts_at->isPast()) {
+                throw ValidationException::withMessages(['target_slot_id' => ['Slot mới đã qua.']]);
+            }
+
+            $oldSlot->update(['status' => SlotStatus::Open]);
+            $newSlot->update(['status' => SlotStatus::Booked]);
+            $locked->update(['slot_id' => $newSlot->id, 'meet_url' => null]);
+
+            return [$locked->fresh(['slot', 'profile.account']), $oldSlot->fresh(), $newSlot->fresh()];
+        });
+
+        /** @var TeacherBooking $updated */
+        [$updated, $oldSlot, $newSlot] = $result;
+        $profile = $updated->profile;
+
+        $notification = $this->notification->push(
+            $profile,
+            type: NotificationType::BookingRescheduled,
+            title: 'Lịch học 1-1 đã được dời',
+            body: "Lịch hẹn mới: {$newSlot->starts_at->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i')}.",
+            iconKey: IconKey::Calendar,
+            payload: ['booking_id' => $updated->id, 'slot_id' => $newSlot->id],
+            dedupKey: "booking_rescheduled:{$updated->id}:{$newSlot->id}",
+        );
+
+        if ($notification !== null) {
+            $this->email->sendLearnerBookingRescheduled($profile, $oldSlot, $newSlot);
+        }
+
+        return $updated;
+    }
+
     public function cancelBooking(TeacherBooking $booking): TeacherBooking
     {
         $booking = DB::transaction(function () use ($booking) {
@@ -330,6 +396,7 @@ final class AdminCourseBookingService implements AdminCourseBookingInterface
                 [
                     "Buổi học {$booking->slot->starts_at->setTimezone('Asia/Ho_Chi_Minh')->format('d/m/Y H:i')} đã bị hủy bởi trung tâm.",
                     'Nếu bạn đã bị trừ xu cho lịch hẹn này, hệ thống sẽ hoàn lại xu theo chính sách hiện tại.',
+                    $this->email->supportLine(),
                 ],
                 'Xem lịch hẹn',
                 "/khoa-hoc/{$booking->slot->course_id}/dat-lich-1-1",

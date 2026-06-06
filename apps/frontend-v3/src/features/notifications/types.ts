@@ -14,7 +14,10 @@ export type NotificationType =
 	| "course_unenrolled"
 	| "booking_created"
 	| "booking_cancelled"
+	| "booking_rescheduled"
 	| "booking_meet_url_updated"
+	| "course_session_rescheduled"
+	| "course_session_cancelled"
 	| "teacher_grading_completed"
 	| "study_reminder"
 
