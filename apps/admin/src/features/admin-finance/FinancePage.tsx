@@ -1,4 +1,10 @@
-import { EyeOutlined, ShoppingOutlined, WalletOutlined } from "@ant-design/icons"
+import {
+	EyeOutlined,
+	MinusCircleOutlined,
+	PlusCircleOutlined,
+	ShoppingOutlined,
+	WalletOutlined,
+} from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import {
 	Button,
@@ -22,7 +28,7 @@ import {
 import { useState } from "react"
 import { type ApiResponse, api, type PaginatedResponse } from "#/lib/api"
 import { formatDateTime } from "#/lib/utils"
-import { formatVnd } from "#/routes/_app/-dashboard/utils"
+import { formatNum, formatVnd } from "#/routes/_app/-dashboard/utils"
 
 type OrderType = "topup" | "course"
 type OrderStatus = "pending" | "paid" | "failed" | "cancelled" | "expired"
@@ -85,6 +91,51 @@ interface OrderFilters {
 	to?: string
 }
 
+type CoinDirection = "credit" | "debit"
+
+interface CoinSummary {
+	totals: {
+		transactions: number
+		credit_total: number
+		debit_total: number
+		net_total: number
+		active_users: number
+	}
+	breakdown: CoinBreakdown[]
+}
+
+interface CoinBreakdown {
+	type: string
+	transactions: number
+	credit_total: number
+	debit_total: number
+	net_total: number
+}
+
+interface CoinTransaction {
+	id: number
+	type: string
+	delta: number
+	balance_after: number
+	source_type: string | null
+	source_id: string | null
+	metadata: unknown
+	created_at: string | null
+	user: { id: string; name: string | null; email: string } | null
+	profile: { id: string; nickname: string | null } | null
+}
+
+interface CoinFilters {
+	page: number
+	per_page: number
+	q?: string
+	type?: string
+	direction?: CoinDirection
+	source_type?: string
+	from?: string
+	to?: string
+}
+
 const STATUS_LABEL: Record<OrderStatus, string> = {
 	pending: "Chờ thanh toán",
 	paid: "Đã thanh toán",
@@ -101,6 +152,33 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
 	expired: "warning",
 }
 
+const COIN_TYPE_LABEL: Record<string, string> = {
+	topup: "Nạp xu",
+	onboarding_bonus: "Quà chào mừng",
+	course_bonus: "Thưởng khóa học",
+	promo_redeem: "Mã khuyến mãi",
+	admin_grant: "Cộng xu thủ công",
+	streak_milestone: "Thưởng streak",
+	refund: "Hoàn xu",
+	exam_custom: "Thi tùy chỉnh",
+	exam_full: "Thi full-test",
+	course_purchase: "Mua khóa học",
+	teacher_booking: "Đặt lịch 1-1",
+	practice_feedback: "Feedback bài luyện",
+}
+
+const COIN_SOURCE_LABEL: Record<string, string> = {
+	wallet_topup_order: "Đơn nạp xu",
+	promo_code_redemption: "Đổi mã khuyến mãi",
+	promo_code: "Mã khuyến mãi",
+	course_enrollment: "Ghi danh khóa học",
+	practice_session: "Phiên luyện tập",
+	practice_feedback_request: "Yêu cầu feedback",
+	profile: "Hồ sơ học tập",
+	profile_streak_claim: "Nhận thưởng streak",
+	teacher_booking: "Lịch học 1-1",
+}
+
 function buildSearch(filters: OrderFilters): string {
 	const params = new URLSearchParams()
 	params.set("page", String(filters.page))
@@ -108,6 +186,19 @@ function buildSearch(filters: OrderFilters): string {
 	if (filters.type) params.set("type", filters.type)
 	if (filters.status) params.set("status", filters.status)
 	if (filters.q) params.set("q", filters.q)
+	if (filters.from) params.set("from", filters.from)
+	if (filters.to) params.set("to", filters.to)
+	return `?${params.toString()}`
+}
+
+function buildCoinSearch(filters: CoinFilters): string {
+	const params = new URLSearchParams()
+	params.set("page", String(filters.page))
+	params.set("per_page", String(filters.per_page))
+	if (filters.q) params.set("q", filters.q)
+	if (filters.type) params.set("type", filters.type)
+	if (filters.direction) params.set("direction", filters.direction)
+	if (filters.source_type) params.set("source_type", filters.source_type)
 	if (filters.from) params.set("from", filters.from)
 	if (filters.to) params.set("to", filters.to)
 	return `?${params.toString()}`
@@ -154,6 +245,26 @@ const useTopProducts = () =>
 		refetchInterval: 10_000,
 	})
 
+const useCoinSummary = () =>
+	useQuery({
+		queryKey: ["admin", "finance", "coin-summary"],
+		queryFn: () => api.get("admin/finance/coin-summary").json<ApiResponse<CoinSummary>>(),
+		select: (r) => r.data,
+		staleTime: 60_000,
+		refetchInterval: 10_000,
+	})
+
+const useCoinTransactions = (filters: CoinFilters) =>
+	useQuery({
+		queryKey: ["admin", "finance", "coin-transactions", filters],
+		queryFn: () =>
+			api
+				.get(`admin/finance/coin-transactions${buildCoinSearch(filters)}`)
+				.json<PaginatedResponse<CoinTransaction>>(),
+		staleTime: 30_000,
+		refetchInterval: 10_000,
+	})
+
 export function FinancePage() {
 	return (
 		<Flex vertical gap={20}>
@@ -171,6 +282,7 @@ export function FinancePage() {
 					{ key: "overview", label: "Tổng quan", children: <FinanceOverview /> },
 					{ key: "orders", label: "Đơn hàng", children: <OrdersTab /> },
 					{ key: "products", label: "Sản phẩm bán chạy", children: <ProductsTab /> },
+					{ key: "coins", label: "Giao dịch xu", children: <CoinTransactionsTab /> },
 				]}
 			/>
 		</Flex>
@@ -510,6 +622,238 @@ function ProductsTab() {
 	)
 }
 
+function CoinTransactionsTab() {
+	const today = new Date()
+	const defaultFrom = new Date(today)
+	defaultFrom.setDate(today.getDate() - 30)
+	const [filters, setFilters] = useState<CoinFilters>({
+		page: 1,
+		per_page: 20,
+		from: toDateInput(defaultFrom),
+		to: toDateInput(today),
+	})
+	const summary = useCoinSummary()
+	const transactions = useCoinTransactions(filters)
+
+	return (
+		<Flex vertical gap={16}>
+			<Row gutter={[16, 16]}>
+				<StatCard
+					title="Tổng xu đã cộng"
+					value={`${formatNum(summary.data?.totals.credit_total ?? 0)} xu`}
+					loading={summary.isLoading}
+				/>
+				<StatCard
+					title="Tổng xu đã trừ"
+					value={`${formatNum(summary.data?.totals.debit_total ?? 0)} xu`}
+					loading={summary.isLoading}
+				/>
+				<StatCard
+					title="Net flow"
+					value={`${formatSignedCoin(summary.data?.totals.net_total ?? 0)} xu`}
+					loading={summary.isLoading}
+				/>
+				<StatCard
+					title="User có giao dịch"
+					value={String(summary.data?.totals.active_users ?? 0)}
+					loading={summary.isLoading}
+				/>
+			</Row>
+
+			<CoinFilterCard filters={filters} setFilters={setFilters} />
+			<Card title="Lịch sử giao dịch xu">
+				<CoinTransactionTable transactions={transactions} filters={filters} setFilters={setFilters} />
+			</Card>
+			<Card title="Breakdown theo loại giao dịch">
+				<Table
+					rowKey="type"
+					loading={summary.isLoading}
+					dataSource={summary.data?.breakdown ?? []}
+					pagination={false}
+					columns={[
+						{ title: "Loại", render: (_, row) => <NoWrap>{coinTypeLabel(row.type)}</NoWrap> },
+						{ title: "Giao dịch", dataIndex: "transactions", align: "right", width: 140 },
+						{
+							title: "Xu cộng",
+							dataIndex: "credit_total",
+							align: "right",
+							width: 140,
+							render: (value: number) => `${formatNum(value)} xu`,
+						},
+						{
+							title: "Xu trừ",
+							dataIndex: "debit_total",
+							align: "right",
+							width: 140,
+							render: (value: number) => `${formatNum(value)} xu`,
+						},
+						{
+							title: "Net",
+							dataIndex: "net_total",
+							align: "right",
+							width: 140,
+							render: (value: number) => <CoinDelta value={value} />,
+						},
+					]}
+				/>
+			</Card>
+		</Flex>
+	)
+}
+
+function CoinFilterCard({
+	filters,
+	setFilters,
+}: {
+	filters: CoinFilters
+	setFilters: React.Dispatch<React.SetStateAction<CoinFilters>>
+}) {
+	return (
+		<Card>
+			<Space wrap>
+				<Input.Search
+					allowClear
+					placeholder="Email, tên, profile, mã nguồn"
+					style={{ width: 320 }}
+					onSearch={(q) => setFilters((prev) => ({ ...prev, q: q || undefined, page: 1 }))}
+				/>
+				<Select
+					allowClear
+					placeholder="Loại giao dịch"
+					style={{ width: 190 }}
+					onChange={(type?: string) => setFilters((prev) => ({ ...prev, type, page: 1 }))}
+					options={Object.keys(COIN_TYPE_LABEL).map((value) => ({ value, label: COIN_TYPE_LABEL[value] }))}
+				/>
+				<Select
+					allowClear
+					placeholder="Hướng"
+					style={{ width: 140 }}
+					onChange={(direction?: CoinDirection) => setFilters((prev) => ({ ...prev, direction, page: 1 }))}
+					options={[
+						{ value: "credit", label: "Cộng xu" },
+						{ value: "debit", label: "Trừ xu" },
+					]}
+				/>
+				<Select
+					allowClear
+					placeholder="Nguồn"
+					style={{ width: 190 }}
+					onChange={(source_type?: string) => setFilters((prev) => ({ ...prev, source_type, page: 1 }))}
+					options={Object.keys(COIN_SOURCE_LABEL).map((value) => ({
+						value,
+						label: COIN_SOURCE_LABEL[value],
+					}))}
+				/>
+				<Input
+					type="date"
+					value={filters.from}
+					style={{ width: 150 }}
+					onChange={(e) => setFilters((prev) => ({ ...prev, from: e.target.value || undefined, page: 1 }))}
+				/>
+				<Input
+					type="date"
+					value={filters.to}
+					style={{ width: 150 }}
+					onChange={(e) => setFilters((prev) => ({ ...prev, to: e.target.value || undefined, page: 1 }))}
+				/>
+			</Space>
+		</Card>
+	)
+}
+
+function CoinTransactionTable({
+	transactions,
+	filters,
+	setFilters,
+}: {
+	transactions: ReturnType<typeof useCoinTransactions>
+	filters: CoinFilters
+	setFilters: React.Dispatch<React.SetStateAction<CoinFilters>>
+}) {
+	return (
+		<Table
+			rowKey="id"
+			loading={transactions.isLoading}
+			dataSource={transactions.data?.data ?? []}
+			scroll={{ x: 1120 }}
+			pagination={{
+				current: transactions.data?.meta.current_page ?? filters.page,
+				pageSize: transactions.data?.meta.per_page ?? filters.per_page,
+				total: transactions.data?.meta.total ?? 0,
+				onChange: (page, per_page) => setFilters((prev) => ({ ...prev, page, per_page })),
+			}}
+			columns={[
+				{
+					title: "Thời gian",
+					dataIndex: "created_at",
+					width: 150,
+					render: (value: string | null) => formatDateTime(value),
+				},
+				{ title: "User", width: 240, render: (_, row) => <CoinUserCell transaction={row} /> },
+				{
+					title: "Loại giao dịch",
+					width: 170,
+					render: (_, row) => <NoWrap>{coinTypeLabel(row.type)}</NoWrap>,
+				},
+				{
+					title: "+/- xu",
+					dataIndex: "delta",
+					align: "right",
+					width: 130,
+					render: (value: number) => <CoinDelta value={value} />,
+				},
+				{
+					title: "Số dư sau",
+					dataIndex: "balance_after",
+					align: "right",
+					width: 130,
+					render: (value: number) => `${formatNum(value)} xu`,
+				},
+				{
+					title: "Nguồn phát sinh",
+					width: 170,
+					render: (_, row) => <NoWrap>{coinSourceLabel(row.source_type)}</NoWrap>,
+				},
+				{
+					title: "Mã nguồn",
+					dataIndex: "source_id",
+					width: 150,
+					render: (value: string | null) => <NoWrap>{shortId(value)}</NoWrap>,
+				},
+			]}
+		/>
+	)
+}
+
+function CoinUserCell({ transaction }: { transaction: CoinTransaction }) {
+	return (
+		<Flex vertical style={{ maxWidth: 220 }}>
+			<Typography.Text ellipsis>
+				{transaction.user?.name || transaction.profile?.nickname || "-"}
+			</Typography.Text>
+			<Typography.Text type="secondary" ellipsis style={{ fontSize: 12 }}>
+				{transaction.user?.email ?? "-"}
+			</Typography.Text>
+		</Flex>
+	)
+}
+
+function NoWrap({ children }: { children: React.ReactNode }) {
+	return <span style={{ whiteSpace: "nowrap" }}>{children}</span>
+}
+
+function CoinDelta({ value }: { value: number }) {
+	const credit = value >= 0
+	return (
+		<Tag
+			color={credit ? "success" : "error"}
+			icon={credit ? <PlusCircleOutlined /> : <MinusCircleOutlined />}
+		>
+			{formatSignedCoin(value)} xu
+		</Tag>
+	)
+}
+
 function ProductTable({ title, data, loading }: { title: string; data: ProductRow[]; loading: boolean }) {
 	return (
 		<Card title={title}>
@@ -536,4 +880,27 @@ function ProductTable({ title, data, loading }: { title: string; data: ProductRo
 function paymentProviderLabel(value: string | null): string {
 	if (value === "payos") return "PayOS"
 	return value ?? "-"
+}
+
+function coinTypeLabel(value: string): string {
+	return COIN_TYPE_LABEL[value] ?? value.replaceAll("_", " ")
+}
+
+function coinSourceLabel(value: string | null): string {
+	if (value === null) return "Nguồn hệ thống"
+	return COIN_SOURCE_LABEL[value] ?? value
+}
+
+function formatSignedCoin(value: number): string {
+	const sign = value > 0 ? "+" : value < 0 ? "-" : ""
+	return `${sign}${formatNum(Math.abs(value))}`
+}
+
+function shortId(value: string | null): string {
+	if (!value) return "-"
+	return value.length > 14 ? `${value.slice(0, 8)}…${value.slice(-4)}` : value
+}
+
+function toDateInput(date: Date): string {
+	return date.toISOString().slice(0, 10)
 }

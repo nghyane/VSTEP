@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\ListCoinTransactionsRequest;
 use App\Http\Requests\Admin\ListFinanceOrdersRequest;
 use App\Services\Admin\FinanceService;
 use Illuminate\Http\JsonResponse;
@@ -41,5 +42,25 @@ final class FinanceController extends Controller
     public function topProducts(): JsonResponse
     {
         return response()->json(['data' => $this->finance->topProducts()]);
+    }
+
+    public function coinSummary(): JsonResponse
+    {
+        return response()->json(['data' => $this->finance->coinSummary()]);
+    }
+
+    public function coinTransactions(ListCoinTransactionsRequest $request): JsonResponse
+    {
+        $transactions = $this->finance->coinTransactions($request->validated());
+
+        return response()->json([
+            'data' => $transactions->items(),
+            'meta' => [
+                'current_page' => $transactions->currentPage(),
+                'per_page' => $transactions->perPage(),
+                'total' => $transactions->total(),
+                'last_page' => $transactions->lastPage(),
+            ],
+        ]);
     }
 }

@@ -174,6 +174,65 @@ final class FinanceService
         return ['topup' => $topup, 'course' => $course];
     }
 
+    /** @return array<string, mixed> */
+    public function coinSummary(): array
+    {
+        $base = DB::table('coin_transactions');
+        $totalTransactions = (clone $base)->count();
+        $creditTotal = (int) (clone $base)->where('delta', '>', 0)->sum('delta');
+        $debitTotal = abs((int) (clone $base)->where('delta', '<', 0)->sum('delta'));
+        $activeUsers = (int) (clone $base)->distinct('account_id')->count('account_id');
+
+        $breakdown = DB::table('coin_transactions')
+            ->selectRaw('type, COUNT(*) as transactions, SUM(CASE WHEN delta > 0 THEN delta ELSE 0 END) as credit_total, ABS(SUM(CASE WHEN delta < 0 THEN delta ELSE 0 END)) as debit_total, SUM(delta) as net_total')
+            ->groupBy('type')
+            ->orderByDesc('transactions')
+            ->get()
+            ->map(fn (object $row): array => [
+                'type' => $row->type,
+                'transactions' => (int) $row->transactions,
+                'credit_total' => (int) $row->credit_total,
+                'debit_total' => (int) $row->debit_total,
+                'net_total' => (int) $row->net_total,
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'totals' => [
+                'transactions' => (int) $totalTransactions,
+                'credit_total' => $creditTotal,
+                'debit_total' => $debitTotal,
+                'net_total' => $creditTotal - $debitTotal,
+                'active_users' => $activeUsers,
+            ],
+            'breakdown' => $breakdown,
+        ];
+    }
+
+    /** @param array<string, mixed> $filters */
+    public function coinTransactions(array $filters): LengthAwarePaginator
+    {
+        $page = max(1, (int) ($filters['page'] ?? 1));
+        $perPage = min(self::MAX_PER_PAGE, max(1, (int) ($filters['per_page'] ?? 20)));
+        $query = DB::table('coin_transactions as tx')
+            ->leftJoin('users as u', 'u.id', '=', 'tx.account_id')
+            ->leftJoin('profiles as p', 'p.id', '=', 'tx.profile_id')
+            ->selectRaw('tx.id, tx.type, tx.delta, tx.balance_after, tx.source_type, tx.source_id, tx.metadata, tx.created_at, u.id as user_id, u.full_name as user_name, u.email as user_email, p.id as profile_id, p.nickname as profile_nickname');
+
+        $this->applyCoinTransactionFilters($query, $filters);
+
+        $total = (clone $query)->count();
+        $transactions = $query
+            ->orderByDesc('tx.id')
+            ->forPage($page, $perPage)
+            ->get()
+            ->map(fn (object $transaction): array => $this->coinTransactionRow($transaction))
+            ->values();
+
+        return new Paginator($transactions, $total, $perPage, $page);
+    }
+
     private function paidSum(string $table, mixed $since = null): int
     {
         $query = DB::table($table)->where('status', OrderStatus::Paid->value);
@@ -182,6 +241,69 @@ final class FinanceService
         }
 
         return (int) $query->sum('amount_vnd');
+    }
+
+    /** @param array<string, mixed> $filters */
+    private function applyCoinTransactionFilters(QueryBuilder $query, array $filters): void
+    {
+        $from = $this->stringFilter($filters, 'from');
+        if ($from !== null) {
+            $query->where('tx.created_at', '>=', CarbonImmutable::parse($from)->startOfDay());
+        }
+
+        $to = $this->stringFilter($filters, 'to');
+        if ($to !== null) {
+            $query->where('tx.created_at', '<=', CarbonImmutable::parse($to)->endOfDay());
+        }
+
+        $type = $this->stringFilter($filters, 'type');
+        if ($type !== null) {
+            $query->where('tx.type', $type);
+        }
+
+        $sourceType = $this->stringFilter($filters, 'source_type');
+        if ($sourceType !== null) {
+            $query->where('tx.source_type', $sourceType);
+        }
+
+        $direction = $this->stringFilter($filters, 'direction');
+        if ($direction === 'credit') {
+            $query->where('tx.delta', '>', 0);
+        }
+        if ($direction === 'debit') {
+            $query->where('tx.delta', '<', 0);
+        }
+
+        $q = $this->stringFilter($filters, 'q');
+        if ($q !== null) {
+            $query->where(function (QueryBuilder $inner) use ($q): void {
+                if (ctype_digit($q)) {
+                    $inner->where('tx.id', (int) $q);
+                }
+
+                $inner->orWhere('u.email', 'like', "%{$q}%")
+                    ->orWhere('u.full_name', 'like', "%{$q}%")
+                    ->orWhere('p.nickname', 'like', "%{$q}%")
+                    ->orWhere('tx.source_id', 'like', "%{$q}%");
+            });
+        }
+    }
+
+    /** @return array<string, mixed> */
+    private function coinTransactionRow(object $transaction): array
+    {
+        return [
+            'id' => (int) $transaction->id,
+            'type' => $transaction->type,
+            'delta' => (int) $transaction->delta,
+            'balance_after' => (int) $transaction->balance_after,
+            'source_type' => $transaction->source_type,
+            'source_id' => $transaction->source_id,
+            'metadata' => $transaction->metadata === null ? null : json_decode((string) $transaction->metadata, true),
+            'created_at' => $this->dateTimeFromQuery($transaction->created_at),
+            'user' => $transaction->user_id === null ? null : ['id' => $transaction->user_id, 'name' => $transaction->user_name, 'email' => $transaction->user_email],
+            'profile' => $transaction->profile_id === null ? null : ['id' => $transaction->profile_id, 'nickname' => $transaction->profile_nickname],
+        ];
     }
 
     private function statusCount(string $status): int
