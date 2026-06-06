@@ -284,6 +284,14 @@ export function ProfileDropdown({ unread, initial }: Props) {
 								>
 									Lịch sử đơn hàng
 								</MenuItem>
+								<MenuItem
+									onClick={() => {
+										setOpen(false)
+										navigate({ to: "/giao-dich-xu" })
+									}}
+								>
+									Lịch sử giao dịch xu
+								</MenuItem>
 								<div className="my-1 h-px bg-border" />
 								<MenuItem
 									iconNode={<Icon name="logout" size="xs" />}

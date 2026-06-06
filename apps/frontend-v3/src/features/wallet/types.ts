@@ -37,3 +37,14 @@ export interface TopupOrder {
 	expires_at: string | null
 	created_at: string
 }
+
+export interface CoinTransaction {
+	id: number
+	type: string
+	delta: number
+	balance_after: number
+	source_type: string | null
+	source_id: string | null
+	metadata: Record<string, unknown> | null
+	created_at: string
+}
