@@ -1,0 +1,40 @@
+@startuml
+!theme plain
+skinparam backgroundColor transparent
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam state {
+  BorderColor #e7e5e4
+  FontColor #1c1917
+  FontSize 12
+}
+skinparam ArrowColor #78716c
+
+title Vòng đời thẻ SRS từ vựng
+
+[*] --> New
+
+state "Mới" as New #E8F2FF
+state "Đang học" as Learning #F3E8FF
+state "Ôn tập" as Review #ECFDF3
+state "Học lại" as Relearning #FFF3D8
+
+New --> Learning : Quên / Khó / Nhớ
+New --> Review : Dễ
+
+Learning --> Learning : Quên / Khó
+Learning --> Review : Nhớ đủ bước / Dễ
+
+Review --> Review : Khó / Nhớ / Dễ
+Review --> Relearning : Quên
+
+Relearning --> Relearning : Quên / Khó
+Relearning --> Review : Nhớ / Dễ
+
+note right of Review
+  FSRS tính ngày ôn tiếp theo
+  dựa trên độ khó, độ bền trí nhớ
+  và kết quả đánh giá của người học.
+end note
+
+@enduml
