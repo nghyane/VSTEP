@@ -17,6 +17,9 @@ export interface AppConfig {
       customPerSkillCoins: number;
       maxCostCoins: number;
     };
+    practice?: {
+      feedbackCostCoins: number;
+    };
   };
 }
 

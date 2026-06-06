@@ -66,6 +66,12 @@ const SPEAKING_LABEL: Record<string, string> = {
   content: "Content",
 };
 
+function speakingGradingPath(attemptId: string | null): string {
+  if (!attemptId) return "/(app)/(tabs)/exams";
+  const id = encodeURIComponent(attemptId);
+  return `/(app)/grading/speaking/${id}?attemptId=${id}&source=attempt`;
+}
+
 export default function ExamResultScreen() {
   const c = useThemeColors();
   const insets = useSafeAreaInsets();
@@ -426,6 +432,7 @@ function OptionRow({ letter, text, isCorrect, isSelected }: { letter: string; te
 }
 
 function WritingReviewPanel({ data }: { data: ResultData }) {
+  const router = useRouter();
   const tasks = useMemo(() => [...(data.version?.writingTasks ?? [])].sort((a, b) => a.part - b.part || a.displayOrder - b.displayOrder), [data.version?.writingTasks]);
   const fallbackItems = data.writingFeedback.map((feedback, index) => ({ id: feedback.taskId, label: `Task ${index + 1}`, score: feedback.overallBand, status: feedback.scoreStatus }));
   const items: ProductiveItem[] = tasks.length > 0
@@ -449,16 +456,24 @@ function WritingReviewPanel({ data }: { data: ResultData }) {
   return (
     <ProductiveLayout title="Writing" items={items} activeId={active.id} onSelect={setActiveId} tone="writing">
       <ProductiveHeader title={task ? `Writing Task ${task.part}` : active.label} score={feedback?.overallBand ?? null} status={feedback?.scoreStatus ?? active.status} meta={feedback ? `${feedback.wordCount} từ` : undefined} tone="writing" />
+      <DisplayNotice display={feedback?.display ?? null} />
       {task?.prompt ? <DetailSection title="Đề bài"><Text style={s.detailText}>{task.prompt}</Text></DetailSection> : null}
       {feedback?.text ? <DetailSection title="Bài làm"><Text style={s.detailText}>{feedback.text}</Text></DetailSection> : null}
-      <RubricSection scores={feedback?.criterionScores ?? null} labels={WRITING_LABEL} tone="writing" />
-      <FeedbackBlock feedback={feedback?.feedback ?? null} />
+      {feedback?.attemptId ? (
+        <DepthButton variant="secondary" fullWidth onPress={() => router.push(`/(app)/grading/writing/${encodeURIComponent(feedback.attemptId ?? "")}` as never)}>
+          Xem chi tiết chấm điểm
+        </DepthButton>
+      ) : null}
+      <ScoreInsightsBlock insights={feedback?.scoreInsights ?? []} />
+      <RubricSection scores={feedback?.display?.ui?.showCriterionBreakdown === false ? null : feedback?.criterionScores ?? null} labels={WRITING_LABEL} tone="writing" />
+      <FeedbackBlock feedback={feedback?.display?.ui?.showFeedback === false ? null : feedback?.feedback ?? null} />
       <PendingBlock status={feedback?.scoreStatus ?? active.status} />
     </ProductiveLayout>
   );
 }
 
 function SpeakingReviewPanel({ data }: { data: ResultData }) {
+  const router = useRouter();
   const parts = useMemo(() => [...(data.version?.speakingParts ?? [])].sort((a, b) => a.part - b.part || a.displayOrder - b.displayOrder), [data.version?.speakingParts]);
   const fallbackItems = data.speakingFeedback.map((feedback, index) => ({ id: feedback.partId, label: `Part ${index + 1}`, score: feedback.overallBand, status: feedback.scoreStatus }));
   const items: ProductiveItem[] = parts.length > 0
@@ -482,11 +497,18 @@ function SpeakingReviewPanel({ data }: { data: ResultData }) {
   return (
     <ProductiveLayout title="Speaking" items={items} activeId={active.id} onSelect={setActiveId} tone="speaking">
       <ProductiveHeader title={part ? `Speaking Part ${part.part}` : active.label} score={feedback?.overallBand ?? null} status={feedback?.scoreStatus ?? active.status} tone="speaking" />
+      <DisplayNotice display={feedback?.display ?? null} />
       {part ? <DetailSection title="Đề nói"><Text style={s.detailText}>{speakingPromptText(part.content)}</Text></DetailSection> : null}
       {feedback?.audioUrl ? <DetailSection title="Bài nói"><AudioPlayback uri={feedback.audioUrl} /></DetailSection> : null}
       {feedback?.transcript ? <DetailSection title="Transcript"><Text style={s.detailText}>{feedback.transcript}</Text></DetailSection> : null}
-      <RubricSection scores={feedback?.criterionScores ?? null} labels={SPEAKING_LABEL} tone="speaking" />
-      <FeedbackBlock feedback={feedback?.feedback ?? null} />
+      {feedback?.attemptId ? (
+        <DepthButton variant="secondary" fullWidth onPress={() => router.push(speakingGradingPath(feedback.attemptId) as never)}>
+          Xem chi tiết chấm điểm
+        </DepthButton>
+      ) : null}
+      <ScoreInsightsBlock insights={feedback?.scoreInsights ?? []} />
+      <RubricSection scores={feedback?.display?.ui?.showCriterionBreakdown === false ? null : feedback?.criterionScores ?? null} labels={SPEAKING_LABEL} tone="speaking" />
+      <FeedbackBlock feedback={feedback?.display?.ui?.showFeedback === false ? null : feedback?.feedback ?? null} />
       <PendingBlock status={feedback?.scoreStatus ?? active.status} />
     </ProductiveLayout>
   );
@@ -556,6 +578,38 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
       <Text style={[s.sectionLabel, { color: c.subtle }]}>{title.toUpperCase()}</Text>
       <View style={{ marginTop: spacing.sm }}>{children}</View>
     </View>
+  );
+}
+
+function DisplayNotice({ display }: { display: WritingFeedbackItem["display"] | SpeakingFeedbackItem["display"] | null }) {
+  const c = useThemeColors();
+  const message = display?.message ?? display?.summary ?? null;
+  if (!message) return null;
+  const tone = display?.ui?.tone;
+  const color = tone === "danger" ? c.destructive : tone === "warning" ? c.warning : c.primary;
+  const backgroundColor = tone === "danger" ? c.destructiveTint : tone === "warning" ? c.warningTint : c.primaryTint;
+  return (
+    <View style={[s.displayNotice, { borderColor: color, backgroundColor }]}>
+      <Ionicons name="information-circle" size={16} color={color} />
+      <Text style={[s.displayNoticeText, { color: c.foreground }]}>{message}</Text>
+    </View>
+  );
+}
+
+function ScoreInsightsBlock({ insights }: { insights: readonly { key: string; label: string; detail: string }[] }) {
+  const c = useThemeColors();
+  if (insights.length === 0) return null;
+  return (
+    <DetailSection title="Vì sao có điểm này">
+      <View style={{ gap: spacing.sm }}>
+        {insights.map((item) => (
+          <View key={item.key} style={[s.insightRow, { backgroundColor: c.surfaceTint, borderColor: c.borderLight }]}>
+            <Text style={[s.insightLabel, { color: c.foreground }]}>{item.label}</Text>
+            <Text style={[s.insightDetail, { color: c.mutedForeground }]}>{item.detail}</Text>
+          </View>
+        ))}
+      </View>
+    </DetailSection>
   );
 }
 
@@ -850,8 +904,8 @@ function buildMcqGroup(
       options: item.options,
       status: detailItem?.answerStatus ?? "unanswered",
       statusLabel: detailItem?.answerStatusLabel ?? "Chưa làm",
-      selectedLabel: selectedIndex == null ? null : OPTION_LABELS[selectedIndex] ?? null,
-      correctLabel: OPTION_LABELS[correctIndex] ?? "—",
+      selectedLabel: detailItem?.selectedLabel ?? (selectedIndex == null ? null : OPTION_LABELS[selectedIndex] ?? null),
+      correctLabel: detailItem?.correctLabel ?? OPTION_LABELS[correctIndex] ?? "—",
     };
   });
 
@@ -1019,6 +1073,11 @@ const s = StyleSheet.create({
   detailSection: { borderBottomWidth: 1, paddingBottom: spacing.md, marginBottom: spacing.md },
   sectionLabel: { fontSize: 10, fontFamily: fontFamily.extraBold, letterSpacing: 1.2 },
   detailText: { fontSize: fontSize.sm, lineHeight: 23, fontFamily: fontFamily.medium },
+  displayNotice: { borderWidth: 1, borderRadius: radius.lg, padding: spacing.md, flexDirection: "row", gap: spacing.sm, alignItems: "flex-start", marginBottom: spacing.md },
+  displayNoticeText: { flex: 1, fontSize: fontSize.xs, lineHeight: 18, fontFamily: fontFamily.medium },
+  insightRow: { borderWidth: 1, borderRadius: radius.lg, padding: spacing.md, gap: spacing.xs },
+  insightLabel: { fontSize: fontSize.sm, fontFamily: fontFamily.extraBold },
+  insightDetail: { fontSize: fontSize.xs, lineHeight: 18, fontFamily: fontFamily.medium },
   rubricTop: { flexDirection: "row", justifyContent: "space-between", gap: spacing.md },
   rubricLabel: { flex: 1, fontSize: fontSize.sm, fontFamily: fontFamily.extraBold },
   rubricScore: { fontSize: fontSize.sm, fontFamily: fontFamily.extraBold },

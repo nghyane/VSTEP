@@ -84,7 +84,7 @@ export default function SpeakingConversationScreen() {
   useEffect(() => {
     const handle = setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
     return () => clearTimeout(handle);
-  }, [conv.turns.length, conv.summary]);
+  }, [conv.turns.length, conv.summary, speechToText.state, conv.isSubmitting]);
 
   const progress = useMemo(() => {
     if (!conv.session) return "0/0";
@@ -249,6 +249,8 @@ export default function SpeakingConversationScreen() {
           />
         ))}
 
+        {speechToText.state === "processing" ? <UserTurnProcessingBubble /> : null}
+
         {conv.isSubmitting && (
           <View style={s.pendingRow}>
             <View style={[s.pendingDot, { backgroundColor: c.skillSpeaking }]} />
@@ -370,6 +372,19 @@ export default function SpeakingConversationScreen() {
   );
 }
 
+function UserTurnProcessingBubble() {
+  const c = useThemeColors();
+  return (
+    <View style={s.userProcessingWrap}>
+      <View style={[s.userProcessingBubble, { backgroundColor: c.surface, borderColor: c.border }]}>
+        <View style={[s.processingDot, { backgroundColor: c.mutedForeground }]} />
+        <View style={[s.processingDot, { backgroundColor: c.mutedForeground }]} />
+        <View style={[s.processingDot, { backgroundColor: c.mutedForeground }]} />
+      </View>
+    </View>
+  );
+}
+
 function ReviewBlock({
   summary,
   review,
@@ -454,6 +469,9 @@ const s = StyleSheet.create({
   pendingRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs, paddingVertical: spacing.sm },
   pendingDot: { width: 8, height: 8, borderRadius: 4 },
   pendingText: { fontSize: fontSize.xs, fontFamily: fontFamily.semiBold },
+  userProcessingWrap: { alignItems: "flex-end" },
+  userProcessingBubble: { flexDirection: "row", gap: spacing.xs, borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
+  processingDot: { width: 7, height: 7, borderRadius: 4 },
   footer: { gap: spacing.md, paddingHorizontal: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1 },
   doneFooter: { paddingHorizontal: spacing.lg, paddingTop: spacing.md, borderTopWidth: 1 },
   sttBlock: { borderWidth: 2, borderBottomWidth: 4, borderRadius: radius.xl, padding: spacing.md, gap: spacing.xs },

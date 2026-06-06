@@ -11,9 +11,26 @@ export interface CriterionScore {
 }
 
 export interface AssessmentResultDisplay {
+  status?: string;
+  statusLabel?: string;
+  message?: string;
   overallBand?: number | null;
   bandLabel?: string | null;
   summary?: string | null;
+  ui?: {
+    tone?: "danger" | "warning" | "success";
+    badge?: string;
+    showScore?: boolean;
+    showCriterionBreakdown?: boolean;
+    showFeedback?: boolean;
+    primaryAction?: string | null;
+  } | null;
+}
+
+export interface ExamScoreInsight {
+  key: string;
+  label: string;
+  detail: string;
 }
 
 export interface AssessmentFeedback {
@@ -107,6 +124,12 @@ export interface ExamSessionResults {
     answerStatus: "correct" | "wrong" | "unanswered";
     answerStatusLabel: string;
     answerTone: "correct" | "wrong" | null;
+    selectedLabel: string | null;
+    correctLabel: string;
+    selectedSummaryLabel: string;
+    correctSummaryLabel: string;
+    correctBadgeLabel: string;
+    selectedBadgeLabel: string;
     answeredAt: string | null;
   }[];
   writingFeedback: {
@@ -122,6 +145,7 @@ export interface ExamSessionResults {
     criterionScores: CriterionScore[] | null;
     display?: AssessmentResultDisplay | null;
     diagnostics?: unknown;
+    scoreInsights?: ExamScoreInsight[];
     feedback: AssessmentFeedback | null;
     calculationTrace: unknown;
   }[];
@@ -138,6 +162,7 @@ export interface ExamSessionResults {
     criterionScores: CriterionScore[] | null;
     display?: AssessmentResultDisplay | null;
     diagnostics?: unknown;
+    scoreInsights?: ExamScoreInsight[];
     feedback: AssessmentFeedback | null;
     calculationTrace: unknown;
   }[];

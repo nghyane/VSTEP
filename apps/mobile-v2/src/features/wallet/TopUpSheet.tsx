@@ -11,6 +11,7 @@ import { GameIcon } from "@/components/GameIcon";
 import { HapticTouchable } from "@/components/HapticTouchable";
 import { syncWalletBalanceCache, useTopupPackages, useWalletBalance } from "@/features/wallet/queries";
 import { useAuth } from "@/hooks/use-auth";
+import { useAppConfig } from "@/hooks/use-exams";
 import { api, getApiErrorMessage } from "@/lib/api";
 import type { TopupPackage, TopupOrder, WalletBalance } from "@/features/wallet/types";
 import { fontFamily, fontSize, radius, spacing, useThemeColors } from "@/theme";
@@ -37,6 +38,7 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
   const { profile } = useAuth();
   const { data, isLoading } = useTopupPackages();
   const { data: balanceData } = useWalletBalance();
+  const { data: configData } = useAppConfig();
   const packages = useMemo(() => data ?? [], [data]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [buying, setBuying] = useState(false);
@@ -46,6 +48,8 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
   const restoredPendingRef = useRef(false);
 
   const balance = balanceData?.balance ?? 0;
+  const pricing = configData?.pricing ?? null;
+  const zaloPhone = configData?.support?.zaloPhone?.replace(/\D/g, "") ?? "";
 
   useEffect(() => {
     if (packages.length > 0 && !selectedId) {
@@ -177,9 +181,9 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
 
         <View style={styles.benefits}>
           <BenefitRow icon="target" text={`Số dư hiện tại: ${formatNumber(balance)} xu`} c={c} />
-          <BenefitRow icon="target" text="Luyện tập & thi thử không giới hạn" c={c} />
-          <BenefitRow icon="pencil" text="Chấm điểm + nhận xét AI chi tiết" c={c} />
-          <BenefitRow icon="lightning" text="Tặng thêm xu theo streak học tập" c={c} />
+          <BenefitRow icon="target" text={`Full-test: ${coinCostLabel(pricing?.exam.fullTestCostCoins, "lượt")}`} c={c} />
+          <BenefitRow icon="target" text={`Thi từng kỹ năng: ${coinCostLabel(pricing?.exam.customPerSkillCoins, "kỹ năng")}`} c={c} />
+          <BenefitRow icon="pencil" text={`Nhận xét AI: ${pricing?.practice?.feedbackCostCoins === 0 ? "đang miễn phí" : coinCostLabel(pricing?.practice?.feedbackCostCoins, "lần")}`} c={c} />
         </View>
 
         {isLoading ? (
@@ -221,7 +225,7 @@ export function TopUpSheet({ visible, onClose, onSuccess }: Props) {
         ) : null}
 
         <Text style={[styles.footerNote, { color: c.subtle }]}>
-          Xu không bao giờ hết hạn. Liên hệ fanpage nếu cần hỗ trợ.
+          {zaloPhone ? `Xu không hết hạn. Cần hỗ trợ? Zalo ${formatPhone(zaloPhone)}.` : "Xu không hết hạn. Cần hỗ trợ? Liên hệ đội ngũ VSTEP Go."}
         </Text>
       </ScrollView>
     </BottomSheet>
@@ -335,6 +339,15 @@ function formatNumber(n: number): string {
 
 function formatVnd(n: number): string {
   return n.toLocaleString("vi-VN") + "đ";
+}
+
+function coinCostLabel(cost: number | null | undefined, unit: string): string {
+  return typeof cost === "number" ? `${formatNumber(cost)} xu / ${unit}` : "theo cấu hình hiện tại";
+}
+
+function formatPhone(phone: string): string {
+  if (phone.length === 10) return `${phone.slice(0, 4)} ${phone.slice(4, 7)} ${phone.slice(7)}`;
+  return phone;
 }
 
 const styles = StyleSheet.create({
