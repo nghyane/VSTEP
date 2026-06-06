@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\LearningPathController;
 use App\Http\Controllers\Api\V1\McqPracticeController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OverviewController;
+use App\Http\Controllers\Api\V1\OrderHistoryController;
 use App\Http\Controllers\Api\V1\PaymentCallbackController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ShadowingProgressController;
@@ -74,6 +75,7 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:api', 'active-profile'])->group(function () {
         Route::patch('/me/avatar', [AccountController::class, 'updateAvatar']);
         Route::post('/me/avatar', [AccountController::class, 'uploadAvatar']);
+        Route::get('/me/orders', [OrderHistoryController::class, 'index']);
 
         Route::get('/wallet/balance', [WalletController::class, 'balance']);
         Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
