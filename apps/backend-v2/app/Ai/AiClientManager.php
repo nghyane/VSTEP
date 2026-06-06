@@ -25,11 +25,11 @@ use RuntimeException;
  */
 final class AiClientManager implements AiClient
 {
-    private const FAILURE_THRESHOLD = 5;
+    private const FAILURE_THRESHOLD = 10;
 
     private const CIRCUIT_WINDOW_SECONDS = 60;
 
-    private const COOLDOWN_SECONDS = 30;
+    private const COOLDOWN_SECONDS = 15;
 
     private const MAX_RETRIES = 3;
 

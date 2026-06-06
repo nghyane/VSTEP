@@ -11,6 +11,7 @@ use App\Models\PracticeReadingExercise;
 use App\Models\PracticeReadingQuestion;
 use App\Models\PracticeSession;
 use App\Models\Profile;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +42,22 @@ final class McqSkillService
             $query->where('part', $part);
         }
 
-        return $query->orderBy('part')->orderBy('created_at')->get();
+        return $query->orderBy('part')->orderBy('created_at')->orderBy('slug')->get();
+    }
+
+    public function paginateExercises(string $skill, ?int $part, int $perPage, int $page): LengthAwarePaginator
+    {
+        $class = $this->exerciseClass($skill);
+        $query = $class::query()->where('is_published', true);
+        if ($part !== null) {
+            $query->where('part', $part);
+        }
+
+        return $query
+            ->orderBy('part')
+            ->orderBy('created_at')
+            ->orderBy('slug')
+            ->paginate($perPage, ['*'], 'page', $page);
     }
 
     /**

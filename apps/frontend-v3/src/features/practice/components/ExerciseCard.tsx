@@ -53,8 +53,7 @@ export function ExerciseCard({
 	const levelStyle = level ? levelColor(level) : null
 
 	return (
-		<div className="group relative card-interactive flex flex-col overflow-hidden">
-			{/* Level tag — top right */}
+		<div className="group relative card-interactive flex min-h-44 flex-col overflow-hidden">
 			{level && levelStyle && (
 				<span
 					className={cn(
@@ -66,16 +65,18 @@ export function ExerciseCard({
 				</span>
 			)}
 
-			<div className="p-5 flex flex-col flex-1">
-				<div className="min-w-0 pr-12">
-					<p className="text-base font-bold text-foreground">{title}</p>
+			<div className="p-5 flex min-h-0 flex-1 flex-col">
+				<div className={cn("min-w-0", level && "pr-12")}>
+					<p className="line-clamp-2 text-base font-bold text-foreground">{title}</p>
 					<p className="mt-1 text-xs text-muted">{meta}</p>
 				</div>
 
-				{description && <p className="mt-2 text-sm text-subtle line-clamp-2 flex-1">{description}</p>}
+				{description && (
+					<p className="mt-2 line-clamp-3 text-sm leading-relaxed text-subtle">{description}</p>
+				)}
 
 				{tag && (
-					<div className="mt-3 flex items-center gap-1.5">
+					<div className="mt-auto flex shrink-0 items-center gap-1.5 pt-3">
 						<Icon name="check" size="xs" className="text-success" />
 						<span className="text-xs font-bold text-success">{tag}</span>
 					</div>

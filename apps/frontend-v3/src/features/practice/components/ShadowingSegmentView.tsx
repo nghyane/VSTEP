@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { HTTPError } from "ky"
 import { useState } from "react"
+import { CoinSpendFly, useCoinSpendFly } from "#/components/CoinSpendFly"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { appConfigQuery } from "#/features/config/queries"
 import { getPronunciationReview, type PronunciationReview } from "#/features/practice/actions"
@@ -156,6 +157,7 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 	const { data: configData } = useQuery(appConfigQuery)
 	const [showIpa, setShowIpa] = useState(false)
 	const [showReview, setShowReview] = useState(false)
+	const { showCoinFly, triggerCoinSpendFly } = useCoinSpendFly()
 	const accuracyPercent = attempt?.accuracyPercent ?? null
 	const profanity = attempt?.profanity
 	const hasProfanity = profanity?.found ?? false
@@ -192,6 +194,9 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 
 	const handleReview = () => {
 		if (reviewQuery.isFetching || hasProfanity) return
+		if (feedbackCost > 0 && !reviewQuery.data) {
+			triggerCoinSpendFly()
+		}
 		const revealReview = () => {
 			setShowReview(true)
 			window.setTimeout(() => {
@@ -307,6 +312,7 @@ export function ShadowingSegmentView({ segment, isSpeaking, speakingCharIndex, o
 					<ShadowingWordChips words={attempt.wordResults} />
 
 					<div className="relative">
+						{showCoinFly && <CoinSpendFly cost={feedbackCost} />}
 						<button
 							type="button"
 							onClick={handleReview}

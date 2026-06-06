@@ -43,11 +43,16 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 	const diagnostics = text === debouncedText ? diagnosticsQuery.data?.data : undefined
 	const diagnosticsLoading = canRequestDiagnostics && (text !== debouncedText || diagnosticsQuery.isFetching)
 
+	const handleSubmit = () => {
+		mutation.mutate()
+	}
+
 	const mutation = useMutation({
 		mutationFn: () => submitWritingSession(sessionId, text),
 		onSuccess: (res) => {
 			setSubmission(res.data)
 			invalidateProgressQueries(queryClient)
+			queryClient.invalidateQueries({ queryKey: ["practice", "writing"] })
 		},
 	})
 
@@ -180,7 +185,7 @@ export function WritingInProgress({ prompt, sessionId }: Props) {
 								)}
 								<button
 									type="button"
-									onClick={() => mutation.mutate()}
+									onClick={handleSubmit}
 									disabled={mutation.isPending || wc === 0}
 									className="btn bg-skill-writing px-8 py-2.5 text-primary-foreground [--btn-shadow:var(--color-skill-writing-dark)] disabled:cursor-not-allowed disabled:opacity-50"
 								>

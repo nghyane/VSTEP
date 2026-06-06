@@ -35,7 +35,7 @@ final class SpeakingPracticeService
             $query->where('level', $level);
         }
 
-        return $query->orderBy('level')->orderBy('created_at')->get();
+        return $query->orderBy('level')->orderBy('created_at')->orderBy('slug')->get();
     }
 
     public function getDrillWithSentences(string $id): PracticeSpeakingDrill

@@ -55,6 +55,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 
 	const segment = segments[current]
 	const attempt = attempts.get(current) ?? null
+	const allDone = mergedDone.size === segments.length && segments.length > 0
 	const handleVoiceChange = useCallback((nextVoice: SpeechSynthesisVoice) => {
 		stopSpeaking()
 		setMic("idle")
@@ -287,7 +288,7 @@ export function ShadowingInProgress({ lesson }: Props) {
 										<button
 											type="button"
 											onClick={handleRecord}
-											className="relative w-16 h-16 rounded-full bg-destructive text-primary-foreground flex items-center justify-center shadow-[0_4px_0_#b5322a] active:translate-y-[2px] active:shadow-[0_2px_0_#b5322a] transition"
+											className="relative w-16 h-16 rounded-full bg-destructive text-primary-foreground flex items-center justify-center shadow-[0_4px_0_var(--color-destructive-dark)] active:translate-y-[2px] active:shadow-[0_2px_0_var(--color-destructive-dark)] transition"
 										>
 											<div className="w-5 h-5 rounded-sm bg-primary-foreground" />
 										</button>
@@ -322,6 +323,17 @@ export function ShadowingInProgress({ lesson }: Props) {
 										</button>
 									</div>
 									<p className="text-xs font-bold text-skill-speaking">Đang phát · Nhấn để bỏ qua</p>
+								</div>
+							) : allDone ? (
+								<div className="flex flex-col items-center gap-4 py-2">
+									<div className="flex items-center gap-2 rounded-2xl bg-success/10 px-4 py-2">
+										<Icon name="check" size="sm" className="text-success" />
+										<span className="text-sm font-extrabold text-success">Hoàn thành!</span>
+									</div>
+									<Link to="/luyen-tap/noi" className="btn btn-primary min-h-12 px-8 text-sm">
+										<Icon name="back" size="xs" />
+										Quay về
+									</Link>
 								</div>
 							) : (
 								<div className="flex flex-col items-center gap-1.5">

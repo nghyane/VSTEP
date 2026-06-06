@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query"
+import { keepPreviousData, queryOptions } from "@tanstack/react-query"
 import type {
 	ConversationHistoryItem,
 	ConversationScenario,
@@ -16,10 +16,31 @@ import type {
 } from "#/features/practice/types"
 import { type ApiResponse, api, type PaginatedResponse } from "#/lib/api"
 
-export const listeningExercisesQuery = queryOptions({
-	queryKey: ["practice", "listening", "exercises"],
-	queryFn: () => api.get("practice/listening/exercises").json<ApiResponse<ListeningExerciseSummary[]>>(),
-})
+interface PracticeListParams {
+	part?: number
+	page: number
+	perPage: number
+}
+
+function searchParams(params: Record<string, string | number | null | undefined>) {
+	const sp = new URLSearchParams()
+	for (const [key, value] of Object.entries(params)) {
+		if (value !== undefined && value !== null && value !== "") sp.set(key, String(value))
+	}
+	return sp
+}
+
+export const listeningExercisesQuery = ({ part, page, perPage }: PracticeListParams) =>
+	queryOptions({
+		queryKey: ["practice", "listening", "exercises", part ?? "all", page, perPage],
+		queryFn: () =>
+			api
+				.get("practice/listening/exercises", {
+					searchParams: searchParams({ part, page, per_page: perPage }),
+				})
+				.json<PaginatedResponse<ListeningExerciseSummary>>(),
+		placeholderData: keepPreviousData,
+	})
 
 export const listeningExerciseDetailQuery = (id: string) =>
 	queryOptions({
@@ -27,10 +48,17 @@ export const listeningExerciseDetailQuery = (id: string) =>
 		queryFn: () => api.get(`practice/listening/exercises/${id}`).json<ApiResponse<ExerciseDetail>>(),
 	})
 
-export const readingExercisesQuery = queryOptions({
-	queryKey: ["practice", "reading", "exercises"],
-	queryFn: () => api.get("practice/reading/exercises").json<ApiResponse<ReadingExercise[]>>(),
-})
+export const readingExercisesQuery = ({ part, page, perPage }: PracticeListParams) =>
+	queryOptions({
+		queryKey: ["practice", "reading", "exercises", part ?? "all", page, perPage],
+		queryFn: () =>
+			api
+				.get("practice/reading/exercises", {
+					searchParams: searchParams({ part, page, per_page: perPage }),
+				})
+				.json<PaginatedResponse<ReadingExercise>>(),
+		placeholderData: keepPreviousData,
+	})
 
 export const readingExerciseDetailQuery = (id: string) =>
 	queryOptions({
@@ -38,10 +66,17 @@ export const readingExerciseDetailQuery = (id: string) =>
 		queryFn: () => api.get(`practice/reading/exercises/${id}`).json<ApiResponse<ReadingExerciseDetail>>(),
 	})
 
-export const writingPromptsQuery = queryOptions({
-	queryKey: ["practice", "writing", "prompts"],
-	queryFn: () => api.get("practice/writing/prompts").json<ApiResponse<WritingPrompt[]>>(),
-})
+export const writingPromptsQuery = ({ part, page, perPage }: PracticeListParams) =>
+	queryOptions({
+		queryKey: ["practice", "writing", "prompts", part ?? "all", page, perPage],
+		queryFn: () =>
+			api
+				.get("practice/writing/prompts", {
+					searchParams: searchParams({ part, page, per_page: perPage }),
+				})
+				.json<PaginatedResponse<WritingPrompt>>(),
+		placeholderData: keepPreviousData,
+	})
 
 export const writingPromptDetailQuery = (id: string) =>
 	queryOptions({
@@ -58,10 +93,15 @@ export const mcqProgressQuery = (skill: "listening" | "reading") =>
 				.json<ApiResponse<Record<string, { score: number; total: number }>>>(),
 	})
 
-export const writingHistoryQuery = queryOptions({
-	queryKey: ["practice", "writing", "history"],
-	queryFn: () => api.get("practice/writing/history").json<PaginatedResponse<WritingHistoryItem>>(),
-})
+export const writingHistoryQuery = (page: number, perPage: number) =>
+	queryOptions({
+		queryKey: ["practice", "writing", "history", page, perPage],
+		queryFn: () =>
+			api
+				.get("practice/writing/history", { searchParams: searchParams({ page, per_page: perPage }) })
+				.json<PaginatedResponse<WritingHistoryItem>>(),
+		placeholderData: keepPreviousData,
+	})
 
 export const conversationScenariosQuery = queryOptions({
 	queryKey: ["practice", "speaking", "scenarios"],

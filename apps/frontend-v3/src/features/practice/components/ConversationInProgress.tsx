@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { HTTPError } from "ky"
 import { useEffect, useRef, useState } from "react"
+import { CoinSpendFly, useCoinSpendFly } from "#/components/CoinSpendFly"
 import { Icon, StaticIcon } from "#/components/Icon"
 import { appConfigQuery } from "#/features/config/queries"
 import { endConversation, submitConversationTurn } from "#/features/practice/actions"
@@ -40,6 +41,7 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	const aiName = scenario.character_name
 	const [sessionState, setSessionState] = useState<SessionState>("active")
 	const [showReview, setShowReview] = useState(false)
+	const { showCoinFly, triggerCoinSpendFly } = useCoinSpendFly()
 	const queryClient = useQueryClient()
 	const [emptyWarning, setEmptyWarning] = useState(false)
 	const [speakingTurnId, setSpeakingTurnId] = useState<string | null>(null)
@@ -127,15 +129,15 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 	}
 
 	const handleReview = () => {
-		const revealReview = () => {
-			setShowReview(true)
-			window.setTimeout(() => {
-				document
-					.getElementById("ai-conversation-feedback")
-					?.scrollIntoView({ behavior: "smooth", block: "start" })
-			}, 0)
+		if (!showReview && feedbackCost > 0) {
+			triggerCoinSpendFly()
 		}
-		revealReview()
+		setShowReview(true)
+		window.setTimeout(() => {
+			document
+				.getElementById("ai-conversation-feedback")
+				?.scrollIntoView({ behavior: "smooth", block: "start" })
+		}, 0)
 	}
 
 	const turnMutation = useMutation({
@@ -335,42 +337,45 @@ export function ConversationInProgress({ session, onEnd }: Props) {
 						(() => {
 							const userTurnCount = turns.filter((t) => t.role === "user").length
 							return (
-								<div className="rounded-(--radius-card) border-2 border-b-4 border-skill-speaking/30 bg-surface p-6 text-center animate-[popIn_0.3s_ease-out]">
+								<div className="rounded-(--radius-card) border-2 border-b-4 border-skill-speaking/30 bg-surface p-6 text-center animate-[popIn_0.3s_ease-out] relative">
+									{showCoinFly && <CoinSpendFly cost={feedbackCost} />}
 									<div className="w-12 h-12 rounded-full bg-skill-speaking/15 flex items-center justify-center mx-auto mb-3">
 										<Icon name="check" size="md" className="text-skill-speaking" />
 									</div>
 									<p className="font-extrabold text-lg text-foreground">Hội thoại hoàn thành!</p>
 									{userTurnCount > 0 ? (
-										<>
-											<p className="text-sm text-muted mt-1">
-												Nhận phản hồi từ AI với gợi ý để cải thiện câu trả lời
-												{feedbackCost > 0 ? (
-													<span className="inline-flex items-center gap-1.5">
-														&nbsp;· Tốn{" "}
-														<StaticIcon name="coin" size="xs" className="h-3.5 w-auto -translate-y-0.5" />
-														{feedbackCost} xu.
-													</span>
-												) : (
-													"."
-												)}
-											</p>
-											<div className="relative mt-4 inline-flex">
-												<button
-													type="button"
-													onClick={handleReview}
-													className="btn px-6 text-primary-foreground"
-													style={
-														{
-															background: "var(--color-skill-speaking)",
-															"--btn-shadow": "var(--color-skill-speaking-dark)",
-														} as React.CSSProperties
-													}
-												>
-													<Icon name="lightning" size="xs" />
-													Xem đánh giá
-												</button>
-											</div>
-										</>
+										!showReview && (
+											<>
+												<p className="text-sm text-muted mt-1">
+													Nhận phản hồi từ AI với gợi ý để cải thiện câu trả lời
+													{feedbackCost > 0 ? (
+														<span className="inline-flex items-center gap-1.5">
+															&nbsp;· Tốn{" "}
+															<StaticIcon name="coin" size="xs" className="h-3.5 w-auto -translate-y-0.5" />
+															{feedbackCost} xu.
+														</span>
+													) : (
+														"."
+													)}
+												</p>
+												<div className="relative mt-4 inline-flex">
+													<button
+														type="button"
+														onClick={handleReview}
+														className="btn px-6 text-primary-foreground"
+														style={
+															{
+																background: "var(--color-skill-speaking)",
+																"--btn-shadow": "var(--color-skill-speaking-dark)",
+															} as React.CSSProperties
+														}
+													>
+														<Icon name="lightning" size="xs" />
+														Xem đánh giá
+													</button>
+												</div>
+											</>
+										)
 									) : (
 										<p className="text-sm text-muted mt-1">
 											Hãy thử lại và nói ít nhất một câu để nhận đánh giá.

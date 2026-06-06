@@ -100,7 +100,7 @@ return [
         ],
         'conversation' => [
             'model' => env('AI_CONVERSATION_MODEL', 'deepseek-v4-flash'),
-            'timeout' => 30,
+            'timeout' => 60,
         ],
         'pronunciation' => [
             'model' => env('AI_PRONUNCIATION_MODEL', 'deepseek-v4-flash'),

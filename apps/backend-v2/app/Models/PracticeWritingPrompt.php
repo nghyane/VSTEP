@@ -48,4 +48,9 @@ class PracticeWritingPrompt extends BaseModel
     {
         return $this->hasMany(PracticeWritingSampleMarker::class, 'prompt_id');
     }
+
+    public function submissions(): HasMany
+    {
+        return $this->hasMany(PracticeWritingSubmission::class, 'prompt_id');
+    }
 }

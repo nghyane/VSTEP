@@ -64,7 +64,7 @@ return new class extends Migration
         return [
             [
                 'slug' => 'star-wars-opening',
-                'title' => 'Star Wars — Opening Crawl',
+                'title' => 'Star Wars — Đoạn mở đầu',
                 'level' => 'B1',
                 'estimated_minutes' => 15,
                 'audio_url' => '',
@@ -83,7 +83,7 @@ return new class extends Migration
             ],
             [
                 'slug' => 'daily-routine',
-                'title' => 'My Daily Routine',
+                'title' => 'Thói quen hằng ngày của tôi',
                 'level' => 'A1',
                 'estimated_minutes' => 8,
                 'audio_url' => '',
@@ -100,7 +100,7 @@ return new class extends Migration
             ],
             [
                 'slug' => 'travel-at-the-airport',
-                'title' => 'At the Airport',
+                'title' => 'Tại sân bay',
                 'level' => 'A2',
                 'estimated_minutes' => 12,
                 'audio_url' => '',
@@ -119,7 +119,7 @@ return new class extends Migration
             ],
             [
                 'slug' => 'ted-talk-motivation',
-                'title' => 'TED Talk — The Power of Habit',
+                'title' => 'TED Talk — Sức mạnh của thói quen',
                 'level' => 'B2',
                 'estimated_minutes' => 20,
                 'audio_url' => '',
@@ -140,7 +140,7 @@ return new class extends Migration
             ],
             [
                 'slug' => 'news-climate-change',
-                'title' => 'News — Climate Change',
+                'title' => 'Tin tức — Biến đổi khí hậu',
                 'level' => 'B2',
                 'estimated_minutes' => 18,
                 'audio_url' => '',
@@ -157,7 +157,7 @@ return new class extends Migration
             ],
             [
                 'slug' => 'friends-the-one-where',
-                'title' => 'Friends — The One Where...',
+                'title' => 'Friends — Những câu thoại quen thuộc',
                 'level' => 'B1',
                 'estimated_minutes' => 14,
                 'audio_url' => '',
@@ -174,7 +174,7 @@ return new class extends Migration
             ],
             [
                 'slug' => 'campus-tour',
-                'title' => 'Campus Tour — University Life',
+                'title' => 'Tham quan khuôn viên — Đời sống đại học',
                 'level' => 'A2',
                 'estimated_minutes' => 10,
                 'audio_url' => '',
@@ -191,7 +191,7 @@ return new class extends Migration
             ],
             [
                 'slug' => 'environment-discussion',
-                'title' => 'Discussing Environmental Issues',
+                'title' => 'Thảo luận vấn đề môi trường',
                 'level' => 'B1',
                 'estimated_minutes' => 12,
                 'audio_url' => '',
@@ -208,7 +208,7 @@ return new class extends Migration
             ],
             [
                 'slug' => 'technology-in-education',
-                'title' => 'Technology in Education',
+                'title' => 'Công nghệ trong giáo dục',
                 'level' => 'B2',
                 'estimated_minutes' => 14,
                 'audio_url' => '',
@@ -225,7 +225,7 @@ return new class extends Migration
             ],
             [
                 'slug' => 'academic-lecture',
-                'title' => 'Academic Lecture — Globalization',
+                'title' => 'Bài giảng học thuật — Toàn cầu hóa',
                 'level' => 'C1',
                 'estimated_minutes' => 16,
                 'audio_url' => '',

@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router"
 import clsx from "clsx"
 import type { ReactNode } from "react"
+import { CoinSpendFly, useCoinSpendFly } from "#/components/CoinSpendFly"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
 import { StaticIcon } from "#/components/Icon"
 import { FeedbackSection, RewriteSection } from "#/features/grading/components/FeedbackSection"
@@ -401,6 +402,7 @@ function AIFeedbackLoading() {
 }
 
 function AIFeedbackButton({ action, hasFeedback }: { action: WritingFeedbackAction; hasFeedback: boolean }) {
+	const { showCoinFly, triggerCoinSpendFly } = useCoinSpendFly()
 	if (!action.canRequest) return null
 	const disabled = action.pending
 	const label = action.pending
@@ -414,6 +416,9 @@ function AIFeedbackButton({ action, hasFeedback }: { action: WritingFeedbackActi
 		if (hasFeedback) {
 			document.getElementById("ai-writing-feedback")?.scrollIntoView({ behavior: "smooth", block: "start" })
 			return
+		}
+		if (!hasFeedback && !action.requested && action.cost > 0) {
+			triggerCoinSpendFly()
 		}
 		if (!hasFeedback) action.onRequest()
 	}
@@ -433,6 +438,7 @@ function AIFeedbackButton({ action, hasFeedback }: { action: WritingFeedbackActi
 					)}
 				</p>
 				<div className="relative inline-flex self-start sm:self-auto">
+					{showCoinFly && <CoinSpendFly cost={action.cost} />}
 					<button
 						type="button"
 						onClick={handleClick}

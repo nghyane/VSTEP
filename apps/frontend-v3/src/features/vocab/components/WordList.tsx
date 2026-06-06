@@ -1,7 +1,9 @@
 import { type ReactNode, useState } from "react"
 import { Icon } from "#/components/Icon"
+import { PaginationControls } from "#/components/PaginationControls"
 import type { FsrsState, WordWithState } from "#/features/vocab/types"
 import { useIpa } from "#/lib/phonemize"
+import { useClientPagination } from "#/lib/use-client-pagination"
 import { cn, speak } from "#/lib/utils"
 
 type Bucket = "new" | "learning" | "known"
@@ -13,6 +15,8 @@ const FILTERS = [
 	{ key: "learning", label: "Đang học" },
 	{ key: "known", label: "Đã thuộc" },
 ] as const
+
+const PAGE_SIZE = 24
 
 function bucket(state: FsrsState): Bucket {
 	if (state.kind === "new") return "new"
@@ -36,6 +40,7 @@ interface Props {
 export function WordList({ words, levelControls, progressSummary }: Props) {
 	const [filter, setFilter] = useState<FilterKey>("all")
 	const filtered = filter === "all" ? words : words.filter((w) => bucket(w.state) === filter)
+	const pagination = useClientPagination(filtered, PAGE_SIZE)
 
 	return (
 		<section className="card overflow-hidden">
@@ -73,11 +78,29 @@ export function WordList({ words, levelControls, progressSummary }: Props) {
 			{filtered.length === 0 ? (
 				<div className="px-5 pb-6 text-center text-sm text-muted">Không có từ phù hợp.</div>
 			) : (
-				<ul className="grid sm:grid-cols-2 gap-px bg-border border-t border-border">
-					{filtered.map(({ word: w, state }) => (
-						<WordRow key={w.id} word={w} state={state} />
-					))}
-				</ul>
+				<>
+					<ul className="grid sm:grid-cols-2 gap-px bg-border border-t border-border">
+						{pagination.pageItems.map(({ word: w, state }) => (
+							<WordRow key={w.id} word={w} state={state} />
+						))}
+						{Array.from({ length: pagination.placeholderCount }, (_, index) => (
+							<li
+								key={`word-placeholder-${index}`}
+								aria-hidden="true"
+								className="min-h-24 bg-surface pointer-events-none"
+							/>
+						))}
+					</ul>
+					<div className="px-5 pb-5">
+						<PaginationControls
+							currentPage={pagination.page}
+							lastPage={pagination.lastPage}
+							total={pagination.total}
+							itemLabel="từ"
+							onPageChange={pagination.setPage}
+						/>
+					</div>
+				</>
 			)}
 		</section>
 	)
