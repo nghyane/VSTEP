@@ -189,3 +189,39 @@ export function ConversationTurnView({ turn, aiName, isSpeaking, highlightCharIn
 		</div>
 	)
 }
+
+export function ConversationUserTurnLoading() {
+	const profile = useAuth((s) => (s.status === "authenticated" ? s.profile : null))
+	const userAvatarSrc = profile ? getProfileAvatarSrc(profile) : null
+
+	return (
+		<div className="flex flex-col items-end">
+			<div className="flex gap-3 max-w-[85%] flex-row-reverse">
+				{userAvatarSrc ? (
+					<img
+						src={userAvatarSrc}
+						alt="You"
+						className="w-9 h-9 rounded-full bg-foreground/10 border-2 border-b-4 border-foreground/20 shrink-0 object-contain p-0.5"
+					/>
+				) : (
+					<div className="w-9 h-9 rounded-full bg-foreground text-surface flex items-center justify-center font-extrabold text-[10px] shrink-0 border-2 border-b-4 border-foreground">
+						You
+					</div>
+				)}
+				<div className="rounded-(--radius-card) border-2 border-b-4 border-border bg-surface px-4 py-3">
+					<div className="flex gap-1.5">
+						<div className="w-2 h-2 rounded-full bg-muted animate-[dotBounce_1.2s_ease-in-out_infinite]" />
+						<div
+							className="w-2 h-2 rounded-full bg-muted animate-[dotBounce_1.2s_ease-in-out_infinite]"
+							style={{ animationDelay: "0.2s" }}
+						/>
+						<div
+							className="w-2 h-2 rounded-full bg-muted animate-[dotBounce_1.2s_ease-in-out_infinite]"
+							style={{ animationDelay: "0.4s" }}
+						/>
+					</div>
+				</div>
+			</div>
+		</div>
+	)
+}

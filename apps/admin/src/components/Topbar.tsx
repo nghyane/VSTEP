@@ -12,6 +12,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { Avatar, Badge, Button, Dropdown, Empty, Space, Spin, Tabs, Tag, Typography } from "antd"
 import { useState } from "react"
 import { ChangeMyPasswordModal } from "#/features/admin-users/ChangeMyPasswordModal"
+import { api } from "#/lib/api"
 import { useAuth } from "#/lib/auth"
 import {
 	useAdminNotifications,
@@ -24,6 +25,7 @@ import type { AdminNotificationItem, AlertItem } from "#/routes/_app/-dashboard/
 export function Topbar() {
 	const user = useAuth((s) => s.user)
 	const clear = useAuth((s) => s.clear)
+	const refreshToken = useAuth((s) => s.refreshToken)
 	const isTeacher = user?.role === "teacher"
 	const { data: alerts, isLoading: alertsLoading } = useAlerts(isTeacher)
 	const { data: notifications, isLoading: notifsLoading } = useAdminNotifications()
@@ -33,8 +35,14 @@ export function Topbar() {
 
 	const badgeCount = (unreadCount ?? 0) + (isTeacher ? 0 : (alerts?.length ?? 0))
 
-	function logout() {
-		clear()
+	async function logout() {
+		try {
+			if (refreshToken) {
+				await api.post("auth/logout", { json: { refresh_token: refreshToken } })
+			}
+		} finally {
+			clear()
+		}
 		window.location.href = "/login"
 	}
 

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useReducer, useRef } from "react";
-import { api, getApiErrorMessage } from "@/lib/api";
+import { ApiError, api, getApiErrorMessage } from "@/lib/api";
 
 // ── Types (mirror frontend-v3, camelCase via api.ts) ──
 
@@ -125,6 +125,7 @@ export interface GradingJobStatus {
 }
 
 export interface WritingGradingResult {
+  attemptId: string | null;
   rubricScores: Record<string, number> | null;
   overallBand: number | null;
   strengths: string[];
@@ -132,6 +133,7 @@ export interface WritingGradingResult {
   rewrites: { original: string; improved: string; reason: string }[];
   annotations: unknown[];
   paragraphFeedback: Record<string, string>[];
+  teacherGradingRequest: TeacherGradingRequestState | null;
 }
 
 export interface SpeakingTopic {
@@ -270,12 +272,14 @@ export interface SpeakingPronunciationReview {
 }
 
 export interface SpeakingGradingResult {
+  attemptId: string | null;
   criterionScores: CriterionScore[];
   overallBand: number | null;
   strengths: string[];
   improvements: { message: string; explanation: string }[];
   pronunciationReport: { accuracyScore: number } | null;
   transcript: string | null;
+  teacherGradingRequest: TeacherGradingRequestState | null;
 }
 
 export interface CriterionScore {
@@ -305,13 +309,45 @@ interface AssessmentResultPayload {
   transcript?: string | null;
 }
 
+export type TeacherGradingRequestStatus = "none" | "pending_assignment" | "assigned" | "in_progress" | "completed" | "cancelled" | "rejected";
+
+export interface TeacherGradingResultState {
+  id: string;
+  overallBand: number;
+  criterionScores: CriterionScore[];
+  feedback: AssessmentFeedback | null;
+  submittedAt: string | null;
+  source: "teacher";
+}
+
+export interface TeacherGradingRequestState {
+  canRequest: boolean;
+  requested: boolean;
+  requestId: string | null;
+  status: TeacherGradingRequestStatus;
+  assignedTeacher: { id: string; fullName: string | null; email: string | null } | null;
+  requestedAt: string | null;
+  assignedAt: string | null;
+  completedAt: string | null;
+  teacherResult: TeacherGradingResultState | null;
+}
+
+export interface TeacherGradingRequestResponse {
+  id: string;
+  status: TeacherGradingRequestStatus;
+}
+
 interface PracticeGradingResultResponse {
+  attemptId?: string;
   data: AssessmentResultPayload | null;
+  teacherGradingRequest?: TeacherGradingRequestState;
 }
 
 interface AssessmentViewResponse {
+  attemptId: string;
   status: "pending" | "processing" | "ready" | "failed";
   result: AssessmentResultPayload | null;
+  teacherGradingRequest: TeacherGradingRequestState;
 }
 
 export interface PresignUploadResponse {
@@ -764,19 +800,36 @@ export function useWritingGradingResult(attemptId: string) {
   });
 }
 
-export function useSpeakingGradingResult(submissionId: string) {
+export function useSpeakingGradingResult(id: string, source: "submission" | "attempt" = "submission") {
   return useQuery({
-    queryKey: ["practice", "speaking", "result", submissionId],
+    queryKey: [source === "attempt" ? "assessment-attempts" : "practice", "speaking", "result", id],
     queryFn: async () => {
-      const response = await api.get<PracticeGradingResultResponse>(
-        `/api/v1/practice/speaking/submissions/${submissionId}/result`,
-      );
+      const response = await getSpeakingGradingResponse(id, source);
       return normalizeSpeakingGradingResult(response);
     },
     refetchInterval: (q) => (q.state.data?.overallBand != null ? false : 5000),
-    enabled: !!submissionId,
+    enabled: !!id,
     retry: false,
   });
+}
+
+export async function requestTeacherGrading(attemptId: string) {
+  return api.post<TeacherGradingRequestResponse>(`/api/v1/assessment-attempts/${attemptId}/teacher-grading-request`, {});
+}
+
+async function getSpeakingGradingResponse(id: string, source: "submission" | "attempt") {
+  if (source === "attempt") {
+    return api.get<AssessmentViewResponse>(`/api/v1/assessment-attempts/${id}/view`);
+  }
+
+  try {
+    return await api.get<PracticeGradingResultResponse>(`/api/v1/practice/speaking/submissions/${id}/result`);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) {
+      return api.get<AssessmentViewResponse>(`/api/v1/assessment-attempts/${id}/view`);
+    }
+    throw error;
+  }
 }
 
 function normalizeWritingGradingResult(response: PracticeGradingResultResponse | AssessmentViewResponse): WritingGradingResult | null {
@@ -789,6 +842,7 @@ function normalizeWritingGradingResult(response: PracticeGradingResultResponse |
     : feedback?.evidenceNotes ?? [];
 
   return {
+    attemptId: "attemptId" in response ? response.attemptId ?? null : null,
     rubricScores: normalizeWritingRubricScores(result.criterionScores),
     overallBand: result.overallBand,
     strengths: normalizeTextItems(feedback?.strengths),
@@ -796,11 +850,12 @@ function normalizeWritingGradingResult(response: PracticeGradingResultResponse |
     rewrites: normalizeRewriteItems(feedback?.rewrites),
     annotations: result.annotations ?? [],
     paragraphFeedback: result.paragraphFeedback ?? [],
+    teacherGradingRequest: response.teacherGradingRequest ?? null,
   };
 }
 
-function normalizeSpeakingGradingResult(response: PracticeGradingResultResponse): SpeakingGradingResult | null {
-  const result = response.data;
+function normalizeSpeakingGradingResult(response: PracticeGradingResultResponse | AssessmentViewResponse): SpeakingGradingResult | null {
+  const result = "result" in response ? response.result : response.data;
   if (!result) return null;
 
   const feedback = result.feedback;
@@ -809,12 +864,14 @@ function normalizeSpeakingGradingResult(response: PracticeGradingResultResponse)
     : feedback?.evidenceNotes ?? [];
 
   return {
+    attemptId: "attemptId" in response ? response.attemptId ?? null : null,
     overallBand: result.overallBand,
     criterionScores: result.criterionScores ?? [],
     strengths: normalizeTextItems(feedback?.strengths),
     improvements: normalizeImprovementItems(improvementItems),
     pronunciationReport: normalizePronunciationReport(result),
     transcript: result.transcript ?? null,
+    teacherGradingRequest: response.teacherGradingRequest ?? null,
   };
 }
 

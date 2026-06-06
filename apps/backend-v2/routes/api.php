@@ -254,16 +254,19 @@ Route::prefix('v1')->group(function () {
 
         // Analytics — finance, growth, activity, distribution
         Route::prefix('analytics')->group(function () {
-            Route::get('/revenue-overview', [Admin\AnalyticsController::class, 'revenueOverview']);
-            Route::get('/revenue-trend', [Admin\AnalyticsController::class, 'revenueTrend']);
             Route::get('/user-growth', [Admin\AnalyticsController::class, 'userGrowth']);
-            Route::get('/wallet-economy', [Admin\AnalyticsController::class, 'walletEconomy']);
             Route::get('/practice-activity', [Admin\AnalyticsController::class, 'practiceActivity']);
             Route::get('/grading-throughput', [Admin\AnalyticsController::class, 'gradingThroughput']);
             Route::get('/profile-segments', [Admin\AnalyticsController::class, 'profileSegments']);
             Route::get('/streak-distribution', [Admin\AnalyticsController::class, 'streakDistribution']);
-            Route::get('/promo-stats', [Admin\AnalyticsController::class, 'promoStats']);
             Route::get('/top-content', [Admin\AnalyticsController::class, 'topContent']);
+
+            Route::middleware('role:admin')->group(function () {
+                Route::get('/revenue-overview', [Admin\AnalyticsController::class, 'revenueOverview']);
+                Route::get('/revenue-trend', [Admin\AnalyticsController::class, 'revenueTrend']);
+                Route::get('/wallet-economy', [Admin\AnalyticsController::class, 'walletEconomy']);
+                Route::get('/promo-stats', [Admin\AnalyticsController::class, 'promoStats']);
+            });
         });
 
         Route::middleware('role:admin')->prefix('finance')->group(function () {

@@ -8,7 +8,14 @@ export function ActionList({ items }: { items: ActionItem[] | undefined }) {
 			<Card
 				title="Cần xử lý"
 				style={{ height: "100%" }}
-				styles={{ body: { height: "calc(100% - 56px)", display: "flex", alignItems: "center", justifyContent: "center" } }}
+				styles={{
+					body: {
+						height: "calc(100% - 56px)",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+					},
+				}}
 			>
 				<Empty
 					image={<CheckCircleOutlined style={{ fontSize: 32, color: "#10b981" }} />}

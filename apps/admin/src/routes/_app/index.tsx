@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
-import { useAuth } from "#/lib/auth"
 import { Col, Flex, Row, Typography } from "antd"
+import { useAuth } from "#/lib/auth"
 import { ActionList } from "./-dashboard/ActionList"
 import { ActivityTimeline } from "./-dashboard/ActivityTimeline"
 import { AlertsBanner } from "./-dashboard/AlertsBanner"
@@ -43,20 +43,21 @@ export const Route = createFileRoute("/_app/")({
 })
 
 function DashboardPage() {
+	const isAdmin = useAuth((s) => s.user?.role === "admin")
 	const stats = useStats()
 	const alerts = useAlerts()
 	const actionItems = useActionItems()
 	const contentStatus = useContentStatus()
 	const recentActivity = useRecentActivity()
-	const revenueOverview = useRevenueOverview()
-	const revenueTrend = useRevenueTrend()
+	const revenueOverview = useRevenueOverview(isAdmin)
+	const revenueTrend = useRevenueTrend(30, isAdmin)
 	const userGrowth = useUserGrowth()
-	const walletEconomy = useWalletEconomy()
+	const walletEconomy = useWalletEconomy(isAdmin)
 	const practiceActivity = usePracticeActivity()
 	const gradingThroughput = useGradingThroughput()
 	const profileSegments = useProfileSegments()
 	const streakDistribution = useStreakDistribution()
-	const promoStats = usePromoStats()
+	const promoStats = usePromoStats(isAdmin)
 	const topContent = useTopContent()
 
 	return (
@@ -73,18 +74,22 @@ function DashboardPage() {
 			</div>
 
 			<StatsRow stats={stats.data} loading={stats.isLoading} />
-			<RevenueOverviewCards data={revenueOverview.data} loading={revenueOverview.isLoading} />
+			{isAdmin ? (
+				<RevenueOverviewCards data={revenueOverview.data} loading={revenueOverview.isLoading} />
+			) : null}
 
 			<Row gutter={[16, 16]}>
-				<Col xs={24} xl={16}>
-					<RevenueChart data={revenueTrend.data} loading={revenueTrend.isLoading} />
-				</Col>
-				<Col xs={24} xl={8}>
+				{isAdmin ? (
+					<Col xs={24} xl={16}>
+						<RevenueChart data={revenueTrend.data} loading={revenueTrend.isLoading} />
+					</Col>
+				) : null}
+				<Col xs={24} xl={isAdmin ? 8 : 24}>
 					<UserGrowthChart data={userGrowth.data} loading={userGrowth.isLoading} />
 				</Col>
 			</Row>
 
-			<WalletEconomyCard data={walletEconomy.data} loading={walletEconomy.isLoading} />
+			{isAdmin ? <WalletEconomyCard data={walletEconomy.data} loading={walletEconomy.isLoading} /> : null}
 
 			<Row gutter={[16, 16]}>
 				<Col xs={24} xl={16}>
@@ -117,9 +122,11 @@ function DashboardPage() {
 				<Col xs={24} xl={12}>
 					<TopContentTabs data={topContent.data} loading={topContent.isLoading} />
 				</Col>
-				<Col xs={24} xl={12}>
-					<PromoStatsCard data={promoStats.data} loading={promoStats.isLoading} />
-				</Col>
+				{isAdmin ? (
+					<Col xs={24} xl={12}>
+						<PromoStatsCard data={promoStats.data} loading={promoStats.isLoading} />
+					</Col>
+				) : null}
 			</Row>
 
 			<ActivityTimeline items={recentActivity.data} />

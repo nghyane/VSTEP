@@ -18,7 +18,6 @@ const TYPE_LABELS: Record<string, string> = {
 	onboarding_bonus: "Quà chào mừng",
 	course_bonus: "Thưởng khóa học",
 	promo_redeem: "Mã khuyến mãi",
-	admin_grant: "Cộng xu thủ công",
 	streak_milestone: "Thưởng streak",
 	refund: "Hoàn xu",
 	exam_custom: "Thi tùy chỉnh",

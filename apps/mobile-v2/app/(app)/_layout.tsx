@@ -46,6 +46,7 @@ export default function AppLayout() {
       <Stack.Screen name="vocabulary/srs-review" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="vocabulary/[id]/flashcard" options={{ headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="courses/[courseId]/booking" options={{ headerShown: false }} />
+      <Stack.Screen name="orders" options={{ headerShown: false }} />
       <Stack.Screen name="account" options={{ headerShown: true, title: "Tài khoản" }} />
     </Stack>
   );

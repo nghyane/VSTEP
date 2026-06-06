@@ -1,7 +1,7 @@
 import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
-import { Input as AntInput, Empty, Flex, Space, Switch as AntdSwitch, Table, Tag, Typography } from "antd"
+import { Switch as AntdSwitch, Input as AntInput, Empty, Flex, Space, Table, Tag, Typography } from "antd"
 import { useState } from "react"
 import { Button } from "#/components/Button"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
@@ -48,7 +48,9 @@ function SpeakingScenarioListPage() {
 	const [createOpen, setCreateOpen] = useState(false)
 	const [deleting, setDeleting] = useState<AdminSpeakingScenario | null>(null)
 
-	const { data, isLoading } = useQuery(speakingScenarioListQuery({ page, q, is_published, level, per_page: 20 }))
+	const { data, isLoading } = useQuery(
+		speakingScenarioListQuery({ page, q, is_published, level, per_page: 20 }),
+	)
 	const create = useCreateSpeakingScenario()
 	const setPub = useSetSpeakingScenarioPublished()
 	const remove = useDeleteSpeakingScenario()
@@ -180,7 +182,11 @@ function SpeakingScenarioListPage() {
 									>
 										<EyeOutlined />
 									</Link>
-									<Link to="/practice/speaking-scenarios/$scenarioId" params={{ scenarioId: t.id }} aria-label="Sửa">
+									<Link
+										to="/practice/speaking-scenarios/$scenarioId"
+										params={{ scenarioId: t.id }}
+										aria-label="Sửa"
+									>
 										<EditOutlined />
 									</Link>
 									<button

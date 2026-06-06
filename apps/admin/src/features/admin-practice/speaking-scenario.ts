@@ -1,6 +1,10 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query"
 import { buildListSearch } from "#/features/admin-practice/filters"
-import type { AdminSpeakingScenario, ListFilters, SpeakingScenarioFormInput } from "#/features/admin-practice/types"
+import type {
+	AdminSpeakingScenario,
+	ListFilters,
+	SpeakingScenarioFormInput,
+} from "#/features/admin-practice/types"
 import { type ApiResponse, api, type PaginatedResponse } from "#/lib/api"
 
 export const speakingScenarioListQuery = (filters: ListFilters) =>
@@ -32,7 +36,9 @@ export function useCreateSpeakingScenario() {
 	const qc = useQueryClient()
 	return useMutation({
 		mutationFn: (input: SpeakingScenarioFormInput) =>
-			api.post("admin/practice/speaking-scenarios", { json: input }).json<ApiResponse<AdminSpeakingScenario>>(),
+			api
+				.post("admin/practice/speaking-scenarios", { json: input })
+				.json<ApiResponse<AdminSpeakingScenario>>(),
 		onSuccess: () => invalidateList(qc),
 	})
 }

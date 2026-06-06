@@ -1,4 +1,5 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -6,7 +7,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { DepthButton } from "@/components/DepthButton";
 import { GradingErrorState, GradingLoadingState, GradingPendingState } from "@/components/GradingStates";
 import { HapticTouchable } from "@/components/HapticTouchable";
-import { useSpeakingGradingResult } from "@/hooks/use-practice";
+import { TeacherGradingPanel } from "@/components/TeacherGradingPanel";
+import { requestTeacherGrading, useSpeakingGradingResult } from "@/hooks/use-practice";
+import { getApiErrorMessage } from "@/lib/api";
 import { useThemeColors, spacing, radius, fontSize, fontFamily } from "@/theme";
 
 const RUBRIC_LABELS: Record<string, string> = {
@@ -21,14 +24,24 @@ const RUBRIC_LABELS: Record<string, string> = {
 };
 
 export default function SpeakingGradingScreen() {
-  const { submissionId } = useLocalSearchParams<{ submissionId: string }>();
+  const { submissionId, attemptId, source } = useLocalSearchParams<{ submissionId: string; attemptId?: string; source?: string }>();
   const c = useThemeColors();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
-  const { data, isLoading, isError, isFetching, refetch } = useSpeakingGradingResult(submissionId ?? "");
+  const gradingId = attemptId ?? submissionId ?? "";
+  const gradingSource = attemptId || source === "attempt" ? "attempt" : "submission";
+  const { data, isLoading, isError, isFetching, refetch } = useSpeakingGradingResult(gradingId, gradingSource);
   const accent = c.skillSpeaking;
   const accentText = c.coinDark;
   const resultReady = data?.overallBand != null;
+  const teacherGrading = useMutation({
+    mutationFn: () => requestTeacherGrading(data?.attemptId ?? ""),
+    onSuccess: () => {
+      if (data?.attemptId) queryClient.invalidateQueries({ queryKey: ["assessment-attempts"] });
+      void refetch();
+    },
+  });
 
   return (
     <View style={[s.root, { backgroundColor: c.background }]}>
@@ -122,6 +135,15 @@ export default function SpeakingGradingScreen() {
                 <Text style={[s.feedText, { color: c.foreground }]}>{data.transcript}</Text>
               </View>
             ) : null}
+
+            <TeacherGradingPanel
+              attemptId={data.attemptId}
+              state={data.teacherGradingRequest}
+              pending={teacherGrading.isPending}
+              error={teacherGrading.error ? getApiErrorMessage(teacherGrading.error) : null}
+              accentColor={accentText}
+              onRequest={() => teacherGrading.mutate()}
+            />
 
             <DepthButton variant="secondary" fullWidth onPress={() => router.back()}>
               Về danh sách

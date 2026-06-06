@@ -1,12 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { useEffect } from "react"
-import { signalTopupReturn } from "#/features/wallet/topup-pending"
 
 type PaymentReturnState = "paid" | "confirming" | "cancelled"
-type PaymentReturnClient = "web" | "mobile"
 type PaymentReturnFlow = "topup" | "course"
 
-export const Route = createFileRoute("/wallet")({
+export const Route = createFileRoute("/payos/mobile-return")({
 	validateSearch: (
 		s: Record<string, unknown>,
 	): {
@@ -15,7 +13,6 @@ export const Route = createFileRoute("/wallet")({
 		cancel?: boolean
 		status?: string
 		orderCode?: string
-		client?: PaymentReturnClient
 		flow?: PaymentReturnFlow
 		courseId?: string
 	} => ({
@@ -24,28 +21,26 @@ export const Route = createFileRoute("/wallet")({
 		cancel: s.cancel === true || s.cancel === "true" ? true : undefined,
 		status: typeof s.status === "string" ? s.status : undefined,
 		orderCode: typeof s.orderCode === "string" ? s.orderCode : undefined,
-		client: s.client === "mobile" || s.client === "web" ? s.client : undefined,
 		flow: s.flow === "course" || s.flow === "topup" ? s.flow : undefined,
 		courseId: typeof s.courseId === "string" ? s.courseId : undefined,
 	}),
-	component: PaymentReturnPage,
+	component: MobilePayosReturnPage,
 })
 
-function PaymentReturnPage() {
+function MobilePayosReturnPage() {
 	const search = Route.useSearch()
 	const state = getPaymentReturnState(search)
 	const isPaid = state === "paid"
 	const isConfirming = state === "confirming"
-	const client = search.client ?? "web"
 	const flow = search.flow ?? "topup"
-	const isMobileReturn = client === "mobile"
 	const appReturnUrl = buildAppReturnUrl(search)
-	const closeTab = () => window.close()
 
 	useEffect(() => {
-		if (!search.id) return
-		signalTopupReturn(search.id, search.status)
-	}, [search.id, search.status])
+		const timer = window.setTimeout(() => {
+			window.location.href = appReturnUrl
+		}, 600)
+		return () => window.clearTimeout(timer)
+	}, [appReturnUrl])
 
 	return (
 		<main className="flex min-h-screen items-center justify-center bg-surface px-4 py-10">
@@ -71,10 +66,10 @@ function PaymentReturnPage() {
 				</h1>
 				<p className="mt-3 text-sm leading-relaxed text-muted">
 					{isPaid
-						? getPaidMessage(flow, isMobileReturn)
+						? getPaidMessage(flow)
 						: isConfirming
-							? getConfirmingMessage(isMobileReturn)
-							: getCancelledMessage(isMobileReturn)}
+							? "Kết quả cuối cùng sẽ được backend cập nhật qua callback bảo mật từ PayOS. Hãy quay về VSTEP GO để kiểm tra lại."
+							: "Giao dịch đã bị hủy hoặc chưa được PayOS xác nhận thành công. Hãy quay về VSTEP GO để tạo giao dịch mới nếu cần."}
 				</p>
 
 				<dl className="mt-6 space-y-2 rounded-(--radius-card) border-2 border-border bg-background p-4 text-left text-xs">
@@ -87,26 +82,11 @@ function PaymentReturnPage() {
 				</dl>
 
 				<div className="mt-7 space-y-3">
-					<div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-						{isMobileReturn ? (
-							<>
-								<a href={appReturnUrl} className="btn btn-primary w-full sm:w-auto">
-									Mở VSTEP GO
-								</a>
-								<button type="button" onClick={closeTab} className="btn btn-primary w-full sm:w-auto">
-									Đóng tab này
-								</button>
-							</>
-						) : (
-							<button type="button" onClick={closeTab} className="btn btn-primary w-full sm:w-auto">
-								Đóng tab này
-							</button>
-						)}
-					</div>
+					<a href={appReturnUrl} className="btn btn-primary w-full sm:w-auto">
+						Quay về VSTEP GO
+					</a>
 					<p className="text-xs text-subtle">
-						{isMobileReturn
-							? "Nếu trình duyệt không cho đóng tự động, hãy đóng tab này thủ công và quay lại ứng dụng."
-							: "Nếu trình duyệt không cho đóng tự động, hãy đóng tab này thủ công và quay lại tab VSTEP GO."}
+						Nếu ứng dụng chưa tự mở, hãy nhấn nút trên hoặc quay lại VSTEP GO thủ công.
 					</p>
 				</div>
 			</section>
@@ -148,21 +128,7 @@ function buildAppReturnUrl(search: {
 	return `vstep://${search.flow === "course" ? "course-payment" : "topup"}${query ? `?${query}` : ""}`
 }
 
-function getPaidMessage(flow: PaymentReturnFlow, isMobileReturn: boolean) {
+function getPaidMessage(flow: PaymentReturnFlow) {
 	const target = flow === "course" ? "khóa học" : "ví"
-	return isMobileReturn
-		? `PayOS đã trả về trạng thái thanh toán thành công. Hãy mở VSTEP GO để hệ thống xác nhận và cập nhật ${target}.`
-		: `PayOS đã trả về trạng thái thanh toán thành công. Hệ thống sẽ xác nhận và cập nhật ${target} trong giây lát.`
-}
-
-function getConfirmingMessage(isMobileReturn: boolean) {
-	return isMobileReturn
-		? "Kết quả cuối cùng sẽ được backend cập nhật qua callback bảo mật từ PayOS. Hãy mở VSTEP GO để kiểm tra lại."
-		: "Kết quả cuối cùng sẽ được backend cập nhật qua callback bảo mật từ PayOS. Bạn có thể quay lại trang web để tiếp tục."
-}
-
-function getCancelledMessage(isMobileReturn: boolean) {
-	return isMobileReturn
-		? "Giao dịch đã bị hủy hoặc chưa được PayOS xác nhận thành công. Hãy mở VSTEP GO để tạo giao dịch mới nếu cần."
-		: "Giao dịch đã bị hủy hoặc chưa được PayOS xác nhận thành công. Bạn có thể quay lại trang web để thử lại."
+	return `PayOS đã trả về trạng thái thanh toán thành công. Hãy quay về VSTEP GO để hệ thống xác nhận và cập nhật ${target}.`
 }

@@ -37,7 +37,9 @@ export function WritingMarkersTab({ promptId, sampleAnswer, markers }: Props) {
 	const [deleteConfirm, setDeleteConfirm] = useState<AdminWritingMarker | null>(null)
 	const [localMarkers, setLocalMarkers] = useState<AdminWritingMarker[]>(markers)
 
-	useEffect(() => { setLocalMarkers(markers) }, [markers])
+	useEffect(() => {
+		setLocalMarkers(markers)
+	}, [markers])
 
 	const activeMarkerId = mode.type === "edit" ? mode.marker.id : null
 

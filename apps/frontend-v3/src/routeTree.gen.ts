@@ -13,6 +13,7 @@ import { Route as WalletRouteImport } from "./routes/wallet"
 import { Route as FocusedRouteImport } from "./routes/_focused"
 import { Route as AppRouteImport } from "./routes/_app"
 import { Route as IndexRouteImport } from "./routes/index"
+import { Route as PayosMobileReturnRouteImport } from "./routes/payos.mobile-return"
 import { Route as AppThiThuRouteImport } from "./routes/_app/thi-thu"
 import { Route as AppLuyenTapRouteImport } from "./routes/_app/luyen-tap"
 import { Route as AppKhoaHocRouteImport } from "./routes/_app/khoa-hoc"
@@ -67,6 +68,11 @@ const AppRoute = AppRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: "/",
   path: "/",
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PayosMobileReturnRoute = PayosMobileReturnRouteImport.update({
+  id: "/payos/mobile-return",
+  path: "/payos/mobile-return",
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppThiThuRoute = AppThiThuRouteImport.update({
@@ -278,6 +284,7 @@ export interface FileRoutesByFullPath {
   "/khoa-hoc": typeof AppKhoaHocRouteWithChildren
   "/luyen-tap": typeof AppLuyenTapRouteWithChildren
   "/thi-thu": typeof AppThiThuRouteWithChildren
+  "/payos/mobile-return": typeof PayosMobileReturnRoute
   "/khoa-hoc/$courseId": typeof AppKhoaHocCourseIdRoute
   "/luyen-tap/doc": typeof AppLuyenTapDocRoute
   "/luyen-tap/ket-qua": typeof AppLuyenTapKetQuaRoute
@@ -316,6 +323,7 @@ export interface FileRoutesByTo {
   "/don-hang": typeof AppDonHangRoute
   "/giao-dich-xu": typeof AppGiaoDichXuRoute
   "/ho-so": typeof AppHoSoRoute
+  "/payos/mobile-return": typeof PayosMobileReturnRoute
   "/khoa-hoc/$courseId": typeof AppKhoaHocCourseIdRoute
   "/luyen-tap/doc": typeof AppLuyenTapDocRoute
   "/luyen-tap/ket-qua": typeof AppLuyenTapKetQuaRoute
@@ -357,6 +365,7 @@ export interface FileRoutesById {
   "/_app/khoa-hoc": typeof AppKhoaHocRouteWithChildren
   "/_app/luyen-tap": typeof AppLuyenTapRouteWithChildren
   "/_app/thi-thu": typeof AppThiThuRouteWithChildren
+  "/payos/mobile-return": typeof PayosMobileReturnRoute
   "/_app/khoa-hoc/$courseId": typeof AppKhoaHocCourseIdRoute
   "/_app/luyen-tap/doc": typeof AppLuyenTapDocRoute
   "/_app/luyen-tap/ket-qua": typeof AppLuyenTapKetQuaRoute
@@ -400,6 +409,7 @@ export interface FileRouteTypes {
     | "/khoa-hoc"
     | "/luyen-tap"
     | "/thi-thu"
+    | "/payos/mobile-return"
     | "/khoa-hoc/$courseId"
     | "/luyen-tap/doc"
     | "/luyen-tap/ket-qua"
@@ -438,6 +448,7 @@ export interface FileRouteTypes {
     | "/don-hang"
     | "/giao-dich-xu"
     | "/ho-so"
+    | "/payos/mobile-return"
     | "/khoa-hoc/$courseId"
     | "/luyen-tap/doc"
     | "/luyen-tap/ket-qua"
@@ -478,6 +489,7 @@ export interface FileRouteTypes {
     | "/_app/khoa-hoc"
     | "/_app/luyen-tap"
     | "/_app/thi-thu"
+    | "/payos/mobile-return"
     | "/_app/khoa-hoc/$courseId"
     | "/_app/luyen-tap/doc"
     | "/_app/luyen-tap/ket-qua"
@@ -515,6 +527,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   FocusedRoute: typeof FocusedRouteWithChildren
   WalletRoute: typeof WalletRoute
+  PayosMobileReturnRoute: typeof PayosMobileReturnRoute
 }
 
 declare module "@tanstack/react-router" {
@@ -545,6 +558,13 @@ declare module "@tanstack/react-router" {
       path: "/"
       fullPath: "/"
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    "/payos/mobile-return": {
+      id: "/payos/mobile-return"
+      path: "/payos/mobile-return"
+      fullPath: "/payos/mobile-return"
+      preLoaderRoute: typeof PayosMobileReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/_app/thi-thu": {
@@ -966,6 +986,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   FocusedRoute: FocusedRouteWithChildren,
   WalletRoute: WalletRoute,
+  PayosMobileReturnRoute: PayosMobileReturnRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

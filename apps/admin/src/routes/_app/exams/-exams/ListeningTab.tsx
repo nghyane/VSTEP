@@ -202,8 +202,10 @@ export function ListeningTab({ sections, examId, versionId }: Props) {
 					onSubmit={async (input) => {
 						if (itemModal.editing) {
 							await updateItem.mutateAsync({ id: itemModal.editing.id, ...input })
+						} else if (itemModal.sectionId) {
+							await createItem.mutateAsync({ sectionId: itemModal.sectionId, ...input })
 						} else {
-							await createItem.mutateAsync({ sectionId: itemModal.sectionId!, ...input })
+							return
 						}
 						showSuccess(itemModal.editing ? "Đã cập nhật." : "Đã thêm câu.")
 						setItemModal({ open: false })
