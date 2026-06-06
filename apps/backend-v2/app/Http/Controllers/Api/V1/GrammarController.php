@@ -47,7 +47,9 @@ final class GrammarController extends Controller
     public function pointDetail(Request $request, string $id): JsonResponse
     {
         /** @var GrammarPoint $point */
-        $point = GrammarPoint::query()->findOrFail($id);
+        $point = GrammarPoint::query()
+            ->where('is_published', true)
+            ->findOrFail($id);
         $profile = $request->profile();
 
         $data = $this->grammarService->getPointForProfile($point, $profile);
@@ -82,6 +84,7 @@ final class GrammarController extends Controller
         $exercise = GrammarExercise::query()
             ->where('is_active', true)
             ->where('kind', 'mcq')
+            ->whereHas('point', fn ($query) => $query->where('is_published', true))
             ->findOrFail($id);
 
         $sessionId = $request->validated('session_id');

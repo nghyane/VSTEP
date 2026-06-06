@@ -87,7 +87,9 @@ final class WritingPracticeController extends Controller
 
     public function diagnostics(WritingDiagnosticsRequest $request): JsonResponse
     {
-        $prompt = PracticeWritingPrompt::query()->findOrFail($request->validated('prompt_id'));
+        $prompt = PracticeWritingPrompt::query()
+            ->where('is_published', true)
+            ->findOrFail($request->validated('prompt_id'));
 
         return response()->json(['data' => $this->diagnosticsService->analyze(
             $prompt,

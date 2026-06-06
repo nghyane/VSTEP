@@ -8,7 +8,6 @@ use App\Enums\CoinTransactionType;
 use App\Models\Profile;
 use App\Models\ProfileDailyActivity;
 use App\Models\ProfileStreakClaim;
-use App\Models\SystemConfig;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -23,6 +22,7 @@ final class StreakMilestoneService
 {
     public function __construct(
         private readonly WalletService $walletService,
+        private readonly ProgressConfigService $progressConfig,
     ) {}
 
     /**
@@ -30,17 +30,7 @@ final class StreakMilestoneService
      */
     public function getMilestones(): array
     {
-        $raw = SystemConfig::get('streak.milestones') ?? [];
-        if (! is_array($raw)) {
-            return [];
-        }
-
-        return collect($raw)
-            ->map(fn ($m) => ['days' => (int) ($m['days'] ?? 0), 'coins' => (int) ($m['coins'] ?? 0)])
-            ->filter(fn ($m) => $m['days'] > 0 && $m['coins'] > 0)
-            ->sortBy('days')
-            ->values()
-            ->all();
+        return $this->progressConfig->streakMilestones();
     }
 
     /**
@@ -141,15 +131,19 @@ final class StreakMilestoneService
      */
     private function computeCurrentStreak(Profile $profile): int
     {
-        $tz = SystemConfig::get('streak.timezone') ?? 'Asia/Ho_Chi_Minh';
+        $tz = $this->progressConfig->streakTimezone();
+        $dailyGoal = $this->progressConfig->streakDailyGoal();
         $today = Carbon::now($tz)->toDateString();
         $yesterday = Carbon::now($tz)->subDay()->toDateString();
 
         $dates = ProfileDailyActivity::query()
             ->where('profile_id', $profile->id)
             ->orderByDesc('date_local')
-            ->pluck('date_local')
-            ->map(fn ($d) => $d instanceof \DateTimeInterface ? $d->format('Y-m-d') : $d)
+            ->get()
+            ->filter(fn (ProfileDailyActivity $row): bool => $row->activityCount() >= $dailyGoal)
+            ->map(fn (ProfileDailyActivity $row): string => $row->date_local instanceof \DateTimeInterface
+                ? $row->date_local->format('Y-m-d')
+                : (string) $row->date_local)
             ->toArray();
 
         if ($dates === []) {
@@ -180,4 +174,5 @@ final class StreakMilestoneService
 
         return $current;
     }
+
 }

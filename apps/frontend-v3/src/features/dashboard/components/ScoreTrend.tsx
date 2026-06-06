@@ -53,6 +53,28 @@ export function ScoreTrend() {
 
 	const target = targetBand
 	const timeline = overview.data.scores.timeline
+	const chartConfig = overview.data.scores.chart_config
+	if (!chartConfig) {
+		return (
+			<section className="card p-6">
+				<h3 className="font-extrabold text-lg text-foreground">Điểm qua các lần thi</h3>
+				<p className="text-sm text-subtle mt-1">Đang đồng bộ cấu hình dashboard</p>
+			</section>
+		)
+	}
+
+	const { min_tests: minTests, sliding_window_size: slidingWindowSize } = chartConfig
+	const totalTests = overview.data.stats.total_tests
+
+	if (totalTests < minTests) {
+		const remainingTests = Math.max(0, minTests - totalTests)
+		return (
+			<section className="card p-6">
+				<h3 className="font-extrabold text-lg text-foreground">Điểm qua các lần thi</h3>
+				<p className="text-sm text-subtle mt-1">Cần thêm {remainingTests} bài thi để hiện biểu đồ điểm</p>
+			</section>
+		)
+	}
 
 	if (timeline.length === 0) {
 		return (
@@ -63,7 +85,7 @@ export function ScoreTrend() {
 		)
 	}
 
-	const tests = timeline.slice(-10)
+	const tests = timeline.slice(-slidingWindowSize)
 	const notice = outlierNotice(overview)
 	const visibleSkills = skills.filter((skill) => selectedSkills.includes(skill.key))
 	const spacing = Math.min(98, 500 / tests.length)

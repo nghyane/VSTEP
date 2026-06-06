@@ -1,14 +1,27 @@
 import { Link } from "@tanstack/react-router"
 import { StaticIcon } from "#/components/Icon"
 
-export function OnboardingRow() {
+interface OnboardingRowProps {
+	remainingTests?: number
+}
+
+export function OnboardingRow({ remainingTests }: OnboardingRowProps = {}) {
+	const remaining = remainingTests ?? 0
+	const needsMoreTests = remaining > 0
+
 	return (
 		<section className="card p-5 flex items-center gap-5">
 			<StaticIcon name="target-md" size="lg" />
 			<div className="flex-1 min-w-0">
-				<h4 className="font-bold text-base text-foreground">Hãy làm bài thi đầu tiên để xem trình độ thật</h4>
+				<h4 className="font-bold text-base text-foreground">
+					{needsMoreTests
+						? `Cần thêm ${remaining} bài thi để dashboard đủ dữ liệu`
+						: "Hãy làm bài thi đầu tiên để xem trình độ thật"}
+				</h4>
 				<p className="text-sm text-subtle mt-0.5">
-					Sau bài full-test đầu, dashboard sẽ ước tính band và chỉ ra kỹ năng cần luyện
+					{needsMoreTests
+						? "Làm thêm bài thi để biểu đồ năng lực và xu hướng điểm ổn định hơn"
+						: "Dashboard sẽ tích lũy dữ liệu thi để ước tính band và chỉ ra kỹ năng cần luyện"}
 				</p>
 			</div>
 			<Link to="/thi-thu" className="btn btn-primary shrink-0">

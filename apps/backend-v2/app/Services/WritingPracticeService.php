@@ -45,6 +45,7 @@ final class WritingPracticeService
     {
         /** @var PracticeWritingPrompt $prompt */
         $prompt = PracticeWritingPrompt::query()
+            ->where('is_published', true)
             ->with(['outlineSections', 'templateSections', 'sampleMarkers'])
             ->findOrFail($id);
 
@@ -54,7 +55,9 @@ final class WritingPracticeService
     public function startSession(Profile $profile, string $promptId): PracticeSession
     {
         /** @var PracticeWritingPrompt $prompt */
-        $prompt = PracticeWritingPrompt::query()->findOrFail($promptId);
+        $prompt = PracticeWritingPrompt::query()
+            ->where('is_published', true)
+            ->findOrFail($promptId);
 
         return $this->sessionService->start($profile, 'writing', $prompt);
     }

@@ -72,6 +72,20 @@ class ConversationPracticeTest extends TestCase
             ->assertJsonPath('data.title', $scenario->title);
     }
 
+    public function test_unpublished_scenario_is_not_accessible(): void
+    {
+        ['token' => $token] = $this->actingAsLearner();
+        $scenario = $this->createScenario(['is_published' => false]);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/practice/speaking/scenarios/{$scenario->id}")
+            ->assertNotFound();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/speaking/conversations', ['scenario_id' => $scenario->id])
+            ->assertNotFound();
+    }
+
     public function test_start_and_end_conversation_session(): void
     {
         ['token' => $token] = $this->actingAsLearner();

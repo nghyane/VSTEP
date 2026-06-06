@@ -561,7 +561,7 @@ Business rules are consolidated from backend routes, services, project documenta
 | BR-38 | Active scoring criteria or criteria already used by historical results cannot be edited directly. Admins must clone a draft version and activate it when changes are needed. |
 | BR-39 | A learner may request teacher grading only after the AI assessment result is available for that writing or speaking attempt. |
 | BR-40 | Each assessment attempt can have only one teacher grading request to prevent duplicate review workflows. |
-| BR-41 | Staff/admin may assign only open teacher-grading requests, and the assigned user must be an active teacher account. |
+| BR-41 | Staff/admin may assign only open teacher-grading requests, and the assigned user must be an active teacher account with an approved professional qualification for the relevant grading skill. |
 | BR-42 | Teachers can view, start and submit only grading requests assigned to them. Teacher grading scores must follow the same 0-10 scoring range and rubric criteria. |
 | BR-43 | Teacher grading results are stored separately from AI results and include a snapshot of the AI result. Teacher grading must not overwrite the original AI assessment. |
 | BR-44 | Practice and drill attempts are separate from mock-exam attempts. Practice results support learning history and feedback but are not official mock-exam results. |

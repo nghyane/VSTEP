@@ -90,6 +90,23 @@ class SpeakingPracticeTest extends TestCase
             ->assertJsonPath('data.segments.0.word_count', 6);
     }
 
+    public function test_unpublished_drill_is_not_accessible(): void
+    {
+        $user = User::factory()->create();
+        Profile::factory()->initial()->forAccount($user)->create();
+        $drill = PracticeSpeakingDrill::factory()->create(['is_published' => false]);
+
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/practice/speaking/drills/{$drill->id}")
+            ->assertNotFound();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/speaking/drill-sessions', ['exercise_id' => $drill->id])
+            ->assertNotFound();
+    }
+
     public function test_vstep_practice_submit(): void
     {
         $user = User::factory()->create();
@@ -123,6 +140,23 @@ class SpeakingPracticeTest extends TestCase
             'source_type' => 'practice',
         ]);
         $this->assertDatabaseCount('assessment_jobs', 1);
+    }
+
+    public function test_unpublished_vstep_task_is_not_accessible(): void
+    {
+        $user = User::factory()->create();
+        Profile::factory()->initial()->forAccount($user)->create();
+        $task = PracticeSpeakingTask::factory()->create(['is_published' => false]);
+
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/practice/speaking/tasks/{$task->id}")
+            ->assertNotFound();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/speaking/vstep-sessions', ['exercise_id' => $task->id])
+            ->assertNotFound();
     }
 
     public function test_speaking_result_returns_diagnostics(): void

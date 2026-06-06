@@ -45,6 +45,26 @@ class ReadingPracticeTest extends TestCase
         $submit->assertJsonPath('data.session.module', 'reading');
     }
 
+    public function test_unpublished_reading_exercise_is_not_accessible(): void
+    {
+        $user = User::factory()->create();
+        Profile::factory()->initial()->forAccount($user)->create();
+        $exercise = PracticeReadingExercise::factory()->create(['is_published' => false]);
+
+        $token = $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->json('data.access_token');
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/practice/reading/exercises/{$exercise->id}")
+            ->assertNotFound();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/reading/sessions', ['exercise_id' => $exercise->id])
+            ->assertNotFound();
+    }
+
     public function test_unknown_skill_returns_404(): void
     {
         $user = User::factory()->create();

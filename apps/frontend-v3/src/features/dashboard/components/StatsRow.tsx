@@ -54,6 +54,13 @@ export function StatsRow() {
 	const { profile, scores, stats } = overview.data
 	if (stats.total_tests === 0) return <OnboardingRow />
 
+	const minTests = scores.chart_config?.min_tests
+	if (minTests === undefined) return null
+
+	if (stats.total_tests < minTests) {
+		return <OnboardingRow remainingTests={minTests - stats.total_tests} />
+	}
+
 	const targetBand = getTargetBand(profile.target_level)
 	const skillStats = computeSkillStats(scores.spider)
 

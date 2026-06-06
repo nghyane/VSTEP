@@ -57,6 +57,24 @@ class VocabExerciseTest extends TestCase
         $response->assertJsonPath('data.is_correct', false);
     }
 
+    public function test_exercise_from_unpublished_topic_is_not_attemptable(): void
+    {
+        $user = User::factory()->create();
+        Profile::factory()->initial()->forAccount($user)->create();
+        $topic = VocabTopic::factory()->create(['is_published' => false]);
+        $exercise = VocabExercise::factory()
+            ->mcq(correctIndex: 0)
+            ->create(['topic_id' => $topic->id]);
+
+        $token = $this->tokenFor($user);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/vocab/exercises/{$exercise->id}/attempt", [
+                'answer' => ['selected_index' => 0],
+            ])
+            ->assertNotFound();
+    }
+
     public function test_fill_blank_accepts_any_of_accepted_answers(): void
     {
         $user = User::factory()->create();

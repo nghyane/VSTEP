@@ -95,6 +95,24 @@ class VocabSrsFlowTest extends TestCase
         $response->assertJsonPath('data.words.0.state.stability', 0);
     }
 
+    public function test_unpublished_topic_detail_and_words_are_not_accessible(): void
+    {
+        $topic = VocabTopic::factory()->create(['is_published' => false]);
+        $word = VocabWord::factory()->create(['topic_id' => $topic->id]);
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/vocab/topics/{$topic->id}")
+            ->assertNotFound();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/vocab/srs/review', [
+                'word_id' => $word->id,
+                'rating' => 3,
+            ])
+            ->assertNotFound();
+    }
+
     public function test_review_rating_good_creates_srs_state(): void
     {
         $user = User::factory()->create();
@@ -195,6 +213,34 @@ class VocabSrsFlowTest extends TestCase
         $this->assertCount(1, $responseData['items'], 'Expected 1 item. Got: '.json_encode($responseData));
         $response->assertJsonPath('data.learning_count', 1);
         $response->assertJsonPath('data.items.0.word.id', $word1->id);
+    }
+
+    public function test_queue_skips_words_from_unpublished_topics(): void
+    {
+        $user = User::factory()->create();
+        $profile = Profile::factory()->initial()->forAccount($user)->create();
+        $topic = VocabTopic::factory()->create(['is_published' => false]);
+        $word = VocabWord::factory()->create(['topic_id' => $topic->id]);
+
+        ProfileVocabSrsState::query()->insert([
+            'profile_id' => $profile->id,
+            'word_id' => $word->id,
+            'state_kind' => 'learning',
+            'difficulty' => 5.0,
+            'stability' => 2.0,
+            'due_at' => now()->subMinute(),
+            'lapses' => 0,
+            'remaining_steps' => 1,
+            'last_review_at' => now()->subDay(),
+            'updated_at' => now(),
+        ]);
+
+        $token = $this->tokenFor($user);
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/v1/vocab/srs/queue')
+            ->assertOk()
+            ->assertJsonCount(0, 'data.items')
+            ->assertJsonPath('data.learning_count', 0);
     }
 
     private function loginLearner(): string

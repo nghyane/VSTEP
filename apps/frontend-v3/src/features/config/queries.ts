@@ -6,5 +6,5 @@ import type { AppConfig } from "./types"
 export const appConfigQuery = queryOptions({
 	queryKey: ["config"],
 	queryFn: () => api.get("config").json<ApiResponse<AppConfig>>(),
-	staleTime: 5 * 60 * 1000,
+	staleTime: 0,
 })

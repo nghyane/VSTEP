@@ -20,8 +20,8 @@ export function SettingsPage() {
 					Cấu hình hệ thống
 				</Typography.Title>
 				<Typography.Text type="secondary">
-					Tham số tunable của platform (chart, streak, grading, exam, support, onboarding). Chỉ admin được
-					phép sửa.
+					Tham số tunable của platform (chart, streak, grading, exam, practice, support, onboarding, profile).
+					Chỉ admin được phép sửa.
 				</Typography.Text>
 			</div>
 
