@@ -17,6 +17,7 @@ use App\Models\ExamSpeakingSubmission;
 use App\Models\ExamVersion;
 use App\Models\ExamWritingSubmission;
 use App\Models\Profile;
+use App\Services\Contracts\ExamSessionExpiryInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -32,6 +33,7 @@ final class ExamSessionService
         private readonly ProgressService $progressService,
         private readonly EconomyConfigService $economyConfig,
         private readonly AudioStorageService $audioStorage,
+        private readonly ExamSessionExpiryInterface $expiry,
     ) {}
 
     public function getExamWithActiveVersion(string $examId): array
@@ -67,6 +69,8 @@ final class ExamSessionService
         if ($mode === 'full') {
             $selectedSkills = $allSkills;
         }
+
+        $this->expiry->forceSubmitExpired($profile);
 
         // Fast-path: reject trước khi vào transaction nếu đã có session active.
         // Concurrency guard thật nằm trong transaction sau spend lock (P5-A fix).
@@ -142,6 +146,8 @@ final class ExamSessionService
             $selectedSkills = $allSkills;
         }
 
+        $this->expiry->forceSubmitExpired($profile);
+
         $cost = $this->computeCost($selectedSkills);
         $totalMinutes = $this->computeDuration($version, $selectedSkills);
         $deadlineMinutes = (int) ceil($totalMinutes * $timeExtensionFactor);
@@ -211,6 +217,8 @@ final class ExamSessionService
             throw ValidationException::withMessages(['session' => ['Session not active.']]);
         }
         if ($session->server_deadline_at->addSeconds(self::SUBMIT_GRACE_SECONDS)->isPast()) {
+            $this->expiry->forceSubmitIfExpired($session);
+
             throw ValidationException::withMessages(['session' => ['Session đã hết hạn.']]);
         }
 
@@ -381,6 +389,9 @@ final class ExamSessionService
     {
         if ($session->profile_id !== $profile->id) {
             throw new NotOwnerException;
+        }
+        if ($session->status === ExamSessionStatus::Active && $session->server_deadline_at->isPast()) {
+            $this->expiry->forceSubmitIfExpired($session);
         }
         if ($session->status !== ExamSessionStatus::Active || $session->server_deadline_at->isPast()) {
             throw ValidationException::withMessages(['session' => ['Session not active.']]);

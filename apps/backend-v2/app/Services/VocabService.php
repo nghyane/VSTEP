@@ -8,6 +8,7 @@ use App\Models\PracticeSession;
 use App\Models\PracticeVocabExerciseAttempt;
 use App\Models\PracticeVocabReview;
 use App\Models\Profile;
+use App\Models\ProfileDailyActivity;
 use App\Models\ProfileVocabSrsState;
 use App\Models\VocabExercise;
 use App\Models\VocabTopic;
@@ -117,6 +118,8 @@ final class VocabService
                 'new_state' => $next->toArray($this->config, $nowMs),
                 'reviewed_at' => now(),
             ]);
+
+            ProfileDailyActivity::addActivity($profile->id, 'vocab_review');
 
             return ['review' => $review, 'state' => $next];
         });

@@ -10,6 +10,7 @@ use App\Models\ExamSession;
 use App\Models\ExamVersion;
 use App\Models\Profile;
 use App\Services\Contracts\ExamOverviewInterface;
+use App\Services\Contracts\ExamSessionExpiryInterface;
 use Illuminate\Support\Collection;
 
 final class ExamOverviewService implements ExamOverviewInterface
@@ -17,10 +18,13 @@ final class ExamOverviewService implements ExamOverviewInterface
     public function __construct(
         private readonly EconomyConfigService $economyConfig,
         private readonly ExamScoringService $scoringService,
+        private readonly ExamSessionExpiryInterface $expiry,
     ) {}
 
     public function show(Profile $profile, string $examId): array
     {
+        $this->expiry->forceSubmitExpired($profile);
+
         /** @var Exam $exam */
         $exam = Exam::query()
             ->where('is_published', true)
@@ -148,6 +152,9 @@ final class ExamOverviewService implements ExamOverviewInterface
         $scores = $session->status->isTerminal()
             ? $this->scoringService->getSessionScores($session)
             : null;
+        $resultSummary = $scores === null
+            ? null
+            : $this->scoringService->sessionScoreSummary($session, $scores);
 
         return [
             'id' => $session->id,
@@ -161,6 +168,7 @@ final class ExamOverviewService implements ExamOverviewInterface
             'submitted_at' => $session->submitted_at,
             'server_deadline_at' => $session->server_deadline_at,
             'scores' => $scores,
+            'result_summary' => $resultSummary,
         ];
     }
 }

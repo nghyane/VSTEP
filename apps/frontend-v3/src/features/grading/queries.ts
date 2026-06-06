@@ -1,5 +1,9 @@
 import { queryOptions } from "@tanstack/react-query"
-import type { AssessmentView, PracticeSpeakingResultResponse } from "#/features/grading/types"
+import type {
+	AssessmentView,
+	PracticeSpeakingResultResponse,
+	TeacherGradingRequestResponse,
+} from "#/features/grading/types"
 import { type ApiResponse, api } from "#/lib/api"
 
 export const assessmentViewQuery = (attemptId: string) =>
@@ -15,3 +19,9 @@ export const speakingResultQuery = (submissionId: string) =>
 		queryFn: () =>
 			api.get(`practice/speaking/submissions/${submissionId}/result`).json<PracticeSpeakingResultResponse>(),
 	})
+
+export async function requestTeacherGrading(attemptId: string) {
+	return api
+		.post(`assessment-attempts/${attemptId}/teacher-grading-request`)
+		.json<ApiResponse<TeacherGradingRequestResponse>>()
+}

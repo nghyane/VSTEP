@@ -226,11 +226,11 @@ final readonly class ExamResultReviewBuilder implements ExamResultReviewBuilderI
         if ($band !== null) {
             return ['label' => 'Band '.round($band, 1), 'status' => ExamResultReadModelStatus::READY];
         }
-        if (collect($sections)->contains(fn (array $section): bool => $section['status'] === ExamResultReadModelStatus::PENDING)) {
-            return ['label' => $this->statusLabel(ExamResultReadModelStatus::PENDING), 'status' => ExamResultReadModelStatus::PENDING];
-        }
         if (collect($sections)->contains(fn (array $section): bool => $section['status'] === ExamResultReadModelStatus::FAILED)) {
             return ['label' => $this->statusLabel(ExamResultReadModelStatus::FAILED), 'status' => ExamResultReadModelStatus::FAILED];
+        }
+        if (collect($sections)->contains(fn (array $section): bool => $section['status'] === ExamResultReadModelStatus::PENDING)) {
+            return ['label' => $this->statusLabel(ExamResultReadModelStatus::PENDING), 'status' => ExamResultReadModelStatus::PENDING];
         }
         if (collect($sections)->contains(fn (array $section): bool => $section['status'] === ExamResultReadModelStatus::READY)) {
             return ['label' => 'Chưa đủ', 'status' => ExamResultReadModelStatus::PARTIAL];

@@ -12,6 +12,8 @@ use App\Models\AssessmentAttempt;
 use App\Models\AssessmentJob;
 use App\Models\AssessmentRubric;
 use App\Models\Exam;
+use App\Models\ExamVersion;
+use App\Models\ExamVersionListeningSection;
 use App\Models\GrammarPoint;
 use App\Models\Profile;
 use App\Models\User;
@@ -120,6 +122,40 @@ class AdminDashboardTest extends TestCase
             ->assertJsonPath('data.0.type', 'error');
     }
 
+    public function test_alerts_count_missing_audio_only_for_published_active_exam_versions(): void
+    {
+        $token = $this->actingAsAdmin();
+
+        $draftExam = Exam::factory()->draft()->create();
+        $draftVersion = ExamVersion::factory()->create([
+            'exam_id' => $draftExam->id,
+            'is_active' => true,
+        ]);
+        $this->createListeningSection($draftVersion, null);
+
+        $publishedExam = Exam::factory()->published()->create();
+        $inactiveVersion = ExamVersion::factory()->create([
+            'exam_id' => $publishedExam->id,
+            'version_number' => 1,
+            'is_active' => false,
+        ]);
+        $activeVersion = ExamVersion::factory()->create([
+            'exam_id' => $publishedExam->id,
+            'version_number' => 2,
+            'is_active' => true,
+        ]);
+
+        $this->createListeningSection($inactiveVersion, null);
+        $this->createListeningSection($activeVersion, '');
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/v1/admin/alerts');
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.message', '1 đoạn nghe trong đề thi chưa có file audio');
+    }
+
     public function test_content_status_classes_by_type(): void
     {
         $token = $this->actingAsAdmin();
@@ -159,5 +195,18 @@ class AdminDashboardTest extends TestCase
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/v1/admin/stats')
             ->assertForbidden();
+    }
+
+    private function createListeningSection(ExamVersion $version, ?string $audioUrl): void
+    {
+        ExamVersionListeningSection::create([
+            'exam_version_id' => $version->id,
+            'part' => 1,
+            'part_title' => 'Part 1 · Notice',
+            'duration_minutes' => 1,
+            'audio_url' => $audioUrl,
+            'transcript' => 'This is a short listening transcript.',
+            'display_order' => 1,
+        ]);
     }
 }

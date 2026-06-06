@@ -36,6 +36,11 @@ final class ReferenceExamListeningAudio
         }
     }
 
+    public static function publicUrlIfConfigured(string $key): ?string
+    {
+        return self::hasS3Bucket() ? self::publicUrl($key) : null;
+    }
+
     private static function hasS3Bucket(): bool
     {
         return (string) config('filesystems.disks.s3.bucket') !== '';

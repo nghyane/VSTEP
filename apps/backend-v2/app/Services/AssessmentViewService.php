@@ -14,6 +14,7 @@ use App\Models\PracticeFeedbackRequest;
 use App\Models\PracticeSpeakingSubmission;
 use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
+use App\Models\TeacherGradingRequest;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\ValidationException;
 
@@ -57,12 +58,14 @@ final class AssessmentViewService
                 'overall_band' => $attempt->result->overall_band,
                 'criterion_scores' => $attempt->result->criterion_scores,
                 'caps_applied' => $attempt->result->caps_applied,
+                'source' => 'ai',
                 'display' => $this->displayService->forResult($attempt->result),
                 'diagnostics' => $this->diagnosticsService->forAttempt($attempt),
                 'calculation_trace' => $attempt->result->calculation_trace,
                 'feedback' => $attempt->result->feedback,
             ],
             'feedback_request' => $feedback,
+            'teacher_grading_request' => $this->teacherGradingRequestState($attempt),
         ];
     }
 
@@ -237,5 +240,38 @@ final class AssessmentViewService
             ->where('submission_type', $submissionType->value)
             ->where('submission_id', $attempt->source_id)
             ->first();
+    }
+
+    /** @return array<string,mixed> */
+    private function teacherGradingRequestState(AssessmentAttempt $attempt): array
+    {
+        $canRequest = $attempt->result !== null;
+        $request = TeacherGradingRequest::query()
+            ->with(['assignedTeacher:id,full_name,email', 'teacherResult'])
+            ->where('attempt_id', $attempt->id)
+            ->first();
+
+        return [
+            'can_request' => $canRequest,
+            'requested' => $request !== null,
+            'request_id' => $request?->id,
+            'status' => $request?->status?->value ?? 'none',
+            'assigned_teacher' => $request?->assignedTeacher === null ? null : [
+                'id' => $request->assignedTeacher->id,
+                'full_name' => $request->assignedTeacher->full_name,
+                'email' => $request->assignedTeacher->email,
+            ],
+            'requested_at' => $request?->requested_at,
+            'assigned_at' => $request?->assigned_at,
+            'completed_at' => $request?->completed_at,
+            'teacher_result' => $request?->teacherResult === null ? null : [
+                'id' => $request->teacherResult->id,
+                'overall_band' => $request->teacherResult->overall_band,
+                'criterion_scores' => $request->teacherResult->criterion_scores,
+                'feedback' => $request->teacherResult->feedback,
+                'submitted_at' => $request->teacherResult->submitted_at,
+                'source' => 'teacher',
+            ],
+        ];
     }
 }

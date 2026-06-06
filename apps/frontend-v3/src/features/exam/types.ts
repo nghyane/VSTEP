@@ -135,6 +135,88 @@ export interface ExamSkillSummary {
 	part_count: number
 }
 
+export type ExamResultStatus =
+	| "pending"
+	| "ready"
+	| "partial"
+	| "not_submitted"
+	| "not_applicable"
+	| "none"
+	| "failed"
+
+export interface ExamScoringSource {
+	title: string
+	issuer: string
+	url: string | null
+}
+
+export interface ExamScoringLevelRule {
+	code: "B1" | "B2" | "C1" | null
+	label: string
+	vietnamese_level: number | null
+	min_score: number
+	max_score: number
+}
+
+export interface ExamScoringRules {
+	scheme: "vstep_3_5"
+	name: string
+	skill_scale: {
+		min: number
+		max: number
+		step: number
+		rounding: "nearest_half"
+	}
+	overall: {
+		required_skills: SkillKey[]
+		formula: string
+	}
+	levels: ExamScoringLevelRule[]
+	sources: ExamScoringSource[]
+}
+
+export interface ExamResultLevel {
+	code: "B1" | "B2" | "C1"
+	label: string
+	vietnamese_level: number
+	min_score: number
+	max_score: number
+}
+
+export interface ExamOverallScoreSummary {
+	applicable: boolean
+	reason: string | null
+	band: number | null
+	score_on_10: number | null
+	max_score: number
+	vstep_level: string | null
+	level: ExamResultLevel | null
+	result_label: string | null
+}
+
+export interface ExamSkillScoreSummary {
+	key: SkillKey
+	label: string
+	status: ExamResultStatus
+	status_label?: string
+	score_on_10: number | null
+	max_score: number
+	weight_percent: number
+	contributes_to_overall: boolean
+	raw?: {
+		correct: number
+		total: number
+		wrong: number
+	} | null
+}
+
+export interface ExamSessionScoreSummary {
+	score_status: ExamResultStatus
+	scoring: ExamScoringRules
+	overall: ExamOverallScoreSummary
+	skills: ExamSkillScoreSummary[]
+}
+
 // ─── Session & Room ───
 
 export type ExamSessionStatus = "active" | "submitted" | "auto_submitted" | "grading" | "graded" | "abandoned"
@@ -151,6 +233,7 @@ export interface ExamSessionSummary {
 	submitted_at: string | null
 	server_deadline_at: string
 	scores: Record<SkillKey, number | null> | null
+	result_summary: ExamSessionScoreSummary | null
 }
 
 export interface ExamOverview {
@@ -319,8 +402,8 @@ export type {
 	ExamResultReview,
 	ExamResultReviewSection,
 	ExamResultReviewSkill,
-	ExamResultStatus,
 	ExamResultSummary,
+	ExamScoreInsight,
 	McqDetailItem,
 	SessionResultsData,
 	SpeakingFeedbackItem,

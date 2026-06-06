@@ -5,10 +5,11 @@ import { Header } from "#/components/Header"
 import { StaticIcon } from "#/components/Icon"
 import { Loading } from "#/components/Loading"
 import { ExamModeSelector } from "#/features/exam/components/ExamModeSelector"
+import { scoreLabel, statusLabel } from "#/features/exam/components/result/helpers"
 import { StartExamPanel } from "#/features/exam/components/StartExamPanel"
 import { examOverviewQuery } from "#/features/exam/queries"
 import type { ExamOverview, ExamSessionSummary, SkillKey } from "#/features/exam/types"
-import { avgSkillScores, formatDate, formatVstepBand } from "#/lib/utils"
+import { formatDate } from "#/lib/utils"
 
 type ExamMode = "full" | "custom"
 
@@ -74,6 +75,24 @@ function computeStats(overview: ExamOverview) {
 	return { totalMcq, totalFreeResponse }
 }
 
+function historyResultLabel(session: ExamSessionSummary): string {
+	const summary = session.result_summary
+	if (!summary) return session.status === "submitted" || session.status === "grading" ? "Đang chấm..." : "—"
+	if (summary.score_status === "pending" || summary.score_status === "partial") return "Đang chấm..."
+	if (summary.score_status === "failed") return statusLabel(summary.score_status)
+	if (summary.skills.some((skill) => skill.status === "pending")) return "Đang chấm..."
+	if (summary.skills.some((skill) => skill.status === "failed")) return statusLabel("failed")
+	if (!summary.overall.applicable) return customSkillResultLabel(summary.skills)
+	if (summary.overall.score_on_10 === null) return statusLabel(summary.score_status)
+	return `${scoreLabel(summary.overall.score_on_10)} · ${summary.overall.result_label ?? "Không xét"}`
+}
+
+function customSkillResultLabel(skills: NonNullable<ExamSessionSummary["result_summary"]>["skills"]): string {
+	const scoredSkills = skills.filter((skill) => skill.score_on_10 !== null)
+	if (scoredSkills.length === 0) return "Không xếp bậc"
+	return scoredSkills.map((skill) => `${skill.label} ${scoreLabel(skill.score_on_10)}`).join(" · ")
+}
+
 function ExamDetailContent({ examId, mode, selected, onChangeMode, onToggleSkill }: ContentProps) {
 	const { data } = useSuspenseQuery(examOverviewQuery(examId))
 	const overview = data.data
@@ -132,12 +151,11 @@ function ExamDetailContent({ examId, mode, selected, onChangeMode, onToggleSkill
 									<span className="w-8 tabular-nums">Lần</span>
 									<span className="flex-1">Ngày nộp</span>
 									<span className="w-28">Kỹ năng</span>
-									<span className="w-16">Điểm</span>
+									<span className="w-28">Kết quả</span>
 									<span className="w-24" />
 								</div>
 								{historySessions.map((s, idx) => {
-									const score = avgSkillScores(s.scores)
-									const isPending = s.status === "submitted" && score === null
+									const resultLabel = historyResultLabel(s)
 									return (
 										<div
 											key={s.id}
@@ -150,16 +168,8 @@ function ExamDetailContent({ examId, mode, selected, onChangeMode, onToggleSkill
 												{s.submitted_at ? formatDate(s.submitted_at) : "—"}
 											</span>
 											<span className="w-28 truncate text-muted font-medium">{getSkillLabel(s)}</span>
-											<span className="w-16">
-												{isPending ? (
-													<span className="text-xs text-subtle italic">Đang chấm...</span>
-												) : score !== null ? (
-													<span className="font-bold text-primary tabular-nums">
-														{formatVstepBand(score)}
-													</span>
-												) : (
-													<span className="text-xs text-subtle">—</span>
-												)}
+											<span className="w-28 truncate">
+												<span className="font-bold text-primary tabular-nums">{resultLabel}</span>
 											</span>
 											<span className="w-24 text-right">
 												<Link

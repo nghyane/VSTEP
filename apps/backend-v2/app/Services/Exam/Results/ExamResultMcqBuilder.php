@@ -8,11 +8,13 @@ use App\Models\ExamMcqAnswer;
 use App\Models\ExamSession;
 use App\Services\Contracts\ExamResultDisplayFormatterInterface;
 use App\Services\Contracts\ExamResultMcqBuilderInterface;
+use App\Services\ExamScoringService;
 
 final readonly class ExamResultMcqBuilder implements ExamResultMcqBuilderInterface
 {
     public function __construct(
         private ExamResultDisplayFormatterInterface $formatter,
+        private ExamScoringService $scoringService,
     ) {}
 
     public function detail(ExamSession $session): array
@@ -73,7 +75,7 @@ final readonly class ExamResultMcqBuilder implements ExamResultMcqBuilderInterfa
             'answered' => $answered,
             'wrong' => $answered - $score,
             'unanswered' => $unanswered,
-            'score_on_10' => $total > 0 ? round($score / $total * 10, 1) : 0.0,
+            'score_on_10' => $total > 0 ? $this->scoringService->roundToHalf($score / $total * 10) : 0.0,
         ];
     }
 
