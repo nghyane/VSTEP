@@ -223,13 +223,23 @@ function SummaryBanner({ data }: { data: ResultData }) {
 
       <View style={[s.bandBox, { backgroundColor: c.primaryTint, borderColor: c.primaryLight }]}>
         <Text style={[s.bandLabel, { color: c.primaryDark }]}>BAND HIỆN TẠI</Text>
-        <View style={s.bandRow}>
-          <Text style={[s.bandValue, { color: c.foreground }]}>{bandValue}</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={[s.bandTitle, { color: c.foreground }]}>{summary.display.bandTitle}</Text>
-            <Text style={[s.bandSub, { color: c.mutedForeground }]}>{summary.display.totalScoreTitle}</Text>
+        {processing ? (
+          <View style={s.bandPendingRow}>
+            <ActivityIndicator color={c.primary} size="small" />
+            <View style={{ flex: 1 }}>
+              <Text style={[s.bandPendingTitle, { color: c.foreground }]}>Đang chấm</Text>
+              <Text style={[s.bandSub, { color: c.mutedForeground }]}>Writing/Speaking sẽ tự cập nhật khi hoàn tất.</Text>
+            </View>
           </View>
-        </View>
+        ) : (
+          <View style={s.bandRow}>
+            <Text style={[s.bandValue, { color: c.foreground }]}>{bandValue}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[s.bandTitle, { color: c.foreground }]}>{summary.display.bandTitle}</Text>
+              <Text style={[s.bandSub, { color: c.mutedForeground }]}>{summary.display.totalScoreTitle}</Text>
+            </View>
+          </View>
+        )}
       </View>
 
       <View style={s.metricGrid}>
@@ -1021,6 +1031,8 @@ const s = StyleSheet.create({
   bandLabel: { fontSize: 11, fontFamily: fontFamily.extraBold, letterSpacing: 1.4 },
   bandRow: { marginTop: spacing.sm, flexDirection: "row", alignItems: "center", gap: spacing.md },
   bandValue: { fontSize: 48, fontFamily: fontFamily.extraBold, lineHeight: 54 },
+  bandPendingRow: { marginTop: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md },
+  bandPendingTitle: { fontSize: fontSize.xl, fontFamily: fontFamily.extraBold, lineHeight: 28 },
   bandTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.extraBold },
   bandSub: { marginTop: spacing.xs, fontSize: fontSize.xs, fontFamily: fontFamily.bold, lineHeight: 17 },
   metricGrid: { flexDirection: "row", gap: spacing.sm },

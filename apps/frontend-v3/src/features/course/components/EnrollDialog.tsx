@@ -208,10 +208,11 @@ export function EnrollDialog({ open, onClose, course }: Props) {
 								Cam kết kỷ luật
 							</p>
 							<p className="text-sm leading-relaxed text-foreground">
-								Để giữ cam kết đầu ra, bạn cần hoàn thành tối thiểu{" "}
+								Để được áp dụng cam kết đầu ra, bạn cần hoàn thành tối thiểu{" "}
 								<span className="font-extrabold">{course.required_full_tests} bài thi full-test</span> trong{" "}
-								<span className="font-extrabold">{course.commitment_window_days} ngày đầu</span> của khóa. Vi
-								phạm sẽ dẫn tới việc <span className="font-extrabold">khóa quyền truy cập khóa học</span>.
+								<span className="font-extrabold">{course.commitment_window_days} ngày đầu</span> của khóa. Nếu
+								không hoàn thành đúng hạn, trung tâm{" "}
+								<span className="font-extrabold">không chịu trách nhiệm về kết quả đầu ra</span>.
 							</p>
 
 							{course.rules && (
