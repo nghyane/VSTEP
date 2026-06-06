@@ -67,9 +67,8 @@ final class McqSkillService
      */
     public function getExercise(string $skill, string $id): array
     {
-        $class = $this->exerciseClass($skill);
         /** @var Model $exercise */
-        $exercise = $class::query()->findOrFail($id);
+        $exercise = $this->publishedExercise($skill, $id);
         $questions = $exercise->questions()->orderBy('display_order')->get();
 
         return ['exercise' => $exercise, 'questions' => $questions];
@@ -80,11 +79,22 @@ final class McqSkillService
         string $skill,
         string $exerciseId,
     ): PracticeSession {
-        $class = $this->exerciseClass($skill);
         /** @var Model $exercise */
-        $exercise = $class::query()->findOrFail($exerciseId);
+        $exercise = $this->publishedExercise($skill, $exerciseId);
 
         return $this->sessionService->start($profile, $skill, $exercise);
+    }
+
+    private function publishedExercise(string $skill, string $id): Model
+    {
+        $class = $this->exerciseClass($skill);
+
+        /** @var Model $exercise */
+        $exercise = $class::query()
+            ->where('is_published', true)
+            ->findOrFail($id);
+
+        return $exercise;
     }
 
     /**

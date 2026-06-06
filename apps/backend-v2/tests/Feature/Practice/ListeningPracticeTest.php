@@ -50,6 +50,21 @@ class ListeningPracticeTest extends TestCase
         $this->assertStringStartsWith('audio/listening/', $response->json('data.exercise.audio_url'));
     }
 
+    public function test_unpublished_exercise_is_not_accessible(): void
+    {
+        $exercise = PracticeListeningExercise::factory()->create(['is_published' => false]);
+        PracticeListeningQuestion::factory()->create(['exercise_id' => $exercise->id]);
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/practice/listening/exercises/{$exercise->id}")
+            ->assertNotFound();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/listening/sessions', ['exercise_id' => $exercise->id])
+            ->assertNotFound();
+    }
+
     public function test_full_mcq_flow_start_submit(): void
     {
         $user = User::factory()->create();

@@ -42,6 +42,7 @@ final class SpeakingPracticeService
     {
         /** @var PracticeSpeakingDrill $drill */
         $drill = PracticeSpeakingDrill::query()
+            ->where('is_published', true)
             ->with(['sentences' => fn ($q) => $q->orderBy('display_order')])
             ->findOrFail($id);
 
@@ -62,7 +63,9 @@ final class SpeakingPracticeService
     public function getTask(string $id): PracticeSpeakingTask
     {
         /** @var PracticeSpeakingTask $task */
-        $task = PracticeSpeakingTask::query()->findOrFail($id);
+        $task = PracticeSpeakingTask::query()
+            ->where('is_published', true)
+            ->findOrFail($id);
 
         return $task;
     }
@@ -70,7 +73,9 @@ final class SpeakingPracticeService
     public function startDrillSession(Profile $profile, string $drillId): PracticeSession
     {
         /** @var PracticeSpeakingDrill $drill */
-        $drill = PracticeSpeakingDrill::query()->findOrFail($drillId);
+        $drill = PracticeSpeakingDrill::query()
+            ->where('is_published', true)
+            ->findOrFail($drillId);
 
         return $this->sessionService->start($profile, 'speaking_drill', $drill);
     }
@@ -78,7 +83,9 @@ final class SpeakingPracticeService
     public function startVstepPracticeSession(Profile $profile, string $taskId): PracticeSession
     {
         /** @var PracticeSpeakingTask $task */
-        $task = PracticeSpeakingTask::query()->findOrFail($taskId);
+        $task = PracticeSpeakingTask::query()
+            ->where('is_published', true)
+            ->findOrFail($taskId);
 
         return $this->sessionService->start($profile, 'speaking_vstep_practice', $task);
     }

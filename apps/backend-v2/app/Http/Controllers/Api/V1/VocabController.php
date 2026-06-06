@@ -41,7 +41,10 @@ final class VocabController extends Controller
     public function topicDetail(Request $request, string $id): JsonResponse
     {
         /** @var VocabTopic $topic */
-        $topic = VocabTopic::query()->with('tasks')->findOrFail($id);
+        $topic = VocabTopic::query()
+            ->where('is_published', true)
+            ->with('tasks')
+            ->findOrFail($id);
         $profile = $request->profile();
 
         $data = $this->vocabService->getTopicForProfile($topic, $profile);
@@ -82,7 +85,9 @@ final class VocabController extends Controller
     {
         $profile = $request->profile();
         /** @var VocabWord $word */
-        $word = VocabWord::query()->findOrFail($request->validated('word_id'));
+        $word = VocabWord::query()
+            ->whereHas('topic', fn ($query) => $query->where('is_published', true))
+            ->findOrFail($request->validated('word_id'));
 
         $sessionId = $request->validated('session_id');
         $session = null;
@@ -108,7 +113,9 @@ final class VocabController extends Controller
     {
         $profile = $request->profile();
         /** @var VocabExercise $exercise */
-        $exercise = VocabExercise::query()->findOrFail($id);
+        $exercise = VocabExercise::query()
+            ->whereHas('topic', fn ($query) => $query->where('is_published', true))
+            ->findOrFail($id);
 
         $sessionId = $request->validated('session_id');
         $session = null;

@@ -23,6 +23,7 @@ const NAMESPACE_LABELS: Record<string, string> = {
 	streak: "Streak (chuỗi học liên tục)",
 	grading: "Chấm bài",
 	exam: "Đề thi (chi phí coin)",
+	practice: "Luyện tập (chi phí coin)",
 	support: "Hỗ trợ",
 	onboarding: "Onboarding",
 	profile: "Profile",
@@ -46,6 +47,7 @@ const KEY_LABELS: Record<string, string> = {
 	"grading.max_retries": "Số lần thử lại tối đa khi chấm bài",
 	"exam.full_test_cost_coins": "Xu/lần thi Full VSTEP (4 kỹ năng)",
 	"exam.custom_per_skill_coins": "Xu/kỹ năng khi thi Custom VSTEP",
+	"practice.feedback_cost_coins": "Xu/lần nhận feedback AI bài luyện",
 	"support.level_costs": "Xu trừ khi bật gợi ý trong drill",
 	"support.zalo_phone": "Số điện thoại Zalo hỗ trợ",
 	"onboarding.initial_coins": "Xu tặng khi tạo profile đầu tiên",
@@ -79,6 +81,8 @@ const KEY_DESCRIPTIONS: Record<string, string> = {
 		"Số xu trừ trong ví khi học viên bắt đầu một đề thi Full VSTEP (đủ 4 kỹ năng Listening + Reading + Writing + Speaking).",
 	"exam.custom_per_skill_coins":
 		"Số xu trừ cho mỗi kỹ năng học viên chọn khi tạo đề Custom VSTEP. VD: chọn 2 kỹ năng → trừ 2 × giá trị này.",
+	"practice.feedback_cost_coins":
+		"Số xu trừ khi học viên yêu cầu AI feedback chi tiết trong luyện viết, shadowing hoặc hội thoại AI. Giá trị này cũng được API public /config trả về cho giao diện học viên.",
 	"support.level_costs":
 		'Số xu trừ khi học viên bật mức gợi ý trong drill. JSON dạng {level: cost}. VD {"1": 1, "2": 2} = level 1 trừ 1 xu, level 2 trừ 2 xu.',
 	"support.zalo_phone":

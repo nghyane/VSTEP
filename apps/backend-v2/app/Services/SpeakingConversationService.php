@@ -47,7 +47,9 @@ final class SpeakingConversationService implements ConversationServiceInterface
     public function getScenario(string $id): PracticeSpeakingScenario
     {
         /** @var PracticeSpeakingScenario */
-        return PracticeSpeakingScenario::query()->findOrFail($id);
+        return PracticeSpeakingScenario::query()
+            ->where('is_published', true)
+            ->findOrFail($id);
     }
 
     /**

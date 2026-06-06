@@ -44,6 +44,23 @@ class GrammarPracticeTest extends TestCase
         $response->assertJsonCount(1, 'data.exercises');
     }
 
+    public function test_unpublished_point_detail_and_exercises_are_not_accessible(): void
+    {
+        $point = GrammarPoint::factory()->create(['is_published' => false]);
+        $exercise = GrammarExercise::factory()->mcq()->create(['grammar_point_id' => $point->id]);
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/grammar/points/{$point->id}")
+            ->assertNotFound();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/v1/grammar/exercises/{$exercise->id}/attempt", [
+                'answer' => ['selected_index' => 0],
+            ])
+            ->assertNotFound();
+    }
+
     public function test_mcq_correct_updates_mastery(): void
     {
         $user = User::factory()->create();

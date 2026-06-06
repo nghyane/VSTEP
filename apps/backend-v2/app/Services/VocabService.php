@@ -183,7 +183,11 @@ final class VocabService
         // concat() not merge() — model has null primaryKey, merge() deduplicates by key
         $allStates = $dueNow->concat($learnAhead)->unique('word_id')->take($limit);
         $wordIds = $allStates->pluck('word_id');
-        $words = VocabWord::query()->whereIn('id', $wordIds)->get()->keyBy('id');
+        $words = VocabWord::query()
+            ->whereIn('id', $wordIds)
+            ->whereHas('topic', fn ($query) => $query->where('is_published', true))
+            ->get()
+            ->keyBy('id');
 
         $counts = ['new' => 0, 'learning' => 0, 'review' => 0];
         $items = [];

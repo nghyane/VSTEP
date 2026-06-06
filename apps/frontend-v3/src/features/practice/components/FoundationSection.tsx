@@ -4,9 +4,10 @@ import { SkillIcon } from "#/components/SkillIcon"
 import { learningPathQuery } from "#/features/practice/queries"
 import type { LearningPathSkill } from "#/features/practice/types"
 
-function progressText(skill: LearningPathSkill | undefined, fallbackTotal: number, unit: string): string {
-	const completed = skill?.completed_items ?? 0
-	const total = skill?.total_items ?? fallbackTotal
+function progressText(skill: LearningPathSkill | undefined, unit: string): string | null {
+	if (!skill || skill.total_items === null) return null
+	const completed = skill.completed_items ?? 0
+	const total = skill.total_items
 	return `${completed}/${total} ${unit}`
 }
 
@@ -17,26 +18,23 @@ export function FoundationSection() {
 	const pathSkills = data?.data.skills ?? []
 	const vocabulary = pathSkills.find((skill) => skill.skill === "vocabulary")
 	const grammar = pathSkills.find((skill) => skill.skill === "grammar")
+	const vocabularyProgress = progressText(vocabulary, `từ ${vocabulary?.level ?? targetLevel}`)
+	const grammarProgress = progressText(grammar, "chủ điểm")
 
 	return (
 		<section>
 			<h3 className="font-extrabold text-xl text-foreground mb-1">Nền tảng</h3>
 			<p className="text-sm text-subtle mb-3">Từ vựng và ngữ pháp — gốc rễ mọi kỹ năng</p>
 
-			{hasPathData && (
+			{hasPathData && (vocabularyProgress || grammarProgress) && (
 				<div className="mb-5 flex flex-wrap gap-2">
 					<span className="self-center text-xs font-extrabold uppercase tracking-wider text-muted">
 						Gợi ý
 					</span>
-					<ProgressPill
-						title="Từ vựng"
-						text={progressText(vocabulary, 120, `từ ${vocabulary?.level ?? "B1"}`)}
-					/>
-					<ProgressPill
-						title="Ngữ pháp"
-						text={progressText(grammar, 10, "chủ điểm")}
-						detail={`Mục tiêu ${targetLevel}`}
-					/>
+					{vocabularyProgress && <ProgressPill title="Từ vựng" text={vocabularyProgress} />}
+					{grammarProgress && (
+						<ProgressPill title="Ngữ pháp" text={grammarProgress} detail={`Mục tiêu ${targetLevel}`} />
+					)}
 				</div>
 			)}
 

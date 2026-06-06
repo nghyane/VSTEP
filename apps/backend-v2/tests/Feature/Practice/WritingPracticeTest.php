@@ -84,6 +84,27 @@ class WritingPracticeTest extends TestCase
         ]]);
     }
 
+    public function test_unpublished_prompt_is_not_accessible(): void
+    {
+        $prompt = PracticeWritingPrompt::factory()->create(['is_published' => false]);
+        $token = $this->loginLearner();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson("/api/v1/practice/writing/prompts/{$prompt->id}")
+            ->assertNotFound();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/writing/sessions', ['exercise_id' => $prompt->id])
+            ->assertNotFound();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson('/api/v1/practice/writing/diagnostics', [
+                'prompt_id' => $prompt->id,
+                'text' => 'Dear John, I am writing to thank you.',
+            ])
+            ->assertNotFound();
+    }
+
     public function test_realtime_writing_diagnostics_returns_readiness_and_requirement_metrics(): void
     {
         $prompt = PracticeWritingPrompt::factory()->create([
