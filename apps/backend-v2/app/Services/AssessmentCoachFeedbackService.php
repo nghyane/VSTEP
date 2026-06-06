@@ -17,6 +17,10 @@ use Throwable;
 
 final readonly class AssessmentCoachFeedbackService
 {
+    private const MIN_SPEAKING_FEEDBACK_WORDS = 20;
+
+    private const MIN_SPEAKING_FEEDBACK_CONFIDENCE = 0.65;
+
     public function __construct(
         private WritingFeedbackGenerator $writingFeedback,
         private SpeakingFeedbackGenerator $speakingFeedback,
@@ -64,6 +68,10 @@ final readonly class AssessmentCoachFeedbackService
         ScoreBag $scores,
         FeedbackBag $feedback,
     ): FeedbackBag {
+        if (! $this->hasAssessableSpeakingTranscript($signals)) {
+            return $this->unassessableSpeakingFeedback($feedback, $signals);
+        }
+
         $generated = $this->speakingFeedback->generate(
             transcript: (string) ($signals->speech['transcript'] ?? ''),
             promptText: $this->promptText($input->prompt),
@@ -78,6 +86,48 @@ final readonly class AssessmentCoachFeedbackService
         );
 
         return $this->mergeFeedback($feedback, $generated);
+    }
+
+    private function hasAssessableSpeakingTranscript(SignalBag $signals): bool
+    {
+        $wordCount = $this->speakingWordCount($signals);
+        $confidence = $signals->speech['confidence'] ?? null;
+
+        return $wordCount >= self::MIN_SPEAKING_FEEDBACK_WORDS
+            && (! is_numeric($confidence) || (float) $confidence >= self::MIN_SPEAKING_FEEDBACK_CONFIDENCE);
+    }
+
+    private function unassessableSpeakingFeedback(FeedbackBag $feedback, SignalBag $signals): FeedbackBag
+    {
+        $wordCount = $this->speakingWordCount($signals);
+        $confidence = $signals->speech['confidence'] ?? null;
+        $improvements = $feedback->improvements;
+
+        if ($wordCount < self::MIN_SPEAKING_FEEDBACK_WORDS) {
+            $improvements[] = "Hệ thống chỉ nhận diện được {$wordCount} từ rõ ràng, chưa đủ dữ liệu để nhận xét nội dung bài nói.";
+        }
+
+        if (is_numeric($confidence) && (float) $confidence < self::MIN_SPEAKING_FEEDBACK_CONFIDENCE) {
+            $improvements[] = 'Độ tin cậy transcript thấp ('.round((float) $confidence * 100).'%). Hãy thu âm lại ở nơi yên tĩnh và nói rõ từng câu.';
+        }
+
+        $improvements[] = 'Không tạo điểm mạnh tự động cho audio chưa đủ rõ để tránh phản hồi sai lệch.';
+
+        return new FeedbackBag(
+            strengths: [],
+            improvements: array_values(array_unique($improvements)),
+            warnings: array_values(array_unique([...$feedback->warnings, 'speaking_audio_unassessable'])),
+            evidenceNotes: $feedback->evidenceNotes,
+            rewrites: $feedback->rewrites,
+        );
+    }
+
+    private function speakingWordCount(SignalBag $signals): int
+    {
+        return max(
+            (int) ($signals->speech['word_count'] ?? 0),
+            str_word_count((string) ($signals->speech['transcript'] ?? '')),
+        );
     }
 
     /** @return list<array<string, mixed>> */
@@ -107,16 +157,29 @@ final readonly class AssessmentCoachFeedbackService
         }
 
         $content = $prompt['content'] ?? [];
-        if (! is_array($content)) {
-            return '';
+
+        return implode('. ', $this->stringValues($content));
+    }
+
+    /** @return list<string> */
+    private function stringValues(mixed $value): array
+    {
+        if (is_string($value)) {
+            $value = trim($value);
+
+            return $value === '' ? [] : [$value];
         }
 
-        return implode('. ', array_filter(array_map(
-            fn (mixed $value): string => is_array($value)
-                ? implode(' ', array_filter($value, 'is_string'))
-                : (is_string($value) ? $value : ''),
-            $content,
-        )));
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $strings = [];
+        foreach ($value as $item) {
+            array_push($strings, ...$this->stringValues($item));
+        }
+
+        return $strings;
     }
 
     /** @param array<string, mixed> $generated */

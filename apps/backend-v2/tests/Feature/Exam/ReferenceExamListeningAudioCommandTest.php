@@ -23,7 +23,7 @@ final class ReferenceExamListeningAudioCommandTest extends TestCase
 
         $exam = Exam::factory()->create([
             'slug' => 'vstep-de-thi-thu-99-audio',
-            'source_school' => 'Capstone VSTEP · Biên soạn theo cấu trúc VSTEP 3-5',
+            'source_school' => 'Capstone VSTEP',
         ]);
         $version = ExamVersion::factory()->create([
             'exam_id' => $exam->id,

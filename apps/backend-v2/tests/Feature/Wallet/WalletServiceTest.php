@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Wallet;
 
 use App\Enums\CoinTransactionType;
+use App\Enums\NotificationType;
 use App\Models\CoinTransaction;
 use App\Models\Profile;
 use App\Models\User;
@@ -49,6 +50,20 @@ class WalletServiceTest extends TestCase
         $this->wallet->spend($profile, 25, CoinTransactionType::ExamCustom);
 
         $this->assertSame(75, $this->wallet->getBalance($profile));
+    }
+
+    public function test_spend_pushes_coin_spent_notification(): void
+    {
+        $profile = $this->profile();
+        $this->wallet->credit($profile, 100, CoinTransactionType::Topup);
+
+        $this->wallet->spend($profile, 25, CoinTransactionType::ExamCustom);
+
+        $this->assertDatabaseHas('notifications', [
+            'profile_id' => $profile->id,
+            'type' => NotificationType::CoinSpent->value,
+            'title' => 'Đã trừ xu thi kỹ năng',
+        ]);
     }
 
     public function test_spend_rejects_insufficient_balance(): void

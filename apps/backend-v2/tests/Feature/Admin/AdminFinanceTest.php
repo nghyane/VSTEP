@@ -97,10 +97,10 @@ class AdminFinanceTest extends TestCase
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/v1/admin/finance/coin-summary')
             ->assertOk()
-            ->assertJsonPath('data.totals.transactions', 2)
-            ->assertJsonPath('data.totals.credit_total', 100)
+            ->assertJsonPath('data.totals.transactions', 3)
+            ->assertJsonPath('data.totals.credit_total', 200)
             ->assertJsonPath('data.totals.debit_total', 30)
-            ->assertJsonPath('data.totals.net_total', 70)
+            ->assertJsonPath('data.totals.net_total', 170)
             ->assertJsonPath('data.totals.active_users', 1);
 
         $this->withHeader('Authorization', "Bearer {$token}")

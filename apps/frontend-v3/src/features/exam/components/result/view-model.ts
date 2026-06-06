@@ -115,11 +115,12 @@ function resultStatusNotice(result: SessionResultsData): ResultStatusNotice | nu
 	if (
 		summary.has_pending_jobs ||
 		summary.score_status === "pending" ||
-		summary.score_status === "partial" ||
-		summary.feedback_status === "pending" ||
-		summary.feedback_status === "partial"
+		summary.feedback_status === "pending"
 	) {
 		return { label: statusLabel("pending"), tone: "warning" }
+	}
+	if (summary.score_status === "partial" || summary.feedback_status === "partial") {
+		return { label: statusLabel("partial"), tone: "warning" }
 	}
 	if (summary.score_status === "not_submitted" || summary.score_status === "none") {
 		return { label: statusLabel(summary.score_status), tone: "muted" }

@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query"
 import { type ReactNode, useEffect, useMemo, useState } from "react"
 import { ScrollArea } from "#/components/ScrollArea"
 import {
@@ -12,7 +13,12 @@ import {
 } from "#/features/exam/components/result/productive-model"
 import type { SessionResultsData } from "#/features/exam/types"
 import { RubricBar } from "#/features/grading/components/RubricBar"
-import type { AssessmentResultDisplay, CriterionScore } from "#/features/grading/types"
+import { requestTeacherGrading } from "#/features/grading/queries"
+import type {
+	AssessmentResultDisplay,
+	CriterionScore,
+	TeacherGradingRequestState,
+} from "#/features/grading/types"
 import { cn, round } from "#/lib/utils"
 import { scoreLabel, statusLabel } from "./helpers"
 
@@ -97,6 +103,7 @@ export function ProductiveSkillReview({ result, kind }: Props) {
 						show={active.display?.ui.show_criterion_breakdown ?? true}
 					/>
 					<ProductiveFeedbackPanel item={active} />
+					<TeacherGradingSection item={active} />
 				</div>
 			</ScrollArea>
 		</div>
@@ -290,4 +297,159 @@ function EmptyState({ text }: { readonly text: string }) {
 			{text}
 		</div>
 	)
+}
+
+function TeacherGradingSection({ item }: { readonly item: ProductiveItem }) {
+	const tgr = item.teacherGradingRequest
+	const attemptId = item.attemptId
+
+	const requestMutation = useMutation({
+		mutationFn: () => {
+			if (!attemptId) throw new Error("No attempt")
+			return requestTeacherGrading(attemptId)
+		},
+	})
+
+	if (!tgr || !attemptId) return null
+
+	// Already requested — show status.
+	if (tgr.requested) {
+		return (
+			<Section title="Giáo viên chấm">
+				<TeacherGradingStatus tgr={tgr} />
+			</Section>
+		)
+	}
+
+	// Not requested yet — show request UI.
+	return (
+		<Section title="Giáo viên chấm">
+			{tgr.can_request ? (
+				<div>
+					<p className="text-sm text-muted">
+						Bạn có thể yêu cầu giáo viên chấm lại bài viết này để có đánh giá chuyên sâu hơn.
+					</p>
+					<button
+						type="button"
+						disabled={requestMutation.isPending}
+						onClick={() => requestMutation.mutate()}
+						className="btn btn-primary mt-3"
+					>
+						{requestMutation.isPending ? "Đang gửi..." : "Yêu cầu giáo viên chấm"}
+					</button>
+					{requestMutation.isError && (
+						<p className="mt-2 text-sm font-bold text-destructive">
+							{(requestMutation.error as Error)?.message ?? "Không gửi được yêu cầu."}
+						</p>
+					)}
+				</div>
+			) : (
+				<p className="text-sm text-muted">
+					Bài cần được chấm điểm tự động trước khi có thể yêu cầu giáo viên chấm.
+				</p>
+			)}
+		</Section>
+	)
+}
+
+function TeacherGradingStatus({ tgr }: { readonly tgr: TeacherGradingRequestState }) {
+	const status = tgr.status
+
+	if (status === "pending_assignment") {
+		return (
+			<div className="rounded-2xl bg-warning/5 p-3">
+				<p className="text-sm font-bold text-warning">Đang chờ phân công giáo viên</p>
+				<p className="mt-1 text-xs text-muted">
+					Yêu cầu của bạn đã được ghi nhận. Đội ngũ sẽ phân công giáo viên trong thời gian sớm nhất.
+				</p>
+			</div>
+		)
+	}
+
+	if (status === "assigned" || status === "in_progress") {
+		const teacherName = tgr.assigned_teacher?.full_name ?? "giáo viên"
+		return (
+			<div className="rounded-2xl bg-info/5 p-3">
+				<p className="text-sm font-bold text-info-dark">
+					{status === "assigned" ? "Đã phân công giáo viên" : "Giáo viên đang chấm"}
+				</p>
+				<p className="mt-1 text-xs text-muted">
+					{teacherName}{" "}
+					{status === "assigned" ? "sẽ sớm bắt đầu chấm bài của bạn." : "đang xem xét bài làm của bạn."}
+				</p>
+			</div>
+		)
+	}
+
+	if (status === "completed" && tgr.teacher_result) {
+		const result = tgr.teacher_result
+		return (
+			<div className="space-y-3">
+				<div className="rounded-2xl bg-primary/5 p-3">
+					<p className="text-sm font-bold text-primary-dark">Giáo viên đã chấm xong</p>
+					<p className="mt-1 text-xs text-muted">Kết quả bên dưới là đánh giá từ giáo viên.</p>
+				</div>
+				<div className="flex items-center gap-3">
+					<span className="text-xs font-black uppercase tracking-[0.14em] text-muted">Điểm giáo viên</span>
+					<span className="text-2xl font-black tabular-nums text-primary-dark">
+						{scoreLabel(result.overall_band)}
+					</span>
+				</div>
+				{result.criterion_scores.length > 0 && (
+					<div className="grid gap-2 sm:grid-cols-2">
+						{result.criterion_scores.map((criterion) => (
+							<div key={criterion.key} className="rounded-2xl bg-background/50 p-3">
+								<RubricBar
+									label={criterion.key}
+									score={round(criterion.score)}
+									max={10}
+									color="var(--color-primary-dark)"
+								/>
+							</div>
+						))}
+					</div>
+				)}
+				{result.feedback && (
+					<ProductiveFeedbackPanel item={{ ...itemPlaceholder, feedback: result.feedback }} />
+				)}
+			</div>
+		)
+	}
+
+	if (status === "rejected" || status === "cancelled") {
+		return (
+			<div className="rounded-2xl bg-destructive/5 p-3">
+				<p className="text-sm font-bold text-destructive">
+					{status === "rejected" ? "Yêu cầu bị từ chối" : "Yêu cầu đã hủy"}
+				</p>
+				<p className="mt-1 text-xs text-muted">
+					{status === "rejected"
+						? "Rất tiếc, yêu cầu chấm bài của bạn không được chấp nhận. Vui lòng thử lại hoặc liên hệ hỗ trợ."
+						: "Yêu cầu chấm bài đã bị hủy. Bạn có thể gửi yêu cầu mới."}
+				</p>
+			</div>
+		)
+	}
+
+	return null
+}
+
+// Placeholder item for reusing ProductiveFeedbackPanel for teacher result.
+// Only the `feedback` field matters for rendering; other fields exist only to
+// satisfy the ProductiveItem type so the feedback panel can render safely.
+const itemPlaceholder: ProductiveItem = {
+	id: "",
+	label: "",
+	prompt: "",
+	responseLabel: "",
+	response: null,
+	score: null,
+	status: "ready",
+	criteria: null,
+	display: null,
+	diagnostics: null,
+	scoreInsights: [],
+	feedback: null,
+	attemptId: null,
+	teacherGradingRequest: null,
 }

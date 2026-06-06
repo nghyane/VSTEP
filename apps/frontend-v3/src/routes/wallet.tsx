@@ -143,9 +143,13 @@ function buildAppReturnUrl(search: {
 	if (search.status) params.set("status", search.status)
 	if (search.orderCode) params.set("orderCode", search.orderCode)
 	if (search.cancel) params.set("cancel", "true")
-	if (search.courseId) params.set("courseId", search.courseId)
 	const query = params.toString()
-	return `vstep://${search.flow === "course" ? "course-payment" : "topup"}${query ? `?${query}` : ""}`
+	if (search.flow === "course") {
+		const coursePath = search.courseId ? `/courses/${encodeURIComponent(search.courseId)}` : "/classes"
+		return `vstep://${coursePath}${query ? `?${query}` : ""}`
+	}
+
+	return `vstep:///topup${query ? `?${query}` : ""}`
 }
 
 function getPaidMessage(flow: PaymentReturnFlow, isMobileReturn: boolean) {

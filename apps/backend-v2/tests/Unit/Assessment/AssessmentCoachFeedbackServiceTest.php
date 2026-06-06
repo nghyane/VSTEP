@@ -92,7 +92,7 @@ final class AssessmentCoachFeedbackServiceTest extends TestCase
             ),
             new SignalBag(
                 vocabulary: ['word_count' => 30],
-                speech: ['transcript' => 'This is my speaking answer.', 'speaking_rate' => 120],
+                speech: ['transcript' => 'This is my speaking answer.', 'speaking_rate' => 120, 'word_count' => 30],
                 coherence: ['linking_word_count' => 1],
                 pronunciation: ['overall' => 7.0],
             ),
@@ -105,6 +105,37 @@ final class AssessmentCoachFeedbackServiceTest extends TestCase
         $this->assertSame(['Nói rõ ý'], $result->strengths);
         $this->assertSame(['Cần giảm ngắt nghỉ'], $result->improvements);
         $this->assertSame([], $result->rewrites);
+    }
+
+    public function test_exam_speaking_with_unclear_audio_does_not_generate_positive_feedback(): void
+    {
+        $speakingGenerator = new CountingSpeakingFeedbackGenerator;
+        $service = new AssessmentCoachFeedbackService(new CoachTestWritingFeedbackGenerator, $speakingGenerator);
+
+        $result = $service->forExam(
+            new AssessmentInput(
+                profileId: 'profile-1',
+                skill: AssessmentSkill::Speaking,
+                taskType: AssessmentTaskType::SpeakingPart1Personal,
+                sourceType: AssessmentSourceType::Exam,
+                sourceId: 'submission-1',
+                prompt: ['content' => ['Talk about your hometown.']],
+            ),
+            new SignalBag(
+                speech: ['transcript' => '.', 'confidence' => 0.0, 'word_count' => 0],
+                pronunciation: ['overall' => 0.0],
+            ),
+            new ScoreBag([
+                new CriterionScore(CriterionKey::Fluency, 1.0, 1.0),
+            ], 1.0),
+            new FeedbackBag(evidenceNotes: ['fluency' => ['label' => 'Độ trôi chảy', 'detail' => 'Không đủ dữ liệu.']]),
+        );
+
+        $this->assertSame(0, $speakingGenerator->calls);
+        $this->assertSame([], $result->strengths);
+        $this->assertContains('speaking_audio_unassessable', $result->warnings);
+        $this->assertStringContainsString('chưa đủ dữ liệu', $result->improvements[0]);
+        $this->assertStringContainsString('Không tạo điểm mạnh', $result->improvements[2]);
     }
 }
 
@@ -127,6 +158,21 @@ final class CoachTestSpeakingFeedbackGenerator implements SpeakingFeedbackGenera
         return [
             'strengths' => ['Nói rõ ý'],
             'improvements' => ['Cần giảm ngắt nghỉ'],
+        ];
+    }
+}
+
+final class CountingSpeakingFeedbackGenerator implements SpeakingFeedbackGenerator
+{
+    public int $calls = 0;
+
+    public function generate(string $transcript, string $promptText, array $scores, array $metrics, ?array $bandContext = null): array
+    {
+        $this->calls++;
+
+        return [
+            'strengths' => ['Không nên xuất hiện'],
+            'improvements' => ['Không nên xuất hiện'],
         ];
     }
 }

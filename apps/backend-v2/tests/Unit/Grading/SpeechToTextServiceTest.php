@@ -79,7 +79,7 @@ final class SpeechToTextServiceTest extends TestCase
                     ],
                     [
                         'Word' => 'morning',
-                        'Offset' => 2_700_000,
+                        'Offset' => 4_500_000,
                         'Duration' => 3_000_000,
                         'AccuracyScore' => 92.0,
                         'ErrorType' => 'None',

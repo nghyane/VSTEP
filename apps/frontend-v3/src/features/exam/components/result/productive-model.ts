@@ -12,6 +12,7 @@ import type {
 	AssessmentFeedback,
 	AssessmentResultDisplay,
 	CriterionScore,
+	TeacherGradingRequestState,
 } from "#/features/grading/types"
 
 export type ProductiveKind = "writing" | "speaking"
@@ -31,6 +32,8 @@ export interface ProductiveItem {
 	readonly diagnostics: AssessmentDiagnostics | null
 	readonly scoreInsights: readonly ExamScoreInsight[]
 	readonly feedback: AssessmentFeedback | null
+	readonly attemptId: string | null
+	readonly teacherGradingRequest: TeacherGradingRequestState | null
 }
 
 export function buildProductiveItems(result: SessionResultsData, kind: ProductiveKind): ProductiveItem[] {
@@ -67,6 +70,8 @@ function writingItem(task: ExamVersionWritingTask, feedback: WritingFeedbackItem
 		diagnostics: feedback?.diagnostics ?? null,
 		scoreInsights: feedback?.score_insights ?? [],
 		feedback: feedback?.feedback ?? null,
+		attemptId: feedback?.attempt_id ?? null,
+		teacherGradingRequest: feedback?.teacher_grading_request ?? null,
 	}
 }
 
@@ -85,6 +90,8 @@ function speakingItem(part: ExamVersionSpeakingPart, feedback: SpeakingFeedbackI
 		diagnostics: feedback?.diagnostics ?? null,
 		scoreInsights: feedback?.score_insights ?? [],
 		feedback: feedback?.feedback ?? null,
+		attemptId: feedback?.attempt_id ?? null,
+		teacherGradingRequest: feedback?.teacher_grading_request ?? null,
 	}
 }
 

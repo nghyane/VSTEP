@@ -20,6 +20,7 @@ import { Route as AppKhoaHocRouteImport } from "./routes/_app/khoa-hoc"
 import { Route as AppHoSoRouteImport } from "./routes/_app/ho-so"
 import { Route as AppGiaoDichXuRouteImport } from "./routes/_app/giao-dich-xu"
 import { Route as AppDonHangRouteImport } from "./routes/_app/don-hang"
+import { Route as AppDieuKhoanRouteImport } from "./routes/_app/dieu-khoan"
 import { Route as AppDashboardRouteImport } from "./routes/_app/dashboard"
 import { Route as AppThiThuIndexRouteImport } from "./routes/_app/thi-thu/index"
 import { Route as AppLuyenTapIndexRouteImport } from "./routes/_app/luyen-tap/index"
@@ -103,6 +104,11 @@ const AppGiaoDichXuRoute = AppGiaoDichXuRouteImport.update({
 const AppDonHangRoute = AppDonHangRouteImport.update({
   id: "/don-hang",
   path: "/don-hang",
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDieuKhoanRoute = AppDieuKhoanRouteImport.update({
+  id: "/dieu-khoan",
+  path: "/dieu-khoan",
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -278,6 +284,7 @@ export interface FileRoutesByFullPath {
   "/": typeof IndexRoute
   "/wallet": typeof WalletRoute
   "/dashboard": typeof AppDashboardRoute
+  "/dieu-khoan": typeof AppDieuKhoanRoute
   "/don-hang": typeof AppDonHangRoute
   "/giao-dich-xu": typeof AppGiaoDichXuRoute
   "/ho-so": typeof AppHoSoRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "/wallet": typeof WalletRoute
   "/dashboard": typeof AppDashboardRoute
+  "/dieu-khoan": typeof AppDieuKhoanRoute
   "/don-hang": typeof AppDonHangRoute
   "/giao-dich-xu": typeof AppGiaoDichXuRoute
   "/ho-so": typeof AppHoSoRoute
@@ -359,6 +367,7 @@ export interface FileRoutesById {
   "/_focused": typeof FocusedRouteWithChildren
   "/wallet": typeof WalletRoute
   "/_app/dashboard": typeof AppDashboardRoute
+  "/_app/dieu-khoan": typeof AppDieuKhoanRoute
   "/_app/don-hang": typeof AppDonHangRoute
   "/_app/giao-dich-xu": typeof AppGiaoDichXuRoute
   "/_app/ho-so": typeof AppHoSoRoute
@@ -403,6 +412,7 @@ export interface FileRouteTypes {
     | "/"
     | "/wallet"
     | "/dashboard"
+    | "/dieu-khoan"
     | "/don-hang"
     | "/giao-dich-xu"
     | "/ho-so"
@@ -445,6 +455,7 @@ export interface FileRouteTypes {
     | "/"
     | "/wallet"
     | "/dashboard"
+    | "/dieu-khoan"
     | "/don-hang"
     | "/giao-dich-xu"
     | "/ho-so"
@@ -483,6 +494,7 @@ export interface FileRouteTypes {
     | "/_focused"
     | "/wallet"
     | "/_app/dashboard"
+    | "/_app/dieu-khoan"
     | "/_app/don-hang"
     | "/_app/giao-dich-xu"
     | "/_app/ho-so"
@@ -607,6 +619,13 @@ declare module "@tanstack/react-router" {
       path: "/don-hang"
       fullPath: "/don-hang"
       preLoaderRoute: typeof AppDonHangRouteImport
+      parentRoute: typeof AppRoute
+    }
+    "/_app/dieu-khoan": {
+      id: "/_app/dieu-khoan"
+      path: "/dieu-khoan"
+      fullPath: "/dieu-khoan"
+      preLoaderRoute: typeof AppDieuKhoanRouteImport
       parentRoute: typeof AppRoute
     }
     "/_app/dashboard": {
@@ -925,6 +944,7 @@ const AppThiThuRouteWithChildren = AppThiThuRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppDieuKhoanRoute: typeof AppDieuKhoanRoute
   AppDonHangRoute: typeof AppDonHangRoute
   AppGiaoDichXuRoute: typeof AppGiaoDichXuRoute
   AppHoSoRoute: typeof AppHoSoRoute
@@ -935,6 +955,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppDieuKhoanRoute: AppDieuKhoanRoute,
   AppDonHangRoute: AppDonHangRoute,
   AppGiaoDichXuRoute: AppGiaoDichXuRoute,
   AppHoSoRoute: AppHoSoRoute,

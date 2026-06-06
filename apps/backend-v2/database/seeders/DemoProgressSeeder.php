@@ -97,7 +97,46 @@ final class DemoProgressSeeder extends Seeder
         $this->seedActivityAndStreak($profile, self::ACTIVITY_DAYS, self::ACTIVITY_PROBABILITY, 12);
         $this->seedExamSessions($profile, $versions, self::MAIN_BANDS);
         $this->seedPracticeHistory($profile, $mcqService);
+
+        // Snapshot today's vocab activity before service calls to revert spurious addActivity()
+        $todayLocal = now()->toDateString();
+        $todayRow = ProfileDailyActivity::query()
+            ->where('profile_id', $profile->id)
+            ->where('date_local', $todayLocal)
+            ->first();
+        $vocabCountBefore = $todayRow ? (int) $todayRow->vocab_review_count : 0;
+
         $this->seedVocabJourney($profile, $vocabService);
+
+        // Revert spurious today vocab_review_count from VocabService::review() → addActivity()
+        // and redistribute across past active dates instead
+        $vocabReviewTotal = (int) PracticeVocabReview::query()
+            ->where('profile_id', $profile->id)
+            ->count();
+        if ($vocabReviewTotal > 0) {
+            ProfileDailyActivity::query()
+                ->where('profile_id', $profile->id)
+                ->where('date_local', $todayLocal)
+                ->update(['vocab_review_count' => $vocabCountBefore]);
+
+            $pastDates = ProfileDailyActivity::query()
+                ->where('profile_id', $profile->id)
+                ->where('date_local', '!=', $todayLocal)
+                ->orderBy('date_local')
+                ->pluck('date_local');
+
+            $remaining = $vocabReviewTotal;
+            while ($remaining > 0 && $pastDates->isNotEmpty()) {
+                $date = $pastDates->random();
+                $count = min(rand(1, 3), $remaining);
+                ProfileDailyActivity::query()
+                    ->where('profile_id', $profile->id)
+                    ->where('date_local', $date)
+                    ->increment('vocab_review_count', $count);
+                $remaining -= $count;
+            }
+        }
+
         $this->seedWalletTransactions($profile, $walletService);
         $this->seedExerciseFeedback($profile);
 
@@ -109,11 +148,12 @@ final class DemoProgressSeeder extends Seeder
             }
 
             $versionOffset = (int) array_search($nickname, array_keys(self::EXTRA_BANDS), true) + 1;
-            $this->seedExamSessions($extra, $versions, $bands, $versionOffset);
 
             if ($nickname !== 'inactive_student') {
                 $this->seedActivityAndStreak($extra, 14, 0.5, 3);
             }
+
+            $this->seedExamSessions($extra, $versions, $bands, $versionOffset);
         }
 
         $this->enrollExtraProfiles();
@@ -133,7 +173,7 @@ final class DemoProgressSeeder extends Seeder
 
         $today = Carbon::today();
         $activeDates = collect();
-        $typePool = ['listening', 'reading', 'vocab_review', 'exam_session'];
+        $typePool = ['listening', 'reading', 'vocab_review', 'writing', 'speaking_drill'];
 
         // Phase 1: deterministic streak — today + ($streakDays-1) past days are always active
         for ($i = 0; $i < $streakDays; $i++) {
@@ -220,6 +260,27 @@ final class DemoProgressSeeder extends Seeder
 
             foreach ($this->speakingParts($version) as $part) {
                 $this->seedSpeakingResult($session->id, $profile->id, $part->id, (int) $part->part, $submittedAt, $bands['speaking']);
+            }
+
+            // Record real activity for this exam session (not fake random data)
+            $dateLocal = $submittedAt->toDateString();
+            $existing = ProfileDailyActivity::query()
+                ->where('profile_id', $profile->id)
+                ->where('date_local', $dateLocal)
+                ->first();
+
+            if ($existing) {
+                $existing->increment('exam_session_count');
+                $existing->increment('total_duration_seconds', 7200);
+                $existing->update(['updated_at' => now()]);
+            } else {
+                ProfileDailyActivity::query()->insert([
+                    'profile_id' => $profile->id,
+                    'date_local' => $dateLocal,
+                    'exam_session_count' => 1,
+                    'total_duration_seconds' => 7200,
+                    'updated_at' => now(),
+                ]);
             }
         }
     }
@@ -529,13 +590,24 @@ final class DemoProgressSeeder extends Seeder
                 ];
             }
 
-            // Submit qua service — validates session state, question mapping, score calc
-            $result = $mcqService->submitSession($session, $skill, $answers);
+            // Raw insert answers — skip service chain to avoid addActivity() spurious today record
+            foreach ($answers as $a) {
+                DB::table('practice_mcq_answers')->insert([
+                    'session_id' => $session->id,
+                    'question_type' => "practice_{$skill}_question",
+                    'question_id' => $a['question_id'],
+                    'selected_index' => $a['selected_index'],
+                    'is_correct' => $a['selected_index'] === $questions->firstWhere('id', $a['question_id'])?->correct_index,
+                    'answered_at' => $startedAt,
+                ]);
+            }
 
-            // Backdate completion time
+            // Manual session completion without service chain side effects
+            $durationSeconds = rand(600, 1500);
             $session->update([
                 'started_at' => $startedAt,
-                'ended_at' => $startedAt->copy()->addMinutes(rand(10, 25)),
+                'ended_at' => $startedAt->copy()->addSeconds($durationSeconds),
+                'duration_seconds' => $durationSeconds,
             ]);
 
             // Activity record for this practice

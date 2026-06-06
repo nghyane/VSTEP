@@ -5,7 +5,6 @@ import { createPortal } from "react-dom"
 import { DuoProgressBar } from "#/components/DuoProgressBar"
 import { Header } from "#/components/Header"
 import { Icon, type IconName, StaticIcon } from "#/components/Icon"
-import { SupportFab } from "#/components/SupportFab"
 import { cancelEnrollmentOrder } from "#/features/course/actions"
 import { EnrollDialog } from "#/features/course/components/EnrollDialog"
 import { EnrollSuccessPopup } from "#/features/course/components/EnrollSuccessPopup"
@@ -132,7 +131,6 @@ function CourseDetailPage() {
 
 				{course.teacher && <TeacherCard teacher={course.teacher} />}
 			</div>
-			<SupportFab />
 			<EnrollSuccessPopup
 				open={enrollSuccessOpen}
 				courseTitle={course.title}

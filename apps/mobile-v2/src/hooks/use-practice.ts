@@ -109,7 +109,7 @@ export interface WritingSampleMarker {
 
 export interface WritingHistoryItem {
   id: string;
-  attemptId: string;
+  attemptId: string | null;
   submittedAt: string;
   wordCount: number;
   prompt: { id: string; slug: string; title: string; part: number } | null;
@@ -788,14 +788,15 @@ export function useGradingJobStatus(jobId: string) {
 // ── Writing grading result ──
 
 export function useWritingGradingResult(attemptId: string) {
+  const validAttemptId = isUuid(attemptId) ? attemptId : "";
   return useQuery({
-    queryKey: ["assessment-attempts", attemptId, "view"],
+    queryKey: ["assessment-attempts", validAttemptId, "view"],
     queryFn: async () => {
-      const response = await api.get<AssessmentViewResponse>(`/api/v1/assessment-attempts/${attemptId}/view`);
+      const response = await api.get<AssessmentViewResponse>(`/api/v1/assessment-attempts/${validAttemptId}/view`);
       return normalizeWritingGradingResult(response);
     },
     refetchInterval: (q) => (q.state.data?.overallBand != null ? false : 5000),
-    enabled: !!attemptId,
+    enabled: !!validAttemptId,
     retry: false,
   });
 }
@@ -928,4 +929,8 @@ function normalizeRewriteItems(items: FeedbackRewriteItem[] | undefined) {
 function normalizePronunciationReport(result: AssessmentResultPayload): { accuracyScore: number } | null {
   const accuracyScore = result.pronunciationReport?.accuracyScore;
   return typeof accuracyScore === "number" ? { accuracyScore } : null;
+}
+
+function isUuid(value: string | null | undefined): value is string {
+  return typeof value === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }

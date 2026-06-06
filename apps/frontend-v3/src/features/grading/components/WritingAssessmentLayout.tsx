@@ -548,7 +548,7 @@ function teacherGradingDescription(action: TeacherGradingAction): string {
 		case "cancelled":
 			return "Yêu cầu đã được hủy."
 		default:
-			return "Gửi bài cho staff để gán giáo viên chấm thủ công. Điểm giáo viên sẽ hiển thị riêng với điểm AI."
+			return "Gửi bài cho staff để gán giáo viên chấm thủ công. Điểm giáo viên sẽ hiển thị riêng với điểm hệ thống."
 	}
 }
 

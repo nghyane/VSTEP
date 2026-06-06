@@ -136,7 +136,7 @@ function SpeakingDiagnostics({ diagnostics }: { readonly diagnostics: Assessment
 					/>
 					<MetricPill
 						label="Phát âm"
-						value={numberLabel(diagnostics.pronunciation?.overall, "/100")}
+						value={numberLabel(diagnostics.pronunciation?.overall, "/10")}
 						tone="default"
 					/>
 					<MetricPill

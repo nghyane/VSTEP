@@ -32,17 +32,17 @@ services:
       POSTGRES_DB: vstep
     command: >
       postgres
-        -c shared_buffers=32MB
-        -c work_mem=2MB
-        -c effective_cache_size=256MB
-        -c maintenance_work_mem=32MB
+        -c shared_buffers=256MB
+        -c work_mem=16MB
+        -c effective_cache_size=768MB
+        -c maintenance_work_mem=128MB
         -c max_connections=30
     volumes:
       - pgdata:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
-          memory: 384M
+          memory: 1024M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d vstep"]
       interval: 5s
@@ -52,11 +52,15 @@ services:
 
   redis:
     image: redis:7-alpine
-    command: redis-server --save "" --appendonly no
+    command: redis-server --save "" --appendonly no --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
     volumes:
       - redisdata:/data
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -222,12 +226,12 @@ services:
     ports:
       - "8081:8010"
     environment:
-      Java_Xms: 128m
-      Java_Xmx: 256m
+      Java_Xms: 512m
+      Java_Xmx: 1536m
     deploy:
       resources:
         limits:
-          memory: 384M
+          memory: 2048M
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8010/v2/languages"]
       interval: 10s

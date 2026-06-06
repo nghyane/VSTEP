@@ -15,7 +15,7 @@ use League\Flysystem\UnableToCheckFileExistence;
 
 final class GenerateReferenceExamListeningAudio extends Command
 {
-    private const SOURCE_SCHOOL = 'Capstone VSTEP · Biên soạn theo cấu trúc VSTEP 3-5';
+    private const SOURCE_SCHOOL = 'Capstone VSTEP';
 
     protected $signature = 'reference-exams:generate-listening-audio
         {--slug=* : Only generate audio for selected exam slug(s)}

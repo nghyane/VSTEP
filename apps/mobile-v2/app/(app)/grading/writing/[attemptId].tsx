@@ -24,16 +24,17 @@ const RUBRIC_LABELS: Record<string, string> = {
 };
 
 export default function WritingGradingScreen() {
-  const { attemptId } = useLocalSearchParams<{ attemptId: string }>();
+  const params = useLocalSearchParams<{ attemptId: string | string[] }>();
+  const attemptId = normalizeRouteParam(params.attemptId);
   const c = useThemeColors();
   const router = useRouter();
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
   const accent = c.skillWriting;
-  const { data, isLoading, isError, isFetching, refetch } = useWritingGradingResult(attemptId ?? "");
+  const { data, isLoading, isError, error, isFetching, refetch } = useWritingGradingResult(attemptId);
   const resultReady = data?.overallBand != null;
   const teacherGrading = useMutation({
-    mutationFn: () => requestTeacherGrading(data?.attemptId ?? attemptId ?? ""),
+    mutationFn: () => requestTeacherGrading(data?.attemptId ?? attemptId),
     onSuccess: () => {
       if (attemptId) queryClient.invalidateQueries({ queryKey: ["assessment-attempts", attemptId, "view"] });
       void refetch();
@@ -54,17 +55,27 @@ export default function WritingGradingScreen() {
           <GradingLoadingState label="Đang tải kết quả chấm bài viết..." accentColor={accent} />
         ) : null}
 
-        {isError ? (
+        {!attemptId ? (
           <GradingErrorState
-            title="Lỗi kết nối"
-            subtitle="Không thể tải kết quả chấm bài viết. Thử lại ngay hoặc quay về danh sách."
+            title="Không tìm thấy mã bài chấm"
+            subtitle="Bài viết này chưa có mã chấm hợp lệ. Hãy quay lại lịch sử và thử mở bài mới hơn."
+            onRetry={() => router.back()}
+            onBack={() => router.back()}
+            retrying={false}
+          />
+        ) : null}
+
+        {attemptId && isError ? (
+          <GradingErrorState
+            title="Không thể tải kết quả"
+            subtitle={getApiErrorMessage(error)}
             onRetry={() => void refetch()}
             onBack={() => router.back()}
             retrying={isFetching}
           />
         ) : null}
 
-        {!isLoading && !isError && !resultReady ? (
+        {attemptId && !isLoading && !isError && !resultReady ? (
           <GradingPendingState
             title="Hệ thống đang chấm bài"
             subtitle="Kết quả sẽ tự cập nhật vài giây một lần. Cứ bình tĩnh, máy đang sửa từng câu."
@@ -144,6 +155,12 @@ export default function WritingGradingScreen() {
       </ScrollView>
     </View>
   );
+}
+
+function normalizeRouteParam(value: string | string[] | undefined): string {
+  const raw = Array.isArray(value) ? value[0] : value;
+  if (!raw || raw === "null" || raw === "undefined") return "";
+  return raw;
 }
 
 function RubricRow({ label, score, max, color }: { label: string; score: number; max: number; color: string }) {

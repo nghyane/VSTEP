@@ -5,7 +5,6 @@ import { createPortal } from "react-dom"
 import { Header } from "#/components/Header"
 import { Icon } from "#/components/Icon"
 import { SegmentedTabs } from "#/components/SegmentedTabs"
-import { SupportFab } from "#/components/SupportFab"
 import { CourseCard } from "#/features/course/components/CourseCard"
 import { HotCoursesDialog } from "#/features/course/components/HotCoursesDialog"
 import { courseListQuery } from "#/features/course/queries"
@@ -247,7 +246,6 @@ function CoursesPage() {
 					)}
 				</div>
 			</div>
-			<SupportFab />
 		</>
 	)
 }
