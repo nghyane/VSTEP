@@ -163,10 +163,32 @@ export function useSubmitExamSession(sessionId: string) {
   return useMutation({
     mutationFn: (payload: SubmitSessionPayload) =>
       api.post<SubmitSessionResult>(`/api/v1/exam-sessions/${sessionId}/submit`, payload),
-    onSuccess: () => {
+    onSuccess: (result) => {
+      qc.setQueryData<ExamRoomData>(["exam-sessions", sessionId, "room"], (current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          draft: null,
+          session: {
+            ...current.session,
+            status: "submitted",
+            submittedAt: result.submittedAt,
+          },
+          actions: {
+            ...current.actions,
+            canAnswer: false,
+            canSubmit: false,
+            canViewResult: true,
+          },
+        };
+      });
+      void qc.invalidateQueries({ queryKey: ["exam-sessions"], refetchType: "all" });
+      void qc.invalidateQueries({ queryKey: ["exams"], refetchType: "all" });
       void qc.invalidateQueries({ queryKey: ["streak"] });
       void qc.invalidateQueries({ queryKey: ["overview"] });
       void qc.invalidateQueries({ queryKey: ["activity-heatmap"] });
+      void qc.invalidateQueries({ queryKey: ["courses"] });
+      void qc.invalidateQueries({ queryKey: ["booking"] });
     },
   });
 }

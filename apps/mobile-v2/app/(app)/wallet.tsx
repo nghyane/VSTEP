@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { DepthButton } from "@/components/DepthButton";
@@ -12,6 +13,7 @@ import { useThemeColors, spacing, fontSize, fontFamily } from "@/theme";
 
 export default function WalletScreen() {
   const c = useThemeColors();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const { data: balanceData } = useWalletBalance();
   const { data: txData } = useWalletTransactions();
@@ -38,6 +40,10 @@ export default function WalletScreen() {
 
       <DepthButton variant="coin" fullWidth onPress={() => setTopUpVisible(true)}>
         Nạp xu
+      </DepthButton>
+
+      <DepthButton variant="secondary" fullWidth onPress={() => router.push("/(app)/orders" as never)}>
+        Lịch sử đơn hàng
       </DepthButton>
 
       <Text style={[styles.sectionTitle, { color: c.foreground }]}>Lịch sử giao dịch</Text>

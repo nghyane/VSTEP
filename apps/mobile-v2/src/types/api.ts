@@ -34,6 +34,7 @@ export interface AuthUser {
   email: string;
   role: string;
   fullName: string | null;
+  phoneNumber: string | null;
   avatarKey: AvatarKey | null;
   avatarUrl: string | null;
   hasPassword: boolean;

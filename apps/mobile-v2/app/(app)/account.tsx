@@ -26,6 +26,7 @@ export default function AccountScreen() {
 
       <InfoCard icon="mail-outline" label="Email" value={user?.email ?? "—"} c={c} />
       <InfoCard icon="person-outline" label="Họ và tên" value={user?.fullName ?? "Chưa cập nhật"} c={c} />
+      <InfoCard icon="call-outline" label="Số điện thoại" value={user?.phoneNumber ?? "Chưa cập nhật"} c={c} />
       <InfoCard icon="person-circle-outline" label="Vai trò" value={formatRole(user?.role)} c={c} />
 
       {profile && (
