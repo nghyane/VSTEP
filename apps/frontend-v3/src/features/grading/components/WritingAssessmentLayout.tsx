@@ -9,6 +9,7 @@ import { feedbackImprovements } from "#/features/grading/feedback"
 import type {
 	AssessmentAnnotation,
 	AssessmentFeedback,
+	AssessmentResultDisplay,
 	GradingProgress,
 	Rewrite,
 	RubricMeta,
@@ -67,6 +68,7 @@ export function WritingAssessmentLayout({ view }: LayoutProps) {
 			</aside>
 			<section className="space-y-4">
 				<WritingPaperPanel context={view.context} result={view.result} />
+				<NotAssessablePanel display={view.result.display} />
 				<RequirementPanel result={view.result} />
 				<ProfanityWarning result={view.result} />
 				<RubricPanel view={view} />
@@ -311,7 +313,7 @@ function RubricPanel({ view }: LayoutProps) {
 function FeedbackPanel({ view }: LayoutProps) {
 	const aiFeedback = view.feedback.generated ?? detailedAIFeedback(view.result.feedback)
 	const showFeedback = view.result.display?.ui.show_feedback ?? true
-	if (!showFeedback && !view.feedback.canRequest) return null
+	if (!showFeedback) return null
 
 	return (
 		<div id="ai-writing-feedback" className="card p-5 space-y-4">
@@ -332,6 +334,20 @@ function FeedbackPanel({ view }: LayoutProps) {
 					)}
 				</div>
 			)}
+		</div>
+	)
+}
+
+function NotAssessablePanel({ display }: { display?: AssessmentResultDisplay }) {
+	if (display?.status !== "not_assessable") return null
+
+	return (
+		<div className="card border-l-4 border-l-destructive bg-destructive/5 p-5">
+			<p className="text-xs font-bold uppercase tracking-wide text-destructive">Không chấm điểm rubric</p>
+			<p className="mt-2 text-base font-extrabold text-foreground">
+				{display.reason.label ?? display.status_label}
+			</p>
+			<p className="mt-1 text-sm leading-6 text-muted">{notAssessableDetail(display)}</p>
 		</div>
 	)
 }
@@ -585,6 +601,43 @@ function criterionLabel(rubric: RubricMeta, key: string): string {
 
 function criterionMax(rubric: RubricMeta, key: string): number {
 	return rubric.criteria.find((criterion) => criterion.key === key)?.max ?? rubric.max_score
+}
+
+function notAssessableDetail(display: AssessmentResultDisplay): string {
+	const details = display.reason.details
+	if (!isRecord(details)) return display.message
+
+	const failedRequirements = stringList(details.failed_requirements)
+	const wordCount = numberValue(details.word_count)
+	const minimumWordCount = numberValue(details.minimum_word_count)
+	const severeMinimumWordCount = numberValue(details.severe_minimum_word_count)
+
+	if (failedRequirements.includes("severe_minimum_word_count") && wordCount !== null) {
+		const minimumText = minimumWordCount === null ? "đủ số từ yêu cầu" : `${minimumWordCount} từ`
+		if (severeMinimumWordCount === null) {
+			return `Bài có ${wordCount} từ, quá ngắn so với yêu cầu ${minimumText}. Hãy viết lại đầy đủ hơn trước khi xem điểm theo tiêu chí.`
+		}
+
+		return `Bài có ${wordCount} từ, dưới ngưỡng tối thiểu để chấm tự động ${severeMinimumWordCount} từ. Hãy viết lại gần yêu cầu đầy đủ ${minimumText} trước khi xem điểm theo tiêu chí.`
+	}
+
+	if (failedRequirements.includes("task_coverage")) {
+		return "Bài chưa bao phủ yêu cầu bắt buộc của đề, nên hệ thống không hiển thị điểm theo tiêu chí. Hãy viết lại với nội dung bám sát từng ý trong đề."
+	}
+
+	return display.message
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function numberValue(value: unknown): number | null {
+	return typeof value === "number" ? value : null
+}
+
+function stringList(value: unknown): string[] {
+	return Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === "string") : []
 }
 
 function toneBorder(tone: "danger" | "warning" | "success") {
