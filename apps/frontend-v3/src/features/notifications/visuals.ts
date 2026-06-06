@@ -68,11 +68,32 @@ const VISUALS: Record<NotificationType, NotifVisual> = {
 		tone: "destructive",
 		navigateTo: "/khoa-hoc",
 	},
+	booking_rescheduled: {
+		iconKind: "regular",
+		iconName: "timer",
+		tintClass: "bg-primary-tint",
+		tone: "primary",
+		navigateTo: "/khoa-hoc",
+	},
 	booking_meet_url_updated: {
 		iconKind: "regular",
 		iconName: "timer",
 		tintClass: "bg-primary-tint",
 		tone: "primary",
+		navigateTo: "/khoa-hoc",
+	},
+	course_session_rescheduled: {
+		iconKind: "regular",
+		iconName: "book",
+		tintClass: "bg-primary-tint",
+		tone: "primary",
+		navigateTo: "/khoa-hoc",
+	},
+	course_session_cancelled: {
+		iconKind: "regular",
+		iconName: "trash",
+		tintClass: "bg-destructive-tint",
+		tone: "destructive",
 		navigateTo: "/khoa-hoc",
 	},
 	teacher_grading_completed: {

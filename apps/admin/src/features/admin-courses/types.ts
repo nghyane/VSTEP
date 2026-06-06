@@ -76,6 +76,8 @@ export interface AdminScheduleItem {
 	start_time: string // HH:mm
 	end_time: string // HH:mm
 	topic: string
+	status?: "scheduled" | "cancelled" | string
+	cancel_reason?: string | null
 }
 
 export interface ScheduleItemFormInput {
@@ -118,6 +120,7 @@ export interface AdminTeacherSlot {
 			nickname: string | null
 			full_name: string | null
 			email: string | null
+			phone_number?: string | null
 		} | null
 	} | null
 }

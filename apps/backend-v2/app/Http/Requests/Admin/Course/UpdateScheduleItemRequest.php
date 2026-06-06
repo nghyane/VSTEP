@@ -30,6 +30,7 @@ final class UpdateScheduleItemRequest extends FormRequest
             'start_time' => ['sometimes', 'date_format:H:i'],
             'end_time' => ['sometimes', 'date_format:H:i', 'after:start_time'],
             'topic' => ['sometimes', 'string', 'max:100'],
+            'notify_learners' => ['sometimes', 'boolean'],
         ];
     }
 }

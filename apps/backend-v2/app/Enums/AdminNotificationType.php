@@ -11,6 +11,7 @@ enum AdminNotificationType: string
 {
     case BookingCreated = 'booking_created';
     case BookingCancelled = 'booking_cancelled';
+    case TeacherLeaveRequestCreated = 'teacher_leave_request_created';
     case TeacherGradingRequestCreated = 'teacher_grading_request_created';
     case TeacherGradingRequestAssigned = 'teacher_grading_request_assigned';
     case TeacherGradingRequestCompleted = 'teacher_grading_request_completed';

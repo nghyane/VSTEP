@@ -7,7 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['course_id', 'session_number', 'date', 'start_time', 'end_time', 'topic'])]
+#[Fillable(['course_id', 'session_number', 'date', 'start_time', 'end_time', 'topic', 'status', 'cancel_reason'])]
 class CourseScheduleItem extends BaseModel
 {
     public $timestamps = false;
