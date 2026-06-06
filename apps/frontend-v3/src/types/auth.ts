@@ -33,6 +33,7 @@ export type AvatarKey =
 export interface User {
 	id: string
 	email: string
+	phone_number: string | null
 	role: string
 	avatar_key: AvatarKey | null
 	avatar_url: string | null

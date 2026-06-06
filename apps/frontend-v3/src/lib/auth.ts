@@ -132,6 +132,7 @@ type AuthActions = {
 		target_deadline: string
 	}) => Promise<void>
 	switchProfile: (profileId: string) => Promise<void>
+	updateUser: (user: User) => void
 	logout: () => void
 	_setAuthenticated: (user: User, profile: Profile) => void
 	_setUnauthenticated: () => void
@@ -297,6 +298,14 @@ export const useAuth = create<AuthStore>()((set, get) => ({
 			useToast.getState().add("Đã chuyển hồ sơ", "success")
 		} catch (e) {
 			showError(e)
+		}
+	},
+
+	updateUser(user) {
+		tokens.setUser(user)
+		const state = get()
+		if (state.status === "authenticated") {
+			set({ status: "authenticated", user, profile: state.profile })
 		}
 	},
 

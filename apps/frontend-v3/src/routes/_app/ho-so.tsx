@@ -4,6 +4,7 @@ import { useState } from "react"
 import { ConfirmDialog } from "#/components/ConfirmDialog"
 import { Header } from "#/components/Header"
 import { appConfigQuery } from "#/features/config/queries"
+import { AccountPhoneForm } from "#/features/profile/components/AccountPhoneForm"
 import { ChangePasswordDialog } from "#/features/profile/components/ChangePasswordDialog"
 import { CreateProfileForm } from "#/features/profile/components/CreateProfileForm"
 import { EditProfileForm } from "#/features/profile/components/EditProfileForm"
@@ -121,6 +122,7 @@ function ProfilePage() {
 						<span className="text-sm text-muted">Email</span>
 						<span className="text-sm font-bold text-foreground">{p.user.email}</span>
 					</div>
+					<AccountPhoneForm user={p.user} />
 					<div className="flex items-center justify-between gap-4 py-3 border-t border-border">
 						<div className="min-w-0">
 							<p className="text-sm text-muted">Mật khẩu</p>

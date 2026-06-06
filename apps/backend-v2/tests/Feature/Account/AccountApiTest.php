@@ -14,6 +14,38 @@ final class AccountApiTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_account_can_update_phone_number_through_api(): void
+    {
+        $user = User::factory()->create();
+        Profile::factory()->initial()->forAccount($user)->create();
+        $token = $this->loginToken($user);
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->patchJson('/api/v1/me', [
+                'phone_number' => '0343062376',
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.phone_number', '0343062376');
+
+        $this->assertSame('0343062376', $user->refresh()->phone_number);
+    }
+
+    public function test_account_phone_number_must_be_valid(): void
+    {
+        $user = User::factory()->create();
+        Profile::factory()->initial()->forAccount($user)->create();
+        $token = $this->loginToken($user);
+
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
+            ->patchJson('/api/v1/me', [
+                'phone_number' => '09815674890000',
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['phone_number']);
+    }
+
     public function test_account_can_change_password_through_api(): void
     {
         $user = User::factory()->create();

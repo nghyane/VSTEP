@@ -1,6 +1,11 @@
-import type { AvatarResponse, CreateProfileInput, UpdateProfileInput } from "#/features/profile/types"
+import type {
+	AvatarResponse,
+	CreateProfileInput,
+	UpdateAccountInput,
+	UpdateProfileInput,
+} from "#/features/profile/types"
 import { type ApiResponse, api } from "#/lib/api"
-import type { AvatarKey, Profile } from "#/types/auth"
+import type { AvatarKey, Profile, User } from "#/types/auth"
 
 export async function createProfile(input: CreateProfileInput) {
 	return api.post("profiles", { json: input }).json<ApiResponse<Profile>>()
@@ -8,6 +13,10 @@ export async function createProfile(input: CreateProfileInput) {
 
 export async function updateProfile(id: string, input: UpdateProfileInput) {
 	return api.patch(`profiles/${id}`, { json: input }).json<ApiResponse<Profile>>()
+}
+
+export async function updateAccount(input: UpdateAccountInput) {
+	return api.patch("me", { json: input }).json<ApiResponse<User>>()
 }
 
 export async function updateAvatar(avatar_key: AvatarKey) {
