@@ -31,6 +31,18 @@ final class AccountApiTest extends TestCase
         $this->assertSame('0343062376', $user->refresh()->phone_number);
     }
 
+    public function test_login_response_includes_phone_number(): void
+    {
+        $user = User::factory()->create(['phone_number' => '0343062376']);
+        Profile::factory()->initial()->forAccount($user)->create();
+
+        $this->postJson('/api/v1/auth/login', [
+            'email' => $user->email,
+            'password' => 'password',
+        ])->assertOk()
+            ->assertJsonPath('data.user.phone_number', '0343062376');
+    }
+
     public function test_account_phone_number_must_be_valid(): void
     {
         $user = User::factory()->create();

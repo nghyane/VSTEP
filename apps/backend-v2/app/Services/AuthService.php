@@ -69,6 +69,7 @@ final class AuthService
 
         /** @var User $user */
         $user = JWTAuth::user();
+        $user = $this->freshUser($user);
         if ($user->isDeactivated()) {
             // Trả message qua field email để FE hiện chung 1 ô lỗi giống login fail.
             throw ValidationException::withMessages([
@@ -207,6 +208,7 @@ final class AuthService
 
         /** @var User $user */
         $user = $refreshToken->user;
+        $user = $this->freshUser($user);
         if ($user->isDeactivated()) {
             // Refresh token còn TTL nhưng account đã bị vô hiệu hoá → revoke session.
             $refreshToken->delete();
@@ -450,5 +452,10 @@ final class AuthService
         }
 
         $user->update(['active_profile_id' => $profile?->id]);
+    }
+
+    private function freshUser(User $user): User
+    {
+        return $user->fresh() ?? $user;
     }
 }

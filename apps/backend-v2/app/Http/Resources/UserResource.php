@@ -19,7 +19,7 @@ final class UserResource extends JsonResource
             'id' => $this->resource->id,
             'email' => $this->resource->email,
             'full_name' => $this->resource->full_name,
-            'phone_number' => $this->resource->phone_number,
+            'phone_number' => $this->resource->getAttributes()['phone_number'] ?? null,
             'role' => $this->resource->role->value,
             'avatar_key' => $this->resource->avatar_key,
             'avatar_url' => $this->resource->avatar_url,
