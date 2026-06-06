@@ -172,6 +172,7 @@ export interface WritingGradingResult {
 	id?: string
 	criterion_scores: CriterionScore[]
 	overall_band: number
+	source?: "ai"
 	display?: AssessmentResultDisplay
 	diagnostics?: AssessmentDiagnostics
 	feedback: AssessmentFeedback | null
@@ -183,6 +184,7 @@ export interface SpeakingGradingResult {
 	id?: string
 	criterion_scores: CriterionScore[]
 	overall_band: number
+	source?: "ai"
 	display?: AssessmentResultDisplay
 	diagnostics?: AssessmentDiagnostics
 	feedback: AssessmentFeedback | null
@@ -195,6 +197,7 @@ export interface PracticeSpeakingResultResponse {
 	attempt_id?: string
 	data: SpeakingGradingResult | null
 	rubric: RubricMeta | null
+	teacher_grading_request?: TeacherGradingRequestState
 }
 
 export interface RubricCriteriaMeta {
@@ -244,6 +247,41 @@ export interface AssessmentFeedbackRequestState {
 	status: "none" | "pending" | "ready" | "failed"
 }
 
+export type TeacherGradingRequestStatus =
+	| "none"
+	| "pending_assignment"
+	| "assigned"
+	| "in_progress"
+	| "completed"
+	| "cancelled"
+	| "rejected"
+
+export interface TeacherGradingRequestState {
+	can_request: boolean
+	requested: boolean
+	request_id: string | null
+	status: TeacherGradingRequestStatus
+	assigned_teacher: { id: string; full_name: string | null; email: string | null } | null
+	requested_at: string | null
+	assigned_at: string | null
+	completed_at: string | null
+	teacher_result: TeacherGradingResultState | null
+}
+
+export interface TeacherGradingResultState {
+	id: string
+	overall_band: number
+	criterion_scores: CriterionScore[]
+	feedback: AssessmentFeedback | null
+	submitted_at: string | null
+	source: "teacher"
+}
+
+export interface TeacherGradingRequestResponse {
+	id: string
+	status: TeacherGradingRequestStatus
+}
+
 export interface RequestFeedbackResponse {
 	submission_id: string
 	status: "pending" | "ready" | "failed"
@@ -266,6 +304,7 @@ export interface AssessmentView {
 	rubric: RubricMeta
 	result: WritingGradingResult | SpeakingGradingResult | null
 	feedback_request: AssessmentFeedbackRequestState
+	teacher_grading_request: TeacherGradingRequestState
 }
 
 export interface GradingJob {

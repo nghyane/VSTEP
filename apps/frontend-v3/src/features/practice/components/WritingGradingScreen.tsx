@@ -74,6 +74,7 @@ export function WritingGradingScreen({ prompt, submission, responseText }: Props
 								generated: assessment.feedbackGenerated,
 								onRequest: assessment.requestFeedback,
 							},
+							teacherGrading: assessment.teacherGrading,
 						}}
 					/>
 				</div>

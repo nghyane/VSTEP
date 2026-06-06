@@ -1,9 +1,15 @@
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { FeedbackSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
 import { feedbackImprovements } from "#/features/grading/feedback"
-import { speakingResultQuery } from "#/features/grading/queries"
-import type { RubricMeta, SpeakingGradingResult } from "#/features/grading/types"
+import { requestTeacherGrading, speakingResultQuery } from "#/features/grading/queries"
+import type {
+	RubricMeta,
+	SpeakingGradingResult,
+	TeacherGradingRequestState,
+	TeacherGradingRequestStatus,
+	TeacherGradingResultState,
+} from "#/features/grading/types"
 import { censorProfanityText, censorProfanityWords } from "#/lib/profanity"
 import { round } from "#/lib/utils"
 
@@ -25,12 +31,22 @@ interface DiagnosticMetricProps {
 }
 
 export function SpeakingResult({ submissionId }: Props) {
+	const queryClient = useQueryClient()
 	const { data, isLoading } = useQuery({
 		...speakingResultQuery(submissionId),
 		refetchInterval: (query) => (query.state.data?.data ? false : 3000),
 	})
 	const result = data?.data
 	const rubric = data?.rubric ?? null
+	const attemptId = data?.attempt_id ?? null
+	const teacherGradingState = data?.teacher_grading_request ?? null
+	const teacherGrading = useMutation({
+		mutationFn: () => requestTeacherGrading(attemptId ?? ""),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["practice", "speaking", "result", submissionId] })
+		},
+		onError: () => {},
+	})
 
 	if (isLoading || !result) {
 		return (
@@ -47,16 +63,20 @@ export function SpeakingResult({ submissionId }: Props) {
 
 	const diagnostics = result.diagnostics
 	const pronScore = result.pronunciation_report?.accuracy_score ?? diagnostics?.pronunciation?.overall ?? null
+	const teacherGradingStatus = teacherGrading.data?.data.status ?? teacherGradingState?.status ?? "none"
 
 	return (
 		<div className="space-y-6">
 			<div className="card p-6 text-center">
-				<p className="text-xs font-bold uppercase tracking-wide text-muted mb-1">Điểm tổng</p>
+				<p className="text-xs font-bold uppercase tracking-wide text-muted mb-1">Điểm AI</p>
 				<p className="text-5xl font-extrabold tabular-nums" style={{ color: COLOR }}>
 					{round(result.overall_band)}
 				</p>
 				<p className="text-sm text-muted mt-1">
 					{rubric ? `/ ${rubric.max_score}` : "Chưa có dữ liệu thang điểm"}
+				</p>
+				<p className="mt-2 inline-flex rounded-full bg-primary-tint px-2.5 py-1 text-[10px] font-extrabold uppercase text-primary-dark">
+					Nguồn: AI tự động
 				</p>
 			</div>
 
@@ -88,6 +108,18 @@ export function SpeakingResult({ submissionId }: Props) {
 				/>
 			</div>
 
+			<TeacherGradingPanel
+				attemptId={attemptId}
+				canRequest={teacherGradingState?.can_request === true}
+				requested={teacherGrading.isSuccess || teacherGradingState?.requested === true}
+				status={teacherGradingStatus}
+				assignedTeacher={teacherGradingState?.assigned_teacher ?? null}
+				result={teacherGradingState?.teacher_result ?? null}
+				pending={teacherGrading.isPending}
+				error={errorMessage(teacherGrading.error)}
+				onRequest={() => teacherGrading.mutate()}
+			/>
+
 			{result.transcript && !diagnostics && (
 				<div className="card p-6">
 					<p className="text-xs font-bold uppercase tracking-wide text-muted mb-2">Transcript</p>
@@ -96,6 +128,146 @@ export function SpeakingResult({ submissionId }: Props) {
 			)}
 		</div>
 	)
+}
+
+function TeacherGradingPanel({
+	attemptId,
+	canRequest,
+	requested,
+	status,
+	assignedTeacher,
+	result,
+	pending,
+	error,
+	onRequest,
+}: {
+	attemptId: string | null
+	canRequest: boolean
+	requested: boolean
+	status: TeacherGradingRequestStatus
+	assignedTeacher: TeacherGradingRequestState["assigned_teacher"]
+	result: TeacherGradingResultState | null
+	pending: boolean
+	error: string | null
+	onRequest: () => void
+}) {
+	if (!attemptId || (!canRequest && !result)) return null
+
+	const isTeacherGraded = result !== null || status === "completed"
+	const hasRequested = requested || status !== "none"
+	const disabled = pending || hasRequested || isTeacherGraded
+
+	return (
+		<div className="card p-5 space-y-3 border-l-4 border-l-info">
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+				<div>
+					<p className="text-xs font-bold uppercase tracking-wide text-subtle">Teacher review</p>
+					<p className="mt-1 text-base font-extrabold text-foreground">
+						{isTeacherGraded ? "Giáo viên đã chấm" : "Yêu cầu giáo viên chấm"}
+					</p>
+					<p className="mt-1 text-sm text-muted">
+						{teacherGradingText(status, result !== null, hasRequested)}
+					</p>
+				</div>
+				<span className="self-start rounded-full bg-info-tint px-2.5 py-1 text-[10px] font-extrabold uppercase text-info">
+					{teacherGradingLabel(status, isTeacherGraded, hasRequested)}
+				</span>
+			</div>
+			{assignedTeacher && (
+				<p className="rounded-2xl bg-background/50 px-3 py-2 text-xs text-muted">
+					Giáo viên phụ trách: <span className="font-bold text-foreground">{assignedTeacher.full_name}</span>
+				</p>
+			)}
+			{result && <TeacherResultSummary result={result} />}
+			{!isTeacherGraded && !hasRequested && (
+				<button
+					type="button"
+					onClick={onRequest}
+					disabled={disabled}
+					className="btn btn-secondary px-5 py-2.5 text-sm disabled:opacity-50"
+				>
+					{pending ? "Đang gửi..." : "Gửi yêu cầu"}
+				</button>
+			)}
+			{error && <p className="text-xs font-bold text-destructive">{error}</p>}
+		</div>
+	)
+}
+
+function TeacherResultSummary({ result }: { result: TeacherGradingResultState }) {
+	const strengths = result.feedback?.strengths ?? []
+	const improvements = feedbackImprovements(result.feedback)
+	const hasFeedback = strengths.length > 0 || improvements.length > 0
+
+	return (
+		<div className="rounded-2xl bg-background/50 p-4">
+			<div className="flex items-end justify-between gap-3">
+				<div>
+					<p className="text-[10px] font-bold uppercase tracking-wide text-subtle">Điểm giáo viên</p>
+					<p className="mt-1 text-4xl font-extrabold tabular-nums text-info">{round(result.overall_band)}</p>
+				</div>
+				<span className="rounded-full bg-info-tint px-2.5 py-1 text-[10px] font-extrabold uppercase text-info">
+					Nguồn: Giáo viên
+				</span>
+			</div>
+			{hasFeedback && (
+				<div className="mt-3 border-t-2 border-border pt-3">
+					<FeedbackSection strengths={strengths} improvements={improvements} />
+				</div>
+			)}
+		</div>
+	)
+}
+
+function teacherGradingLabel(
+	status: TeacherGradingRequestStatus,
+	isTeacherGraded: boolean,
+	requested: boolean,
+): string {
+	if (isTeacherGraded) return "Đã chấm"
+	switch (status) {
+		case "pending_assignment":
+			return "Chờ gán"
+		case "assigned":
+			return "Đã gán"
+		case "in_progress":
+			return "Đang chấm"
+		case "rejected":
+			return "Từ chối"
+		case "cancelled":
+			return "Đã hủy"
+		default:
+			return requested ? "Đã gửi" : "Chưa gửi"
+	}
+}
+
+function teacherGradingText(
+	status: TeacherGradingRequestStatus,
+	hasTeacherResult: boolean,
+	requested: boolean,
+): string {
+	if (hasTeacherResult)
+		return "Bên dưới là điểm giáo viên. Điểm AI vẫn được giữ riêng ở khối kết quả phía trên."
+	switch (status) {
+		case "pending_assignment":
+			return "Yêu cầu đã gửi. Staff sẽ kiểm tra và gán giáo viên phù hợp."
+		case "assigned":
+			return "Yêu cầu đã được gán cho giáo viên. Bạn sẽ nhận thông báo khi có kết quả."
+		case "in_progress":
+			return "Giáo viên đang chấm bài. Bạn sẽ nhận thông báo khi hoàn tất."
+		case "rejected":
+			return "Yêu cầu chưa được duyệt. Vui lòng liên hệ trung tâm nếu cần hỗ trợ."
+		case "cancelled":
+			return "Yêu cầu đã được hủy."
+		default:
+			return requested
+				? "Yêu cầu đã gửi. Staff sẽ kiểm tra và gán giáo viên phù hợp."
+				: "Gửi bài nói cho staff để gán giáo viên chấm thủ công. Điểm giáo viên sẽ hiển thị riêng với điểm AI."
+	}
+}
+
+function errorMessage(error: unknown): string | null {
+	return error instanceof Error ? error.message : null
 }
 
 function SpeakingProfanityWarning({ result }: { result: SpeakingGradingResult }) {

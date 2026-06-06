@@ -75,6 +75,13 @@ const VISUALS: Record<NotificationType, NotifVisual> = {
 		tone: "primary",
 		navigateTo: "/khoa-hoc",
 	},
+	teacher_grading_completed: {
+		iconKind: "static",
+		iconName: "trophy",
+		tintClass: "bg-warning-tint",
+		tone: "warning",
+		navigateTo: "/luyen-tap/ket-qua",
+	},
 }
 
 const FALLBACK: NotifVisual = {

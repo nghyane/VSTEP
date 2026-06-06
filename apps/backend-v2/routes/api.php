@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\V1\ShadowingProgressController;
 use App\Http\Controllers\Api\V1\SpeakingConversationController;
 use App\Http\Controllers\Api\V1\SpeakingFeedbackController;
 use App\Http\Controllers\Api\V1\SpeakingPracticeController;
+use App\Http\Controllers\Api\V1\TeacherGradingRequestController;
 use App\Http\Controllers\Api\V1\VocabController;
 use App\Http\Controllers\Api\V1\WalletController;
 use App\Http\Controllers\Api\V1\WritingPracticeController;
@@ -119,6 +120,8 @@ Route::prefix('v1')->group(function () {
         Route::get('/assessment-jobs/{assessment_job}', [AssessmentJobController::class, 'show'])->whereUuid('assessment_job');
         Route::get('/assessment-attempts/{assessment_attempt}/view', [AssessmentAttemptController::class, 'show'])->whereUuid('assessment_attempt');
         Route::post('/assessment-attempts/{assessment_attempt}/feedback', [AssessmentAttemptController::class, 'requestFeedback'])->whereUuid('assessment_attempt');
+        Route::get('/assessment-attempts/{assessment_attempt}/teacher-grading-request', [TeacherGradingRequestController::class, 'show'])->whereUuid('assessment_attempt');
+        Route::post('/assessment-attempts/{assessment_attempt}/teacher-grading-request', [TeacherGradingRequestController::class, 'store'])->whereUuid('assessment_attempt');
 
         // Practice Speaking — drill + VSTEP.
         Route::get('/practice/speaking/drills', [SpeakingPracticeController::class, 'listDrills']);
@@ -206,6 +209,13 @@ Route::prefix('v1')->group(function () {
         Route::get('/content-status', [Admin\DashboardController::class, 'contentStatus']);
         Route::get('/recent-activity', [Admin\DashboardController::class, 'recentActivity']);
         Route::get('/feedback', [Admin\FeedbackController::class, 'index']);
+
+        Route::prefix('teacher-grading-requests')->group(function () {
+            Route::get('/', [Admin\TeacherGradingRequestController::class, 'index']);
+            Route::get('/{requestId}', [Admin\TeacherGradingRequestController::class, 'show'])->whereUuid('requestId');
+            Route::post('/{requestId}/assign', [Admin\TeacherGradingRequestController::class, 'assign'])->whereUuid('requestId');
+            Route::post('/{requestId}/reject', [Admin\TeacherGradingRequestController::class, 'reject'])->whereUuid('requestId');
+        });
 
         // Audio upload (presigned PUT to R2) — staff only.
         Route::post('/audio/presign-upload', [Admin\AudioUploadController::class, 'presignUpload']);
@@ -556,5 +566,9 @@ Route::prefix('v1')->group(function () {
         Route::get('/bookings', [Admin\TeacherController::class, 'bookings']);
         Route::get('/leave-requests', [Admin\TeacherController::class, 'leaveRequests']);
         Route::post('/leave-requests', [Admin\TeacherController::class, 'storeLeaveRequest']);
+        Route::get('/grading-requests', [Admin\TeacherGradingRequestController::class, 'teacherIndex']);
+        Route::get('/grading-requests/{requestId}', [Admin\TeacherGradingRequestController::class, 'teacherShow'])->whereUuid('requestId');
+        Route::post('/grading-requests/{requestId}/start', [Admin\TeacherGradingRequestController::class, 'start'])->whereUuid('requestId');
+        Route::post('/grading-requests/{requestId}/submit', [Admin\TeacherGradingRequestController::class, 'submit'])->whereUuid('requestId');
     });
 });

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { assessmentViewQuery } from "#/features/grading/queries"
+import { assessmentViewQuery, requestTeacherGrading } from "#/features/grading/queries"
 import type {
 	AssessmentView,
 	GradingProgress,
@@ -30,8 +30,16 @@ export function useWritingAssessment({ attemptId }: Input) {
 		},
 		onError: () => {}, // handled inline via feedbackError; suppress global toast
 	})
+	const teacherGrading = useMutation({
+		mutationFn: () => requestTeacherGrading(attemptId),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["assessment-attempts", attemptId, "view"] })
+		},
+		onError: () => {},
+	})
 	const viewData = view.data?.data ?? null
 	const viewResult = writingResult(viewData)
+	const teacherGradingState = viewData?.teacher_grading_request ?? null
 
 	return {
 		status: status(viewData?.status, viewResult, view.isError),
@@ -47,6 +55,16 @@ export function useWritingAssessment({ attemptId }: Input) {
 		feedbackError: errorMessage(feedback.error),
 		feedbackGenerated: feedback.data?.data.feedback ?? null,
 		requestFeedback: () => feedback.mutate(),
+		teacherGrading: {
+			canRequest: teacherGradingState?.can_request === true,
+			requested: teacherGrading.isSuccess || teacherGradingState?.requested === true,
+			status: teacherGrading.data?.data.status ?? teacherGradingState?.status ?? "none",
+			assignedTeacher: teacherGradingState?.assigned_teacher ?? null,
+			result: teacherGradingState?.teacher_result ?? null,
+			pending: teacherGrading.isPending,
+			error: errorMessage(teacherGrading.error),
+			onRequest: () => teacherGrading.mutate(),
+		},
 	}
 }
 
@@ -70,6 +88,7 @@ function writingResult(view: AssessmentView | null): WritingGradingResult | null
 	return {
 		overall_band: view.result.overall_band,
 		criterion_scores: view.result.criterion_scores,
+		source: view.result.source,
 		display: view.result.display,
 		diagnostics: view.result.diagnostics,
 		feedback: view.result.feedback,
