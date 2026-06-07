@@ -70,6 +70,18 @@ import "../styles/global.css";
           <img src="/diagrams/grading-flow.svg" alt="Luồng chấm Writing/Speaking" />
         </figure>
 
+        <h3>Fixed formula trong hệ thống</h3>
+        <p><strong>Fixed formula</strong> nghĩa là AI/STT/LanguageTool chỉ trích xuất tín hiệu; điểm cuối do backend tính bằng công thức cố định và tham số rubric đang active. Vì vậy AI không tự quyết định điểm, mà chỉ cung cấp dữ liệu đầu vào cho công thức.</p>
+        <div class="code-block formula-block">
+          <div class="formula-line"><span class="fn">Core</span><span>Điểm = round<sub>0.5</sub>(weighted_mean(điểm tiêu chí × trọng số))<em>Công thức rubric hiện lưu là equal_weighted_mean_rounded_half.</em></span></div>
+          <div class="formula-line"><span class="cm">Writing task</span><span>Task band = round<sub>0.5</sub>((Task Fulfillment + Organization + Grammar + Vocabulary) / 4)<em>4 tiêu chí Writing đang có trọng số bằng nhau.</em></span></div>
+          <div class="formula-line"><span class="cm">Speaking part</span><span>Part band = round<sub>0.5</sub>((Grammar + Vocabulary + Fluency + Discourse + Pronunciation) / 5)<em>5 tiêu chí Speaking đang có trọng số bằng nhau.</em></span></div>
+          <div class="formula-line"><span class="cm">Writing exam</span><span>Writing = round<sub>0.5</sub>((Task 1 + 2 × Task 2) / 3)<em>Task 2 chiếm 2/3 điểm kỹ năng Writing.</em></span></div>
+          <div class="formula-line"><span class="cm">Speaking exam</span><span>Speaking = round<sub>0.5</sub>((Part 1 + Part 2 + Part 3) / 3)<em>3 phần Speaking lấy trung bình.</em></span></div>
+        </div>
+        <p class="formula-note"><strong>Công thức tiêu chí:</strong> Writing Grammar lấy trung bình độ đa dạng cấu trúc và độ chính xác sau phạt lỗi; Task Fulfillment dựa trên mức đáp ứng yêu cầu, độ phát triển ý, ví dụ/lập trường và phạt lạc đề; Organization dựa trên đoạn, từ nối, đa dạng câu và định dạng thư; Vocabulary là trung bình có trọng số các tín hiệu lexical. Speaking Pronunciation = 0.45 × accuracy + 0.20 × fluency + 0.20 × prosody + 0.15 × completeness − phạt lỗi phát âm/ngắt nghỉ; Fluency = base + thưởng WPM − phạt pause; Discourse dùng descriptor score nhân content factor.</p>
+        <p class="formula-note"><strong>Caps/penalties:</strong> Writing có giới hạn khi quá ngắn, copy đề, thiếu yêu cầu tối thiểu, Task Fulfillment vượt xa các tiêu chí còn lại hoặc phản hồi quá ngắn. Speaking có giới hạn khi audio không đủ tin cậy, số từ quá ít, ASR confidence thấp hoặc nội dung không bám đề.</p>
+
         <h2 id="criteria">3. Tiêu chí chấm</h2>
         <figure class="uml-figure">
           <img src="/diagrams/signal-params.svg" alt="Mô hình tín hiệu và tham số" />
