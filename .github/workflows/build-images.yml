@@ -22,7 +22,62 @@ env:
   IMAGE_OWNER: ${{ github.repository_owner }}
 
 jobs:
+  backend-grading-e2e:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend-v2
+    env:
+      APP_ENV: 'testing'
+      APP_KEY: 'base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA='
+      APP_DEBUG: 'false'
+      DB_CONNECTION: 'pgsql'
+      DB_HOST: '127.0.0.1'
+      DB_PORT: '5432'
+      DB_DATABASE: 'vstep_test'
+      DB_USERNAME: 'user'
+      DB_PASSWORD: 'password'
+      CACHE_STORE: 'array'
+      SESSION_DRIVER: 'array'
+      QUEUE_CONNECTION: 'sync'
+      BROADCAST_CONNECTION: 'null'
+      MAIL_MAILER: 'array'
+      GOOGLE_CLIENT_ID: 'test-client-id.apps.googleusercontent.com'
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: vstep_test
+          POSTGRES_USER: user
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U user -d vstep_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, dom, fileinfo, pdo_pgsql, pcntl
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare database
+        run: php artisan migrate:fresh --seed --force
+
+      - name: Validate Writing scoring E2E
+        run: php artisan validate:writing-e2e
+
   build:
+    needs: backend-grading-e2e
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
