@@ -76,6 +76,28 @@ php artisan migrate
 php artisan route:list --path=api/v1
 ```
 
+## Scoring validation commands
+
+Run from `apps/backend-v2`:
+
+```bash
+php artisan validate:assessment-engine
+php artisan validate:assessment-engine --suite=guardrail
+php artisan validate:assessment-engine --suite=all
+php artisan validate:assessment-engine --suite=all --technical
+
+php artisan validate:writing-e2e
+php artisan validate:writing-e2e --technical
+php artisan validate:writing-e2e --max-drift=0.5
+```
+
+Show command options:
+
+```bash
+php artisan help validate:assessment-engine
+php artisan help validate:writing-e2e
+```
+
 ## API
 
 All versioned endpoints are under `/api/v1`.
