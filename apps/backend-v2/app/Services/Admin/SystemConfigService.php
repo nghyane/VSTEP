@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Admin;
 
 use App\Models\SystemConfig;
+use App\Support\SystemConfigSchemas;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -51,10 +52,45 @@ final class SystemConfigService
     {
         $config = $this->show($key);
 
+        $value = $this->normalizeValue($key, $value);
+
         $config->value = $value;
         $config->updated_at = now();
         $config->save();
 
         return $config->refresh();
+    }
+
+    private function normalizeValue(string $key, mixed $value): mixed
+    {
+        $schema = SystemConfigSchemas::for($key);
+
+        if (($schema['type'] ?? 'auto') !== 'number') {
+            return $value;
+        }
+
+        if (! is_numeric($value)) {
+            throw ValidationException::withMessages([
+                'value' => ['Giá trị phải là số.'],
+            ]);
+        }
+
+        if (($schema['integer'] ?? false) === true) {
+            if (is_float($value) && floor($value) !== $value) {
+                throw ValidationException::withMessages([
+                    'value' => ['Giá trị phải là số nguyên.'],
+                ]);
+            }
+
+            if (is_string($value) && preg_match('/^-?\d+$/', $value) !== 1) {
+                throw ValidationException::withMessages([
+                    'value' => ['Giá trị phải là số nguyên.'],
+                ]);
+            }
+
+            return (int) $value;
+        }
+
+        return (float) $value;
     }
 }

@@ -6,6 +6,7 @@ namespace Tests\Feature\Admin;
 
 use App\Models\SystemConfig;
 use App\Models\User;
+use App\Services\EconomyConfigService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPOpenSourceSaver\JWTAuth\Facades\JWTAuth;
 use Tests\TestCase;
@@ -46,6 +47,33 @@ final class SystemConfigTest extends TestCase
         $this->getJson('/api/v1/config')
             ->assertOk()
             ->assertJsonPath('data.pricing.practice.feedback_cost_coins', 3);
+    }
+
+    public function test_number_config_submitted_as_string_is_normalized(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->withHeader('Authorization', 'Bearer '.$this->tokenFor($admin))
+            ->patchJson('/api/v1/admin/system-config/teacher_grading.request_cost_coins', [
+                'value' => '4',
+            ])
+            ->assertOk()
+            ->assertJsonPath('data.key', 'teacher_grading.request_cost_coins')
+            ->assertJsonPath('data.value', 4);
+
+        $this->assertSame(4, SystemConfig::get('teacher_grading.request_cost_coins'));
+        $this->assertSame(4, app(EconomyConfigService::class)->teacherGradingRequestCost());
+
+        $this->getJson('/api/v1/config')
+            ->assertOk()
+            ->assertJsonPath('data.pricing.teacher_grading.request_cost_coins', 4);
+    }
+
+    public function test_teacher_grading_cost_accepts_existing_numeric_string_config(): void
+    {
+        SystemConfig::set('teacher_grading.request_cost_coins', '5', 'Test legacy string value.');
+
+        $this->assertSame(5, app(EconomyConfigService::class)->teacherGradingRequestCost());
     }
 
     public function test_admin_cannot_update_support_zalo_phone_with_non_phone_text(): void

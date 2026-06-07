@@ -36,11 +36,29 @@ final class EconomyConfigService
     private function requiredInt(string $key, int $min): int
     {
         $value = SystemConfig::get($key);
+        $intValue = $this->coerceInt($value);
 
-        if (! is_int($value) || $value < $min) {
+        if ($intValue === null || $intValue < $min) {
             throw new \RuntimeException("Missing or invalid system config: {$key}.");
         }
 
-        return $value;
+        return $intValue;
+    }
+
+    private function coerceInt(mixed $value): ?int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_float($value) && floor($value) === $value) {
+            return (int) $value;
+        }
+
+        if (is_string($value) && preg_match('/^-?\d+$/', $value) === 1) {
+            return (int) $value;
+        }
+
+        return null;
     }
 }
