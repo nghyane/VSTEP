@@ -27,6 +27,7 @@ import {
           <a class="sidebar-link" href="#flow">Luồng chấm</a>
           <a class="sidebar-link" href="#criteria">Tiêu chí</a>
           <a class="sidebar-link" href="#guard">Giới hạn</a>
+          <a class="sidebar-link" href="#grading-libraries">Tool chấm</a>
           <a class="sidebar-link" href="#srs">SRS</a>
         </div>
         <div class="mb-5">
@@ -36,6 +37,7 @@ import {
           <a class="sidebar-link" href="#writing">Writing</a>
           <a class="sidebar-link" href="#writing-samples">Bài mẫu</a>
           <a class="sidebar-link" href="#speaking">Speaking</a>
+          <a class="sidebar-link" href="#practice-libraries">Thư viện/API</a>
         </div>
         <div class="mb-5">
           <p class="sidebar-section">Khác</p>
@@ -63,7 +65,7 @@ import {
           <div class="formula-line"><span class="cm">Speaking</span><span>Điểm = round<sub>0.5</sub>((Part 1 + Part 2 + Part 3) / 3)<em>Ba phần nói được lấy trung bình ngang nhau.</em></span></div>
           <div class="formula-line"><span class="fn">Overall</span><span>Điểm tổng = round<sub>0.5</sub>((Listening + Reading + Writing + Speaking) / 4)<em>Bốn kỹ năng đóng góp ngang nhau vào điểm tổng.</em></span></div>
         </div>
-        <p class="formula-note"><strong>Cách đọc nhanh:</strong> phần trong ngoặc là điểm thô, <strong>× 10</strong> dùng để đổi tỷ lệ đúng sang thang 10, dấu <strong>/</strong> là chia trung bình. <strong>round<sub>0.5</sub></strong> = làm tròn đến mốc 0.5 gần nhất, ví dụ 6.24 → 6.0, 6.25 → 6.5.</p>
+        <p class="formula-note"><strong>Trong đó:</strong> phần trong ngoặc là điểm thô, <strong>× 10</strong> dùng để đổi tỷ lệ đúng sang thang 10, dấu <strong>/</strong> là chia trung bình. <strong>round<sub>0.5</sub></strong> = làm tròn đến mốc 0.5 gần nhất, ví dụ 6.24 → 6.0, 6.25 → 6.5.</p>
         <p class="formula-note"><strong>Task 1/2</strong> là điểm từng bài Writing. <strong>Part 1/2/3</strong> là điểm từng phần Speaking. Nếu chưa cần kiểm tra chi tiết, chỉ cần nhớ: Listening/Reading theo số câu đúng; Writing ưu tiên Task 2; Speaking lấy trung bình 3 phần.</p>
         <p class="formula-note"><strong>Ví dụ:</strong> Listening đúng 28/35 câu → 28/35 × 10 = 8.0. Writing Task 1 = 6.0, Task 2 = 7.0 → (6.0 + 2 × 7.0) / 3 = 6.67 → 6.5.</p>
         <p><strong>B1:</strong> 4.0–5.5 · <strong>B2:</strong> 6.0–8.0 · <strong>C1:</strong> 8.5–10.0</p>
@@ -94,7 +96,7 @@ import {
           <li><strong>Discourse Management:</strong> phát triển ý, liên kết, bám đề</li>
           <li><strong>Pronunciation:</strong> chính xác, trôi chảy, ngữ điệu, hoàn chỉnh</li>
         </ul>
-        <p class="formula-note"><strong>Cách đọc công thức tiêu chí:</strong> tín hiệu đo được là dữ liệu thô từ bài làm, ví dụ số lỗi, số từ, tốc độ nói, độ bám đề. Tham số cấu hình là trọng số, ngưỡng, giới hạn điểm và mức phạt. AI/ASR chỉ là một trong các nguồn tạo tín hiệu; điểm được kiểm soát bởi công thức và điều kiện giới hạn của hệ thống.</p>
+        <p class="formula-note"><strong>Trong đó:</strong> tín hiệu đo được là dữ liệu thô từ bài làm, ví dụ số lỗi, số từ, tốc độ nói, độ bám đề. Tham số cấu hình là trọng số, ngưỡng, giới hạn điểm và mức phạt. AI/ASR chỉ là một trong các nguồn tạo tín hiệu; điểm được kiểm soát bởi công thức và điều kiện giới hạn của hệ thống.</p>
         <p class="formula-note"><strong>Luồng tính điểm:</strong> điểm tiêu chí → trung bình có trọng số để ra điểm task/part → trung bình các part → làm tròn 0.5 để ra điểm kỹ năng.</p>
         <p class="formula-note"><strong>Nguồn tín hiệu:</strong> công cụ kiểm tra ngữ pháp — chính tả, dịch vụ nhận dạng giọng nói — đánh giá phát âm, phân tích văn bản (số từ, câu, đoạn, từ nối, CEFR), đánh giá mức độ bám đề và phát triển ý.</p>
 
@@ -107,13 +109,26 @@ import {
           <li><strong>Lạc đề:</strong> phát âm tốt không che lấp nội dung sai</li>
         </ul>
 
-        <h2 id="srs">5. SRS từ vựng — FSRS v6</h2>
+        <h2 id="grading-libraries">5. Tool/API cho chấm điểm</h2>
+        <p>Luồng chấm điểm kết hợp công thức nội bộ với các tool đo tín hiệu ngôn ngữ. AI hỗ trợ nhận xét và phân tích, nhưng điểm cuối vẫn đi qua rubric, trọng số và giới hạn điểm của hệ thống.</p>
+        <div class="scope-table">
+          <div><span class="scope-tag system">Ngữ pháp</span><div><strong>LanguageTool</strong> kiểm tra lỗi ngữ pháp, chính tả, punctuation/style cho Writing và transcript Speaking. Link: <a href="https://github.com/languagetool-org/languagetool">GitHub</a> · <a href="https://dev.languagetool.org/http-server">HTTP server docs</a>.</div></div>
+          <div><span class="scope-tag system">STT</span><div><strong>Azure Speech-to-Text</strong> chuyển audio Speaking thành transcript và trả thêm confidence, thời lượng, số từ, tốc độ nói. Link: <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/get-started-speech-to-text">Azure Speech-to-Text</a>.</div></div>
+          <div><span class="scope-tag system">Phát âm</span><div><strong>Azure Pronunciation Assessment</strong> cung cấp tín hiệu accuracy, fluency, prosody, completeness, lỗi phát âm và ngắt nghỉ cho tiêu chí Pronunciation/Fluency. Link: <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/how-to-pronunciation-assessment">Azure Pronunciation Assessment</a>.</div></div>
+          <div><span class="scope-tag system">AI nhận xét</span><div><strong>Laravel AI</strong> và AI Gateway nội bộ chuẩn hóa lời gọi LLM để sinh nhận xét Writing/Speaking, đánh giá bám đề, phát triển ý và phản hồi phát âm. Link: <a href="https://github.com/laravel/ai">Laravel AI GitHub</a>.</div></div>
+        </div>
+
+        <h2 id="srs">6. SRS từ vựng — FSRS v6</h2>
         <p>FSRS cá nhân hóa lịch ôn từ vựng qua 3 chỉ số: <strong>difficulty</strong> (độ khó), <strong>stability</strong> (độ bền trí nhớ), <strong>retrievability</strong> (xác suất nhớ lại). Người học đánh giá Again/Hard/Good/Easy sau mỗi lần ôn → hệ thống cập nhật chỉ số và tính ngày ôn tiếp.</p>
+        <div class="scope-table">
+          <div><span class="scope-tag system">FSRS</span><div>Hệ thống triển khai scheduler FSRS v6 nội bộ ở backend, theo mô hình <strong>Free Spaced Repetition Scheduler</strong> và learning steps kiểu Anki. Link: <a href="https://github.com/open-spaced-repetition/fsrs4anki">FSRS4Anki GitHub</a> · <a href="https://github.com/open-spaced-repetition/fsrs4anki/releases/tag/v6.0.0">FSRS v6 release</a>.</div></div>
+          <div><span class="scope-tag system">Anki</span><div>Anki là phần mềm flashcard spaced repetition dùng làm tham chiếu cho luồng Again/Hard/Good/Easy và learning/relearning steps. Link: <a href="https://github.com/ankitects/anki">Anki GitHub</a> · <a href="https://apps.ankiweb.net/">Anki website</a>.</div></div>
+        </div>
 
         <div class="code-block formula-block compact">
           <div class="formula-line"><span class="fn">Interval</span><span>I = S / F × (0.9<sup>1/(−w<sub>20</sub>)</sup> − 1), trong đó F = 0.9<sup>−1/w<sub>20</sub></sup> − 1<em>Stability càng cao thì khoảng cách ôn tiếp theo càng dài; w<sub>20</sub> là tham số hiệu chỉnh của FSRS.</em></span></div>
         </div>
-        <p class="formula-note"><strong>Cách đọc nhanh:</strong> <strong>I</strong> = interval, số ngày đến lần ôn tiếp theo; <strong>S</strong> = stability, độ bền trí nhớ hiện tại; <strong>w<sub>20</sub></strong> = tham số FSRS dùng để hiệu chỉnh đường quên. Người học không cần tự tính công thức này; hệ thống dùng nó để chọn ngày ôn.</p>
+        <p class="formula-note"><strong>Trong đó:</strong> <strong>I</strong> = interval, số ngày đến lần ôn tiếp theo; <strong>S</strong> = stability, độ bền trí nhớ hiện tại; <strong>w<sub>20</sub></strong> = tham số FSRS dùng để hiệu chỉnh đường quên. Người học không cần tự tính công thức này; hệ thống dùng nó để chọn ngày ôn.</p>
 
         <h3>Vòng đời thẻ</h3>
         <figure class="uml-figure compact-uml">
@@ -122,16 +137,16 @@ import {
         <p class="formula-note">Dashboard: hiển thị xu hướng năng lực từng kỹ năng, một điểm thấp không kéo tụt ngay.</p>
 
         <!-- ===== PRACTICE ===== -->
-        <h2 id="listening">6. Luyện tập Listening</h2>
-        <p>Audio được tạo trực tiếp từ văn bản đề bài, không yêu cầu file thu sẵn. Transcript đồng bộ với thời gian phát.</p>
+        <h2 id="listening">7. Luyện tập Listening</h2>
+        <p>Listening dùng Text-to-Speech từ transcript/đề bài, không phụ thuộc file audio thu sẵn. Transcript đồng bộ theo từ đang đọc trong lúc phát.</p>
         <ul>
           <li>Chọn part (1–3), nhận danh sách bài luyện tập</li>
-          <li>Nghe audio tạo từ text, trả lời câu hỏi MCQ</li>
-          <li>Transcript hiển thị đồng bộ với thời gian audio</li>
+          <li>Nghe audio tạo bằng Web Speech TTS từ transcript, trả lời câu hỏi MCQ</li>
+          <li>Transcript hiển thị đồng bộ theo tiến trình đọc TTS</li>
           <li>Nộp bài → xem đáp án, điểm và lịch sử</li>
         </ul>
 
-        <h2 id="reading">7. Luyện tập Reading</h2>
+        <h2 id="reading">8. Luyện tập Reading</h2>
         <ul>
           <li>Chọn part (1–4), nhận bài đọc và câu hỏi</li>
           <li>Đọc passage, chọn đáp án MCQ</li>
@@ -139,7 +154,7 @@ import {
           <li>Nộp bài → xem kết quả và điểm từng câu</li>
         </ul>
 
-        <h2 id="writing">8. Luyện tập Writing</h2>
+        <h2 id="writing">9. Luyện tập Writing</h2>
         <ul>
           <li>Nhận đề: Task 1 (thư/email) hoặc Task 2 (bài luận)</li>
           <li>Viết bài, nhận gợi ý trực tiếp (số từ, chính tả)</li>
@@ -212,24 +227,37 @@ import {
           ))}
         </div>
 
-        <h2 id="speaking">9. Luyện tập Speaking</h2>
+        <h2 id="speaking">10. Luyện tập Speaking</h2>
         <p>Tận dụng API giọng nói có sẵn trong trình duyệt để tạo transcript và đọc câu mẫu. Đánh giá phát âm dùng dịch vụ chuyên biệt ở bước cần độ chính xác cao.</p>
         <ul>
           <li><strong>Hội thoại:</strong> luyện nói theo kịch bản, hệ thống phản hồi từng lượt</li>
           <li><strong>Shadowing:</strong> đọc theo câu mẫu, so sánh phát âm với bản gốc</li>
-          <li>Ghi âm câu trả lời qua microphone, hiển thị waveform</li>
+          <li>Ghi âm câu trả lời qua microphone, hiển thị trạng thái ghi âm/xử lý</li>
           <li>Nhận điểm 5 tiêu chí và phản hồi phát âm chi tiết</li>
         </ul>
 
+        <h2 id="practice-libraries">11. Thư viện/API cho luyện tập</h2>
+        <p>Đã đối chiếu với frontend và backend: phần luyện tập có đủ các thư viện/API chính cho IPA, dịch, Web Speech, avatar hồ sơ, kiểm tra ngữ pháp và xử lý audio.</p>
+        <div class="scope-table">
+          <div><span class="scope-tag system">IPA</span><div><strong>phonemize</strong> tạo IPA phía client khi dữ liệu admin/AI chưa có sẵn; package đang dùng: <span class="code-inline">phonemize</span>. Link: <a href="https://github.com/hans00/phonemize">GitHub</a> · <a href="https://www.npmjs.com/package/phonemize">npm</a>.</div></div>
+          <div><span class="scope-tag system">Dịch</span><div>Bôi đen văn bản dùng <strong>Chrome Translator API</strong> khi trình duyệt hỗ trợ; tra từ đơn dùng <strong>Free Dictionary API</strong> và dịch nghĩa sang tiếng Việt. Link: <a href="https://developer.chrome.com/docs/ai/translator-api">Translator API</a> · <a href="https://dictionaryapi.dev/">Dictionary API</a> · <a href="https://github.com/meetDeveloper/freeDictionaryAPI">Dictionary GitHub</a>.</div></div>
+          <div><span class="scope-tag system">Web Speech</span><div>Đọc câu mẫu, chọn giọng, phát passage/listening fallback và nhận dạng giọng nói ban đầu dùng <strong>Web Speech API</strong> (<span class="code-inline">speechSynthesis</span>, <span class="code-inline">SpeechRecognition</span>/<span class="code-inline">webkitSpeechRecognition</span>). Link: <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API">MDN</a> · <a href="https://webaudio.github.io/web-speech-api/">Spec</a>.</div></div>
+          <div><span class="scope-tag system">STT</span><div>Khi cần độ tin cậy cao hoặc Web Speech lỗi, backend dùng <strong>Azure Speech-to-Text / Pronunciation Assessment</strong>; fallback request-response dùng <strong>OpenAI Audio Transcriptions</strong>. Link: <a href="https://learn.microsoft.com/en-us/azure/ai-services/speech-service/how-to-pronunciation-assessment">Azure Pronunciation Assessment</a> · <a href="https://developers.openai.com/api/docs/guides/speech-to-text">OpenAI Speech to Text</a>.</div></div>
+          <div><span class="scope-tag system">Ngữ pháp</span><div>Writing/Speaking feedback lấy lỗi chính tả, ngữ pháp, style từ <strong>LanguageTool</strong> self-hosted. Link: <a href="https://github.com/languagetool-org/languagetool">GitHub</a> · <a href="https://dev.languagetool.org/http-server">HTTP server docs</a>.</div></div>
+          <div><span class="scope-tag system">Avatar</span><div>Ảnh hồ sơ preset và avatar nhân vật hội thoại dùng <strong>DiceBear Avataaars</strong> qua HTTP API; người dùng vẫn có thể upload ảnh riêng qua form upload. Link: <a href="https://github.com/dicebear/dicebear/tree/9.x">DiceBear GitHub</a> · <a href="https://www.dicebear.com/styles/avataaars/">Avataaars docs</a>.</div></div>
+          <div><span class="scope-tag system">Audio</span><div>Ghi âm dùng Web APIs <span class="code-inline">MediaRecorder</span>, <span class="code-inline">getUserMedia</span> và xử lý WAV trong client; lưu file luyện nói qua presigned URL S3/R2 bằng <span class="code-inline">league/flysystem-aws-s3-v3</span> ở backend. Link: <a href="https://developer.mozilla.org/en-US/docs/Web/API/MediaRecorder">MediaRecorder</a> · <a href="https://github.com/thephpleague/flysystem-aws-s3-v3">Flysystem S3 GitHub</a>.</div></div>
+        </div>
+        <p class="formula-note">Ghi chú: các link trên là nguồn chính thức hoặc repository của package/API đang dùng.</p>
+
         <!-- ===== AI GATEWAY ===== -->
-        <h2 id="gateway">10. AI Gateway</h2>
+        <h2 id="gateway">12. AI Gateway</h2>
         <p>Tất cả lời gọi AI/LLM đi qua một gateway tập trung. Gateway đảm nhận retry khi lỗi thoáng qua, circuit breaker khi dịch vụ AI liên tục thất bại, và wire abstraction để dễ đổi provider.</p>
         <figure class="uml-figure">
           <img src="/diagrams/ai-gateway.svg" alt="Sơ đồ kiến trúc AI Gateway" />
         </figure>
 
         <!-- ===== TECH STACK ===== -->
-        <h2 id="stack">11. Công nghệ sử dụng</h2>
+        <h2 id="stack">13. Công nghệ sử dụng</h2>
         <ul class="tech-list">
           <li><img src="https://cdn.simpleicons.org/react/1c1917" width="16" height="16" alt="" /> React — giao diện</li>
           <li><img src="https://cdn.simpleicons.org/tanstack/1c1917" width="16" height="16" alt="" /> TanStack Query, Router, Form — dữ liệu, điều hướng</li>
@@ -245,16 +273,16 @@ import {
         </ul>
 
         <!-- ===== LIMITS ===== -->
-        <h2 id="limits">12. Giới hạn</h2>
+        <h2 id="limits">14. Giới hạn</h2>
         <ul>
           <li>Điểm tự động Writing/Speaking là tham khảo; kết quả xác nhận cần người chấm</li>
           <li>Cần thêm dữ liệu thực tế để hiệu chỉnh độ chính xác</li>
           <li>Speaking phụ thuộc chất lượng âm thanh đầu vào</li>
         </ul>
 
-        <p class="source-note"><strong>Nguồn tham khảo:</strong> <a href="https://tanstack.com/query">TanStack Query</a> · <a href="https://github.com/sindresorhus/ky">ky</a> · <a href="https://recharts.org">Recharts</a> · <a href="https://tanstack.com/router">TanStack Router</a> · <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API">Web Speech API</a></p>
+        <p class="source-note"><strong>Nguồn tham khảo:</strong> <a href="https://tanstack.com/query">TanStack Query</a> · <a href="https://github.com/sindresorhus/ky">ky</a> · <a href="https://recharts.org">Recharts</a> · <a href="https://tanstack.com/router">TanStack Router</a> · <a href="https://github.com/hans00/phonemize">phonemize</a> · <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API">Web Speech API</a> · <a href="https://developer.chrome.com/docs/ai/translator-api">Translator API</a> · <a href="https://github.com/dicebear/dicebear/tree/9.x">DiceBear</a> · <a href="https://github.com/languagetool-org/languagetool">LanguageTool</a></p>
 
-        <h2 id="glossary">13. Chú giải từ viết tắt</h2>
+        <h2 id="glossary">15. Chú giải từ viết tắt</h2>
         <div class="glossary-table">
           <div><strong>AI</strong><span>Artificial Intelligence (trí tuệ nhân tạo)</span></div>
           <div><strong>API</strong><span>Application Programming Interface</span></div>
