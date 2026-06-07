@@ -27,10 +27,10 @@ const VISUALS: Record<NotificationType, NotifVisual> = {
 		navigateTo: "/dashboard",
 	},
 	coin_spent: {
-		iconKind: "regular",
-		iconName: "trash",
-		tintClass: "bg-destructive-tint",
-		tone: "destructive",
+		iconKind: "static",
+		iconName: "coin",
+		tintClass: "bg-coin-tint",
+		tone: "coin",
 		navigateTo: "/giao-dich-xu",
 	},
 	assessment_completed: {
