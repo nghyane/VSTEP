@@ -9,6 +9,7 @@ import {
 	submitTeacherGradingRequest,
 	teacherGradingRequestDetailQuery,
 } from "#/features/teacher-grading/queries"
+import { SpeakingAudioPlayer, speakingAudioSource } from "#/features/teacher-grading/SpeakingAudioPlayer"
 import type {
 	TeacherGradingAnnotation,
 	TeacherGradingCriterion,
@@ -183,6 +184,7 @@ function AttemptPanel({ item }: { item: TeacherGradingRequestItem }) {
 	const prompt = stringValue(attempt.prompt, "prompt") ?? stringValue(attempt.prompt, "content")
 	const responseText =
 		stringValue(attempt.response_payload, "text") ?? stringValue(attempt.response_payload, "transcript")
+	const audio = speakingAudioSource(attempt.response_payload)
 
 	return (
 		<Space orientation="vertical" size={16} style={{ width: "100%" }}>
@@ -206,6 +208,7 @@ function AttemptPanel({ item }: { item: TeacherGradingRequestItem }) {
 					{responseText ?? "Không có text/transcript trong submission."}
 				</Typography.Paragraph>
 			</section>
+			{attempt.skill === "speaking" && <SpeakingAudioPlayer source={audio} />}
 			{attempt.result && (
 				<Card size="small" title="Điểm hệ thống">
 					<Space orientation="vertical" size={4}>
@@ -275,6 +278,9 @@ function RequirementReference({ diagnostics }: { diagnostics: TeacherGradingDiag
 	const format = diagnostics.format
 	const vocab = diagnostics.vocabulary_profile
 	const cohesion = diagnostics.cohesion
+	const informalCount = format?.tone?.informal_count ?? null
+	const sentenceVariety = cohesion?.sentence_variety ?? null
+	const cefrWeightedAvg = vocab?.cefr_weighted_avg ?? null
 
 	if (!word && !coverage && !format && !vocab && !cohesion && !diagnostics.profanity?.found) return null
 
@@ -303,15 +309,9 @@ function RequirementReference({ diagnostics }: { diagnostics: TeacherGradingDiag
 					<MetricTag label="Có greeting" value={yesNo(format.has_salutation)} />
 				)}
 				{format?.letter_format_expected && <MetricTag label="Có closing" value={yesNo(format.has_closing)} />}
-				{format?.tone.informal_count !== null && (
-					<MetricTag label="Informal words" value={format.tone.informal_count} />
-				)}
-				{cohesion?.sentence_variety !== null && (
-					<MetricTag label="Đa dạng câu" value={roundMetric(cohesion.sentence_variety)} />
-				)}
-				{vocab?.cefr_weighted_avg !== null && (
-					<MetricTag label="CEFR vocab" value={roundMetric(vocab.cefr_weighted_avg)} />
-				)}
+				{informalCount !== null && <MetricTag label="Informal words" value={informalCount} />}
+				{sentenceVariety !== null && <MetricTag label="Đa dạng câu" value={roundMetric(sentenceVariety)} />}
+				{cefrWeightedAvg !== null && <MetricTag label="CEFR vocab" value={roundMetric(cefrWeightedAvg)} />}
 				{diagnostics.profanity?.found && (
 					<Tag color="red">Từ không phù hợp: {diagnostics.profanity.words.join(", ")}</Tag>
 				)}
