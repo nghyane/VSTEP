@@ -23,6 +23,7 @@ import {
 	assignTeacherGradingRequest,
 	rejectTeacherGradingRequest,
 } from "#/features/teacher-grading/queries"
+import { SpeakingAudioPlayer, speakingAudioSource } from "#/features/teacher-grading/SpeakingAudioPlayer"
 import type {
 	TeacherGradingRequestItem,
 	TeacherGradingRequestStatus,
@@ -169,6 +170,7 @@ function AttemptContent({ item }: { item: TeacherGradingRequestItem }) {
 	const prompt = stringValue(attempt.prompt, "prompt") ?? stringValue(attempt.prompt, "content")
 	const responseText =
 		stringValue(attempt.response_payload, "text") ?? stringValue(attempt.response_payload, "transcript")
+	const audio = speakingAudioSource(attempt.response_payload)
 
 	return (
 		<Flex gap={16} align="flex-start" wrap="wrap">
@@ -188,6 +190,7 @@ function AttemptContent({ item }: { item: TeacherGradingRequestItem }) {
 							{responseText ?? "Không có text/transcript trong submission."}
 						</Typography.Paragraph>
 					</section>
+					{attempt.skill === "speaking" && <SpeakingAudioPlayer source={audio} />}
 				</Space>
 			</Card>
 			<Card title="Điểm" style={{ flex: "1 1 360px" }}>
