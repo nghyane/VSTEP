@@ -279,6 +279,8 @@ function RequirementReference({ diagnostics }: { diagnostics: TeacherGradingDiag
 	const vocab = diagnostics.vocabulary_profile
 	const cohesion = diagnostics.cohesion
 	const informalCount = format?.tone?.informal_count ?? null
+	const sentenceVariety = cohesion?.sentence_variety ?? null
+	const cefrWeightedAvg = vocab?.cefr_weighted_avg ?? null
 
 	if (!word && !coverage && !format && !vocab && !cohesion && !diagnostics.profanity?.found) return null
 
@@ -308,12 +310,8 @@ function RequirementReference({ diagnostics }: { diagnostics: TeacherGradingDiag
 				)}
 				{format?.letter_format_expected && <MetricTag label="Có closing" value={yesNo(format.has_closing)} />}
 				{informalCount !== null && <MetricTag label="Informal words" value={informalCount} />}
-				{cohesion?.sentence_variety !== null && (
-					<MetricTag label="Đa dạng câu" value={roundMetric(cohesion.sentence_variety)} />
-				)}
-				{vocab?.cefr_weighted_avg !== null && (
-					<MetricTag label="CEFR vocab" value={roundMetric(vocab.cefr_weighted_avg)} />
-				)}
+				{sentenceVariety !== null && <MetricTag label="Đa dạng câu" value={roundMetric(sentenceVariety)} />}
+				{cefrWeightedAvg !== null && <MetricTag label="CEFR vocab" value={roundMetric(cefrWeightedAvg)} />}
 				{diagnostics.profanity?.found && (
 					<Tag color="red">Từ không phù hợp: {diagnostics.profanity.words.join(", ")}</Tag>
 				)}
