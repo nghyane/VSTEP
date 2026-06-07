@@ -91,7 +91,7 @@ export interface TeacherGradingDiagnostics {
 		letter_format_expected: boolean
 		has_salutation: boolean | null
 		has_closing: boolean | null
-		tone: {
+		tone?: {
 			formal_count: number | null
 			informal_count: number | null
 			informal_words: string[] | null
