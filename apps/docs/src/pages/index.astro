@@ -10,165 +10,194 @@ import "../styles/global.css";
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=STIX+Two+Text:wght@500;600&subset=latin,latin-ext,vietnamese&display=swap" rel="stylesheet" />
-  <title>Technical Appendix — VSTEP</title>
-  <meta name="description" content="Phụ lục kỹ thuật bảo vệ đồ án VSTEP: công thức chấm điểm, dashboard robust score và SRS." />
+  <title>Phụ lục kỹ thuật — VSTEP</title>
 </head>
 <body class="bg-bg text-fg font-sans">
   <div class="page-shell">
-    <nav class="h-12 border-b border-border flex items-center px-5 gap-4">
-      <a href="/" class="font-semibold text-sm">VSTEP</a>
-      <span class="text-border text-xs">·</span>
-      <span class="text-[13px] text-fg-2 font-medium">Technical Appendix</span>
-      <div class="flex-1"></div>
-      <span class="text-[13px] text-fg-3">Scoring formulas</span>
-    </nav>
 
     <div class="flex-1 flex max-w-[1080px] mx-auto w-full">
       <aside class="sidebar w-52 shrink-0 border-r border-border py-6 px-3 sticky top-0 h-screen overflow-y-auto">
         <div class="mb-5">
-          <p class="sidebar-section">Phạm vi</p>
-          <a class="sidebar-link active" href="#scope">Mục đích</a>
-          <a class="sidebar-link" href="#sources">Nguồn</a>
-        </div>
-        <div class="mb-5">
-          <p class="sidebar-section">Scoring</p>
-          <a class="sidebar-link" href="#overall">Điểm tổng</a>
-          <a class="sidebar-link" href="#writing">Writing</a>
-          <a class="sidebar-link" href="#speaking">Speaking</a>
-          <a class="sidebar-link" href="#guardrails">Guardrails</a>
-        </div>
-        <div class="mb-5">
-          <p class="sidebar-section">Analytics</p>
-          <a class="sidebar-link" href="#robust">Robust score</a>
+          <p class="sidebar-section">Chấm điểm</p>
+          <a class="sidebar-link active" href="#formula">Công thức</a>
+          <a class="sidebar-link" href="#flow">Luồng chấm</a>
+          <a class="sidebar-link" href="#criteria">Tiêu chí</a>
+          <a class="sidebar-link" href="#guard">Giới hạn</a>
           <a class="sidebar-link" href="#srs">SRS</a>
         </div>
         <div class="mb-5">
-          <p class="sidebar-section">Kết luận</p>
-          <a class="sidebar-link" href="#clarify">Làm rõ</a>
+          <p class="sidebar-section">Luyện tập</p>
+          <a class="sidebar-link" href="#listening">Listening</a>
+          <a class="sidebar-link" href="#reading">Reading</a>
+          <a class="sidebar-link" href="#writing">Writing</a>
+          <a class="sidebar-link" href="#speaking">Speaking</a>
+        </div>
+        <div class="mb-5">
+          <p class="sidebar-section">Khác</p>
+          <a class="sidebar-link" href="#gateway">AI Gateway</a>
+          <a class="sidebar-link" href="#stack">Công nghệ</a>
           <a class="sidebar-link" href="#limits">Giới hạn</a>
+          <a class="sidebar-link" href="#glossary">Chú giải</a>
         </div>
       </aside>
 
       <main class="flex-1 min-w-0 py-8 px-8 max-md:px-5 prose">
-        <h2 id="scope">Mục đích</h2>
-        <p>Phụ lục này tập trung vào phần kỹ thuật để hội đồng xem nhanh: công thức điểm, tiêu chí Writing/Speaking, cơ chế chống nhiễu dashboard và SRS từ vựng. Slide chính chỉ nên nêu ý; phần này dùng để đọc chi tiết khi cần.</p>
-        <ul>
-          <li><strong>Official VSTEP:</strong> quy đổi điểm 4 kỹ năng và mức B1/B2/C1.</li>
-          <li><strong>System rubric:</strong> chấm Writing/Speaking tham khảo bằng tiêu chí và guardrails.</li>
-          <li><strong>Learning analytics:</strong> robust score và SRS là cơ chế hỗ trợ học tập, không phải quy định chấm thi chính thức.</li>
-        </ul>
 
-        <h2 id="sources">Nguồn tham chiếu</h2>
-        <ul>
-          <li><a href="https://thuvienphapluat.vn/van-ban/Giao-duc/Quyet-dinh-729-QD-BGDDT-2015-de-thi-danh-gia-nang-luc-su-dung-tieng-Anh-tu-bac-3-den-bac-5-267956.aspx">Quyết định 729/QĐ-BGDĐT, 11/03/2015</a>: định dạng đề thi tiếng Anh bậc 3–5, thang điểm từng kỹ năng 0–10, làm tròn 0.5 và quy đổi bậc năng lực.</li>
-          <li><a href="https://vqa.moet.gov.vn/vi/laws/detail/Thong-tu-Ban-hanh-Quy-che-thi-danh-gia-nang-luc-ngoai-ngu-theo-Khung-nang-luc-ngoai-ngu-6-bac-dung-cho-Viet-Nam-30/">Thông tư 23/2017/TT-BGDĐT</a>: quy chế thi đánh giá năng lực ngoại ngữ theo Khung năng lực ngoại ngữ 6 bậc.</li>
-        </ul>
-
-        <h2 id="overall">Công thức điểm tổng mock test</h2>
-        <p>Quyết định 729 quy định mỗi kỹ năng được chấm trên thang 0–10, làm tròn đến 0.5; điểm trung bình 4 kỹ năng dùng để xác định bậc năng lực. Hệ thống triển khai thêm công thức quy đổi từng kỹ năng về cùng thang điểm này.</p>
-        <div class="code-block formula-block">
-          <div class="formula-line"><span class="cm">Listening</span><span><strong>L = r<sub>0.5</sub>(c<sub>L</sub> / n<sub>L</sub> × 10)</strong><em>MCQ correct ratio</em></span></div>
-          <div class="formula-line"><span class="cm">Reading</span><span><strong>R = r<sub>0.5</sub>(c<sub>R</sub> / n<sub>R</sub> × 10)</strong><em>MCQ correct ratio</em></span></div>
-          <div class="formula-line"><span class="cm">Writing</span><span><strong>W = r<sub>0.5</sub>((T<sub>1</sub> + 2T<sub>2</sub>) / 3)</strong><em>Task 2 weighted double</em></span></div>
-          <div class="formula-line"><span class="cm">Speaking</span><span><strong>S = r<sub>0.5</sub>(mean(P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub>))</strong><em>average of speaking parts</em></span></div>
-          <div class="formula-line"><span class="fn">Overall</span><span><strong>O = r<sub>0.5</sub>((L + R + W + S) / 4)</strong><em>requires all 4 skills</em></span></div>
+        <!-- ===== SCORING ===== -->
+        <h2 id="formula">1. Công thức điểm</h2>
+        <p>Mỗi kỹ năng quy về thang 0–10, làm tròn 0.5. Điểm tổng = trung bình 4 kỹ năng.</p>
+        <div class="scope-table">
+          <div><span class="scope-tag official">Chính thức</span><div>Thang điểm 0–10, làm tròn 0.5, quy đổi B1/B2/C1 theo <a href="https://thuvienphapluat.vn/van-ban/Giao-duc/Quyet-dinh-729-QD-BGDDT-2015-de-thi-danh-gia-nang-luc-su-dung-tieng-Anh-tu-bac-3-den-bac-5-267956.aspx">Quyết định 729/QĐ-BGDĐT</a> và <a href="https://vqa.moet.gov.vn/vi/laws/detail/Thong-tu-Ban-hanh-Quy-che-thi-danh-gia-nang-luc-ngoai-ngu-theo-Khung-nang-luc-ngoai-ngu-6-bac-dung-cho-Viet-Nam-30/">Thông tư 23/2017/TT-BGDĐT</a>.</div></div>
+          <div><span class="scope-tag system">Hệ thống</span><div>Trọng số Task 2 = 2; quy đổi từng phần về thang 0–10.</div></div>
+          <div><span class="scope-tag limit">Giới hạn</span><div>Điểm tự động là tham khảo; xác nhận cần người chấm hoặc dữ liệu giám khảo.</div></div>
         </div>
-        <p class="formula-note">Ký hiệu: r<sub>0.5</sub> = làm tròn đến 0.5; c = số câu đúng; n = tổng số câu; T = Writing task; P = Speaking part.</p>
-        <p class="source-note">Nguồn chính thức: thang điểm kỹ năng, làm tròn 0.5, overall và mapping bậc theo Quyết định 729/QĐ-BGDĐT. Công thức quy đổi thành phần là triển khai của hệ thống để đưa dữ liệu về thang 0–10.</p>
-        <h3>Quy đổi bậc tham khảo</h3>
-        <ul>
-          <li>B1: 4.0–5.5</li>
-          <li>B2: 6.0–8.0</li>
-          <li>C1: 8.5–10.0</li>
-        </ul>
-
-        <h2 id="writing">Writing scoring</h2>
         <div class="code-block formula-block">
-          <div class="formula-line"><span class="fn">Task</span><span><strong>T = r<sub>0.5</sub>(Σ score<sub>i</sub> × weight<sub>i</sub> / Σ weight<sub>i</sub>)</strong><em>weighted rubric score</em></span></div>
+          <div class="formula-line"><span class="cm">Listening</span><span>L = round<sub>0.5</sub>(c<sub>L</sub> / n<sub>L</sub> × 10)</span></div>
+          <div class="formula-line"><span class="cm">Reading</span><span>R = round<sub>0.5</sub>(c<sub>R</sub> / n<sub>R</sub> × 10)</span></div>
+          <div class="formula-line"><span class="cm">Writing</span><span>W = round<sub>0.5</sub>((T<sub>1</sub> + 2T<sub>2</sub>) / 3)</span></div>
+          <div class="formula-line"><span class="cm">Speaking</span><span>S = round<sub>0.5</sub>(mean(P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub>))</span></div>
+          <div class="formula-line"><span class="fn">Overall</span><span>O = round<sub>0.5</sub>((L + R + W + S) / 4)</span></div>
         </div>
-        <p class="formula-note">score<sub>i</sub> là điểm từng tiêu chí; weight<sub>i</sub> là trọng số của tiêu chí trong rubric hệ thống.</p>
-        <h3>Tiêu chí</h3>
-        <ul>
-          <li><strong>Task Fulfillment:</strong> độ phủ yêu cầu đề bài, phát triển ý, ví dụ, quan điểm, mức độ lạc đề.</li>
-          <li><strong>Organization:</strong> đoạn văn, liên kết ý, từ nối, độ đa dạng câu, định dạng thư/bài luận.</li>
-          <li><strong>Grammar:</strong> độ đa dạng cấu trúc và độ chính xác ngữ pháp.</li>
-          <li><strong>Vocabulary:</strong> độ rộng từ vựng, độ nâng cao, đa dạng từ, chính tả và khả năng diễn đạt.</li>
-        </ul>
-        <h3>Input chính</h3>
-        <ul>
-          <li>Nội dung bài viết và yêu cầu đề bài.</li>
-          <li>Số từ, số câu, số đoạn, từ nối, lỗi ngữ pháp, lỗi chính tả.</li>
-          <li>Độ phủ ý chính, mức độ phát triển ý và dấu hiệu lạc đề.</li>
-        </ul>
-        <p class="source-note">Rubric hệ thống: dùng cho điểm tham khảo luyện tập, không phải công thức chấm chính thức của Bộ GD&ĐT.</p>
+        <p class="formula-note">round<sub>0.5</sub>(x) = làm tròn đến mốc 0.5; c = câu đúng; n = tổng câu; T = task; P = part.</p>
+        <p><strong>B1:</strong> 4.0–5.5 · <strong>B2:</strong> 6.0–8.0 · <strong>C1:</strong> 8.5–10.0</p>
 
-        <h2 id="speaking">Speaking scoring</h2>
-        <div class="code-block formula-block">
-          <div class="formula-line"><span class="cm">Part</span><span><strong>P = r<sub>0.5</sub>(Σ score<sub>i</sub> × weight<sub>i</sub> / Σ weight<sub>i</sub>)</strong><em>weighted rubric score</em></span></div>
-          <div class="formula-line"><span class="fn">Skill</span><span><strong>S = r<sub>0.5</sub>(mean(P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub>))</strong><em>aggregate speaking parts</em></span></div>
+        <h2 id="flow">2. Luồng chấm Writing/Speaking</h2>
+        <figure class="uml-figure compact-uml">
+          <img src="/diagrams/grading-flow.svg" alt="Luồng chấm Writing/Speaking" />
+        </figure>
+
+        <h2 id="criteria">3. Tiêu chí chấm</h2>
+        <figure class="uml-figure">
+          <img src="/diagrams/signal-params.svg" alt="Mô hình tín hiệu và tham số" />
+        </figure>
+
+        <h3>Writing — 4 tiêu chí</h3>
+        <ul>
+          <li><strong>Task Fulfillment:</strong> đáp ứng yêu cầu đề, phát triển ý, lạc đề</li>
+          <li><strong>Organization:</strong> bố cục đoạn, từ nối, đa dạng câu, định dạng</li>
+          <li><strong>Grammar:</strong> đa dạng cấu trúc, mật độ lỗi ngữ pháp</li>
+          <li><strong>Vocabulary:</strong> độ rộng từ vựng, mức nâng cao, chính tả</li>
+        </ul>
+
+        <h3>Speaking — 5 tiêu chí</h3>
+        <ul>
+          <li><strong>Grammar:</strong> đa dạng cấu trúc, độ chính xác</li>
+          <li><strong>Vocabulary:</strong> phù hợp chủ đề, đa dạng</li>
+          <li><strong>Fluency:</strong> tốc độ nói, mức ngập ngừng</li>
+          <li><strong>Discourse Management:</strong> phát triển ý, liên kết, bám đề</li>
+          <li><strong>Pronunciation:</strong> chính xác, trôi chảy, ngữ điệu, hoàn chỉnh</li>
+        </ul>
+        <p class="formula-note">Điểm tiêu chí = tín hiệu đo được × tham số cấu hình. AI/ASR chỉ là một trong các nguồn tạo tín hiệu; điểm được kiểm soát bởi công thức và điều kiện giới hạn của hệ thống. Điểm task/part = trung bình có trọng số. Điểm skill = làm tròn 0.5(trung bình các part).</p>
+        <p class="formula-note"><strong>Nguồn tín hiệu:</strong> công cụ kiểm tra ngữ pháp — chính tả, dịch vụ nhận dạng giọng nói — đánh giá phát âm, phân tích văn bản (số từ, câu, đoạn, từ nối, CEFR), đánh giá mức độ bám đề và phát triển ý.</p>
+
+        <h2 id="guard">4. Giới hạn điểm</h2>
+        <ul>
+          <li><strong>Bài quá ngắn hoặc copy đề:</strong> giới hạn điểm</li>
+          <li><strong>Không đáp ứng yêu cầu:</strong> giảm Task Fulfillment</li>
+          <li><strong>Nói quá ít:</strong> không đủ mẫu ngôn ngữ</li>
+          <li><strong>Audio kém:</strong> tín hiệu âm thanh không đủ tin cậy</li>
+          <li><strong>Lạc đề:</strong> phát âm tốt không che lấp nội dung sai</li>
+        </ul>
+
+        <h2 id="srs">5. SRS từ vựng — FSRS v6</h2>
+        <p>FSRS cá nhân hóa lịch ôn từ vựng qua 3 chỉ số: <strong>difficulty</strong> (độ khó), <strong>stability</strong> (độ bền trí nhớ), <strong>retrievability</strong> (xác suất nhớ lại). Người học đánh giá Again/Hard/Good/Easy sau mỗi lần ôn → hệ thống cập nhật chỉ số và tính ngày ôn tiếp.</p>
+
+        <div class="code-block formula-block compact">
+          <div class="formula-line"><span class="fn">Interval</span><span>I = S / F × (0.9<sup>1/(−w<sub>20</sub>)</sup> − 1)  where F = 0.9<sup>−1/w<sub>20</sub></sup> − 1</span></div>
         </div>
-        <p class="formula-note">score<sub>i</sub> là điểm từng tiêu chí Speaking; P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub> là điểm các phần nói.</p>
-        <h3>Tiêu chí</h3>
-        <ul>
-          <li><strong>Grammar:</strong> cấu trúc và lỗi trong transcript.</li>
-          <li><strong>Vocabulary:</strong> từ vựng phù hợp chủ đề và độ đa dạng.</li>
-          <li><strong>Fluency:</strong> tốc độ nói và số lần ngập ngừng.</li>
-          <li><strong>Discourse Management:</strong> phát triển ý, liên kết ý và mức độ bám đề.</li>
-          <li><strong>Pronunciation:</strong> accuracy, fluency, prosody và completeness.</li>
-        </ul>
-        <h3>Input chính</h3>
-        <ul>
-          <li>Audio câu trả lời và transcript.</li>
-          <li>Speaking rate, pause count, ASR confidence.</li>
-          <li>Tín hiệu phát âm và mức độ bám đề.</li>
-        </ul>
-        <p class="source-note">Rubric hệ thống: dùng transcript và tín hiệu phát âm làm input; điểm phục vụ luyện tập/thi thử tham khảo.</p>
+        <p class="formula-note">S = stability; w<sub>20</sub> = tham số FSRS; interval = số ngày đến lần ôn tiếp theo.</p>
 
-        <h2 id="guardrails">Guardrails</h2>
+        <h3>Vòng đời thẻ</h3>
+        <figure class="uml-figure compact-uml">
+          <img src="/diagrams/srs-lifecycle.svg" alt="State diagram vòng đời thẻ SRS" />
+        </figure>
+        <p class="formula-note">Dashboard: hiển thị xu hướng năng lực từng kỹ năng, một điểm thấp không kéo tụt ngay.</p>
+
+        <!-- ===== PRACTICE ===== -->
+        <h2 id="listening">6. Luyện tập Listening</h2>
+        <p>Audio được tạo trực tiếp từ văn bản đề bài, không yêu cầu file thu sẵn. Transcript đồng bộ với thời gian phát.</p>
         <ul>
-          <li><strong>Writing quá ngắn / copy đề:</strong> giới hạn mạnh điểm vì không đủ nội dung để đánh giá năng lực viết.</li>
-          <li><strong>Writing không đáp ứng yêu cầu:</strong> giảm Task Fulfillment để ưu tiên đúng yêu cầu đề bài.</li>
-          <li><strong>Speaking nói quá ít:</strong> giới hạn điểm vì không đủ mẫu ngôn ngữ và âm thanh.</li>
-          <li><strong>Audio thiếu tin cậy:</strong> giới hạn điểm Speaking vì transcript và pronunciation signals có thể sai lệch.</li>
-          <li><strong>Speaking lạc đề:</strong> giới hạn Discourse/Overall để không cho phát âm tốt che lấp nội dung sai.</li>
+          <li>Chọn part (1–3), nhận danh sách bài luyện tập</li>
+          <li>Nghe audio tạo từ text, trả lời câu hỏi MCQ</li>
+          <li>Transcript hiển thị đồng bộ với thời gian audio</li>
+          <li>Nộp bài → xem đáp án, điểm và lịch sử</li>
         </ul>
 
-        <h2 id="robust">Dashboard robust score</h2>
-        <p>Đây là cơ chế analytics của hệ thống, không phải quy định chấm thi. Mục tiêu là tách lịch sử điểm thật và năng lực hiện tại.</p>
-        <div class="code-block formula-block">
-          <div class="formula-line"><span class="fn">Outlier</span><span><strong>x<sub>i</sub> &lt; median(S \ &#123;x<sub>i</sub>&#125;) − 3.0</strong><em>applied per skill</em></span></div>
+        <h2 id="reading">7. Luyện tập Reading</h2>
+        <ul>
+          <li>Chọn part (1–4), nhận bài đọc và câu hỏi</li>
+          <li>Đọc passage, chọn đáp án MCQ</li>
+          <li>Tra từ nhanh bằng cách bôi đen văn bản</li>
+          <li>Nộp bài → xem kết quả và điểm từng câu</li>
+        </ul>
+
+        <h2 id="writing">8. Luyện tập Writing</h2>
+        <ul>
+          <li>Nhận đề: Task 1 (thư/email) hoặc Task 2 (bài luận)</li>
+          <li>Viết bài, nhận gợi ý trực tiếp (số từ, chính tả)</li>
+          <li>Nộp bài → chấm tự động, trả điểm 4 tiêu chí và nhận xét</li>
+          <li>Xem lịch sử bài viết và feedback từng tiêu chí</li>
+        </ul>
+
+        <h2 id="speaking">9. Luyện tập Speaking</h2>
+        <p>Tận dụng API giọng nói có sẵn trong trình duyệt để tạo transcript và đọc câu mẫu. Đánh giá phát âm dùng dịch vụ chuyên biệt ở bước cần độ chính xác cao.</p>
+        <ul>
+          <li><strong>Hội thoại:</strong> luyện nói theo kịch bản, hệ thống phản hồi từng lượt</li>
+          <li><strong>Shadowing:</strong> đọc theo câu mẫu, so sánh phát âm với bản gốc</li>
+          <li>Ghi âm câu trả lời qua microphone, hiển thị waveform</li>
+          <li>Nhận điểm 5 tiêu chí và phản hồi phát âm chi tiết</li>
+        </ul>
+
+        <!-- ===== AI GATEWAY ===== -->
+        <h2 id="gateway">10. AI Gateway</h2>
+        <p>Tất cả lời gọi AI/LLM đi qua một gateway tập trung. Gateway đảm nhận retry khi lỗi thoáng qua, circuit breaker khi dịch vụ AI liên tục thất bại, và wire abstraction để dễ đổi provider.</p>
+        <figure class="uml-figure">
+          <img src="/diagrams/ai-gateway.svg" alt="Sơ đồ kiến trúc AI Gateway" />
+        </figure>
+
+        <!-- ===== TECH STACK ===== -->
+        <h2 id="stack">11. Công nghệ sử dụng</h2>
+        <ul class="tech-list">
+          <li><img src="https://cdn.simpleicons.org/react/1c1917" width="16" height="16" alt="" /> React — giao diện</li>
+          <li><img src="https://cdn.simpleicons.org/tanstack/1c1917" width="16" height="16" alt="" /> TanStack Query, Router, Form — dữ liệu, điều hướng</li>
+          <li><img src="https://cdn.simpleicons.org/tailwindcss/1c1917" width="16" height="16" alt="" /> Tailwind CSS — thiết kế</li>
+          <li><img src="https://cdn.simpleicons.org/vite/1c1917" width="16" height="16" alt="" /> Vite — build</li>
+          <li><img src="https://cdn.simpleicons.org/astro/1c1917" width="16" height="16" alt="" /> Astro — tài liệu</li>
+          <li><img src="https://cdn.simpleicons.org/laravel/1c1917" width="16" height="16" alt="" /> Laravel — API backend</li>
+          <li><img src="https://cdn.simpleicons.org/php/1c1917" width="16" height="16" alt="" /> PHP 8.4 — xử lý nghiệp vụ</li>
+          <li><img src="https://cdn.simpleicons.org/biome/1c1917" width="16" height="16" alt="" /> Biome — kiểm tra mã</li>
+          <li>ky — gọi API</li>
+          <li>Recharts — biểu đồ</li>
+          <li>Zustand — trạng thái</li>
+        </ul>
+
+        <!-- ===== LIMITS ===== -->
+        <h2 id="limits">12. Giới hạn</h2>
+        <ul>
+          <li>Điểm tự động Writing/Speaking là tham khảo; kết quả xác nhận cần người chấm</li>
+          <li>Cần thêm dữ liệu thực tế để hiệu chỉnh độ chính xác</li>
+          <li>Speaking phụ thuộc chất lượng âm thanh đầu vào</li>
+        </ul>
+
+        <p class="source-note"><strong>Nguồn tham khảo:</strong> <a href="https://tanstack.com/query">TanStack Query</a> · <a href="https://github.com/sindresorhus/ky">ky</a> · <a href="https://recharts.org">Recharts</a> · <a href="https://tanstack.com/router">TanStack Router</a> · <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API">Web Speech API</a></p>
+
+        <h2 id="glossary">13. Chú giải từ viết tắt</h2>
+        <div class="glossary-table">
+          <div><strong>AI</strong><span>Artificial Intelligence (trí tuệ nhân tạo)</span></div>
+          <div><strong>API</strong><span>Application Programming Interface</span></div>
+          <div><strong>ASR</strong><span>Automatic Speech Recognition (nhận dạng giọng nói)</span></div>
+          <div><strong>CEFR</strong><span>Common European Framework of Reference (khung tham chiếu ngôn ngữ châu Âu)</span></div>
+          <div><strong>FSRS</strong><span>Free Spaced Repetition Scheduler</span></div>
+          <div><strong>LLM</strong><span>Large Language Model (mô hình ngôn ngữ lớn)</span></div>
+          <div><strong>MCQ</strong><span>Multiple Choice Question (câu hỏi trắc nghiệm)</span></div>
+          <div><strong>MOET</strong><span>Ministry of Education and Training (Bộ GD&ĐT)</span></div>
+          <div><strong>SRS</strong><span>Spaced Repetition System (hệ thống ôn tập ngắt quãng)</span></div>
+          <div><strong>TTS</strong><span>Text-to-Speech (chuyển văn bản thành giọng nói)</span></div>
+          <div><strong>UML</strong><span>Unified Modeling Language</span></div>
+          <div><strong>VSTEP</strong><span>Vietnamese Standardized Test of English Proficiency</span></div>
+          <div><strong>WPM</strong><span>Words Per Minute (từ/phút)</span></div>
         </div>
-        <p class="formula-note">S là tập điểm gần đây của một kỹ năng; x<sub>i</sub> là điểm đang xét. Điều kiện này chỉ dùng cho dashboard analytics.</p>
-        <ul>
-          <li><strong>Isolated low score:</strong> một điểm thấp đơn lẻ không kéo tụt năng lực hiện tại ngay.</li>
-          <li><strong>Consecutive low scores:</strong> nhiều điểm thấp liên tiếp được xem là xu hướng giảm thật.</li>
-        </ul>
-        <p class="source-note">Heuristic hệ thống: ngưỡng 3.0 trên thang 0–10, cần tiếp tục hiệu chỉnh bằng dữ liệu thực tế.</p>
 
-        <h2 id="srs">SRS từ vựng</h2>
-        <p>SRS là cơ chế hỗ trợ ôn tập, không liên quan đến quy đổi điểm VSTEP chính thức.</p>
-        <ul>
-          <li><strong>Vòng đời thẻ:</strong> New → Learning → Review; nếu quên ở Review thì chuyển Relearning.</li>
-          <li><strong>Rating:</strong> Again, Hard, Good, Easy điều chỉnh lịch ôn theo mức độ nhớ.</li>
-          <li><strong>Memory state:</strong> difficulty, stability và retrievability.</li>
-          <li><strong>Scheduling:</strong> từ khó quay lại sớm, từ dễ giãn xa hơn.</li>
-        </ul>
-
-        <h2 id="clarify">Các điểm làm rõ</h2>
-        <ul>
-          <li><strong>AI/Speech:</strong> chỉ hỗ trợ trích xuất tín hiệu; không tự quyết định điểm cuối.</li>
-          <li><strong>Writing/Speaking score:</strong> điểm tham khảo cho luyện tập/thi thử, chưa thay thế giám khảo chính thức.</li>
-          <li><strong>Robust score:</strong> giúp dashboard ổn định, không thay đổi lịch sử điểm thật.</li>
-          <li><strong>SRS:</strong> cá nhân hóa lịch ôn từ vựng, không phải cơ chế chấm điểm.</li>
-        </ul>
-
-        <h2 id="limits">Giới hạn</h2>
-        <ul>
-          <li>Cần dữ liệu được giám khảo chấm để kiểm chứng và hiệu chỉnh điểm Writing/Speaking.</li>
-          <li>Đánh giá Speaking phụ thuộc chất lượng audio và độ tin cậy transcript.</li>
-          <li>Outlier threshold là heuristic, chưa phải chuẩn thống kê cố định.</li>
-          <li>SRS hiện tập trung vào nhu cầu ôn từ vựng chính, chưa bao gồm đầy đủ tính năng nâng cao như Anki.</li>
-        </ul>
       </main>
     </div>
   </div>

@@ -1,0 +1,27 @@
+@startuml
+!theme plain
+left to right direction
+skinparam backgroundColor transparent
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam rectangle {
+  BorderColor #e7e5e4
+  FontColor #1c1917
+  FontSize 13
+}
+skinparam ArrowColor #78716c
+
+rectangle "1. Đề bài" as topic #E8F2FF
+rectangle "2. Bài làm\ntext/audio" as answer #F3E8FF
+rectangle "3. Tín hiệu\nAI/ASR + text + audio" as signals #ECFDF3
+rectangle "4. Tham số\nweights" as scoring #FFF3D8
+rectangle "5. Giới hạn\ncaps" as guardrails #FFE8D8
+rectangle "6. Kết quả\ntham khảo" as result #F5F5F0
+
+topic -right-> answer
+answer -right-> signals
+signals -down-> scoring
+scoring -left-> guardrails
+guardrails -left-> result
+
+@enduml

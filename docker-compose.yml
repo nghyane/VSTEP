@@ -177,6 +177,33 @@ services:
       - traefik
     restart: unless-stopped
 
+  # Technical docs — Astro static site, image built in CI (ghcr.io)
+  docs:
+    image: ghcr.io/${IMAGE_OWNER:-nghyane}/vstep-docs:${DOCS_IMAGE_TAG:-main}
+    pull_policy: always
+    expose:
+      - "80"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.docs.rule=Host(`${DOCS_DOMAIN:-docs.vstepgo.com}`)
+      - traefik.http.routers.docs.entrypoints=web
+      - traefik.http.routers.docs.service=docs
+      - traefik.http.routers.docs-secure.rule=Host(`${DOCS_DOMAIN:-docs.vstepgo.com}`)
+      - traefik.http.routers.docs-secure.entrypoints=websecure
+      - traefik.http.routers.docs-secure.tls=true
+      - traefik.http.routers.docs-secure.tls.certresolver=le
+      - traefik.http.routers.docs-secure.service=docs
+      - traefik.http.services.docs.loadbalancer.server.port=80
+    healthcheck:
+      test: ["CMD", "/bin/sh", "-c", "test -f /usr/share/nginx/html/index.html"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    networks:
+      - default
+      - traefik
+    restart: unless-stopped
+
   # Laravel Horizon — queue dashboard + worker management
   horizon:
     image: ghcr.io/${IMAGE_OWNER:-nghyane}/vstep-backend:${BACKEND_IMAGE_TAG:-main}

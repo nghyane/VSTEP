@@ -6,6 +6,7 @@ on:
     paths:
       - 'apps/frontend-v3/**'
       - 'apps/admin/**'
+      - 'apps/docs/**'
       - 'apps/backend-v2/**'
       - 'docker-compose.yml'
       - 'docker-compose.override.yml'
@@ -42,6 +43,10 @@ jobs:
             image: vstep-admin
             args: |
               VITE_API_URL=https://api.vstepgo.com/api/v1
+          - app: docs
+            context: ./apps/docs
+            image: vstep-docs
+            args: |
     steps:
       - uses: actions/checkout@v4
 
@@ -89,7 +94,7 @@ jobs:
           target: /opt/vstep
           overwrite: true
 
-      - name: Pull + recreate SPAs on VPS
+      - name: Pull + recreate app containers on VPS
         uses: appleboy/ssh-action@v1
         with:
           host: 5.223.87.142
@@ -123,6 +128,7 @@ jobs:
             set_compose_env BACKEND_IMAGE_TAG "$tag"
             set_compose_env FRONTEND_IMAGE_TAG "$tag"
             set_compose_env ADMIN_IMAGE_TAG "$tag"
+            set_compose_env DOCS_IMAGE_TAG "$tag"
 
             set_backend_env FILESYSTEM_DISK s3
             set_backend_env AWS_DEFAULT_REGION auto
@@ -149,7 +155,7 @@ jobs:
               exit 1
             fi
 
-            docker compose -f docker-compose.yml --env-file .env pull backend frontend admin
+            docker compose -f docker-compose.yml --env-file .env pull backend frontend admin docs
             docker compose -f docker-compose.yml --env-file .env run --rm backend php artisan migrate:fresh --seed --force
-            docker compose -f docker-compose.yml --env-file .env up -d backend horizon frontend admin
+            docker compose -f docker-compose.yml --env-file .env up -d backend horizon frontend admin docs
             docker image prune -f

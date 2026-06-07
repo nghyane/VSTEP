@@ -1,0 +1,24 @@
+@startuml defense_assessment_pipeline_slide
+!theme plain
+
+skinparam backgroundColor transparent
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 18
+skinparam defaultTextAlignment center
+
+title Writing/Speaking Assessment Pipeline
+
+legend center
+|<#E8F2FF><b>Learner Answer</b><br/>Text answer<br/>──────<br/>Audio answer|
+|<#FFFFFF><size:28>→</size>|
+|<#F3E8FF><b>Metric Extraction</b><br/>Text metrics<br/>Speech metrics<br/>Task / content relevance|
+|<#FFFFFF><size:28>→</size>|
+|<#FFF3D6><b>Backend Scoring Engine</b><br/>Final score = fixed formula(inputs)<br/>then apply caps / penalties|
+|<#FFFFFF><size:28>→</size>|
+|<#E9FBEF><b>Result</b><br/>Score<br/>Feedback<br/>Skill gap|
+endlegend
+
+caption AI / Speech tools extract metrics only — backend computes the final score.
+
+@enduml
