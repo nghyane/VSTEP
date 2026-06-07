@@ -23,6 +23,11 @@ final class EconomyConfigService
         return $this->requiredInt('practice.feedback_cost_coins', 1);
     }
 
+    public function teacherGradingRequestCost(): int
+    {
+        return $this->requiredInt('teacher_grading.request_cost_coins', 1);
+    }
+
     public function onboardingInitialCoins(): int
     {
         return $this->requiredInt('onboarding.initial_coins', 0);

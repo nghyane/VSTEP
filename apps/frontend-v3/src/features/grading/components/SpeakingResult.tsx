@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { CoinSpendFly, useCoinSpendFly } from "#/components/CoinSpendFly"
+import { StaticIcon } from "#/components/Icon"
 import { FeedbackSection } from "#/features/grading/components/FeedbackSection"
 import { RubricBar } from "#/features/grading/components/RubricBar"
 import { feedbackImprovements } from "#/features/grading/feedback"
@@ -56,6 +58,7 @@ export function SpeakingResult({ submissionId }: Props) {
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["practice", "speaking", "result", submissionId] })
 			if (attemptId) queryClient.invalidateQueries({ queryKey: ["assessment-attempts", attemptId, "view"] })
+			queryClient.invalidateQueries({ queryKey: ["wallet"] })
 		},
 		onError: () => {},
 	})
@@ -80,8 +83,8 @@ export function SpeakingResult({ submissionId }: Props) {
 
 	const diagnostics = result.diagnostics
 	const pronScore = result.pronunciation_report?.accuracy_score ?? diagnostics?.pronunciation?.overall ?? null
-	const teacherGradingState = viewData.teacher_grading_request
-	const teacherGradingStatus = teacherGrading.data?.data.status ?? teacherGradingState.status
+	const teacherGradingState = viewData?.teacher_grading_request
+	const teacherGradingStatus = teacherGrading.data?.data.status ?? teacherGradingState?.status ?? "none"
 
 	return (
 		<div className="space-y-6">
@@ -128,6 +131,7 @@ export function SpeakingResult({ submissionId }: Props) {
 
 			<TeacherGradingPanel
 				attemptId={attemptId}
+				cost={teacherGradingState?.cost_coins ?? 0}
 				canRequest={teacherGradingState?.can_request === true}
 				requested={teacherGrading.isSuccess || teacherGradingState?.requested === true}
 				status={teacherGradingStatus}
@@ -198,6 +202,7 @@ function normalizeProgress(progress: GradingProgress[] | GradingProgress | undef
 
 function TeacherGradingPanel({
 	attemptId,
+	cost,
 	canRequest,
 	requested,
 	status,
@@ -208,6 +213,7 @@ function TeacherGradingPanel({
 	onRequest,
 }: {
 	attemptId: string | null
+	cost: number
 	canRequest: boolean
 	requested: boolean
 	status: TeacherGradingRequestStatus
@@ -217,11 +223,16 @@ function TeacherGradingPanel({
 	error: string | null
 	onRequest: () => void
 }) {
+	const { showCoinFly, triggerCoinSpendFly } = useCoinSpendFly()
 	if (!attemptId || (!canRequest && !result)) return null
 
 	const isTeacherGraded = result !== null || status === "completed"
 	const hasRequested = requested || status !== "none"
 	const disabled = pending || hasRequested || isTeacherGraded
+	const handleRequest = () => {
+		if (!hasRequested && !isTeacherGraded && cost > 0) triggerCoinSpendFly()
+		onRequest()
+	}
 
 	return (
 		<div className="card p-5 space-y-3 border-l-4 border-l-info">
@@ -246,15 +257,26 @@ function TeacherGradingPanel({
 			)}
 			{result && <TeacherResultSummary result={result} />}
 			{!isTeacherGraded && !hasRequested && (
-				<button
-					type="button"
-					onClick={onRequest}
-					disabled={disabled}
-					className="btn btn-secondary px-5 py-2.5 text-sm disabled:opacity-50"
-				>
-					{pending ? "Đang gửi..." : "Gửi yêu cầu"}
-				</button>
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+					<p className="text-xs text-subtle">
+						<span className="inline-flex items-center gap-1.5">
+							<StaticIcon name="coin" size="xs" className="h-3.5 w-auto -translate-y-0.5" /> {cost} xu
+						</span>
+					</p>
+					<div className="relative inline-flex self-start sm:self-auto">
+						{showCoinFly && <CoinSpendFly cost={cost} />}
+						<button
+							type="button"
+							onClick={handleRequest}
+							disabled={disabled}
+							className="btn btn-secondary px-5 py-2.5 text-sm disabled:opacity-50"
+						>
+							{pending ? "Đang gửi..." : "Gửi yêu cầu"}
+						</button>
+					</div>
+				</div>
 			)}
+			{hasRequested && !isTeacherGraded && <p className="text-xs text-subtle">Đã thanh toán {cost} xu.</p>}
 			{error && <p className="text-xs font-bold text-destructive">{error}</p>}
 		</div>
 	)

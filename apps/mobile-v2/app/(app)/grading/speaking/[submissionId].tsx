@@ -40,6 +40,7 @@ export default function SpeakingGradingScreen() {
     mutationFn: () => requestTeacherGrading(data?.attemptId ?? ""),
     onSuccess: () => {
       if (data?.attemptId) queryClient.invalidateQueries({ queryKey: ["assessment-attempts"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet"] });
       void refetch();
     },
   });

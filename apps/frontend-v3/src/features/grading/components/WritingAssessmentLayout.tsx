@@ -43,6 +43,7 @@ export interface WritingFeedbackAction {
 }
 
 export interface TeacherGradingAction {
+	cost: number
 	canRequest: boolean
 	requested: boolean
 	status: TeacherGradingRequestStatus
@@ -455,6 +456,7 @@ function AIFeedbackButton({ action, hasFeedback }: { action: WritingFeedbackActi
 }
 
 function TeacherGradingPanel({ action }: { action: TeacherGradingAction }) {
+	const { showCoinFly, triggerCoinSpendFly } = useCoinSpendFly()
 	if (!action.canRequest && !action.result) return null
 
 	const isTeacherGraded = action.result !== null || action.status === "completed"
@@ -462,6 +464,10 @@ function TeacherGradingPanel({ action }: { action: TeacherGradingAction }) {
 	const disabled = action.pending || requested || isTeacherGraded
 	const title = isTeacherGraded ? "Giáo viên đã chấm" : "Yêu cầu giáo viên chấm"
 	const description = teacherGradingDescription(action)
+	const handleRequest = () => {
+		if (!requested && !isTeacherGraded && action.cost > 0) triggerCoinSpendFly()
+		action.onRequest()
+	}
 
 	return (
 		<div className="card p-5 space-y-3 border-l-4 border-l-info">
@@ -483,14 +489,27 @@ function TeacherGradingPanel({ action }: { action: TeacherGradingAction }) {
 			)}
 			{action.result && <TeacherResultSummary result={action.result} />}
 			{!requested && !isTeacherGraded && (
-				<button
-					type="button"
-					onClick={action.onRequest}
-					disabled={disabled}
-					className="btn btn-secondary px-5 py-2.5 text-sm disabled:opacity-50"
-				>
-					{action.pending ? "Đang gửi..." : "Gửi yêu cầu"}
-				</button>
+				<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+					<p className="text-xs text-subtle">
+						<span className="inline-flex items-center gap-1.5">
+							<StaticIcon name="coin" size="xs" className="h-3.5 w-auto -translate-y-0.5" /> {action.cost} xu
+						</span>
+					</p>
+					<div className="relative inline-flex self-start sm:self-auto">
+						{showCoinFly && <CoinSpendFly cost={action.cost} />}
+						<button
+							type="button"
+							onClick={handleRequest}
+							disabled={disabled}
+							className="btn btn-secondary px-5 py-2.5 text-sm disabled:opacity-50"
+						>
+							{action.pending ? "Đang gửi..." : "Gửi yêu cầu"}
+						</button>
+					</div>
+				</div>
+			)}
+			{requested && !isTeacherGraded && (
+				<p className="text-xs text-subtle">Đã thanh toán {action.cost} xu.</p>
 			)}
 			{action.error && <p className="text-xs font-bold text-destructive">{action.error}</p>}
 		</div>

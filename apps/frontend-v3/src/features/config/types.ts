@@ -17,5 +17,8 @@ export interface AppConfig {
 		practice: {
 			feedback_cost_coins: number
 		}
+		teacher_grading: {
+			request_cost_coins: number
+		}
 	}
 }

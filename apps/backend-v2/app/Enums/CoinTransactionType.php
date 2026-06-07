@@ -11,7 +11,7 @@ namespace App\Enums;
  * - Topup, OnboardingBonus, PromoRedeem, AdminGrant
  *
  * Negative types (delta < 0):
- * - ExamCustom, ExamFull, CoursePurchase, TeacherBooking, PracticeFeedback
+ * - ExamCustom, ExamFull, CoursePurchase, TeacherBooking, PracticeFeedback, TeacherGrading
  */
 enum CoinTransactionType: string
 {
@@ -27,6 +27,7 @@ enum CoinTransactionType: string
     case CoursePurchase = 'course_purchase';
     case TeacherBooking = 'teacher_booking';
     case PracticeFeedback = 'practice_feedback';
+    case TeacherGrading = 'teacher_grading';
 
     public function isCredit(): bool
     {

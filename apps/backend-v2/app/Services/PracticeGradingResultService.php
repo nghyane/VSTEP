@@ -15,6 +15,7 @@ final class PracticeGradingResultService
 {
     public function __construct(
         private readonly AssessmentDiagnosticsService $diagnosticsService,
+        private readonly EconomyConfigService $economyConfig,
     ) {}
 
     /** @return array{attempt_id?: string, data: array<string,mixed>|null, rubric: array<string,mixed>|null, teacher_grading_request?: array<string,mixed>} */
@@ -84,6 +85,7 @@ final class PracticeGradingResultService
         return [
             'can_request' => $canRequest,
             'requested' => $request !== null,
+            'cost_coins' => $canRequest ? $this->economyConfig->teacherGradingRequestCost() : 0,
             'request_id' => $request?->id,
             'status' => $request?->status?->value ?? 'none',
             'assigned_teacher' => $request?->assignedTeacher === null ? null : [
