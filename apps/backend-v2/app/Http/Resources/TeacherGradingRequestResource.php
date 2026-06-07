@@ -11,6 +11,7 @@ use App\Models\Profile;
 use App\Models\TeacherGradingResult;
 use App\Models\User;
 use App\Services\AssessmentDiagnosticsService;
+use App\Services\EconomyConfigService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -18,9 +19,15 @@ final class TeacherGradingRequestResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $attributes = $this->resource->getAttributes();
+
         return [
             'id' => $this->resource->id,
             'status' => $this->resource->status?->value ?? $this->resource->status,
+            'cost_coins' => array_key_exists('cost_coins', $attributes)
+                ? (int) $attributes['cost_coins']
+                : app(EconomyConfigService::class)->teacherGradingRequestCost(),
+            'charged' => (bool) ($attributes['charged'] ?? false),
             'student_note' => $this->resource->student_note,
             'staff_note' => $this->resource->staff_note,
             'priority' => $this->resource->priority,

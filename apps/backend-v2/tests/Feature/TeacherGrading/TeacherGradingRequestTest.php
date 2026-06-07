@@ -8,6 +8,7 @@ use App\Assessment\Enums\AssessmentSkill;
 use App\Assessment\Enums\AssessmentSourceType;
 use App\Assessment\Enums\AssessmentTaskType;
 use App\Enums\AdminNotificationType;
+use App\Enums\CoinTransactionType;
 use App\Enums\NotificationType;
 use App\Enums\Role;
 use App\Enums\TeacherGradingRequestStatus;
@@ -16,10 +17,12 @@ use App\Models\AssessmentAttempt;
 use App\Models\AssessmentEvidence;
 use App\Models\AssessmentResult;
 use App\Models\AssessmentRubric;
+use App\Models\CoinTransaction;
 use App\Models\PracticeSession;
 use App\Models\PracticeWritingPrompt;
 use App\Models\PracticeWritingSubmission;
 use App\Models\Profile;
+use App\Models\SystemConfig;
 use App\Models\TeacherGradingRequest;
 use App\Models\TeacherGradingResult;
 use App\Models\User;
@@ -41,9 +44,12 @@ final class TeacherGradingRequestTest extends TestCase
             ])
             ->assertAccepted()
             ->assertJsonPath('data.status', TeacherGradingRequestStatus::PendingAssignment->value)
+            ->assertJsonPath('data.cost_coins', 1)
+            ->assertJsonPath('data.charged', true)
             ->assertJsonPath('data.attempt.id', $attempt->id);
 
         $this->assertSame(1, TeacherGradingRequest::query()->where('attempt_id', $attempt->id)->count());
+        $this->assertSame(1, CoinTransaction::query()->where('type', CoinTransactionType::TeacherGrading->value)->count());
         $this->assertSame(1, AdminNotification::query()
             ->where('type', AdminNotificationType::TeacherGradingRequestCreated->value)
             ->count());
@@ -51,12 +57,28 @@ final class TeacherGradingRequestTest extends TestCase
         $this->withTokenFor($learner)
             ->postJson("/api/v1/assessment-attempts/{$attempt->id}/teacher-grading-request")
             ->assertAccepted()
-            ->assertJsonPath('data.status', TeacherGradingRequestStatus::PendingAssignment->value);
+            ->assertJsonPath('data.status', TeacherGradingRequestStatus::PendingAssignment->value)
+            ->assertJsonPath('data.charged', false);
 
         $this->assertSame(1, TeacherGradingRequest::query()->where('attempt_id', $attempt->id)->count());
+        $this->assertSame(1, CoinTransaction::query()->where('type', CoinTransactionType::TeacherGrading->value)->count());
         $this->assertSame(1, AdminNotification::query()
             ->where('type', AdminNotificationType::TeacherGradingRequestCreated->value)
             ->count());
+    }
+
+    public function test_teacher_grading_request_requires_enough_coins(): void
+    {
+        SystemConfig::set('teacher_grading.request_cost_coins', 101, 'Test high teacher grading cost.');
+        [$learner, , $attempt] = $this->gradedWritingAttempt();
+
+        $this->withTokenFor($learner)
+            ->postJson("/api/v1/assessment-attempts/{$attempt->id}/teacher-grading-request")
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('coins');
+
+        $this->assertSame(0, TeacherGradingRequest::query()->where('attempt_id', $attempt->id)->count());
+        $this->assertSame(0, CoinTransaction::query()->where('type', CoinTransactionType::TeacherGrading->value)->count());
     }
 
     public function test_staff_assigns_request_and_teacher_can_list_it(): void

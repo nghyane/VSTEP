@@ -1,5 +1,7 @@
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { type ReactNode, useEffect, useMemo, useState } from "react"
+import { CoinSpendFly, useCoinSpendFly } from "#/components/CoinSpendFly"
+import { StaticIcon } from "#/components/Icon"
 import { ScrollArea } from "#/components/ScrollArea"
 import {
 	AnnotatedText,
@@ -17,6 +19,7 @@ import { requestTeacherGrading } from "#/features/grading/queries"
 import type {
 	AssessmentResultDisplay,
 	CriterionScore,
+	TeacherGradingRequestResponse,
 	TeacherGradingRequestState,
 } from "#/features/grading/types"
 import { cn, round } from "#/lib/utils"
@@ -47,7 +50,10 @@ export function ProductiveSkillReview({ result, kind }: Props) {
 	const [activeId, setActiveId] = useState(items[0]?.id ?? "")
 
 	useEffect(() => {
-		setActiveId(items[0]?.id ?? "")
+		setActiveId((current) => {
+			if (items.some((item) => item.id === current)) return current
+			return items[0]?.id ?? ""
+		})
 	}, [items])
 
 	const active = items.find((item) => item.id === activeId) ?? items[0]
@@ -103,7 +109,7 @@ export function ProductiveSkillReview({ result, kind }: Props) {
 						show={active.display?.ui.show_criterion_breakdown ?? true}
 					/>
 					<ProductiveFeedbackPanel item={active} />
-					<TeacherGradingSection item={active} />
+					<TeacherGradingSection item={active} kind={kind} sessionId={result.session.id} />
 				</div>
 			</ScrollArea>
 		</div>
@@ -299,7 +305,17 @@ function EmptyState({ text }: { readonly text: string }) {
 	)
 }
 
-function TeacherGradingSection({ item }: { readonly item: ProductiveItem }) {
+function TeacherGradingSection({
+	item,
+	kind,
+	sessionId,
+}: {
+	readonly item: ProductiveItem
+	readonly kind: ProductiveKind
+	readonly sessionId: string
+}) {
+	const queryClient = useQueryClient()
+	const { showCoinFly, triggerCoinSpendFly } = useCoinSpendFly()
 	const tgr = item.teacherGradingRequest
 	const attemptId = item.attemptId
 
@@ -308,38 +324,62 @@ function TeacherGradingSection({ item }: { readonly item: ProductiveItem }) {
 			if (!attemptId) throw new Error("No attempt")
 			return requestTeacherGrading(attemptId)
 		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["exam-sessions", sessionId, "results"] })
+			queryClient.invalidateQueries({ queryKey: ["wallet"] })
+		},
 	})
 
 	if (!tgr || !attemptId) return null
+	const state = teacherGradingStateAfterRequest(tgr, requestMutation.data?.data, attemptId)
+	const responseLabel = kind === "writing" ? "bài viết" : "bài nói"
+	const handleRequest = () => {
+		if (state.cost_coins > 0) triggerCoinSpendFly()
+		requestMutation.mutate()
+	}
 
-	// Already requested — show status.
-	if (tgr.requested) {
+	if (state.requested) {
 		return (
 			<Section title="Giáo viên chấm">
-				<TeacherGradingStatus tgr={tgr} />
+				<div className="space-y-2">
+					<TeacherGradingStatus tgr={state} />
+					{state.status !== "completed" && (
+						<p className="text-xs text-subtle">Đã thanh toán {state.cost_coins} xu.</p>
+					)}
+				</div>
 			</Section>
 		)
 	}
 
-	// Not requested yet — show request UI.
 	return (
 		<Section title="Giáo viên chấm">
-			{tgr.can_request ? (
+			{state.can_request ? (
 				<div>
 					<p className="text-sm text-muted">
-						Bạn có thể yêu cầu giáo viên chấm lại bài viết này để có đánh giá chuyên sâu hơn.
+						Bạn có thể yêu cầu giáo viên chấm lại {responseLabel} này để có đánh giá chuyên sâu hơn.
 					</p>
-					<button
-						type="button"
-						disabled={requestMutation.isPending}
-						onClick={() => requestMutation.mutate()}
-						className="btn btn-primary mt-3"
-					>
-						{requestMutation.isPending ? "Đang gửi..." : "Yêu cầu giáo viên chấm"}
-					</button>
+					<div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+						<p className="text-xs text-subtle">
+							<span className="inline-flex items-center gap-1.5">
+								<StaticIcon name="coin" size="xs" className="h-3.5 w-auto -translate-y-0.5" />{" "}
+								{state.cost_coins} xu
+							</span>
+						</p>
+						<div className="relative inline-flex self-start sm:self-auto">
+							{showCoinFly && <CoinSpendFly cost={state.cost_coins} />}
+							<button
+								type="button"
+								disabled={requestMutation.isPending}
+								onClick={handleRequest}
+								className="btn btn-primary"
+							>
+								{requestMutation.isPending ? "Đang gửi..." : "Yêu cầu giáo viên chấm"}
+							</button>
+						</div>
+					</div>
 					{requestMutation.isError && (
 						<p className="mt-2 text-sm font-bold text-destructive">
-							{(requestMutation.error as Error)?.message ?? "Không gửi được yêu cầu."}
+							{errorMessage(requestMutation.error) ?? "Không gửi được yêu cầu."}
 						</p>
 					)}
 				</div>
@@ -350,6 +390,32 @@ function TeacherGradingSection({ item }: { readonly item: ProductiveItem }) {
 			)}
 		</Section>
 	)
+}
+
+function teacherGradingStateAfterRequest(
+	state: TeacherGradingRequestState,
+	response: TeacherGradingRequestResponse | undefined,
+	attemptId: string,
+): TeacherGradingRequestState {
+	if (!response) return state
+	if (response.attempt && response.attempt.id !== attemptId) return state
+
+	return {
+		...state,
+		requested: true,
+		request_id: response.id,
+		status: response.status,
+		cost_coins: response.cost_coins ?? state.cost_coins,
+		assigned_teacher: response.assigned_teacher ?? state.assigned_teacher,
+		requested_at: response.requested_at ?? state.requested_at,
+		assigned_at: response.assigned_at ?? state.assigned_at,
+		completed_at: response.completed_at ?? state.completed_at,
+		teacher_result: response.teacher_result ?? state.teacher_result,
+	}
+}
+
+function errorMessage(error: unknown): string | null {
+	return error instanceof Error ? error.message : null
 }
 
 function TeacherGradingStatus({ tgr }: { readonly tgr: TeacherGradingRequestState }) {

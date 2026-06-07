@@ -254,6 +254,7 @@ final class AssessmentViewService
         return [
             'can_request' => $canRequest,
             'requested' => $request !== null,
+            'cost_coins' => $canRequest ? $this->economyConfig->teacherGradingRequestCost() : 0,
             'request_id' => $request?->id,
             'status' => $request?->status?->value ?? 'none',
             'assigned_teacher' => $request?->assignedTeacher === null ? null : [

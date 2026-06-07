@@ -40,6 +40,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
         private readonly AssessmentResultDisplayService $displayService,
         private readonly AssessmentDiagnosticsService $diagnosticsService,
         private readonly ExamResultPerformanceRowBuilder $performanceRowBuilder,
+        private readonly EconomyConfigService $economyConfig,
     ) {}
 
     /** @return array<string, mixed> */
@@ -578,6 +579,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
             return [
                 'can_request' => $canRequest,
                 'requested' => false,
+                'cost_coins' => $canRequest ? $this->economyConfig->teacherGradingRequestCost() : 0,
                 'request_id' => null,
                 'status' => 'none',
                 'assigned_teacher' => null,
@@ -591,6 +593,7 @@ final class ExamSessionResultService implements ExamSessionResultInterface
         return [
             'can_request' => $canRequest,
             'requested' => true,
+            'cost_coins' => $canRequest ? $this->economyConfig->teacherGradingRequestCost() : 0,
             'request_id' => $request->id,
             'status' => $request->status->value,
             'assigned_teacher' => $request->assignedTeacher === null ? null : [

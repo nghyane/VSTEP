@@ -38,6 +38,7 @@ export default function WritingGradingScreen() {
     mutationFn: () => requestTeacherGrading(data?.attemptId ?? attemptId),
     onSuccess: () => {
       if (attemptId) queryClient.invalidateQueries({ queryKey: ["assessment-attempts", attemptId, "view"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet"] });
       void refetch();
     },
   });

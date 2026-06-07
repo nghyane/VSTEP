@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Assessment\Enums\AssessmentSourceType;
 use App\Enums\AdminNotificationType;
+use App\Enums\CoinTransactionType;
 use App\Enums\IconKey;
 use App\Enums\NotificationType;
 use App\Enums\Role;
@@ -28,6 +29,8 @@ final class TeacherGradingRequestService implements TeacherGradingRequestService
     public function __construct(
         private readonly AdminNotificationService $adminNotifications,
         private readonly NotificationService $notifications,
+        private readonly EconomyConfigService $economyConfig,
+        private readonly WalletService $walletService,
     ) {}
 
     public function request(Profile $profile, AssessmentAttempt $attempt, ?string $studentNote): TeacherGradingRequest
@@ -41,19 +44,48 @@ final class TeacherGradingRequestService implements TeacherGradingRequestService
             ]);
         }
 
-        $request = TeacherGradingRequest::query()->createOrFirst(
-            ['attempt_id' => $attempt->id],
-            [
-                'profile_id' => $profile->id,
-                'status' => TeacherGradingRequestStatus::PendingAssignment,
-                'student_note' => $this->nullableTrim($studentNote),
-                'requested_at' => now(),
-            ],
-        );
+        $cost = $this->economyConfig->teacherGradingRequestCost();
+        $charged = false;
 
-        if ($request->wasRecentlyCreated) {
+        $request = DB::transaction(function () use ($profile, $attempt, $studentNote, $cost, &$charged): TeacherGradingRequest {
+            $request = TeacherGradingRequest::query()->createOrFirst(
+                ['attempt_id' => $attempt->id],
+                [
+                    'profile_id' => $profile->id,
+                    'status' => TeacherGradingRequestStatus::PendingAssignment,
+                    'student_note' => $this->nullableTrim($studentNote),
+                    'requested_at' => now(),
+                ],
+            );
+
+            if (! $request->wasRecentlyCreated) {
+                return $request;
+            }
+
+            $this->walletService->spend(
+                $profile,
+                $cost,
+                CoinTransactionType::TeacherGrading,
+                $request,
+                [
+                    'attempt_id' => $attempt->id,
+                    'skill' => $attempt->skill->value,
+                    'source_type' => $attempt->source_type->value,
+                    'source_id' => $attempt->source_id,
+                ],
+            );
+
+            $charged = true;
+
+            return $request->refresh();
+        });
+
+        if ($charged) {
             $this->notifyStaffRequestCreated($request);
         }
+
+        $request->setAttribute('cost_coins', $cost);
+        $request->setAttribute('charged', $charged);
 
         return $this->loadForResource($request);
     }

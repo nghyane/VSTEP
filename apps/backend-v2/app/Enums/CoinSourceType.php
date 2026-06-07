@@ -12,6 +12,7 @@ use App\Models\ProfileStreakClaim;
 use App\Models\PromoCode;
 use App\Models\PromoCodeRedemption;
 use App\Models\TeacherBooking;
+use App\Models\TeacherGradingRequest;
 use App\Models\WalletTopupOrder;
 
 enum CoinSourceType: string
@@ -25,6 +26,7 @@ enum CoinSourceType: string
     case Profile = 'profile';
     case StreakClaim = 'profile_streak_claim';
     case TeacherBooking = 'teacher_booking';
+    case TeacherGradingRequest = 'teacher_grading_request';
 
     /** Map Eloquent model → source type. */
     private const MODEL_MAP = [
@@ -37,6 +39,7 @@ enum CoinSourceType: string
         Profile::class => self::Profile,
         ProfileStreakClaim::class => self::StreakClaim,
         TeacherBooking::class => self::TeacherBooking,
+        TeacherGradingRequest::class => self::TeacherGradingRequest,
     ];
 
     public static function fromModel(string $class): self

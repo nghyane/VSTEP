@@ -200,6 +200,7 @@ final class WalletService
             CoinTransactionType::CoursePurchase => 'Đã trừ xu mua khóa học',
             CoinTransactionType::TeacherBooking => 'Đã trừ xu đặt lịch 1-1',
             CoinTransactionType::PracticeFeedback => 'Đã trừ xu nhận xét AI',
+            CoinTransactionType::TeacherGrading => 'Đã trừ xu yêu cầu giáo viên chấm',
             default => 'Đã trừ xu',
         };
     }

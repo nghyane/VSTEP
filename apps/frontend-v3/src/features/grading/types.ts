@@ -259,6 +259,7 @@ export type TeacherGradingRequestStatus =
 export interface TeacherGradingRequestState {
 	can_request: boolean
 	requested: boolean
+	cost_coins: number
 	request_id: string | null
 	status: TeacherGradingRequestStatus
 	assigned_teacher: { id: string; full_name: string | null; email: string | null } | null
@@ -280,6 +281,14 @@ export interface TeacherGradingResultState {
 export interface TeacherGradingRequestResponse {
 	id: string
 	status: TeacherGradingRequestStatus
+	cost_coins?: number
+	charged?: boolean
+	requested_at?: string | null
+	assigned_at?: string | null
+	completed_at?: string | null
+	assigned_teacher?: TeacherGradingRequestState["assigned_teacher"]
+	teacher_result?: TeacherGradingResultState | null
+	attempt?: { id: string } | null
 }
 
 export interface RequestFeedbackResponse {

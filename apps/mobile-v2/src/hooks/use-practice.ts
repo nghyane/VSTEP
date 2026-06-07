@@ -329,6 +329,7 @@ export interface TeacherGradingResultState {
 export interface TeacherGradingRequestState {
   canRequest: boolean;
   requested: boolean;
+  costCoins: number;
   requestId: string | null;
   status: TeacherGradingRequestStatus;
   assignedTeacher: { id: string; fullName: string | null; email: string | null } | null;

@@ -43,6 +43,9 @@ final class ConfigController extends Controller
                     'practice' => [
                         'feedback_cost_coins' => $this->economyConfig->practiceFeedbackCost(),
                     ],
+                    'teacher_grading' => [
+                        'request_cost_coins' => $this->economyConfig->teacherGradingRequestCost(),
+                    ],
                 ],
             ],
         ]);

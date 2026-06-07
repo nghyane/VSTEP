@@ -20,6 +20,9 @@ export interface AppConfig {
     practice?: {
       feedbackCostCoins: number;
     };
+    teacherGrading?: {
+      requestCostCoins: number;
+    };
   };
 }
 

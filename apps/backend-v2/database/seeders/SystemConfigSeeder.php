@@ -39,6 +39,9 @@ class SystemConfigSeeder extends Seeder
             // Practice feedback costs (xu).
             'practice.feedback_cost_coins' => [1, 'Xu/lần yêu cầu AI feedback chi tiết cho bài luyện tập.'],
 
+            // Teacher grading costs (xu).
+            'teacher_grading.request_cost_coins' => [1, 'Xu/lần yêu cầu giáo viên chấm thủ công Writing/Speaking.'],
+
             // Onboarding bonus.
             'onboarding.initial_coins' => [100, 'Xu tặng khi tạo profile đầu tiên của account.'],
 

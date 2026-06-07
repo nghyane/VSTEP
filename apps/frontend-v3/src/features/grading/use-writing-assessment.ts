@@ -34,6 +34,7 @@ export function useWritingAssessment({ attemptId }: Input) {
 		mutationFn: () => requestTeacherGrading(attemptId),
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["assessment-attempts", attemptId, "view"] })
+			queryClient.invalidateQueries({ queryKey: ["wallet"] })
 		},
 		onError: () => {},
 	})
@@ -56,6 +57,7 @@ export function useWritingAssessment({ attemptId }: Input) {
 		feedbackGenerated: feedback.data?.data.feedback ?? null,
 		requestFeedback: () => feedback.mutate(),
 		teacherGrading: {
+			cost: teacherGradingState?.cost_coins ?? 0,
 			canRequest: teacherGradingState?.can_request === true,
 			requested: teacherGrading.isSuccess || teacherGradingState?.requested === true,
 			status: teacherGrading.data?.data.status ?? teacherGradingState?.status ?? "none",

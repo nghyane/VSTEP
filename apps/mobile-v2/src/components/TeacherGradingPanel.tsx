@@ -26,6 +26,7 @@ export function TeacherGradingPanel({
   const requested = state?.requested === true || status !== "none";
   const teacherGraded = result !== null || status === "completed";
   const canRequest = attemptId !== null && state?.canRequest === true;
+  const cost = state?.costCoins ?? 0;
 
   if (!attemptId || (!canRequest && !result)) return null;
 
@@ -50,10 +51,15 @@ export function TeacherGradingPanel({
       {result ? <TeacherResultSummary result={result} accentColor={accentColor} /> : null}
 
       {!teacherGraded && !requested ? (
-        <DepthButton variant="secondary" fullWidth onPress={onRequest} disabled={pending}>
-          {pending ? "Đang gửi..." : "Gửi yêu cầu"}
-        </DepthButton>
+        <View style={s.requestBlock}>
+          <Text style={[s.costText, { color: c.subtle }]}>{cost} xu</Text>
+          <DepthButton variant="secondary" fullWidth onPress={onRequest} disabled={pending}>
+            {pending ? "Đang gửi..." : "Gửi yêu cầu"}
+          </DepthButton>
+        </View>
       ) : null}
+
+      {!teacherGraded && requested ? <Text style={[s.costText, { color: c.subtle }]}>Đã thanh toán {cost} xu.</Text> : null}
 
       {error ? <Text style={[s.error, { color: c.destructive }]}>{error}</Text> : null}
     </View>
@@ -143,6 +149,8 @@ const s = StyleSheet.create({
   badge: { overflow: "hidden", borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 4, fontSize: 10, fontFamily: fontFamily.extraBold, textTransform: "uppercase" },
   assigned: { flexDirection: "row", alignItems: "center", gap: spacing.xs, borderRadius: radius.lg, padding: spacing.sm },
   assignedText: { flex: 1, fontSize: fontSize.xs, fontFamily: fontFamily.medium },
+  requestBlock: { gap: spacing.sm },
+  costText: { fontSize: fontSize.xs, fontFamily: fontFamily.bold },
   resultBox: { borderRadius: radius.lg, padding: spacing.md, gap: spacing.md },
   resultHeader: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.md },
   teacherScore: { fontSize: 36, lineHeight: 42, fontFamily: fontFamily.extraBold },
