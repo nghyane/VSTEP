@@ -17,6 +17,13 @@ Các thông tin cần kiểm tra trong job `deploy`:
 - `target`: thư mục app trên VPS, hiện tại là `/opt/vstep`
 - compose file sync/deploy: `docker-compose.yml`
 
+Production compose hiện có các public host mặc định:
+
+- API: `api.vstepgo.com` (`DOMAIN`)
+- Learner web: `vstepgo.com` (`FRONTEND_DOMAIN`)
+- Admin portal: `admin.vstepgo.com` (`ADMIN_DOMAIN`)
+- Technical docs: `docs.vstepgo.com` (`DOCS_DOMAIN`)
+
 ## 2. SSH vào VPS
 
 ```bash
@@ -82,3 +89,28 @@ Kết quả mong đợi:
 
 - `backend` status `healthy`
 - `horizon` status `healthy`
+
+## 7. Docs subdomain deploy checklist
+
+Docs chạy bằng service `docs` trong `docker-compose.yml`, image `ghcr.io/<owner>/vstep-docs:<tag>`.
+
+Trước khi deploy docs public, cấu hình DNS:
+
+```text
+docs.vstepgo.com  A  <VPS IPv4>
+```
+
+Nếu dùng subdomain khác, đặt trong `/opt/vstep/.env`:
+
+```dotenv
+DOCS_DOMAIN=docs.vstepgo.com
+```
+
+CI/CD sẽ tự build image `vstep-docs`, ghi `DOCS_IMAGE_TAG` vào `/opt/vstep/.env`, pull image và recreate service `docs`. Traefik tự cấp TLS qua Let's Encrypt khi DNS đã trỏ đúng.
+
+Verify docs sau deploy:
+
+```bash
+docker compose -f docker-compose.yml --env-file .env ps docs
+curl -I https://${DOCS_DOMAIN:-docs.vstepgo.com}
+```
