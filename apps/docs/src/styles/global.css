@@ -111,30 +111,7 @@
   margin:6px 0 10px !important;
 }
 
-.sample-tabs { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin:12px 0 14px }
-.sample-tab { border:1px solid #e7e5e4; background:#fff; color:#57534e; border-radius:999px; padding:7px 12px; font-family:var(--font-sans); font-size:12px; font-weight:600; white-space:nowrap; cursor:pointer }
-.sample-tab:hover { color:#1c1917; background:#faf9f7 }
-.sample-tab[aria-selected="true"] { background:#1c1917; border-color:#1c1917; color:#fff }
-.sample-tab span { opacity:.65; margin-left:4px }
-.sample-panel[hidden] { display:none }
-.sample-grid { display:grid; gap:14px }
-.sample-card { border:1px solid #e7e5e4; border-radius:12px; background:#fff; padding:14px }
-.sample-card-head { display:flex; justify-content:space-between; gap:14px; align-items:flex-start; margin-bottom:10px }
-.sample-card h4 { margin:0 0 4px; font-family:var(--font-sans); font-size:15px; font-weight:700; color:#1c1917 }
-.sample-card p { margin:0; font-size:12px; line-height:1.6; color:#78716c }
-.sample-meta { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; min-width:160px }
-.sample-meta span { display:inline-flex; align-items:center; min-height:20px; padding:0 8px; border-radius:999px; background:#f0ede8; color:#57534e; font-size:11px; font-weight:600; white-space:nowrap }
-.sample-prompt { margin:10px 0; padding:10px 12px; border-radius:10px; background:#faf9f7; border:1px solid #f0ede8; font-size:12px; color:#57534e; line-height:1.6 }
-.sample-prompt strong { display:block; margin-bottom:4px; color:#1c1917 }
-.sample-prompt p { margin:0 0 6px; font-size:12px; line-height:1.6 }
-.sample-prompt ul { margin:0; padding-left:18px; font-size:12px; line-height:1.5 }
-.sample-prompt li { margin-bottom:2px }
-.sample-copy-head { display:flex; justify-content:space-between; gap:10px; align-items:center; margin:8px 0 6px; color:#78716c; font-size:12px }
-.copy-button { border:1px solid #d6d3d1; background:#fff; color:#1c1917; border-radius:8px; padding:5px 10px; font-family:var(--font-sans); font-size:12px; font-weight:600; cursor:pointer }
-.copy-button:hover { background:#f0ede8 }
-.sample-copy { margin:0; padding:12px; border-radius:10px; border:1px solid #e7e5e4; background:#faf9f7; color:#292524; font-family:var(--font-mono); font-size:12px; line-height:1.65; white-space:pre-wrap; overflow-x:auto }
-
 .tech-list img { display:inline; vertical-align:-2px; margin-right:6px }
 .tech-list li { margin-bottom:4px }
 
-@media (max-width:768px) { .sidebar { display:none } .sample-card-head { display:block } .sample-meta { justify-content:flex-start; margin-top:8px } }
+@media (max-width:768px) { .sidebar { display:none } }

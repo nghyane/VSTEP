@@ -1,9 +1,5 @@
 ---
 import "../styles/global.css";
-import {
-  assessmentSampleTypeLabels,
-  assessmentValidationTabs,
-} from "../data/assessment-validation-samples";
 ---
 
 <!DOCTYPE html>
@@ -34,7 +30,6 @@ import {
           <a class="sidebar-link" href="#listening">Listening</a>
           <a class="sidebar-link" href="#reading">Reading</a>
           <a class="sidebar-link" href="#writing">Writing</a>
-          <a class="sidebar-link" href="#writing-samples">Bài mẫu</a>
           <a class="sidebar-link" href="#speaking">Speaking</a>
         </div>
         <div class="mb-5">
@@ -147,71 +142,6 @@ import {
           <li>Xem lịch sử bài viết và feedback từng tiêu chí</li>
         </ul>
 
-        <h3 id="writing-samples">Bài đã làm copy nhanh</h3>
-        <p>Dữ liệu lấy từ <span class="code-inline">database/fixtures/writing_samples</span>, chính là bộ dùng cho <span class="code-inline">php artisan validate:assessment-engine</span>. Nút Copy chỉ copy phần bài làm để dán nhanh vào màn chấm demo.</p>
-        <div class="sample-tabs" role="tablist" aria-label="Chủ đề bài đã làm Writing">
-          {assessmentValidationTabs.map((topic, index) => (
-            <button
-              class="sample-tab"
-              type="button"
-              role="tab"
-              aria-selected={index === 0 ? "true" : "false"}
-              aria-controls={`sample-panel-${topic.key}`}
-              id={`sample-tab-${topic.key}`}
-              data-topic-tab={topic.key}
-            >
-              {topic.label} <span>{topic.samples.length}</span>
-            </button>
-          ))}
-        </div>
-        <div class="sample-panels">
-          {assessmentValidationTabs.map((topic, index) => (
-            <section
-              class="sample-panel"
-              id={`sample-panel-${topic.key}`}
-              role="tabpanel"
-              aria-labelledby={`sample-tab-${topic.key}`}
-              data-topic-panel={topic.key}
-              hidden={index !== 0}
-            >
-              <div class="sample-grid">
-                {topic.samples.map((sample) => (
-                  <article class="sample-card">
-                    <div class="sample-card-head">
-                      <div>
-                        <h4>{sample.label}</h4>
-                        <p>{sample.note}</p>
-                      </div>
-                      <div class="sample-meta">
-                        <span>{assessmentSampleTypeLabels[sample.sampleType]}</span>
-                        <span>{sample.expectedLabel}</span>
-                        {sample.sourceGrade && <span>Grade {sample.sourceGrade}</span>}
-                        {sample.riskType && <span>{sample.riskType}</span>}
-                      </div>
-                    </div>
-                    <div class="sample-prompt">
-                      <strong>Đề:</strong>
-                      <p>{sample.prompt}</p>
-                      {sample.requirements.length > 0 && (
-                        <ul>
-                          {sample.requirements.map((requirement) => (
-                            <li>{requirement}</li>
-                          ))}
-                        </ul>
-                      )}
-                    </div>
-                    <div class="sample-copy-head">
-                      <span>Bài làm đã nộp — copy để chấm nhanh</span>
-                      <button class="copy-button" type="button" data-copy-target={`sample-copy-${sample.slug}`}>Copy</button>
-                    </div>
-                    <pre class="sample-copy"><code id={`sample-copy-${sample.slug}`}>{sample.answer}</code></pre>
-                  </article>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-
         <h2 id="speaking">9. Luyện tập Speaking</h2>
         <p>Tận dụng API giọng nói có sẵn trong trình duyệt để tạo transcript và đọc câu mẫu. Đánh giá phát âm dùng dịch vụ chuyên biệt ở bước cần độ chính xác cao.</p>
         <ul>
@@ -274,55 +204,5 @@ import {
       </main>
     </div>
   </div>
-  <script is:inline>
-    const tabs = document.querySelectorAll("[data-topic-tab]");
-    const panels = document.querySelectorAll("[data-topic-panel]");
-
-    tabs.forEach((tab) => {
-      tab.addEventListener("click", () => {
-        const activeTopic = tab.getAttribute("data-topic-tab");
-
-        tabs.forEach((item) => {
-          item.setAttribute("aria-selected", item === tab ? "true" : "false");
-        });
-
-        panels.forEach((panel) => {
-          panel.hidden = panel.getAttribute("data-topic-panel") !== activeTopic;
-        });
-      });
-    });
-
-    async function copyText(text) {
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
-        return;
-      }
-
-      const textarea = document.createElement("textarea");
-      textarea.value = text;
-      textarea.setAttribute("readonly", "");
-      textarea.style.position = "fixed";
-      textarea.style.left = "-9999px";
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textarea);
-    }
-
-    document.querySelectorAll("[data-copy-target]").forEach((button) => {
-      button.addEventListener("click", async () => {
-        const targetId = button.getAttribute("data-copy-target");
-        const target = targetId ? document.getElementById(targetId) : null;
-        if (!target) return;
-
-        const originalLabel = button.textContent;
-        await copyText(target.textContent || "");
-        button.textContent = "Đã copy";
-        setTimeout(() => {
-          button.textContent = originalLabel;
-        }, 1200);
-      });
-    });
-  </script>
 </body>
 </html>
