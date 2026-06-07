@@ -45,20 +45,21 @@ import "../styles/global.css";
 
         <!-- ===== SCORING ===== -->
         <h2 id="formula">1. Công thức điểm</h2>
-        <p>Mỗi kỹ năng quy về thang 0–10, làm tròn 0.5. Điểm tổng = trung bình 4 kỹ năng.</p>
+        <p>Mỗi kỹ năng quy về thang 0–10, làm tròn 0.5. Có thể đọc công thức theo cách đơn giản: điểm Listening/Reading dựa trên tỷ lệ câu đúng; Writing lấy Task 2 nặng gấp đôi Task 1; Speaking lấy trung bình 3 phần nói; điểm tổng là trung bình 4 kỹ năng.</p>
         <div class="scope-table">
           <div><span class="scope-tag official">Chính thức</span><div>Thang điểm 0–10, làm tròn 0.5, quy đổi B1/B2/C1 theo <a href="https://thuvienphapluat.vn/van-ban/Giao-duc/Quyet-dinh-729-QD-BGDDT-2015-de-thi-danh-gia-nang-luc-su-dung-tieng-Anh-tu-bac-3-den-bac-5-267956.aspx">Quyết định 729/QĐ-BGDĐT</a> và <a href="https://vqa.moet.gov.vn/vi/laws/detail/Thong-tu-Ban-hanh-Quy-che-thi-danh-gia-nang-luc-ngoai-ngu-theo-Khung-nang-luc-ngoai-ngu-6-bac-dung-cho-Viet-Nam-30/">Thông tư 23/2017/TT-BGDĐT</a>.</div></div>
           <div><span class="scope-tag system">Hệ thống</span><div>Trọng số Task 2 = 2; quy đổi từng phần về thang 0–10.</div></div>
           <div><span class="scope-tag limit">Giới hạn</span><div>Điểm tự động là tham khảo; xác nhận cần người chấm hoặc dữ liệu giám khảo.</div></div>
         </div>
         <div class="code-block formula-block">
-          <div class="formula-line"><span class="cm">Listening</span><span>L = round<sub>0.5</sub>(c<sub>L</sub> / n<sub>L</sub> × 10)</span></div>
-          <div class="formula-line"><span class="cm">Reading</span><span>R = round<sub>0.5</sub>(c<sub>R</sub> / n<sub>R</sub> × 10)</span></div>
-          <div class="formula-line"><span class="cm">Writing</span><span>W = round<sub>0.5</sub>((T<sub>1</sub> + 2T<sub>2</sub>) / 3)</span></div>
-          <div class="formula-line"><span class="cm">Speaking</span><span>S = round<sub>0.5</sub>(mean(P<sub>1</sub>, P<sub>2</sub>, P<sub>3</sub>))</span></div>
-          <div class="formula-line"><span class="fn">Overall</span><span>O = round<sub>0.5</sub>((L + R + W + S) / 4)</span></div>
+          <div class="formula-line"><span class="cm">Listening</span><span>Điểm = round<sub>0.5</sub>((số câu đúng Listening / tổng câu Listening) × 10)</span></div>
+          <div class="formula-line"><span class="cm">Reading</span><span>Điểm = round<sub>0.5</sub>((số câu đúng Reading / tổng câu Reading) × 10)</span></div>
+          <div class="formula-line"><span class="cm">Writing</span><span>Điểm = round<sub>0.5</sub>((Task 1 + 2 × Task 2) / 3)</span></div>
+          <div class="formula-line"><span class="cm">Speaking</span><span>Điểm = round<sub>0.5</sub>((Part 1 + Part 2 + Part 3) / 3)</span></div>
+          <div class="formula-line"><span class="fn">Overall</span><span>Điểm tổng = round<sub>0.5</sub>((Listening + Reading + Writing + Speaking) / 4)</span></div>
         </div>
-        <p class="formula-note">round<sub>0.5</sub>(x) = làm tròn đến mốc 0.5; c = câu đúng; n = tổng câu; T = task; P = part.</p>
+        <p class="formula-note"><strong>round<sub>0.5</sub></strong> = làm tròn đến mốc 0.5 gần nhất, ví dụ 6.24 → 6.0, 6.25 → 6.5. <strong>Task 1/2</strong> là điểm từng bài Writing. <strong>Part 1/2/3</strong> là điểm từng phần Speaking.</p>
+        <p class="formula-note"><strong>Ví dụ:</strong> Listening đúng 28/35 câu → 28/35 × 10 = 8.0. Writing Task 1 = 6.0, Task 2 = 7.0 → (6.0 + 2 × 7.0) / 3 = 6.67 → 6.5.</p>
         <p><strong>B1:</strong> 4.0–5.5 · <strong>B2:</strong> 6.0–8.0 · <strong>C1:</strong> 8.5–10.0</p>
 
         <h2 id="flow">2. Luồng chấm Writing/Speaking</h2>
