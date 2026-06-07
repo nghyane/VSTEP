@@ -1,340 +1,227 @@
 # Cơ Chế Khóa Học Và Booking 1-1
 
-Tài liệu này giải thích theo góc nhìn nghiệp vụ để bảo vệ capstone. Nội dung không tập trung vào dòng code, mà tập trung vào hệ thống đang giải quyết bài toán gì, luồng đi như thế nào, đã chặn những rủi ro nào, và vì sao thiết kế như vậy.
+Tài liệu này mô tả luồng khóa học và booking 1-1 theo cách một người bán dịch vụ giới thiệu cho khách hàng: người học thật sự cần gì khi mua khóa, hệ thống đáp ứng nhu cầu đó như thế nào, và điểm khác biệt nào khiến khóa học trên VSTEP không chỉ là một trang bán khóa thông thường.
 
-## 1. Bức Tranh Tổng Quan
+## 1. Người Dùng Muốn Gì Khi Vào Luồng Khóa Học
 
-Hệ thống khóa học trong VSTEP không chỉ là trang bán khóa. Nó gồm 4 lớp nghiệp vụ chính:
+Khi một học viên tìm đến khóa học VSTEP, họ thường không chỉ muốn xem giá hay bấm mua. Nhu cầu thật của họ là tìm một lộ trình có người dẫn, có lịch học rõ ràng, có cam kết luyện tập và có cơ hội được giáo viên hỗ trợ cá nhân khi gặp điểm yếu.
 
-1. Khóa học chính: thông tin khóa, học phí, giáo viên phụ trách, thời gian diễn ra, số lượng học viên tối đa, lịch các buổi học chính.
-2. Ghi danh khóa học: learner mua/ghi danh vào khóa, hệ thống kiểm tra trạng thái mở bán, còn slot hay không, có trùng ghi danh không.
-3. Cam kết học tập: learner phải hoàn thành một số bài full test trong một khoảng thời gian sau khi ghi danh để mở quyền đặt lịch 1-1.
-4. Booking 1-1: learner được đặt lịch phụ đạo/chữa bài riêng với giáo viên thông qua các slot 1-1 do admin/staff tạo.
+Một người học VSTEP khi vào luồng khóa học thường muốn 5 điều:
 
-Điểm quan trọng khi bảo vệ: hệ thống không cho learner đặt 1-1 tự do ngay sau khi vào khóa. Booking 1-1 được xem như quyền lợi sau khi learner có mức độ chủ động học tập nhất định, được kiểm soát bằng cơ chế cam kết.
+- Muốn biết khóa này có phù hợp với mục tiêu B1/B2/C1 của mình không.
+- Muốn biết học với ai, học khi nào, khóa kéo dài bao lâu và có bao nhiêu học viên.
+- Muốn mua khóa một cách rõ ràng, không bị trùng đơn, không mua nhầm khóa đã đóng hoặc đã hết chỗ.
+- Muốn có động lực luyện tập sau khi ghi danh, chứ không chỉ mua xong rồi bỏ đó.
+- Muốn được gặp giáo viên 1-1 khi cần chữa bài, tư vấn hoặc xử lý điểm yếu cá nhân.
 
-## 2. Khóa Học Có Những Thành Phần Nào
+Luồng khóa học của VSTEP được thiết kế để trả lời trực tiếp các nhu cầu đó. Đây không chỉ là trang giới thiệu khóa học, mà là một hệ thống quản lý hành trình học: từ xem khóa, ghi danh, nhận quyền lợi, theo dõi cam kết, học theo lịch chính, đến đặt lịch 1-1 với giáo viên.
 
-Một khóa học đang quản lý các thông tin nghiệp vụ sau:
+## 2. Thông Điệp Bán Hàng Chính
 
-- Mục tiêu trình độ: ví dụ B1, B2, C1.
-- Trường/đợt thi mục tiêu: giúp khóa học gắn với bối cảnh thi thật.
-- Giá tiền VND và giá gốc để hiển thị chính sách bán hàng.
-- Bonus coins khi ghi danh, dùng trong hệ sinh thái luyện tập/booking.
-- Số học viên tối đa.
-- Số booking 1-1 tối đa mỗi learner được đặt trong khóa.
-- Chi phí coin cho mỗi booking 1-1.
-- Ngày bắt đầu và ngày kết thúc khóa học.
-- Lịch các buổi học chính.
-- Link livestream/phòng học chính.
-- Giáo viên phụ trách.
-- Trạng thái mở/đóng ghi danh.
+Nếu giới thiệu ngắn gọn với khách hàng, có thể nói:
 
-Về mặt nghiệp vụ, khóa học là một “container” gom cả học chính khóa, tiến độ cam kết, quyền booking 1-1, học viên, và các hoạt động vận hành của staff/admin.
+VSTEP không chỉ bán một khóa học online. VSTEP bán một chương trình ôn thi có lịch học, cam kết luyện tập và quyền hỗ trợ 1-1 được kiểm soát bằng dữ liệu học tập.
 
-## 3. Luồng Hiển Thị Và Ghi Danh Khóa Học
+Điểm đáng giá là học viên không bị bỏ mặc sau khi thanh toán. Họ có lịch học chính, có giáo viên phụ trách, có bonus xu để tiếp tục luyện trong hệ sinh thái, có mục tiêu full test cần hoàn thành, và khi đã có đủ dữ liệu luyện tập thì được mở quyền đặt lịch 1-1.
 
-### 3.1 Learner xem danh sách khóa học
+Với trung tâm hoặc đơn vị vận hành, chức năng này giúp khóa học không chỉ là sản phẩm bán một lần. Nó trở thành một quy trình vận hành có kiểm soát: quản lý học viên, lịch lớp, lịch giáo viên, booking cá nhân, xu, thông báo và các tình huống phát sinh như giáo viên xin nghỉ.
 
-Hệ thống hiển thị các khóa đang published. Với learner đã đăng nhập, hệ thống còn trả thêm trạng thái learner đã ghi danh khóa nào để UI phân biệt:
+## 3. Điểm Đặc Biệt 1: Khóa Học Không Chỉ Là Trang Bán Hàng
 
-- Khóa chưa ghi danh.
-- Khóa đã ghi danh.
-- Buổi học tiếp theo.
-- Trạng thái cam kết.
+Một khóa học trong VSTEP được thiết kế như một gói học tập hoàn chỉnh. Người học không chỉ nhìn thấy tên khóa và giá tiền, mà còn thấy mục tiêu trình độ, thời gian diễn ra, giáo viên phụ trách, lịch học, số lượng học viên tối đa, chính sách bonus xu và quyền booking 1-1.
 
-Nếu learner chưa ghi danh, một số thông tin nhạy cảm như livestream URL không được mở ra. Đây là cách tách thông tin marketing và thông tin dành cho học viên thật.
+Điều này giúp học viên trả lời được câu hỏi quan trọng trước khi mua: khóa này có dành cho mình không, học trong bao lâu, học với ai, và sau khi mua mình nhận được gì.
 
-### 3.2 Điều kiện tạo đơn thanh toán ghi danh
+Giá trị khách hàng nhận được:
 
-Khi learner tạo đơn thanh toán khóa học, hệ thống kiểm tra:
+- Học viên có đủ thông tin để ra quyết định, không mua theo cảm tính.
+- Trung tâm có thể trình bày khóa học như một sản phẩm có cấu trúc rõ ràng.
+- Các quyền lợi như bonus xu, lịch học và 1-1 được gắn trực tiếp vào khóa, không bị rời rạc.
+- Thông tin nhạy cảm như link học/livestream chỉ mở cho người đã ghi danh, giúp tách rõ phần marketing và phần dành cho học viên thật.
 
-- Khóa học phải đang mở ghi danh.
-- Khóa học chưa kết thúc.
-- Khóa học chưa đủ số lượng học viên tối đa.
-- Khóa học phải có giá hợp lệ.
-- Learner chưa ghi danh khóa đó.
-- Learner không có đơn thanh toán active bị trùng cho cùng khóa.
+## 4. Điểm Đặc Biệt 2: Ghi Danh Có Kiểm Soát, Không Bán Bừa
 
-Ý nghĩa nghiệp vụ: tránh tình trạng bán khóa đã đóng, khóa hết hạn, khóa đầy, hoặc một learner mua trùng cùng một khóa.
+Một hệ thống bán khóa tốt không chỉ cần nút thanh toán. Nó phải đảm bảo học viên chỉ mua được khóa hợp lệ, còn chỗ, đang mở ghi danh và chưa bị mua trùng.
 
-### 3.3 Sau khi thanh toán thành công
+VSTEP xử lý điều này bằng cách kiểm tra trạng thái khóa trước khi tạo đơn thanh toán. Khóa phải đang published, chưa kết thúc, còn capacity, có giá hợp lệ và learner chưa ghi danh khóa đó. Nếu học viên đã có đơn thanh toán active cho cùng khóa, hệ thống cũng chặn để tránh tạo nhiều đơn trùng.
 
-Khi payment callback xác nhận thanh toán thành công:
+Sau khi thanh toán thành công, hệ thống tạo enrollment, ghi nhận cam kết, cộng bonus xu nếu khóa có chính sách bonus, đánh dấu đơn đã paid và gửi thông báo cho học viên.
 
-- Hệ thống tạo enrollment cho learner.
-- Ghi nhận chữ ký/cam kết nếu có.
-- Cộng bonus coins nếu khóa có chính sách bonus.
-- Đánh dấu đơn thanh toán đã paid.
-- Gửi invoice/email sau transaction.
-- Gửi notification ghi danh thành công.
+Giá trị khách hàng nhận được:
 
-Điểm cần nhấn mạnh: việc tạo enrollment và cập nhật trạng thái thanh toán được xử lý theo hướng transaction để tránh trường hợp payment thành công nhưng learner chưa được ghi danh, hoặc ghi danh bị tạo lặp.
+- Học viên không mua nhầm khóa đã đóng, khóa hết hạn hoặc khóa đã đầy.
+- Trung tâm tránh tình trạng một học viên mua trùng cùng một khóa.
+- Payment thành công được gắn với enrollment rõ ràng, giảm rủi ro “đã trả tiền nhưng chưa được vào khóa”.
+- Bonus xu sau ghi danh giúp học viên tiếp tục luyện đề, booking hoặc dùng các dịch vụ khác trong hệ sinh thái.
 
-## 4. Cơ Chế Cam Kết Trong Khóa Học
+## 5. Điểm Đặc Biệt 3: Cam Kết Học Tập Biến Khóa Học Thành Một Hành Trình
 
-Mỗi khóa học có 2 tham số quan trọng:
+Điểm khác biệt lớn của luồng khóa học là cơ chế cam kết. Hệ thống không xem học viên là người mua xong rồi tùy ý sử dụng mọi tài nguyên. Thay vào đó, học viên cần hoàn thành một số bài full test trong thời hạn cam kết của khóa.
 
-- Số bài full test learner cần hoàn thành.
-- Thời hạn hoàn thành tính từ lúc ghi danh.
+Cam kết này có ý nghĩa thực tế: học viên cần tự luyện và tạo dữ liệu năng lực trước khi dùng đến tài nguyên giáo viên 1-1. Khi giáo viên gặp học viên, giáo viên không phải hỏi từ đầu “em đang yếu gì”, mà có thể dựa trên kết quả full test để feedback hiệu quả hơn.
 
-Trạng thái cam kết có 3 nhóm chính:
+Trạng thái cam kết có thể hiểu đơn giản:
 
-- Chưa ghi danh: learner chưa thuộc khóa.
-- Đang chờ hoàn thành: learner đã ghi danh nhưng chưa đủ số bài trong thời hạn.
-- Đạt cam kết: learner đã hoàn thành đủ số full test hợp lệ.
-- Vi phạm cam kết: quá thời hạn nhưng chưa hoàn thành đủ.
+- Chưa ghi danh: học viên chưa thuộc khóa.
+- Đang chờ hoàn thành: đã vào khóa nhưng chưa đủ full test trong thời hạn.
+- Đạt cam kết: đã hoàn thành đủ yêu cầu.
+- Vi phạm cam kết: quá hạn nhưng chưa hoàn thành đủ.
 
-Booking 1-1 phụ thuộc vào trạng thái cam kết. Nếu learner chưa đạt cam kết, hệ thống không cho đặt lịch 1-1.
+Giá trị khách hàng nhận được:
 
-Ý nghĩa khi bảo vệ: hệ thống khuyến khích learner tự luyện full test trước, sau đó mới sử dụng tài nguyên giáo viên 1-1. Điều này giúp giáo viên không bị quá tải bởi learner chưa có dữ liệu học tập rõ ràng.
+- Học viên có động lực luyện tập sau khi mua khóa.
+- Giáo viên có dữ liệu trước khi hỗ trợ cá nhân.
+- Trung tâm tránh việc học viên lạm dụng booking 1-1 khi chưa tự luyện đủ.
+- Booking 1-1 trở thành quyền lợi có điều kiện, tạo cảm giác giá trị hơn.
 
-## 5. Lịch Buổi Học Chính Của Khóa
+## 6. Điểm Đặc Biệt 4: Booking 1-1 Là Quyền Lợi Cao Cấp, Không Phải Đặt Lịch Tự Do
 
-### 5.1 Admin/staff quản lý buổi học
+Booking 1-1 trong VSTEP là lịch học riêng giữa learner và giáo viên của khóa. Nó dùng cho các nhu cầu như chữa bài, tư vấn hướng học, feedback Writing/Speaking hoặc xử lý điểm yếu cá nhân.
 
-Admin/staff có thể tạo, sửa, xóa buổi học chính của khóa. Mỗi buổi học gồm:
+Điểm quan trọng là học viên không được đặt 1-1 ngay lập tức chỉ vì đã mua khóa. Họ cần có active enrollment, đạt cam kết, còn quota booking, slot phải còn mở, không quá sát giờ và ví xu phải đủ để thanh toán nếu booking có phí.
 
-- Số buổi.
-- Ngày học.
-- Giờ bắt đầu.
-- Giờ kết thúc.
-- Chủ đề.
+Thiết kế này giúp 1-1 trở thành tài nguyên được kiểm soát. Giáo viên không bị quá tải bởi các booking thiếu chuẩn bị, còn học viên có lý do để hoàn thành bài full test trước khi gặp giáo viên.
 
-### 5.2 Các kiểm soát nghiệp vụ đã handle
+Giá trị khách hàng nhận được:
 
-Hệ thống đang xử lý các ràng buộc sau:
+- Học viên xem 1-1 như một quyền lợi thật sự có giá trị.
+- Giáo viên gặp học viên đã có dữ liệu học tập, buổi 1-1 hiệu quả hơn.
+- Trung tâm kiểm soát được quota, lead time, chi phí xu và lịch giáo viên.
+- Slot 1-1 không bị đặt trùng nhờ cơ chế reserve an toàn khi booking.
 
-- Buổi học phải nằm trong khoảng ngày bắt đầu và ngày kết thúc khóa học.
-- Khi thêm buổi mới ở admin UI, không cho chọn ngày đã qua.
-- Khi dời buổi học trong luồng xử lý giáo viên xin nghỉ, UI cũng check ngày phải nằm trong thời gian khóa học.
-- Backend vẫn là lớp chặn cuối cho date range, tránh phụ thuộc hoàn toàn vào UI.
-- Giáo viên không được có 2 buổi học chính trùng giờ, kể cả thuộc 2 khóa khác nhau.
-- Buổi học chính không được trùng với slot 1-1 của giáo viên.
-- Buổi học đã bị hủy không còn được tính là lịch bận khi check conflict.
+## 7. Điểm Đặc Biệt 5: Lịch Giáo Viên Được Xem Như Tài Nguyên Chung
 
-Điểm quan trọng: hệ thống xem lịch của giáo viên là tài nguyên chung. Một giáo viên có thể dạy nhiều khóa, nhưng không được bị xếp 2 lớp hoặc lớp và 1-1 cùng một khung giờ.
+Trong vận hành thật, một giáo viên có thể dạy nhiều khóa, có nhiều buổi học chính và cũng có các slot 1-1. Nếu hệ thống chỉ quản lý lịch trong từng khóa riêng lẻ, rất dễ xảy ra trùng giờ.
 
-## 6. Booking 1-1 Là Gì
+VSTEP xử lý lịch giáo viên như một tài nguyên chung. Khi tạo buổi học chính hoặc slot 1-1, hệ thống kiểm tra thời gian trong phạm vi khóa, không cho tạo lịch quá khứ, không cho xếp một giáo viên vào 2 lớp trùng giờ, và không cho slot 1-1 trùng với buổi học chính.
 
-Booking 1-1 là lịch học riêng giữa learner và giáo viên của khóa. Nó không phải lịch học chính. Nó dùng để:
+Với bulk create slot 1-1, hệ thống có thể tạo nhanh nhiều slot nhưng vẫn skip các slot không hợp lệ như ngoài thời gian khóa, quá khứ, trùng slot đã có, trùng buổi học chính hoặc trùng nhau trong cùng batch.
 
-- Chữa bài.
-- Tư vấn hướng học.
-- Feedback speaking/writing.
-- Hỗ trợ learner sau khi đã hoàn thành cam kết luyện tập.
+Giá trị khách hàng nhận được:
 
-Luồng booking gồm 3 đối tượng:
+- Học viên không bị nhận lịch học bị trùng hoặc không thể diễn ra.
+- Giáo viên không bị xếp 2 việc cùng một khung giờ.
+- Staff tạo lịch nhanh nhưng vẫn an toàn vận hành.
+- Trung tâm có thể mở rộng nhiều khóa, nhiều slot 1-1 mà không mất kiểm soát lịch.
 
-- Teacher slot: khung giờ trống do admin/staff tạo cho giáo viên.
-- Teacher booking: booking thật của learner sau khi đặt slot.
-- Coin transaction: giao dịch trừ xu hoặc hoàn xu liên quan booking.
+## 8. Điểm Đặc Biệt 6: Dời, Hủy, Hoàn Xu Có Quy Trình Rõ Ràng
 
-## 7. Admin/Staff Tạo Slot 1-1
+Trong vận hành khóa học thật, lịch có thể thay đổi. Giáo viên có thể xin nghỉ, học viên có thể không tham gia được, hoặc staff cần đổi slot. VSTEP không xem đây là ngoại lệ nhỏ, mà có quy trình xử lý rõ.
 
-### 7.1 Tạo slot đơn
+Khi dời booking, booking gốc phải còn active, slot mới phải cùng khóa, còn open và không ở quá khứ. Slot cũ được mở lại, slot mới được giữ chỗ, booking cập nhật sang lịch mới và meet URL cũ được reset vì lịch đã đổi.
 
-Admin/staff chọn thời gian bắt đầu và thời lượng slot. Hệ thống kiểm tra:
+Khi hủy booking, hệ thống chuyển booking sang cancelled, mở lại slot nếu phù hợp, tìm giao dịch trừ xu gốc và hoàn đúng số xu nếu chưa refund. Số xu hoàn không do client gửi lên, mà backend tự tính từ giao dịch gốc để tránh hoàn sai hoặc bị chỉnh payload.
 
-- Slot phải nằm trong thời gian diễn ra khóa học.
-- Slot không được ở quá khứ.
-- Slot không được trùng slot 1-1 khác của cùng giáo viên.
-- Slot không được trùng lịch buổi học chính của cùng giáo viên.
-- Nếu slot đang có booking active thì không cho sửa/xóa trực tiếp.
+Giá trị khách hàng nhận được:
 
-### 7.2 Tạo slot hàng loạt
+- Học viên được thông báo khi lịch thay đổi.
+- Nếu hủy cần hoàn xu, hệ thống hoàn đúng số đã trừ.
+- Staff có công cụ xử lý tình huống thật thay vì phải sửa tay rời rạc.
+- Trung tâm giữ được audit trail cho các thao tác nhạy cảm như hủy, dời và refund.
 
-Khi admin/staff bulk create slot theo ngày, thứ trong tuần và giờ:
+## 9. Điểm Đặc Biệt 7: Giáo Viên Xin Nghỉ Không Làm Hệ Thống Rối
 
-- Hệ thống chỉ lấy các ngày nằm trong thời gian khóa học.
-- Bỏ qua các slot ở quá khứ.
-- Bỏ qua slot trùng slot đã tồn tại.
-- Bỏ qua slot trùng lịch buổi học chính.
-- Bỏ qua slot trùng nhau trong cùng batch.
-- Kết quả trả về số slot tạo được và số slot bị skip.
+Khi giáo viên xin nghỉ, hệ thống không tự động hủy toàn bộ lịch một cách máy móc. Thay vào đó, hệ thống hiển thị các tác động để staff/admin quyết định cách xử lý phù hợp.
 
-Ý nghĩa nghiệp vụ: admin có thể tạo nhanh nhiều lịch 1-1 nhưng hệ thống vẫn giữ an toàn lịch dạy cho giáo viên.
+Một ngày nghỉ có thể ảnh hưởng đến buổi học chính, booking 1-1 đã đặt và slot 1-1 còn mở. Staff có thể dời buổi học chính, hủy buổi học chính, dời booking, hủy booking và hoàn xu, hoặc dời/xóa slot còn mở.
 
-## 8. Learner Đặt Booking 1-1
+Lý do thiết kế này hợp lý là vì mỗi tình huống có cách xử lý khác nhau. Một lớp chính có thể cần lịch bù, một booking 1-1 có thể dời sang slot khác, còn một slot trống thì chỉ cần xóa hoặc dời.
 
-### 8.1 Điều kiện để learner đặt booking
+Giá trị khách hàng nhận được:
 
-Learner chỉ đặt được booking nếu thỏa các điều kiện:
+- Staff thấy rõ lịch nào bị ảnh hưởng trước khi ra quyết định.
+- Học viên không bị hủy/dời lịch một cách thiếu kiểm soát.
+- Giáo viên có quy trình xin nghỉ nhưng vẫn giữ vận hành ổn định.
+- Trung tâm xử lý sự cố lịch theo nghiệp vụ, không phải sửa dữ liệu thủ công.
 
-- Slot thuộc đúng khóa học đang xem.
-- Slot chưa qua.
-- Slot phải cách thời điểm hiện tại ít nhất 24 giờ.
-- Slot không nằm trước ngày bắt đầu khóa.
-- Learner đã đạt cam kết học tập của khóa.
-- Learner chưa vượt quá số booking tối đa của khóa.
-- Slot vẫn còn trạng thái open tại thời điểm transaction lock.
-- Learner có đủ coin để thanh toán booking.
+## 10. Cách Có Thể Trình Bày Khi Demo
 
-Điểm quan trọng: UI có thể hiển thị slot available, nhưng khi bấm đặt hệ thống vẫn lock lại slot để kiểm tra lần cuối. Điều này tránh race condition khi 2 learner cùng đặt một slot gần như đồng thời.
+Khi demo chức năng này, nên đi theo câu chuyện của một học viên thật thay vì đọc danh sách rule.
 
-### 8.2 Khi đặt thành công
+Một kịch bản demo tốt:
 
-Hệ thống thực hiện:
+1. Học viên vào danh sách khóa học vì muốn tìm lộ trình ôn VSTEP phù hợp.
+2. Học viên xem chi tiết khóa, thấy mục tiêu, lịch học, giáo viên, giá, bonus xu và quyền booking 1-1.
+3. Học viên tạo đơn ghi danh, hệ thống kiểm tra khóa còn mở, còn slot và chưa mua trùng.
+4. Sau khi thanh toán, học viên được ghi danh và nhận quyền lợi trong khóa.
+5. Học viên cần hoàn thành full test theo cam kết để mở quyền booking 1-1.
+6. Khi đạt cam kết, học viên chọn slot 1-1 còn phù hợp, hệ thống kiểm tra lead time, quota và số dư xu.
+7. Giáo viên nhận booking, cập nhật meet URL, học viên nhận thông báo để tham gia buổi học.
+8. Nếu phát sinh giáo viên xin nghỉ, staff xem impact và chọn dời/hủy/hoàn xu theo tình huống.
 
-- Đổi trạng thái slot từ open sang booked.
-- Tạo booking.
-- Trừ coin của learner.
-- Gửi notification/email cho learner.
-- Gửi notification/email cho teacher.
-- Gửi notification/email cho admin.
+Câu chốt khi demo:
 
-Teacher nhận thông báo để cập nhật link Google Meet. Admin nhận thông báo để theo dõi vận hành.
+VSTEP không chỉ cho học viên mua khóa. VSTEP giúp trung tâm vận hành cả hành trình sau khi mua: lịch học, cam kết, dữ liệu luyện tập, booking 1-1, lịch giáo viên, thông báo và xử lý sự cố.
 
-## 9. Trạng Thái Slot Và Booking
+## 11. Những Nghiệp Vụ Đã Được Handle
 
-### 9.1 Slot 1-1
+Phần này ghi lại ngắn gọn các nghiệp vụ đã có để phục vụ báo cáo/bảo vệ, nhưng không phải trọng tâm khi sale chức năng.
 
-Slot có thể được hiểu theo các trạng thái nghiệp vụ:
+- Khóa học có mục tiêu trình độ, trường/đợt thi mục tiêu, giá, giá gốc, bonus xu, capacity, thời gian khóa, giáo viên phụ trách và trạng thái published/enrollment.
+- Danh sách khóa học phân biệt khóa đã ghi danh và chưa ghi danh, đồng thời ẩn thông tin phòng học/livestream với người chưa ghi danh.
+- Tạo đơn ghi danh kiểm tra course published, chưa kết thúc, còn capacity, giá hợp lệ, learner chưa enrolled và không có order active trùng.
+- Payment thành công tạo enrollment, ghi nhận cam kết, cộng bonus xu nếu có, đánh dấu order paid và gửi notification/email.
+- Cam kết khóa học tính theo số full mock test phải hoàn thành trong commitment window.
+- Booking 1-1 chỉ mở khi learner có active enrollment, đạt cam kết, còn quota, slot open, slot tương lai, đạt lead time và đủ xu.
+- Buổi học chính phải nằm trong ngày bắt đầu/kết thúc khóa và không được tạo ở ngày quá khứ.
+- Lịch giáo viên được check conflict giữa các buổi học chính, giữa các khóa và giữa buổi học chính với slot 1-1.
+- Slot 1-1 phải thuộc thời gian khóa, không ở quá khứ, không trùng slot khác và không trùng buổi học chính của giáo viên.
+- Slot đã có booking active không được sửa/xóa trực tiếp cho đến khi booking bị hủy.
+- Bulk create slot tự bỏ qua slot ngoài thời gian khóa, quá khứ, trùng slot cũ, trùng lịch lớp chính hoặc trùng trong batch.
+- Khi learner đặt booking, hệ thống reserve slot và trừ xu trong một thao tác an toàn để tránh hai learner cùng đặt một slot.
+- Booking thành công đổi slot sang booked, tạo booking, trừ xu và gửi thông báo/email cho learner, teacher, admin.
+- Booking có trạng thái booked, completed, cancelled; slot có trạng thái open/booked/past/booked by me/booked by other theo góc nhìn learner.
+- Dời booking yêu cầu booking gốc còn booked, slot mới cùng khóa, còn open và không ở quá khứ.
+- Dời booking mở lại slot cũ, giữ slot mới, reset meet URL và gửi thông báo lịch mới.
+- Hủy booking chuyển booking sang cancelled, mở lại slot phù hợp, hoàn xu một lần dựa trên giao dịch gốc và gửi thông báo.
+- Meet URL do teacher cập nhật; learner nhận thông báo khi link được thêm, đổi hoặc gỡ.
+- Teacher leave request hiển thị impact gồm buổi học chính, booking đã đặt và slot còn mở để staff xử lý.
+- Staff/admin có thể dời/hủy buổi học chính, dời/hủy booking 1-1, hoàn xu hoặc xử lý slot còn mở khi giáo viên xin nghỉ.
 
-- Open: còn trống, learner có thể đặt nếu đủ điều kiện.
-- Booked: đã có learner đặt.
-- Past: đã qua thời gian.
-- Booked by me: learner hiện tại đã đặt slot này.
-- Booked by other: slot đã bị learner khác đặt.
+## 12. Những Rủi Ro Nghiệp Vụ Đã Được Chặn
 
-UI learner không chỉ dựa vào status trong DB mà còn tính thêm lead time 24 giờ. Slot quá gần giờ bắt đầu sẽ không còn được xem là available.
+Các rủi ro quan trọng đã được hệ thống kiểm soát:
 
-### 9.2 Booking
-
-Booking có thể ở các trạng thái:
-
-- Booked: đang có hiệu lực.
-- Completed: đã hoàn thành.
-- Cancelled: đã hủy.
-
-Chỉ booking active mới cho phép một số thao tác như cập nhật meet URL hoặc hủy/hoàn.
-
-## 10. Dời Booking 1-1
-
-Admin/staff có thể dời booking sang slot khác khi cần, đặc biệt trong tình huống giáo viên xin nghỉ.
-
-Điều kiện dời:
-
-- Booking gốc phải đang booked.
-- Slot mới phải thuộc cùng khóa học.
-- Slot mới phải còn open.
-- Slot mới không được ở quá khứ.
-
-Khi dời:
-
-- Slot cũ được mở lại.
-- Slot mới chuyển sang booked.
-- Booking được cập nhật sang slot mới.
-- Meet URL cũ bị reset vì lịch đã đổi.
-- Learner nhận notification/email lịch mới.
-
-Điểm nghiệp vụ: dời booking không tạo giao dịch coin mới và không refund, vì learner vẫn giữ quyền học 1-1, chỉ đổi lịch.
-
-## 11. Hủy Booking Và Hoàn Xu
-
-Admin/staff có thể hủy booking khi learner không thể/không muốn đổi lịch.
-
-Khi hủy:
-
-- Booking chuyển sang cancelled.
-- Slot liên quan được mở lại nếu phù hợp.
-- Hệ thống tìm giao dịch trừ coin gốc.
-- Nếu chưa refund, hệ thống hoàn đúng số coin đã trừ.
-- Gửi notification/email cho learner.
-
-Điểm cần nhấn mạnh khi bảo vệ: client không tự gửi số tiền refund. Backend tự tính từ giao dịch gốc để tránh gian lận hoặc hoàn sai số xu.
-
-## 12. Meet URL Và Trách Nhiệm Giáo Viên
-
-Sau khi learner đặt booking, teacher được thông báo để cập nhật link Google Meet.
-
-Khi meet URL được cập nhật:
-
-- Learner nhận notification.
-- Learner có thể xem link trong booking của mình.
-
-Nếu link bị gỡ hoặc thay đổi, hệ thống cũng gửi thông báo tương ứng. Điều này giúp learner không bị mất thông tin lịch học hoặc vào nhầm phòng.
-
-## 13. Luồng Giáo Viên Xin Nghỉ Liên Quan Đến Khóa Học Và Booking
-
-Giáo viên có thể gửi đơn xin nghỉ theo ngày. Hệ thống không tự động hủy/dời mọi thứ, vì đây là nghiệp vụ cần staff cân nhắc. Thay vào đó hệ thống hiển thị impact:
-
-- Buổi học chính bị ảnh hưởng.
-- Booking 1-1 đã đặt bị ảnh hưởng.
-- Slot 1-1 còn mở trong ngày nghỉ.
-
-Staff/admin có thể xử lý thủ công:
-
-- Dời buổi học chính.
-- Hủy buổi học chính và thông báo learner.
-- Dời booking 1-1.
-- Hủy booking 1-1 và hoàn xu.
-- Dời hoặc xóa slot 1-1 còn mở.
-
-Lý do không tự động xử lý: mỗi trường hợp có thể khác nhau. Với booking 1-1 có thể ưu tiên dời, còn lớp chính có thể cần thông báo toàn bộ học viên hoặc sắp lịch bù.
-
-## 14. Các Rủi Ro Nghiệp Vụ Đã Được Chặn
-
-Hệ thống hiện đã handle các rủi ro quan trọng:
-
-- Ghi danh trùng một khóa.
-- Bán khóa đã đóng hoặc đã kết thúc.
-- Vượt số lượng học viên tối đa.
-- Tạo đơn thanh toán trùng đang active.
-- Tạo buổi học ngoài thời gian khóa.
-- Thêm buổi học mới ở ngày quá khứ.
-- Xếp một giáo viên dạy 2 lớp trùng giờ.
-- Xếp lớp chính trùng slot 1-1.
-- Tạo slot 1-1 ngoài thời gian khóa.
-- Tạo slot 1-1 trong quá khứ.
-- Tạo slot 1-1 trùng slot khác của cùng giáo viên.
-- Tạo slot 1-1 trùng buổi học chính của giáo viên.
+- Bán khóa đã đóng, đã kết thúc hoặc đã đầy.
+- Một learner ghi danh trùng một khóa.
+- Tạo nhiều payment order active cho cùng một khóa.
+- Payment thành công nhưng tạo enrollment trùng.
+- Người chưa ghi danh thấy link học/livestream dành cho học viên thật.
+- Learner đặt 1-1 khi chưa hoàn thành cam kết.
+- Learner đặt quá số booking tối đa của khóa.
 - Learner đặt slot quá sát giờ học.
-- Learner đặt booking khi chưa đạt cam kết.
-- Learner vượt số booking tối đa.
-- Hai learner cùng đặt một slot do race condition.
-- Refund sai số xu do client tự gửi amount.
-- Dời booking sang slot khác khóa.
+- Hai learner cùng đặt một slot do thao tác đồng thời.
+- Tạo buổi học hoặc slot ngoài thời gian khóa.
+- Xếp giáo viên trùng lịch giữa nhiều khóa hoặc giữa lớp chính và 1-1.
 - Sửa/xóa slot đã có booking active.
+- Dời booking sang slot khác khóa hoặc slot không còn open.
+- Refund sai số xu do client tự nhập số tiền hoàn.
+- Giáo viên xin nghỉ nhưng staff không biết lịch nào bị ảnh hưởng.
 
-## 15. Tại Sao Thiết Kế Này Hợp Lý
-
-Thiết kế tách khóa học chính và booking 1-1 giúp hệ thống linh hoạt:
-
-- Khóa học chính phục vụ nhiều learner cùng lúc.
-- Booking 1-1 phục vụ cá nhân hóa hỗ trợ learner.
-- Cam kết học tập làm điều kiện mở booking để tránh lạm dụng tài nguyên giáo viên.
-- Admin/staff kiểm soát lịch giáo viên để tránh conflict.
-- Các thao tác nhạy cảm như refund, hủy, dời lịch đều do backend quyết định.
-
-Về mặt vận hành, staff có đủ quyền xử lý thủ công các tình huống phát sinh, nhưng hệ thống vẫn chặn các lỗi logic nghiêm trọng.
-
-## 16. Câu Hỏi Phản Biện Có Thể Gặp
+## 13. Câu Hỏi Phản Biện Có Thể Gặp
 
 ### Vì sao không cho learner đặt 1-1 ngay sau khi mua khóa?
 
-Vì 1-1 là tài nguyên giáo viên có giới hạn. Hệ thống yêu cầu learner hoàn thành full test trước để chứng minh đã học và có dữ liệu cho giáo viên feedback hiệu quả.
+Vì 1-1 là tài nguyên giáo viên có giới hạn. Hệ thống yêu cầu learner hoàn thành full test trước để chứng minh đã học và tạo dữ liệu cho giáo viên feedback hiệu quả hơn.
 
 ### Vì sao booking 1-1 cần đặt trước ít nhất 24 giờ?
 
-Để giáo viên có thời gian chuẩn bị và tránh các booking sát giờ gây khó vận hành.
+Để giáo viên có thời gian chuẩn bị và tránh booking sát giờ gây khó vận hành.
 
 ### Vì sao khi giáo viên xin nghỉ không tự động hủy/dời tất cả?
 
-Vì mỗi lịch bị ảnh hưởng có cách xử lý khác nhau. Có booking nên dời, có booking cần hủy/hoàn, lớp chính có thể cần lịch bù hoặc thông báo riêng. Staff cần quyết định theo tình huống.
+Vì mỗi lịch bị ảnh hưởng có cách xử lý khác nhau. Có booking nên dời, có booking nên hủy/hoàn, lớp chính có thể cần lịch bù hoặc thông báo riêng. Staff cần quyết định theo tình huống.
 
 ### Vì sao backend phải tự tính refund?
 
-Vì refund liên quan tài sản người dùng. Nếu client gửi số xu refund, có rủi ro sai hoặc bị chỉnh payload. Backend tính từ giao dịch gốc để đảm bảo đúng và an toàn.
+Vì refund liên quan tài sản người dùng. Nếu client gửi số xu refund, payload có thể sai hoặc bị chỉnh. Backend tính từ giao dịch gốc để đảm bảo đúng và an toàn.
 
-### Nếu một giáo viên phụ trách 2 khóa thì sao tránh trùng lịch?
+### Nếu một giáo viên phụ trách nhiều khóa thì sao tránh trùng lịch?
 
-Khi tạo/sửa buổi học chính, hệ thống kiểm tra lịch của giáo viên trên toàn bộ khóa. Nếu khung giờ bị trùng với buổi học khác hoặc slot 1-1, hệ thống từ chối.
+Khi tạo/sửa buổi học hoặc slot 1-1, hệ thống kiểm tra lịch của giáo viên trên toàn bộ phạm vi liên quan. Nếu khung giờ trùng với lớp khác hoặc slot 1-1, hệ thống từ chối hoặc skip.
 
-### Nếu admin tạo slot 1-1 trùng giờ lớp chính thì sao?
+## 14. Kết Luận
 
-Backend từ chối vì slot 1-1 được check overlap với lịch lớp chính của giáo viên. Bulk tạo slot cũng tự skip các slot bị trùng.
+Luồng khóa học và booking 1-1 nên được nhìn như một sản phẩm vận hành học tập, không phải chỉ là trang bán khóa. Giá trị lớn nhất của nó nằm ở việc kết nối 4 thứ: mua khóa, học theo lịch, cam kết luyện tập và hỗ trợ cá nhân với giáo viên.
 
-## 17. Tóm Tắt Nói Ngắn Khi Bảo Vệ
-
-Hệ thống khóa học của em quản lý đầy đủ vòng đời từ mở bán khóa, thanh toán ghi danh, cam kết học tập, lịch học chính, đến hỗ trợ 1-1. Booking 1-1 không phải chức năng đặt lịch đơn giản mà được kiểm soát bằng cam kết học tập, giới hạn số booking, lead time 24 giờ, trạng thái slot, coin transaction và notification. Phần vận hành admin/staff có cơ chế chống trùng lịch giáo viên giữa nhiều khóa và giữa lớp chính với slot 1-1, đồng thời có quy trình xử lý khi giáo viên xin nghỉ để staff chủ động dời/hủy/hoàn xu đúng nghiệp vụ.
+Với học viên, đây là nơi họ tìm được lộ trình học có người dẫn và có quyền 1-1 sau khi thật sự luyện tập. Với trung tâm, đây là nơi quản lý được doanh thu khóa học, lịch giáo viên, quyền lợi học viên, booking cá nhân, xu và các tình huống vận hành phát sinh.
