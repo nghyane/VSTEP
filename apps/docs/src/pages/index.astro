@@ -1,387 +1,9 @@
 ---
 import "../styles/global.css";
-
-const writingSamples = [
-  {
-    slug: "wt1-request-library-hours-b1",
-    title: "Đề nghị kéo dài giờ mở cửa thư viện",
-    description: "Email yêu cầu trang trọng về dịch vụ học tập.",
-    part: 1,
-    taskType: "request",
-    level: "B1",
-    topic: "education",
-    prompt: "Bạn đang chuẩn bị cho một kỳ thi tiếng Anh quan trọng nhưng thư viện địa phương đóng cửa quá sớm vào buổi tối. Hãy viết email cho quản lý thư viện để:\n- giải thích vì sao bạn cần thư viện mở cửa lâu hơn\n- mô tả việc kéo dài giờ mở cửa sẽ giúp sinh viên như thế nào\n- đề xuất lịch mở cửa thực tế trong mùa thi",
-    minWords: 120,
-    maxWords: 180,
-    requiredPoints: ["giải thích lý do đề nghị", "mô tả lợi ích cho sinh viên", "đề xuất lịch mở cửa thực tế"],
-    keywords: ["thư viện", "ôn thi", "giờ mở cửa", "sinh viên"],
-    sentenceStarters: ["I am writing to ask whether...", "This change would help students because...", "One practical solution would be..."],
-    estimatedMinutes: 20,
-  },
-  {
-    slug: "wt1-complaint-online-course-b2",
-    title: "Khiếu nại về khóa học trực tuyến",
-    description: "Email khiếu nại trang trọng về chất lượng dịch vụ.",
-    part: 1,
-    taskType: "complaint",
-    level: "B2",
-    topic: "education",
-    prompt: "Bạn vừa trả tiền cho một khóa học tiếng Anh trực tuyến, nhưng nhiều buổi học trực tiếp bị hủy và nền tảng học tập thường xuyên bị lỗi. Hãy viết email cho đơn vị cung cấp khóa học để:\n- mô tả các vấn đề bạn gặp phải\n- giải thích chúng ảnh hưởng đến kế hoạch học tập của bạn như thế nào\n- yêu cầu giải pháp hoặc bồi thường",
-    minWords: 120,
-    maxWords: 180,
-    requiredPoints: ["mô tả buổi học bị hủy và lỗi kỹ thuật", "giải thích ảnh hưởng đến kế hoạch học tập", "yêu cầu giải pháp rõ ràng hoặc bồi thường"],
-    keywords: ["khóa học trực tuyến", "sự cố kỹ thuật", "buổi học bị hủy", "bồi thường"],
-    sentenceStarters: ["I am writing to complain about...", "As a result, I was unable to...", "I would appreciate it if..."],
-    estimatedMinutes: 20,
-  },
-  {
-    slug: "wt1-apology-missed-meeting-b1",
-    title: "Xin lỗi vì bỏ lỡ cuộc họp",
-    description: "Email xin lỗi bán trang trọng kèm giải thích và đề xuất sửa sai.",
-    part: 1,
-    taskType: "apology",
-    level: "B1",
-    topic: "work-career",
-    prompt: "Bạn đã hứa tham dự cuộc họp với nhóm dự án nhưng không thể đến. Hãy viết email cho các thành viên trong nhóm để:\n- xin lỗi vì đã bỏ lỡ cuộc họp\n- giải thích chuyện đã xảy ra\n- đề nghị hoàn thành một nhiệm vụ cụ thể cho nhóm",
-    minWords: 120,
-    maxWords: 180,
-    requiredPoints: ["xin lỗi rõ ràng", "giải thích lý do", "đề nghị một cách hỗ trợ cụ thể"],
-    keywords: ["cuộc họp", "nhóm dự án", "xin lỗi", "trách nhiệm"],
-    sentenceStarters: ["I am very sorry that...", "Unfortunately, ...", "To make up for this, I can..."],
-    estimatedMinutes: 20,
-  },
-  {
-    slug: "wt1-application-part-time-tutor-b2",
-    title: "Ứng tuyển vị trí gia sư bán thời gian",
-    description: "Thư ứng tuyển trang trọng trong bối cảnh công việc và giáo dục.",
-    part: 1,
-    taskType: "application",
-    level: "B2",
-    topic: "work-career",
-    prompt: "Bạn thấy quảng cáo tuyển gia sư tiếng Anh bán thời gian tại một trung tâm cộng đồng. Hãy viết thư cho điều phối viên để:\n- bày tỏ sự quan tâm đến vị trí này\n- mô tả kinh nghiệm hoặc kỹ năng liên quan của bạn\n- hỏi về lịch làm việc và mức thù lao",
-    minWords: 120,
-    maxWords: 180,
-    requiredPoints: ["bày tỏ sự quan tâm", "mô tả kinh nghiệm hoặc kỹ năng liên quan", "hỏi về lịch làm việc và thù lao"],
-    keywords: ["ứng tuyển", "việc bán thời gian", "gia sư", "kinh nghiệm"],
-    sentenceStarters: ["I would like to apply for...", "I believe I am suitable because...", "Could you please let me know..."],
-    estimatedMinutes: 20,
-  },
-  {
-    slug: "wt1-invitation-cultural-festival-b1",
-    title: "Mời tham dự lễ hội văn hóa",
-    description: "Email mời thân mật về chủ đề xã hội và văn hóa.",
-    part: 1,
-    taskType: "invitation",
-    level: "B1",
-    topic: "society-culture",
-    prompt: "Thành phố của bạn tổ chức lễ hội văn hóa vào cuối tuần tới. Hãy viết email cho một người bạn nói tiếng Anh để:\n- mời họ tham gia cùng bạn\n- mô tả hai hoạt động tại lễ hội\n- gợi ý thời gian và địa điểm gặp nhau",
-    minWords: 120,
-    maxWords: 180,
-    requiredPoints: ["mời người bạn tham gia", "mô tả hai hoạt động lễ hội", "gợi ý thời gian và địa điểm gặp"],
-    keywords: ["lễ hội", "văn hóa", "hoạt động", "gặp mặt"],
-    sentenceStarters: ["Would you like to...", "There will be...", "Let's meet at..."],
-    estimatedMinutes: 20,
-  },
-  {
-    slug: "wt1-advice-healthy-routine-b1",
-    title: "Lời khuyên về thói quen lành mạnh hơn",
-    description: "Email góp ý thân thiện về sức khỏe và lối sống.",
-    part: 1,
-    taskType: "advice",
-    level: "B1",
-    topic: "health",
-    prompt: "Bạn của bạn nói rằng họ cảm thấy mệt vì học khuya mỗi đêm và ít tập thể dục. Hãy viết email cho bạn của bạn để:\n- thể hiện sự thông cảm với vấn đề của họ\n- đưa ra hai lời khuyên thực tế\n- động viên họ duy trì thói quen lành mạnh hơn",
-    minWords: 120,
-    maxWords: 180,
-    requiredPoints: ["thể hiện sự thông cảm", "đưa ra hai gợi ý thực tế", "động viên duy trì thói quen lành mạnh hơn"],
-    keywords: ["giấc ngủ", "tập thể dục", "căng thẳng", "thói quen sinh hoạt"],
-    sentenceStarters: ["I'm sorry to hear that...", "You could try...", "If you keep this habit, ..."],
-    estimatedMinutes: 20,
-  },
-  {
-    slug: "wt1-information-homestay-program-b2",
-    title: "Hỏi thông tin về chương trình homestay",
-    description: "Email hỏi thông tin trang trọng trong bối cảnh du lịch và học tập.",
-    part: 1,
-    taskType: "information_request",
-    level: "B2",
-    topic: "travel-tourism",
-    prompt: "Bạn muốn tham gia một khóa học tiếng Anh ngắn hạn ở nước ngoài và ở cùng gia đình bản xứ. Hãy viết email cho cán bộ chương trình để:\n- giải thích kế hoạch học tập của bạn\n- hỏi về gia đình bản xứ và địa điểm\n- yêu cầu thông tin về chi phí và hạn nộp hồ sơ",
-    minWords: 120,
-    maxWords: 180,
-    requiredPoints: ["giải thích kế hoạch học tập", "hỏi về gia đình bản xứ và địa điểm", "yêu cầu thông tin chi phí và hạn nộp"],
-    keywords: ["homestay", "du học", "gia đình bản xứ", "ứng tuyển"],
-    sentenceStarters: ["I am planning to...", "I would like to know whether...", "Could you also provide details about..."],
-    estimatedMinutes: 20,
-  },
-  {
-    slug: "wt1-thank-you-volunteer-event-b1",
-    title: "Email cảm ơn sau sự kiện tình nguyện",
-    description: "Email cảm ơn bán trang trọng kèm phản hồi.",
-    part: 1,
-    taskType: "thanks",
-    level: "B1",
-    topic: "society-culture",
-    prompt: "Bạn đã tham gia một sự kiện tình nguyện cuối tuần do câu lạc bộ địa phương tổ chức. Hãy viết email cho người tổ chức để:\n- cảm ơn họ vì đã tổ chức sự kiện\n- mô tả điều bạn học được từ trải nghiệm này\n- gợi ý một cải tiến cho sự kiện tiếp theo",
-    minWords: 120,
-    maxWords: 180,
-    requiredPoints: ["cảm ơn người tổ chức", "mô tả điều học được từ trải nghiệm", "gợi ý một cải tiến"],
-    keywords: ["tình nguyện", "cộng đồng", "kinh nghiệm", "improvement"],
-    sentenceStarters: ["Thank you for organizing...", "I learned that...", "For the next event, it might be useful to..."],
-    estimatedMinutes: 20,
-  },
-  {
-    slug: "wt1-arrangement-airport-pickup-b1",
-    title: "Sắp xếp đón ở sân bay",
-    description: "Email thân mật sắp xếp các chi tiết thực tế.",
-    part: 1,
-    taskType: "arrangement",
-    level: "B1",
-    topic: "travel-tourism",
-    prompt: "Anh/chị/em họ của bạn từ nước ngoài sẽ lần đầu đến thăm thành phố của bạn. Hãy viết email cho người đó để:\n- xác nhận thời gian bạn sẽ đón họ ở sân bay\n- giải thích cách họ nhận ra bạn\n- gợi ý một hoạt động cho buổi tối đầu tiên",
-    minWords: 120,
-    maxWords: 180,
-    requiredPoints: ["xác nhận thời gian đón", "giải thích cách nhận ra bạn", "gợi ý hoạt động cho buổi tối đầu tiên"],
-    keywords: ["airport", "chuyến thăm", "đón tại sân bay", "hoạt động"],
-    sentenceStarters: ["I will meet you at...", "You can recognize me because...", "In the evening, we could..."],
-    estimatedMinutes: 20,
-  },
-  {
-    slug: "wt1-feedback-company-training-b2",
-    title: "Phản hồi về buổi đào tạo công ty",
-    description: "Email phản hồi trang trọng sau đào tạo tại nơi làm việc.",
-    part: 1,
-    taskType: "feedback",
-    level: "B2",
-    topic: "work-career",
-    prompt: "Công ty của bạn vừa tổ chức một buổi đào tạo kỹ năng giao tiếp. Hãy viết email cho quản lý nhân sự để:\n- cảm ơn công ty vì buổi đào tạo\n- giải thích phần nào hữu ích nhất\n- đề xuất một chủ đề cho buổi đào tạo sau",
-    minWords: 120,
-    maxWords: 180,
-    requiredPoints: ["cảm ơn công ty", "giải thích phần hữu ích nhất", "đề xuất chủ đề đào tạo trong tương lai"],
-    keywords: ["đào tạo", "kỹ năng giao tiếp", "hội thảo", "phát triển chuyên môn"],
-    sentenceStarters: ["I appreciate the opportunity to...", "The most useful part was...", "For future training, I would suggest..."],
-    estimatedMinutes: 20,
-  },
-  {
-    slug: "wt2-online-learning-opinion-b2",
-    title: "Học trực tuyến sau đại dịch",
-    description: "Bài luận nêu quan điểm về giáo dục và công nghệ.",
-    part: 2,
-    taskType: "opinion",
-    level: "B2",
-    topic: "education",
-    prompt: "Một số người cho rằng học trực tuyến nên trở thành một phần lâu dài của giáo dục đại học. Những người khác nghĩ rằng lớp học trực tiếp vẫn hiệu quả hơn. Bạn đồng ý hay không đồng ý ở mức độ nào? Hãy đưa ra lý do và ví dụ.",
-    minWords: 250,
-    maxWords: 350,
-    requiredPoints: ["nêu quan điểm rõ ràng", "so sánh học trực tuyến và học trực tiếp", "hỗ trợ ý bằng lý do và ví dụ"],
-    keywords: ["học trực tuyến", "giáo dục đại học", "linh hoạt", "tương tác"],
-    sentenceStarters: ["It is widely argued that...", "One major advantage is...", "However, this does not mean that..."],
-    estimatedMinutes: 40,
-  },
-  {
-    slug: "wt2-public-transport-problem-solution-b2",
-    title: "Cải thiện giao thông công cộng",
-    description: "Bài luận vấn đề - giải pháp về giao thông đô thị.",
-    part: 2,
-    taskType: "problem_solution",
-    level: "B2",
-    topic: "urban-transport",
-    prompt: "Nhiều thành phố lớn gặp vấn đề ùn tắc giao thông và ô nhiễm không khí. Tình trạng này gây ra những vấn đề gì, và chính phủ có thể làm gì để cải thiện giao thông công cộng?",
-    minWords: 250,
-    maxWords: 350,
-    requiredPoints: ["xác định vấn đề giao thông và ô nhiễm", "đề xuất biện pháp của chính phủ", "giải thích tác động mong đợi"],
-    keywords: ["ùn tắc giao thông", "ô nhiễm không khí", "giao thông công cộng", "chính sách chính phủ"],
-    sentenceStarters: ["One serious problem is...", "A practical measure would be...", "This policy could reduce..."],
-    estimatedMinutes: 40,
-  },
-  {
-    slug: "wt2-social-media-discussion-b2",
-    title: "Mạng xã hội và người trẻ",
-    description: "Bài luận thảo luận về truyền thông.",
-    part: 2,
-    taskType: "discussion",
-    level: "B2",
-    topic: "media-communication",
-    prompt: "Một số người nói mạng xã hội giúp người trẻ giao tiếp và học tập. Những người khác cho rằng nó gây hại cho sức khỏe tinh thần và khả năng tập trung. Hãy thảo luận cả hai quan điểm và đưa ra ý kiến của bạn.",
-    minWords: 250,
-    maxWords: 350,
-    requiredPoints: ["thảo luận lợi ích của mạng xã hội", "thảo luận rủi ro với sức khỏe tinh thần và tập trung", "đưa ra ý kiến cá nhân"],
-    keywords: ["mạng xã hội", "người trẻ", "sức khỏe tinh thần", "giao tiếp"],
-    sentenceStarters: ["Supporters of social media argue that...", "On the other hand, critics point out that...", "In my view, ..."],
-    estimatedMinutes: 40,
-  },
-  {
-    slug: "wt2-aging-population-advantages-disadvantages-b2",
-    title: "Dân số già hóa",
-    description: "Bài luận ưu điểm - nhược điểm về dân số và sức khỏe.",
-    part: 2,
-    taskType: "advantage_disadvantage",
-    level: "B2",
-    topic: "health",
-    prompt: "Ở nhiều quốc gia, con người sống lâu hơn trước đây. Dân số già hóa có những ưu điểm và nhược điểm gì đối với xã hội? Hãy đưa ra lý do và ví dụ.",
-    minWords: 250,
-    maxWords: 350,
-    requiredPoints: ["giải thích ưu điểm của tuổi thọ cao hơn", "giải thích nhược điểm đối với xã hội", "đưa ví dụ"],
-    keywords: ["già hóa dân số", "y tế", "kinh nghiệm", "dịch vụ công"],
-    sentenceStarters: ["One clear benefit is...", "A possible drawback is...", "For example, ..."],
-    estimatedMinutes: 40,
-  },
-  {
-    slug: "wt2-plastic-waste-cause-effect-b1",
-    title: "Rác thải nhựa trong đời sống hằng ngày",
-    description: "Bài luận nguyên nhân - hệ quả về môi trường.",
-    part: 2,
-    taskType: "cause_effect",
-    level: "B1",
-    topic: "environment",
-    prompt: "Rác thải nhựa đã trở thành vấn đề nghiêm trọng ở nhiều cộng đồng. Nguyên nhân chính của vấn đề này là gì, và nó ảnh hưởng thế nào đến môi trường?",
-    minWords: 250,
-    maxWords: 350,
-    requiredPoints: ["giải thích nguyên nhân chính của rác thải nhựa", "mô tả tác động môi trường", "sắp xếp ý rõ ràng"],
-    keywords: ["rác thải nhựa", "môi trường", "tái chế", "ô nhiễm"],
-    sentenceStarters: ["One reason for this problem is...", "As a result, ...", "Another effect is..."],
-    estimatedMinutes: 40,
-  },
-  {
-    slug: "wt2-ai-workplace-opinion-c1",
-    title: "Trí tuệ nhân tạo tại nơi làm việc",
-    description: "Bài luận nêu quan điểm về công nghệ và việc làm.",
-    part: 2,
-    taskType: "opinion",
-    level: "C1",
-    topic: "technology",
-    prompt: "Trí tuệ nhân tạo ngày càng được dùng để đưa ra quyết định tại nơi làm việc. Một số người hoan nghênh xu hướng này, trong khi người khác lo ngại về sự công bằng và an toàn việc làm. Theo bạn, AI nên được sử dụng ở mức độ nào trong các quyết định tuyển dụng và việc làm?",
-    minWords: 250,
-    maxWords: 380,
-    requiredPoints: ["nêu quan điểm có sắc thái", "cân nhắc hiệu quả và công bằng", "đề cập an toàn việc làm hoặc trách nhiệm giải trình"],
-    keywords: ["trí tuệ nhân tạo", "quyết định tuyển dụng", "công bằng", "trách nhiệm giải trình"],
-    sentenceStarters: ["There is a strong case for...", "Nevertheless, employers should not...", "A balanced approach would..."],
-    estimatedMinutes: 40,
-  },
-  {
-    slug: "wt2-rural-urban-migration-discussion-b2",
-    title: "Người trẻ chuyển đến thành phố",
-    description: "Bài luận thảo luận về đô thị hóa và cơ hội.",
-    part: 2,
-    taskType: "discussion",
-    level: "B2",
-    topic: "urban-transport",
-    prompt: "Nhiều người trẻ chuyển từ nông thôn đến thành phố lớn để học tập và làm việc. Hãy thảo luận ưu điểm và nhược điểm của xu hướng này đối với cả người trẻ và quê hương của họ.",
-    minWords: 250,
-    maxWords: 350,
-    requiredPoints: ["thảo luận lợi ích cho người trẻ", "thảo luận tác động đối với quê hương", "đưa ra kết luận cân bằng"],
-    keywords: ["đô thị hóa", "việc làm", "giáo dục", "khu vực nông thôn"],
-    sentenceStarters: ["For young people, city life can...", "However, rural communities may...", "Overall, ..."],
-    estimatedMinutes: 40,
-  },
-  {
-    slug: "wt2-healthy-lifestyle-problem-solution-b1",
-    title: "Lối sống thiếu lành mạnh ở sinh viên",
-    description: "Bài luận vấn đề - giải pháp về sức khỏe sinh viên.",
-    part: 2,
-    taskType: "problem_solution",
-    level: "B1",
-    topic: "health",
-    prompt: "Nhiều sinh viên không ngủ đủ hoặc không tập thể dục vì dành quá nhiều thời gian cho việc học hoặc thiết bị số. Điều này có thể gây ra những vấn đề gì, và bạn đề xuất giải pháp nào?",
-    minWords: 250,
-    maxWords: 350,
-    requiredPoints: ["mô tả vấn đề sức khỏe hoặc học tập", "đề xuất giải pháp thực tế", "giải thích vì sao giải pháp hữu ích"],
-    keywords: ["sinh viên", "giấc ngủ", "tập thể dục", "thiết bị số"],
-    sentenceStarters: ["This can lead to...", "One solution is to...", "Schools and families can also..."],
-    estimatedMinutes: 40,
-  },
-  {
-    slug: "wt2-tourism-local-communities-b2",
-    title: "Du lịch và cộng đồng địa phương",
-    description: "Bài luận ưu điểm - nhược điểm về du lịch.",
-    part: 2,
-    taskType: "advantage_disadvantage",
-    level: "B2",
-    topic: "travel-tourism",
-    prompt: "Du lịch mang lại thu nhập cho nhiều cộng đồng địa phương, nhưng cũng có thể tạo ra vấn đề môi trường và văn hóa. Du lịch có những ưu điểm và nhược điểm gì đối với người dân địa phương?",
-    minWords: 250,
-    maxWords: 350,
-    requiredPoints: ["giải thích lợi ích kinh tế", "giải thích bất lợi về môi trường hoặc văn hóa", "đưa ví dụ"],
-    keywords: ["du lịch", "cộng đồng địa phương", "thu nhập", "tác động môi trường"],
-    sentenceStarters: ["Tourism can benefit local people because...", "A disadvantage is that...", "For this reason, ..."],
-    estimatedMinutes: 40,
-  },
-  {
-    slug: "wt2-consumerism-environment-c1",
-    title: "Chủ nghĩa tiêu dùng và trách nhiệm môi trường",
-    description: "Bài luận C1 về tiêu dùng và phát triển bền vững.",
-    part: 2,
-    taskType: "opinion",
-    level: "C1",
-    topic: "economy-business",
-    prompt: "Nền kinh tế hiện đại thường phụ thuộc vào việc con người mua nhiều hàng hóa và dịch vụ hơn. Tuy nhiên, xu hướng này có thể gây hại cho môi trường. Chính phủ có nên hạn chế chủ nghĩa tiêu dùng, hay cá nhân nên được tự do lựa chọn mua bao nhiêu tùy ý?",
-    minWords: 250,
-    maxWords: 380,
-    requiredPoints: ["nêu quan điểm rõ ràng", "đề cập lập luận kinh tế và môi trường", "cân nhắc trách nhiệm của chính phủ và cá nhân"],
-    keywords: ["chủ nghĩa tiêu dùng", "tăng trưởng kinh tế", "trách nhiệm môi trường", "quy định"],
-    sentenceStarters: ["Although consumption supports...", "From an environmental perspective, ...", "Policy should therefore..."],
-    estimatedMinutes: 40,
-  },
-];
-
-const topicLabels = {
-  education: "Giáo dục",
-  "work-career": "Công việc",
-  "society-culture": "Xã hội & văn hóa",
-  health: "Sức khỏe",
-  "travel-tourism": "Du lịch",
-  "urban-transport": "Đô thị & giao thông",
-  "media-communication": "Truyền thông",
-  environment: "Môi trường",
-  technology: "Công nghệ",
-  "economy-business": "Kinh tế",
-};
-
-const taskTypeLabels = {
-  request: "Đề nghị",
-  complaint: "Khiếu nại",
-  apology: "Xin lỗi",
-  application: "Ứng tuyển",
-  invitation: "Mời",
-  advice: "Lời khuyên",
-  information_request: "Hỏi thông tin",
-  thanks: "Cảm ơn",
-  arrangement: "Sắp xếp",
-  feedback: "Phản hồi",
-  opinion: "Nêu quan điểm",
-  problem_solution: "Vấn đề - giải pháp",
-  discussion: "Thảo luận",
-  advantage_disadvantage: "Ưu/nhược điểm",
-  cause_effect: "Nguyên nhân - hệ quả",
-};
-
-const writingTopics = Object.entries(topicLabels)
-  .map(([key, label]) => ({
-    key,
-    label,
-    samples: writingSamples.filter((sample) => sample.topic === key),
-  }))
-  .filter((topic) => topic.samples.length > 0);
-
-const formatSampleForCopy = (sample) => [
-  `${sample.title} (${sample.level})`,
-  `Part: Writing Task ${sample.part}`,
-  `Dạng bài: ${taskTypeLabels[sample.taskType]}`,
-  `Thời gian gợi ý: ${sample.estimatedMinutes} phút`,
-  `Số từ: ${sample.minWords}-${sample.maxWords}`,
-  "",
-  "Đề bài:",
-  sample.prompt,
-  "",
-  "Yêu cầu cần có:",
-  ...sample.requiredPoints.map((point) => `- ${point}`),
-  "",
-  "Từ khóa:",
-  sample.keywords.join(", "),
-  "",
-  "Câu mở đầu gợi ý:",
-  ...sample.sentenceStarters.map((starter) => `- ${starter}`),
-].join("\n");
+import {
+  assessmentSampleTypeLabels,
+  assessmentValidationTabs,
+} from "../data/assessment-validation-samples";
 ---
 
 <!DOCTYPE html>
@@ -525,10 +147,10 @@ const formatSampleForCopy = (sample) => [
           <li>Xem lịch sử bài viết và feedback từng tiêu chí</li>
         </ul>
 
-        <h3 id="writing-samples">Bài mẫu copy nhanh</h3>
-        <p>Dữ liệu lấy từ dataseed Writing hiện có, gom theo tab chủ đề để copy đề luyện nhanh. Mỗi block gồm đề bài, yêu cầu, từ khóa và câu mở đầu gợi ý.</p>
-        <div class="sample-tabs" role="tablist" aria-label="Chủ đề bài mẫu Writing">
-          {writingTopics.map((topic, index) => (
+        <h3 id="writing-samples">Bài đã làm copy nhanh</h3>
+        <p>Dữ liệu lấy từ <span class="code-inline">database/fixtures/writing_samples</span>, chính là bộ dùng cho <span class="code-inline">php artisan validate:assessment-engine</span>. Nút Copy chỉ copy phần bài làm để dán nhanh vào màn chấm demo.</p>
+        <div class="sample-tabs" role="tablist" aria-label="Chủ đề bài đã làm Writing">
+          {assessmentValidationTabs.map((topic, index) => (
             <button
               class="sample-tab"
               type="button"
@@ -543,7 +165,7 @@ const formatSampleForCopy = (sample) => [
           ))}
         </div>
         <div class="sample-panels">
-          {writingTopics.map((topic, index) => (
+          {assessmentValidationTabs.map((topic, index) => (
             <section
               class="sample-panel"
               id={`sample-panel-${topic.key}`}
@@ -557,20 +179,32 @@ const formatSampleForCopy = (sample) => [
                   <article class="sample-card">
                     <div class="sample-card-head">
                       <div>
-                        <h4>{sample.title}</h4>
-                        <p>{sample.description}</p>
+                        <h4>{sample.label}</h4>
+                        <p>{sample.note}</p>
                       </div>
                       <div class="sample-meta">
-                        <span>Task {sample.part}</span>
-                        <span>{sample.level}</span>
-                        <span>{taskTypeLabels[sample.taskType]}</span>
+                        <span>{assessmentSampleTypeLabels[sample.sampleType]}</span>
+                        <span>{sample.expectedLabel}</span>
+                        {sample.sourceGrade && <span>Grade {sample.sourceGrade}</span>}
+                        {sample.riskType && <span>{sample.riskType}</span>}
                       </div>
                     </div>
+                    <div class="sample-prompt">
+                      <strong>Đề:</strong>
+                      <p>{sample.prompt}</p>
+                      {sample.requirements.length > 0 && (
+                        <ul>
+                          {sample.requirements.map((requirement) => (
+                            <li>{requirement}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                     <div class="sample-copy-head">
-                      <span>{sample.minWords}-{sample.maxWords} từ · {sample.estimatedMinutes} phút</span>
+                      <span>Bài làm đã nộp — copy để chấm nhanh</span>
                       <button class="copy-button" type="button" data-copy-target={`sample-copy-${sample.slug}`}>Copy</button>
                     </div>
-                    <pre class="sample-copy"><code id={`sample-copy-${sample.slug}`}>{formatSampleForCopy(sample)}</code></pre>
+                    <pre class="sample-copy"><code id={`sample-copy-${sample.slug}`}>{sample.answer}</code></pre>
                   </article>
                 ))}
               </div>
