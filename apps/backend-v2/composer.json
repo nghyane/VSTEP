@@ -16,6 +16,7 @@
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.32",
         "php-open-source-saver/jwt-auth": "^2.9",
+        "resend/resend-php": "^1.3",
         "scalar/laravel": "^0.2.1"
     },
     "require-dev": {
