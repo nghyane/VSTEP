@@ -16,9 +16,15 @@ RUN install-php-extensions \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+ENV COMPOSER_ALLOW_SUPERUSER=1 \
+    COMPOSER_MAX_PARALLEL_HTTP=4 \
+    COMPOSER_PROCESS_TIMEOUT=1200
+
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-progress \
+    || composer install --no-dev --optimize-autoloader --no-scripts --no-progress \
+    || composer install --no-dev --optimize-autoloader --no-scripts --no-progress
 
 COPY . .
 RUN cp .env.example .env \
