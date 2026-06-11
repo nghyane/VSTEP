@@ -20,6 +20,7 @@ final class ProductionDatabaseSeeder extends Seeder
             SystemConfigSeeder::class,
             WalletSeeder::class,
             GradingRubricSeeder::class,
+            AssessmentRubricSeeder::class,
             CefrVocabularySeeder::class,
             ContentSeeder::class,
             ReferenceExamSeeder::class,
