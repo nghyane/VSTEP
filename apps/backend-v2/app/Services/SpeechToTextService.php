@@ -6,6 +6,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
 
 /**
  * Azure Speech-to-Text service.
@@ -37,12 +38,56 @@ final class SpeechToTextService implements SpeechToText
      */
     public function transcribe(string $audioContent, string $language = 'en-US', ?string $contentType = null): ?array
     {
+        // Azure short-audio REST không decode được container WEBM (trả Success + text rỗng).
+        // Remux sang OGG (stream copy, cùng codec opus) trước khi gửi.
+        $mime = $this->normalizeMime($contentType);
+        if ($mime !== null && str_contains($mime, 'webm')) {
+            $remuxed = $this->remuxWebmToOgg($audioContent);
+            if ($remuxed !== null) {
+                $audioContent = $remuxed;
+                $contentType = 'audio/ogg; codecs=opus';
+            }
+        }
+
         $azure = $this->transcribeWithAzure($audioContent, $language, $contentType);
-        if ($azure !== null) {
+        if ($azure !== null && trim($azure['text']) !== '') {
             return $azure;
         }
 
-        return $this->transcribeWithOpenAi($audioContent, $language, $contentType);
+        // Azure lỗi hoặc trả text rỗng dù audio có tiếng → thử fallback.
+        return $this->transcribeWithOpenAi($audioContent, $language, $contentType) ?? $azure;
+    }
+
+    /**
+     * Remux WEBM → OGG without re-encoding (both carry opus).
+     * Returns null when ffmpeg is unavailable or fails — caller keeps original bytes.
+     */
+    private function remuxWebmToOgg(string $content): ?string
+    {
+        $in = tempnam(sys_get_temp_dir(), 'stt_in_');
+        $out = tempnam(sys_get_temp_dir(), 'stt_out_').'.ogg';
+
+        try {
+            file_put_contents($in, $content);
+
+            $result = Process::timeout(15)->run(['ffmpeg', '-y', '-i', $in, '-c:a', 'copy', '-f', 'ogg', $out]);
+            if (! $result->successful()) {
+                Log::warning('STT webm→ogg remux failed', ['stderr' => mb_substr($result->errorOutput(), -500)]);
+
+                return null;
+            }
+
+            $ogg = @file_get_contents($out);
+
+            return $ogg !== false && $ogg !== '' ? $ogg : null;
+        } catch (\Throwable $e) {
+            Log::warning('STT webm→ogg remux unavailable', ['error' => $e->getMessage()]);
+
+            return null;
+        } finally {
+            @unlink($in);
+            @unlink($out);
+        }
     }
 
     /**
